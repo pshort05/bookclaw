@@ -4,27 +4,14 @@ Quick reference for starting, stopping, and managing AuthorClaw.
 
 ---
 
-## Local PC (Windows — Direct)
+## Windows — via Docker Desktop or WSL2
 
-### Start the server
-```bash
-cd C:\Users\chris\OneDrive\Documents\Automations\AuthorClaw\authorclaw
-npm start
-```
+AuthorClaw v5+ does not ship a supported Windows-direct install. Windows users should run AuthorClaw through Docker Desktop or under WSL2; both flows reuse the steps in the **VPS / Remote Server (Docker)** section below.
 
-### Start with auto-reload (development)
-```bash
-npm run dev
-```
+- **Docker Desktop:** install Docker Desktop for Windows, clone the repo in PowerShell or Git Bash, then follow the **Start with Docker** subsection below. The dashboard is reachable at `http://localhost:3847` from the Windows host.
+- **WSL2 (Ubuntu / Debian):** open your WSL distro and follow the **First-time setup** + **Start without Docker** steps below as if it were a Linux box.
 
-### Stop the server
-Press `Ctrl+C` in the terminal, or:
-```bash
-taskkill /F /FI "WINDOWTITLE eq *authorclaw*"
-```
-
-### Dashboard
-Open browser to: **http://localhost:3847**
+Direct `npm start` from a Windows command prompt or PowerShell is not a supported configuration on this fork. Some `process.platform === 'win32'` branches survive in the source from upstream OpenClaw — they may continue to work, but Windows-direct is not tested or documented.
 
 ---
 
@@ -159,7 +146,7 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 
 | Service | Port | Binding |
 |---|---|---|
-| AuthorClaw | 3847 | localhost only |
+| AuthorClaw | 3847 | configurable via `AUTHORCLAW_BIND` (default `0.0.0.0`; set `127.0.0.1` for loopback-only) |
 | Ollama (if installed) | 11434 | localhost only |
 
 ## Security Checklist
@@ -169,5 +156,5 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 - [ ] No API keys in plain text files
 - [ ] Telegram bot token only in vault
 - [ ] `.gitignore` covers `.env`, `vault.enc`, `user.json`, `workspace/`
-- [ ] Server binds to `127.0.0.1` (default — don't change)
-- [ ] SSH tunnel or HTTPS proxy for remote access
+- [ ] Bind address is appropriate for the environment: `AUTHORCLAW_BIND=0.0.0.0` (default) only on a trusted LAN; `AUTHORCLAW_BIND=127.0.0.1` for loopback-only when fronted by a tunnel or auth proxy
+- [ ] SSH tunnel or auth-enforcing reverse proxy (Caddy / Nginx / Traefik) in front of any non-trusted-LAN deployment

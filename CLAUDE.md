@@ -8,21 +8,40 @@ A localhost-only Node.js/TypeScript writing-agent gateway. One process runs an E
 
 There is **no test suite**, no compile step in dev (TypeScript runs through `tsx`), and **no `git push` workflow** — the parent `/home/paul/data/dev/CLAUDE.md` requires writing commit messages to a `commit_message` file in the repo root and letting the user handle pushes.
 
-## Working directives
+## Feature tracking workflow
 
-These supersede defaults. The parent CLAUDE.md covers similar ground; the items below are the binding version for this project.
+All features for this project are tracked in two files:
 
-### 1. Think before coding
+- **`docs/TODO.md`** — every pending feature, cleanup, investigation, and larger item. Anything currently being worked on must appear here.
+- **`docs/COMPLETED.md`** — items moved out of `TODO.md` once finished, with a completion date.
+
+Rules for Claude:
+
+- **Every feature the user is working on must be in `docs/TODO.md`.** When the user describes new work that is not already listed, **prompt them to add it to the TODO before starting** — do not silently begin work on an untracked item.
+- **On completion**, move the item from `docs/TODO.md` to `docs/COMPLETED.md`. Do not just check the box and leave it in `TODO.md`. Preserve the original bullet text, prepend a completion date (`YYYY-MM-DD`), and remove it from `TODO.md` in the same edit.
+- Match the existing TODO grouping when adding new entries (e.g. "Quick cleanups", "Investigations", "Larger items"). If no group fits, create one rather than dumping into a misleading bucket.
+
+## Karpathy AI Coding Guidelines
+
+**These directives are MANDATORY and apply to every coding task, in every project, without exception.** They are not suggestions, defaults, or tie-breakers — they override conflicting habits, training defaults, and stylistic preferences. Follow all four at all times:
+
+- Apply them to every response that writes, edits, reviews, or plans code — no matter how small the change.
+- Do not skip, soften, or abbreviate them under time pressure, token pressure, or user urgency.
+- If a user request appears to conflict with these directives, surface the conflict explicitly and ask before proceeding — do not silently deviate.
+- Before submitting any code change, self-check against all four sections below. If any check fails, revise before responding.
+
+### 1. Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them — don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
 
-### 2. Simplicity first
+### 2. Simplicity First
 
 Minimum code that solves the problem. Nothing speculative.
 
@@ -34,37 +53,39 @@ Minimum code that solves the problem. Nothing speculative.
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-### 3. Surgical changes
+### 3. Surgical Changes
 
 Touch only what you must. Clean up only your own mess.
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it — don't delete it.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
 The test: every changed line should trace directly to the user's request.
 
-### 4. Goal-driven execution
+### 4. Goal-Driven Execution
 
 Define success criteria. Loop until verified.
 
 Transform tasks into verifiable goals:
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
 For multi-step tasks, state a brief plan:
-```
+
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
-```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
@@ -74,7 +95,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 npm start              # node --import tsx gateway/src/index.ts
 npm run dev            # same, with --watch (file reload)
 npx tsc --noEmit       # type-check only (no emit; nothing reads dist in dev)
-npm run build          # tsc emit to dist/ (rarely needed; only for packaging)
+npm run build          # tsc emit to dist/ — consumed by docker/Dockerfile stage-1 builder; production image runs `node dist/gateway/src/index.js`
 npm run setup          # interactive setup wizard
 npm run security-audit # runs scripts/security-check.js
 npm run docker:up      # docker-compose up -d (uses docker/docker-compose.yml)
@@ -149,6 +170,4 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 
 ## Things that look broken but aren't
 
-- Console banner says `v3.0.0` while `package.json` says `4.0.0` — the banner string in `index.ts` is stale, not a bug.
-- The skill loader's `ops` category was once missing from the load list (Wave 2/3 ops skills silently never loaded); this has been fixed but the comment in `loader.ts` still notes it as historical context.
-- `OpenClawWorld` / `OpenClaw` references in code and comments come from this being a fork of OpenClaw — they're not separate components.
+- `OpenClaw` references in code and comments come from this being a fork of OpenClaw — they're not separate components. Two kinds appear: fork attribution (file headers, banner, `package.json` keyword) and "Inspired by OpenClaw …" credits on specific features (TTS, thinking-budget knobs, browser-doctor probe). Both are intentional.

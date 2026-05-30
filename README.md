@@ -335,7 +335,7 @@ AuthorClaw security features:
 - **Injection Detection**: Pattern matching for prompt injection attempts
 - **Rate Limiting**: Per-channel rate limits
 - **Research Gate**: Real web search + HTML extraction, 50+ allowlisted domains, 60 req/hr rate limit
-- **Localhost Only**: Server binds to 127.0.0.1 (no external access)
+- **Configurable Bind**: Server bind address controlled by `AUTHORCLAW_BIND` (default `0.0.0.0` for LAN reach; set to `127.0.0.1` for loopback-only). See the **Deployment — Defense in Depth** section below for the full fork posture.
 
 ---
 

@@ -37,9 +37,6 @@ export class SkillLoader {
 
   async loadAll(): Promise<void> {
     this.skills.clear();
-    // Note: 'ops' was previously missing from this list, so Wave 2's ops
-    // skills (decision-maker, task-planner, orchestrator-mgmt) and Wave 3's
-    // browser-automation never actually loaded. Now included.
     for (const category of ['core', 'author', 'marketing', 'premium', 'ops'] as const) {
       const categoryDir = join(this.skillsDir, category);
       if (!existsSync(categoryDir)) continue;

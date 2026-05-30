@@ -200,7 +200,7 @@ class AuthorClawGateway {
 
   async initialize(): Promise<void> {
     console.log('');
-    console.log('  ✍️  AuthorClaw v3.0.0');
+    console.log('  ✍️  AuthorClaw v5.0.0');
     console.log('  ═══════════════════════════════════');
     console.log('  The Autonomous AI Writing Agent');
     console.log('  An OpenClaw fork for authors');
