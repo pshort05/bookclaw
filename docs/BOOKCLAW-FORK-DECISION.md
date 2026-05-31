@@ -1,8 +1,8 @@
-# BookClaw: Evolve AuthorClaw vs. Re-Fork OpenClaw — Effort Comparison
+# BookClaw: Evolve BookClaw vs. Re-Fork OpenClaw — Effort Comparison
 
 Decision memo for review. Prepared 2026-05-30.
 
-**Question:** Rather than continuing to fix AuthorClaw and rebranding it to "BookClaw,"
+**Question:** Rather than continuing to fix BookClaw and rebranding it to "BookClaw,"
 would it be easier to start fresh from a fork of OpenClaw to build BookClaw? Target
 features: multi-book support and the StoryHackerAI feature.
 
@@ -17,18 +17,18 @@ below.
 
 ## The single fact that decides this
 
-**AuthorClaw is already a fork of OpenClaw.** `package.json`, the startup banner, and
+**BookClaw is already a fork of OpenClaw.** `package.json`, the startup banner, and
 `docs/OPENCLAW-UPDATES.md` confirm the last upstream sync was OpenClaw commit `80df746`. So the
 two options are not symmetric:
 
 | Option | What it actually is |
 |---|---|
-| **A — "fix AuthorClaw -> BookClaw"** | Keep the OpenClaw base already in the tree + the ~21,000 LOC of writing features built on top, add the two new features, rename. |
+| **A — "fix BookClaw -> BookClaw"** | Keep the OpenClaw base already in the tree + the ~21,000 LOC of writing features built on top, add the two new features, rename. |
 | **B — "fresh fork of OpenClaw -> BookClaw"** | Re-fork *current* OpenClaw, then rebuild or re-port the entire writing layer from scratch before starting on the two new features. |
 
 OpenClaw (confirmed via GitHub: ~247k stars, pnpm monorepo, ~150 plugins) is a
 **general-purpose multi-channel AI assistant gateway**. It has **zero** book/author/novel
-capability. Every writing feature is original to AuthorClaw, not inherited:
+capability. Every writing feature is original to BookClaw, not inherited:
 
 - **53 service files / ~21,000 LOC** of writing-specific logic: `projects.ts` (the novel
   pipeline), `plot-promises`, `story-structures`, `character-voices`, `beta-reader`,
@@ -74,14 +74,14 @@ infrastructure is exactly what a fresh fork discards.
 
 ## Honest effort estimates
 
-Ranges assume a solo, focused-session pace. "Working system" = AuthorClaw today: v5.0.0, smoke
+Ranges assume a solo, focused-session pace. "Working system" = BookClaw today: v5.0.0, smoke
 tests pass, `tsc` clean, security review nearly complete.
 
 ### Option A — evolve + rebrand
 
 | Work | Effort |
 |---|---|
-| Rename AuthorClaw -> BookClaw (runbook ready in `RENAME-PLAN.md`) | 1-2 hours (mechanical) |
+| Rename BookClaw -> BookClaw (runbook ready in `RENAME-PLAN.md`) | 1-2 hours (mechanical) |
 | Multi-book entity + author/genre profiles + migration | 1-2 weeks |
 | StoryHackerAI port (OpenRouter-canonical + multi-pass + checks) | 1-2 weeks |
 | *Optional* Level-1 god-class refactor as a pre-step (`GOD-CLASS-REFACTOR.md`) | 1-2 days |
@@ -106,7 +106,7 @@ capability — it only returns to today's baseline on a different foundation.
 `GOD-CLASS-REFACTOR.md` is candid: OpenClaw's plugin architecture is decisively better.
 `index.ts` (2,649 lines, 61 services, 35 init phases, two duplicate `Phase 6h` blocks) and
 `routes.ts` (5,516 lines, 234 endpoints in one function) are real god-class debt. Adding a
-provider/channel in OpenClaw is creating a folder; in AuthorClaw it is editing the monolith.
+provider/channel in OpenClaw is creating a folder; in BookClaw it is editing the monolith.
 
 If the goal were to absorb dozens of OpenClaw upstream features — voice/Talk Mode, Live Canvas,
 20+ channels, native iOS/Android apps, embeddings (see `OPENCLAW-UPDATES.md` Tiers 1-2) — then
@@ -128,7 +128,7 @@ Two things defuse that:
 
 **Take Option A.** Concretely:
 
-1. **Do not frame it as "fixing."** AuthorClaw is not broken — it is a working, actively
+1. **Do not frame it as "fixing."** BookClaw is not broken — it is a working, actively
    developed system with (a) well-scoped architectural debt and (b) two missing features. Both
    are already documented with plans.
 2. **Rename now if the BookClaw identity is wanted** — `RENAME-PLAN.md` is a ready, reversible
@@ -157,7 +157,7 @@ those match "multi-book + StoryHackerAI for one author."
 ## Related documents
 
 - [TODO.md](TODO.md) — multi-book is listed under "Larger items"; rename under "Pending plans."
-- [RENAME-PLAN.md](RENAME-PLAN.md) — ready, reversible AuthorClaw -> BookClaw runbook.
+- [RENAME-PLAN.md](RENAME-PLAN.md) — ready, reversible BookClaw -> BookClaw runbook.
 - [GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md) — OpenClaw architecture comparison + 3-level
   incremental refactor plan.
 - [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) — upstream features and which justify the plugin

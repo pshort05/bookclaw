@@ -1,7 +1,7 @@
 ---
 name: full-pipeline
 description: Write a complete novel from scratch — premise through final manuscript
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "full pipeline"

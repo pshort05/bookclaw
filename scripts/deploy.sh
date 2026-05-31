@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# AuthorClaw Docker Deployment Script
-# Run this INSIDE the VM from ~/authorclaw/
+# BookClaw Docker Deployment Script
+# Run this INSIDE the VM from ~/bookclaw/
 # ═══════════════════════════════════════════════════════════
 
 set -e
@@ -12,7 +12,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
 echo ""
-echo "  ✍️  AuthorClaw Docker Deploy"
+echo "  ✍️  BookClaw Docker Deploy"
 echo "  ═══════════════════════════════════════"
 echo ""
 
@@ -30,30 +30,30 @@ if ! docker info &> /dev/null 2>&1; then
 fi
 
 # ── Check for vault key ──
-if [ -z "$AUTHORCLAW_VAULT_KEY" ]; then
-    echo "  ⚠ AUTHORCLAW_VAULT_KEY not set."
+if [ -z "$BOOKCLAW_VAULT_KEY" ]; then
+    echo "  ⚠ BOOKCLAW_VAULT_KEY not set."
     echo "    Generating a random vault key for this deployment."
     echo "    To persist vault data across deploys, set it explicitly:"
-    echo "    export AUTHORCLAW_VAULT_KEY='your-secure-passphrase'"
+    echo "    export BOOKCLAW_VAULT_KEY='your-secure-passphrase'"
     echo ""
-    AUTHORCLAW_VAULT_KEY=$(openssl rand -hex 32)
+    BOOKCLAW_VAULT_KEY=$(openssl rand -hex 32)
 fi
 
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
 cat > docker/.env << EOF
-AUTHORCLAW_VAULT_KEY=${AUTHORCLAW_VAULT_KEY}
+BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY}
 AUTHOR_OS_PATH=${AUTHOR_OS_PATH:-$HOME/author-os}
 EOF
 echo "  ✓ Environment file created"
 
 # ── Build the image ──
-echo "  [2/4] Building AuthorClaw Docker image..."
+echo "  [2/4] Building BookClaw Docker image..."
 docker compose -f docker/docker-compose.yml build
 echo "  ✓ Image built"
 
 # ── Start services ──
-echo "  [3/4] Starting AuthorClaw..."
+echo "  [3/4] Starting BookClaw..."
 docker compose -f docker/docker-compose.yml up -d
 echo "  ✓ Services started"
 
@@ -63,7 +63,7 @@ RETRIES=0
 MAX_RETRIES=30
 while [ $RETRIES -lt $MAX_RETRIES ]; do
     if curl -sf http://localhost:3847/healthz > /dev/null 2>&1; then
-        echo "  ✓ AuthorClaw is healthy!"
+        echo "  ✓ BookClaw is healthy!"
         break
     fi
     RETRIES=$((RETRIES + 1))
@@ -77,7 +77,7 @@ fi
 
 echo ""
 echo "  ═══════════════════════════════════════"
-echo "  ✍️  AuthorClaw is running!"
+echo "  ✍️  BookClaw is running!"
 echo "  📡 Dashboard: http://localhost:3847"
 echo ""
 echo "  Useful commands:"

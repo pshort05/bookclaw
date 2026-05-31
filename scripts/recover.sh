@@ -1,7 +1,7 @@
 #!/bin/bash
-# AuthorClaw Recovery Tool
+# BookClaw Recovery Tool
 echo ""
-echo "  🔧 AuthorClaw Recovery"
+echo "  🔧 BookClaw Recovery"
 echo "  ═══════════════════════"
 echo ""
 echo "  1) Clear conversation cache"

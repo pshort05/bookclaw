@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Sandbox Guard
+ * BookClaw Sandbox Guard
  * Constrains all file operations to the workspace directory
  */
 

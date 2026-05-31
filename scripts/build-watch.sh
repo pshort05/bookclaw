@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════
-# AuthorClaw test-build watcher
+# BookClaw test-build watcher
 # ═══════════════════════════════════════════════════════════
-# Invoked periodically by authorclaw-build.timer (see scripts/systemd/).
+# Invoked periodically by bookclaw-build.timer (see scripts/systemd/).
 #
 # If a `build_now` sentinel file exists in the repo root, rebuild the
 # Docker image from the CURRENT working tree and (re)start the standard
-# `authorclaw` container on port 3847, then remove the sentinel.
+# `bookclaw` container on port 3847, then remove the sentinel.
 #
 # Why a sentinel instead of inotify: this repo lives on Mercury's local
 # disk and is exported over NFS to the workstations you edit from. inotify
@@ -49,7 +49,7 @@ COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 rm -f "$SENTINEL"
 
 # Reuse the stable vault key from the repo .env so the persisted
-# authorclaw-vault volume stays decryptable across rebuilds. (Without this
+# bookclaw-vault volume stays decryptable across rebuilds. (Without this
 # deploy.sh generates a throwaway key and orphans the existing vault.)
 if [ -f "$PROJECT_DIR/.env" ]; then
     set -a
@@ -60,7 +60,7 @@ fi
 
 {
     echo "═══════════════════════════════════════"
-    echo " AuthorClaw test build"
+    echo " BookClaw test build"
     echo " started : $(date -Is)"
     echo " commit  : $COMMIT"
     echo " tree    : $PROJECT_DIR"
@@ -91,5 +91,5 @@ echo "$(date -Is) commit=$COMMIT result=$STATUS log=$(basename "$LOG_FILE")" \
 # Keep only the 20 most recent build logs.
 ls -1t "$LOG_DIR"/build-*.log 2>/dev/null | tail -n +21 | xargs -r rm -f
 
-# Surface failure to systemd so `systemctl status authorclaw-build` is honest.
+# Surface failure to systemd so `systemctl status bookclaw-build` is honest.
 [ "$STATUS" = PASS ]

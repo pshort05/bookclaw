@@ -1,6 +1,6 @@
 ---
 name: ws-book-bible-bridge
-description: Import and sync Book Bible Engine JSON data into AuthorClaw's memory system
+description: Import and sync Book Bible Engine JSON data into BookClaw's memory system
 author: Writing Secrets
 version: 1.0.0
 triggers:
@@ -18,11 +18,11 @@ permissions:
 
 # Book Bible Engine Bridge
 
-Seamlessly import data from Writing Secrets' Book Bible Engine into AuthorClaw's memory system.
+Seamlessly import data from Writing Secrets' Book Bible Engine into BookClaw's memory system.
 
 ## Supported Import Formats
 
-This skill reads the JSON export from Book Bible Engine and maps it directly into AuthorClaw's book-bible memory structure.
+This skill reads the JSON export from Book Bible Engine and maps it directly into BookClaw's book-bible memory structure.
 
 ## JSON Schema Expected
 
@@ -70,7 +70,7 @@ This skill reads the JSON export from Book Bible Engine and maps it directly int
 
 1. User provides path to Book Bible JSON export OR pastes JSON
 2. Validate the JSON structure
-3. Map each entity type to AuthorClaw's book-bible format:
+3. Map each entity type to BookClaw's book-bible format:
    - `characters` → `workspace/memory/book-bible/[project]/characters/[name].md`
    - `locations` → `workspace/memory/book-bible/[project]/locations/[name].md`
    - `timeline` → `workspace/memory/book-bible/[project]/timeline.md`
@@ -113,7 +113,7 @@ For each imported character, generate:
 
 ## Two-Way Sync
 
-When the author makes changes in AuthorClaw's book bible:
+When the author makes changes in BookClaw's book bible:
 1. Track all modifications with timestamps
 2. On "export to Book Bible Engine" command, generate updated JSON
 3. This allows round-tripping between both tools

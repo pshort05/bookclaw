@@ -1,6 +1,6 @@
 ---
 name: deep-voice-analysis
-description: Advanced 47-marker voice analysis engine — analyzes your writing to build a comprehensive Voice Profile for AuthorClaw
+description: Advanced 47-marker voice analysis engine — analyzes your writing to build a comprehensive Voice Profile for BookClaw
 author: Writing Secrets
 version: 1.0.0
 triggers:
@@ -96,7 +96,7 @@ The free `style-clone` skill does a basic voice analysis (~10 markers). This pre
 
 ## Output: Enhanced Voice Profile
 
-Saved to `workspace/soul/VOICE-PROFILE.md` with all 47 markers organized into sections that AuthorClaw's Soul system reads on every interaction.
+Saved to `workspace/soul/VOICE-PROFILE.md` with all 47 markers organized into sections that BookClaw's Soul system reads on every interaction.
 
 ```markdown
 # Voice Profile — Deep Analysis (47 Markers)

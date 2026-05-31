@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-# AuthorClaw Setup Wizard v4.0
+# BookClaw Setup Wizard v4.0
 # The Secure AI Writing Agent — By Writing Secrets
 #
 # This wizard handles everything:
@@ -10,7 +10,7 @@
 # 4. Walks you through API key setup
 # 5. Creates your vault passphrase
 # 6. Sets up your first project
-# 7. Starts AuthorClaw
+# 7. Starts BookClaw
 #
 # Run with: bash setup-wizard.sh
 # ═══════════════════════════════════════════════════════════════
@@ -35,7 +35,7 @@ print_header() {
     echo ""
     echo -e "${PURPLE}  ╔═══════════════════════════════════════════╗${NC}"
     echo -e "${PURPLE}  ║                                           ║${NC}"
-    echo -e "${PURPLE}  ║${WHITE}${BOLD}       AuthorClaw Setup Wizard v4.0       ${NC}${PURPLE}║${NC}"
+    echo -e "${PURPLE}  ║${WHITE}${BOLD}       BookClaw Setup Wizard v4.0       ${NC}${PURPLE}║${NC}"
     echo -e "${PURPLE}  ║${DIM}       The Secure AI Writing Agent         ${NC}${PURPLE}║${NC}"
     echo -e "${PURPLE}  ║                                           ║${NC}"
     echo -e "${PURPLE}  ╚═══════════════════════════════════════════╝${NC}"
@@ -308,7 +308,7 @@ print_header
 step "4" "API keys (optional — for paid AI providers)"
 
 echo -e "  ${DIM}You can skip all of these if you're using Ollama only.${NC}"
-echo -e "  ${DIM}API keys are encrypted with AES-256 in AuthorClaw's vault.${NC}"
+echo -e "  ${DIM}API keys are encrypted with AES-256 in BookClaw's vault.${NC}"
 echo ""
 
 GEMINI_KEY=""
@@ -380,7 +380,7 @@ PROVIDER_COUNT=0
 
 echo ""
 if [ "$PROVIDER_COUNT" -eq 0 ]; then
-    fail "No AI providers configured. AuthorClaw needs at least one."
+    fail "No AI providers configured. BookClaw needs at least one."
     echo -e "  ${YELLOW}Please install Ollama or add at least one API key.${NC}"
     echo -e "  ${DIM}Run this wizard again after setting up a provider.${NC}"
     exit 1
@@ -396,7 +396,7 @@ wait_for_enter
 print_header
 step "5" "Setting your vault passphrase"
 
-echo -e "  AuthorClaw encrypts all your API keys with AES-256."
+echo -e "  BookClaw encrypts all your API keys with AES-256."
 echo -e "  You need a passphrase to unlock them."
 echo ""
 echo -e "  ${DIM}Choose something you'll remember. If you forget it,${NC}"
@@ -430,7 +430,7 @@ wait_for_enter
 # STEP 6: Install Dependencies
 # ═══════════════════════════════════════
 print_header
-step "6" "Installing AuthorClaw"
+step "6" "Installing BookClaw"
 
 echo -e "  Installing Node.js dependencies..."
 
@@ -440,17 +440,17 @@ if [ -f "package.json" ]; then
     npm install --silent 2>&1 | tail -1
     ok "Dependencies installed"
 else
-    fail "package.json not found. Make sure you're running this from the authorclaw directory."
+    fail "package.json not found. Make sure you're running this from the bookclaw directory."
     exit 1
 fi
 
 # Store vault passphrase — export for this session AND save to .env for persistence
-export AUTHORCLAW_VAULT_KEY="$VAULT_PASS"
+export BOOKCLAW_VAULT_KEY="$VAULT_PASS"
 
 # Write to .env so dotenv auto-loads it on every future start
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-echo "AUTHORCLAW_VAULT_KEY=$VAULT_PASS" > "$PROJECT_DIR/.env"
+echo "BOOKCLAW_VAULT_KEY=$VAULT_PASS" > "$PROJECT_DIR/.env"
 
 ok "Vault passphrase configured"
 info "Saved to .env — your API keys will persist across restarts."
@@ -535,7 +535,7 @@ print_header
 step "8" "Setup complete!"
 
 echo ""
-echo -e "  ${GREEN}${BOLD}AuthorClaw is ready.${NC}"
+echo -e "  ${GREEN}${BOLD}BookClaw is ready.${NC}"
 echo ""
 echo -e "  ${WHITE}What was configured:${NC}"
 echo ""
@@ -548,9 +548,9 @@ echo -e "    ${GREEN}✓${NC} Encrypted vault"
 echo -e "    ${GREEN}✓${NC} Word goal: ${WORD_GOAL}/day"
 echo -e "    ${GREEN}✓${NC} Genre focus: ${GENRE}"
 echo ""
-echo -e "  ${WHITE}${BOLD}To start AuthorClaw:${NC}"
+echo -e "  ${WHITE}${BOLD}To start BookClaw:${NC}"
 echo ""
-echo -e "    ${CYAN}cd ~/authorclaw && npx tsx gateway/src/index.ts${NC}"
+echo -e "    ${CYAN}cd ~/bookclaw && npx tsx gateway/src/index.ts${NC}"
 echo ""
 echo -e "  ${WHITE}Then open the dashboard:${NC} ${CYAN}http://localhost:3847${NC}"
 echo ""
@@ -572,17 +572,17 @@ echo ""
 # ═══════════════════════════════════════
 HELP_PROMPT_FILE="HELP-ME-SETUP.md"
 cat > "$HELP_PROMPT_FILE" << 'HELPEOF'
-# AuthorClaw — Personalized Setup Help
+# BookClaw — Personalized Setup Help
 
 Copy everything below this line and paste it into ChatGPT, Claude, Gemini, or any AI assistant to get personalized help:
 
 ---
 
-I'm trying to set up AuthorClaw, an open-source AI writing agent for authors. It's a Node.js/TypeScript project that runs directly with tsx. I need help troubleshooting my setup.
+I'm trying to set up BookClaw, an open-source AI writing agent for authors. It's a Node.js/TypeScript project that runs directly with tsx. I need help troubleshooting my setup.
 
-Here's what AuthorClaw is:
+Here's what BookClaw is:
 - A Node.js 22+ server (TypeScript, uses tsx to run)
-- Start command: cd ~/authorclaw && npx tsx gateway/src/index.ts
+- Start command: cd ~/bookclaw && npx tsx gateway/src/index.ts
 - Connects to AI providers: Ollama (local), Google Gemini (free), Anthropic Claude, OpenAI, DeepSeek
 - Runs on port 3847 (localhost only)
 - Has a dashboard at http://localhost:3847 with 5 panels: Home, Projects, Personas, Library, Settings
@@ -612,11 +612,11 @@ echo -e "  ${DIM}into any AI chatbot for personalized troubleshooting.${NC}"
 echo ""
 
 # Ask if they want to start now
-ask "Start AuthorClaw now? [Y/n]: "
+ask "Start BookClaw now? [Y/n]: "
 read -r yn
 if [[ ! "$yn" =~ ^[Nn]$ ]]; then
     echo ""
-    echo -e "  ${WHITE}Starting AuthorClaw...${NC}"
+    echo -e "  ${WHITE}Starting BookClaw...${NC}"
     echo ""
     cd "$(dirname "$0")/.." 2>/dev/null || cd "$(dirname "$0")"
 
@@ -659,7 +659,7 @@ if [[ ! "$yn" =~ ^[Nn]$ ]]; then
     fi
 
     echo ""
-    echo -e "  ${GREEN}${BOLD}AuthorClaw is running!${NC}"
+    echo -e "  ${GREEN}${BOLD}BookClaw is running!${NC}"
     echo -e "  ${WHITE}Dashboard:${NC} ${CYAN}http://localhost:3847${NC}"
     echo ""
     echo -e "  ${DIM}Press Ctrl+C to stop the server.${NC}"
@@ -670,6 +670,6 @@ if [[ ! "$yn" =~ ^[Nn]$ ]]; then
 else
     echo ""
     echo -e "  ${DIM}When you're ready, just run:${NC}"
-    echo -e "  ${CYAN}cd ~/authorclaw && npx tsx gateway/src/index.ts${NC}"
+    echo -e "  ${CYAN}cd ~/bookclaw && npx tsx gateway/src/index.ts${NC}"
     echo ""
 fi

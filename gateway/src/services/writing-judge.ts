@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Writing Judge
+ * BookClaw Writing Judge
  *
  * Modify-evaluate-retry loop for chapter writing, ported from AutoNovel's
  * dual-immune-system pattern. Every chapter draft passes through:

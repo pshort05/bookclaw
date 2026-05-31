@@ -1,9 +1,9 @@
 /**
- * AuthorClaw Orchestrator Service
+ * BookClaw Orchestrator Service
  * Manages user scripts/processes — start/stop/restart, health monitoring,
  * log capture, auto-restart on crash, config persistence.
  *
- * Lightweight PM2-like process manager built into AuthorClaw.
+ * Lightweight PM2-like process manager built into BookClaw.
  * Ported from Sneakers.
  */
 
@@ -53,7 +53,7 @@ function buildSafeEnv(extra?: Record<string, string>): NodeJS.ProcessEnv {
   const env = { ...process.env };
   // Redact sensitive keys
   const sensitiveKeys = [
-    'AUTHORCLAW_VAULT_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY',
+    'BOOKCLAW_VAULT_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY',
     'GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'TOGETHER_API_KEY',
     'ELEVENLABS_API_KEY', 'OPENROUTER_API_KEY',
   ];

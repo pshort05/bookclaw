@@ -1,4 +1,4 @@
-# AuthorClaw - Hardened Container Image
+# BookClaw - Hardened Container Image
 # Based on MoatBot security architecture
 #
 # Security features:
@@ -26,8 +26,8 @@ RUN npm prune --omit=dev
 FROM node:22-slim
 
 # Security: Create non-root user
-RUN groupadd -r authorclaw && \
-    useradd -r -g authorclaw -d /app -s /sbin/nologin authorclaw
+RUN groupadd -r bookclaw && \
+    useradd -r -g bookclaw -d /app -s /sbin/nologin bookclaw
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ COPY package.json ./
 # RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip && \
 #     rm -rf /var/lib/apt/lists/*
 
-# Create writable directories and give authorclaw user ownership of everything
+# Create writable directories and give bookclaw user ownership of everything
 RUN mkdir -p /app/workspace/memory/conversations \
              /app/workspace/memory/book-bible \
              /app/workspace/memory/voice-data \
@@ -59,10 +59,10 @@ RUN mkdir -p /app/workspace/memory/conversations \
              /app/workspace/.audit \
              /app/config/.vault \
              /app/skills/premium && \
-    chown -R authorclaw:authorclaw /app
+    chown -R bookclaw:bookclaw /app
 
 # Security: Drop to non-root user
-USER authorclaw
+USER bookclaw
 
 # Health check — liveness probe (proves process is running and accepting HTTP)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \

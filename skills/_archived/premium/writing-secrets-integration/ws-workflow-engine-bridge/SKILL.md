@@ -1,6 +1,6 @@
 ---
 name: ws-workflow-engine-bridge
-description: Import and execute Author Workflow Engine prompt sequences inside AuthorClaw
+description: Import and execute Author Workflow Engine prompt sequences inside BookClaw
 author: Writing Secrets
 version: 1.0.0
 triggers:
@@ -18,11 +18,11 @@ permissions:
 
 # Author Workflow Engine Bridge
 
-Import prompt sequence JSON files from the Author Workflow Engine and execute them as AuthorClaw automations.
+Import prompt sequence JSON files from the Author Workflow Engine and execute them as BookClaw automations.
 
 ## What This Does
 
-The Author Workflow Engine (AWE) lets you build multi-step prompt chains — like "research → premise → outline → write chapter 1." This bridge imports those chains and runs them inside AuthorClaw with full access to your book bible, voice profile, and memory.
+The Author Workflow Engine (AWE) lets you build multi-step prompt chains — like "research → premise → outline → write chapter 1." This bridge imports those chains and runs them inside BookClaw with full access to your book bible, voice profile, and memory.
 
 ## JSON Schema Expected
 
@@ -65,15 +65,15 @@ The Author Workflow Engine (AWE) lets you build multi-step prompt chains — lik
 
 ## Execution Process
 
-1. **Import**: Load AWE JSON into AuthorClaw's automation engine
-2. **Enhance**: Automatically inject AuthorClaw context into each step:
+1. **Import**: Load AWE JSON into BookClaw's automation engine
+2. **Enhance**: Automatically inject BookClaw context into each step:
    - Book Bible data (characters, locations, timeline)
    - Voice Profile (so output matches author's style)
    - Style Guide rules
    - Active project context
 3. **Execute**: Run steps sequentially, passing output variables between steps
-4. **Route**: Use AuthorClaw's smart AI routing per step:
-   - `"model": "auto"` → Let AuthorClaw pick the best provider
+4. **Route**: Use BookClaw's smart AI routing per step:
+   - `"model": "auto"` → Let BookClaw pick the best provider
    - `"model": "creative"` → Route to Claude or GPT-4o
    - `"model": "fast"` → Route to Ollama or Gemini
    - `"model": "cheap"` → Route to DeepSeek

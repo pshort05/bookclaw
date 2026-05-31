@@ -1,4 +1,4 @@
-# AuthorClaw
+# BookClaw
 
 **The Autonomous AI Writing Agent — Built for Authors**
 
@@ -6,7 +6,7 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org)
 [![Security](https://img.shields.io/badge/security-hardened-green.svg)](#security)
 
-AuthorClaw is a security-hardened AI agent purpose-built for fiction and nonfiction authors. It doesn't just write — it runs the entire book production pipeline autonomously, from first idea to KDP-ready manuscript.
+BookClaw is a security-hardened AI agent purpose-built for fiction and nonfiction authors. It doesn't just write — it runs the entire book production pipeline autonomously, from first idea to KDP-ready manuscript.
 
 **Give it an idea and a pen name. It plans, writes, revises, formats, and launches.** Pipeline mode chains 6 production phases automatically. Author personas manage multiple pen names with distinct voices. Deep revision runs 21 editing passes. Export produces professional DOCX and EPUB ready for self-publishing.
 
@@ -35,7 +35,7 @@ Tell it what you want. It figures out the steps, picks the right skills, and exe
 ## How It Works
 
 1. **You say what you want** — via Telegram, dashboard, or API
-2. **AuthorClaw plans the steps** — AI dynamically decomposes your task into executable steps
+2. **BookClaw plans the steps** — AI dynamically decomposes your task into executable steps
 3. **Skills are auto-selected** — 19 focused writing skills get injected into each step's context
 4. **Work happens autonomously** — each step runs through the AI, output saved to files
 5. **Everything is logged** — universal activity feed tracks all agent actions in real-time
@@ -43,7 +43,7 @@ Tell it what you want. It figures out the steps, picks the right skills, and exe
 ```
 User: "/novel a small-town romance under pen name Lily Hart"
 
-AuthorClaw: "Pipeline created — 6 phases, 48 steps total"
+BookClaw: "Pipeline created — 6 phases, 48 steps total"
   Phase 1: Book Planning    (6 steps)  — market analysis, premise, characters, outline, synopsis
   Phase 2: Book Bible       (5 steps)  — world-building, character bible, continuity, themes, style
   Phase 3: Book Production  (20 steps) — write + self-review per chapter
@@ -60,11 +60,11 @@ AuthorClaw: "Pipeline created — 6 phases, 48 steps total"
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/Ckokoski/authorclaw.git
-cd authorclaw
+git clone https://github.com/Ckokoski/bookclaw.git
+cd bookclaw
 npm install
 
-# 2. Start AuthorClaw (auto-generates vault key on first run)
+# 2. Start BookClaw (auto-generates vault key on first run)
 npx tsx gateway/src/index.ts
 
 # 3. Open dashboard: http://localhost:3847
@@ -75,7 +75,7 @@ npx tsx gateway/src/index.ts
 #    OR send /project to your Telegram bot
 ```
 
-> **First run?** AuthorClaw auto-generates a vault encryption key and saves it to `.env`.
+> **First run?** BookClaw auto-generates a vault encryption key and saves it to `.env`.
 > Your API keys will persist across restarts. For a guided setup, run `bash scripts/setup-wizard.sh`.
 
 See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) for a step-by-step walkthrough of writing your first novel.
@@ -86,7 +86,7 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AUTHORCLAW v4 ARCHITECTURE                │
+│                    BOOKCLAW v4 ARCHITECTURE                │
 │                                                             │
 │  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
 │  │ Channels  │   │    Gateway       │   │  AI Router     │  │
@@ -121,7 +121,7 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/
 
 ## AI Providers
 
-AuthorClaw supports 5 AI providers with tiered routing:
+BookClaw supports 5 AI providers with tiered routing:
 
 | Provider | Tier | Cost | Best For | Setup |
 |----------|------|------|----------|-------|
@@ -137,12 +137,12 @@ Task routing is automatic — planning and research use free models, creative wr
 
 ## Telegram Command Center
 
-Connect a Telegram bot to control AuthorClaw from your phone:
+Connect a Telegram bot to control BookClaw from your phone:
 
 | Command | What It Does |
 |---------|-------------|
 | `/novel [idea]` | Create a full novel pipeline (premise → characters → world → outline → chapters → revision → assembly) |
-| `/project [task]` | Plan & auto-execute any task — AuthorClaw figures out the steps |
+| `/project [task]` | Plan & auto-execute any task — BookClaw figures out the steps |
 | `/write [idea]` | Quick writing task (short-form content, scenes, intros) |
 | `/projects` | List all projects with status and progress |
 | `/status` | Quick status check on what's running |
@@ -160,21 +160,21 @@ Connect a Telegram bot to control AuthorClaw from your phone:
 
 ```
 You:        /write a short snarky YouTube intro for my channel
-AuthorClaw: 📝 On it. Planning "a short snarky YouTube intro"...
-AuthorClaw: ✅ Planned 2 steps. Running autonomously...
-AuthorClaw: ✅ 1/2: Draft the intro (~400 words)
-AuthorClaw: 🎉 All 2 steps complete!
+BookClaw: 📝 On it. Planning "a short snarky YouTube intro"...
+BookClaw: ✅ Planned 2 steps. Running autonomously...
+BookClaw: ✅ 1/2: Draft the intro (~400 words)
+BookClaw: 🎉 All 2 steps complete!
 
 You:        /novel a sci-fi thriller about rogue AI in aviation
-AuthorClaw: 📖 Novel pipeline created: 32 steps
+BookClaw: 📖 Novel pipeline created: 32 steps
             (premise → bible → outline → chapters → revision → assembly)
-AuthorClaw: ✅ 1/32: Develop premise (~800 words)
+BookClaw: ✅ 1/32: Develop premise (~800 words)
             ⏭ Next: Refine premise...
 You:        /stop
-AuthorClaw: ⏸ Paused at step 4/32. Say "continue" to resume.
+BookClaw: ⏸ Paused at step 4/32. Say "continue" to resume.
 
 You:        /clean
-AuthorClaw: 📊 Workspace Usage: 2.1 MB (67 files)
+BookClaw: 📊 Workspace Usage: 2.1 MB (67 files)
             📁 projects: 43 files (1.8 MB)
             📁 exports: 2 files (21 KB)
             🧹 /clean projects — delete all project files
@@ -196,7 +196,7 @@ Open `http://localhost:3847` to access the web dashboard — a sidebar-driven in
 
 ## Voice & Text-to-Speech
 
-AuthorClaw includes a built-in neural voice engine powered by Microsoft Edge TTS — no API keys, no binary installation, no cost.
+BookClaw includes a built-in neural voice engine powered by Microsoft Edge TTS — no API keys, no binary installation, no cost.
 
 **9 author-optimized voice presets:**
 
@@ -228,7 +228,7 @@ AuthorClaw includes a built-in neural voice engine powered by Microsoft Edge TTS
 
 ## Document Library & Large Manuscript Support
 
-AuthorClaw supports uploading manuscripts of any size — from short stories to 100K+ word novels.
+BookClaw supports uploading manuscripts of any size — from short stories to 100K+ word novels.
 
 **Two-tier upload system:**
 
@@ -254,7 +254,7 @@ AuthorClaw supports uploading manuscripts of any size — from short stories to 
 
 ## Dynamic Task Planning
 
-When you give AuthorClaw a task, it doesn't use hardcoded templates. Instead:
+When you give BookClaw a task, it doesn't use hardcoded templates. Instead:
 
 1. The AI receives a catalog of all available skills (with descriptions and triggers)
 2. The AI receives the list of Author OS tools
@@ -262,7 +262,7 @@ When you give AuthorClaw a task, it doesn't use hardcoded templates. Instead:
 4. Each step is executed with that skill's full content injected into the AI's context
 5. Results from earlier steps are chained into later steps for continuity
 
-If AI planning fails, the system falls back to template-based planning (6 project types with pre-built step sequences). For pipeline mode, AuthorClaw chains all 6 phases (Planning → Bible → Production → Revision → Format → Launch) into a single automated workflow, passing outputs forward between phases.
+If AI planning fails, the system falls back to template-based planning (6 project types with pre-built step sequences). For pipeline mode, BookClaw chains all 6 phases (Planning → Bible → Production → Revision → Format → Launch) into a single automated workflow, passing outputs forward between phases.
 
 ---
 
@@ -276,7 +276,7 @@ Skills are markdown files that teach the AI how to handle specific writing tasks
 
 **Marketing Skills (2):** blurb-writer, ad-copy
 
-**Tool Ingestion:** AuthorClaw can read source code of any tool and generate a new skill from it. Just say "create a skill from this code" or use `POST /api/tools/ingest`.
+**Tool Ingestion:** BookClaw can read source code of any tool and generate a new skill from it. Just say "create a skill from this code" or use `POST /api/tools/ingest`.
 
 Skills are automatically matched by keyword triggers and injected into the AI's context. A full reference with descriptions and example trigger keywords is available in `workspace/SKILLS.txt`.
 
@@ -285,7 +285,7 @@ Skills are automatically matched by keyword triggers and injected into the AI's 
 ## Project Structure
 
 ```
-authorclaw/
+bookclaw/
 ├── gateway/src/          # Core application
 │   ├── index.ts          # Main entry point (gateway, handlers, bridges)
 │   ├── ai/router.ts      # Multi-provider AI routing
@@ -327,7 +327,7 @@ authorclaw/
 
 ## Security
 
-AuthorClaw security features:
+BookClaw security features:
 
 - **Vault**: AES-256-GCM encrypted credential storage (scrypt KDF)
 - **Sandbox**: Workspace-only file access enforcement
@@ -335,17 +335,17 @@ AuthorClaw security features:
 - **Injection Detection**: Pattern matching for prompt injection attempts
 - **Rate Limiting**: Per-channel rate limits
 - **Research Gate**: Real web search + HTML extraction, 50+ allowlisted domains, 60 req/hr rate limit
-- **Configurable Bind**: Server bind address controlled by `AUTHORCLAW_BIND` (default `0.0.0.0` for LAN reach; set to `127.0.0.1` for loopback-only). See the **Deployment — Defense in Depth** section below for the full fork posture.
+- **Configurable Bind**: Server bind address controlled by `BOOKCLAW_BIND` (default `0.0.0.0` for LAN reach; set to `127.0.0.1` for loopback-only). See the **Deployment — Defense in Depth** section below for the full fork posture.
 
 ---
 
 ## Deployment — Defense in Depth
 
-> **We strongly recommend running AuthorClaw inside a VM or VPS with Docker.** Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers — not just application-level security.
+> **We strongly recommend running BookClaw inside a VM or VPS with Docker.** Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers — not just application-level security.
 
 > **Fork posture — LAN-accessible by default.** This fork ships the Docker
 > image bound to `0.0.0.0` so the published port is reachable from other hosts
-> on the same LAN. The bind address is controlled by the `AUTHORCLAW_BIND`
+> on the same LAN. The bind address is controlled by the `BOOKCLAW_BIND`
 > env var (default `0.0.0.0`; set to `127.0.0.1` for loopback-only). This is
 > intentional and overrides the upstream localhost-only behavior. **The
 > service has no HTTP/WebSocket authentication.** Acceptable on a trusted
@@ -358,9 +358,9 @@ AuthorClaw security features:
 This is the gold standard for always-on, secure operation:
 
 1. **Rent a VPS** ($5-6/month) — Hetzner, DigitalOcean, or Linode
-2. **Install Docker** — containerizes AuthorClaw with strict resource limits
+2. **Install Docker** — containerizes BookClaw with strict resource limits
 3. **Install Tailscale** — free mesh VPN, no public ports exposed
-4. **Deploy AuthorClaw** — `docker compose up -d`
+4. **Deploy BookClaw** — `docker compose up -d`
 
 ```bash
 # On your VPS:
@@ -369,13 +369,13 @@ curl -fsSL https://tailscale.com/install.sh | sh
 tailscale up
 
 # Clone and deploy:
-git clone https://github.com/Ckokoski/authorclaw.git
-cd authorclaw/docker
+git clone https://github.com/Ckokoski/bookclaw.git
+cd bookclaw/docker
 docker compose up -d
 ```
 
 **Why this matters:**
-- VPS isolates AuthorClaw from your personal machine
+- VPS isolates BookClaw from your personal machine
 - Docker containers limit file access and resource usage
 - Tailscale VPN means zero public ports — only your devices can connect
 - Telegram works 24/7 even when your computer is off
@@ -387,15 +387,15 @@ If you prefer running locally:
 
 1. **VirtualBox/UTM** — free VM software
 2. **Ubuntu 24.04** — lightweight Linux inside the VM
-3. **Run AuthorClaw natively** or with Docker inside the VM
+3. **Run BookClaw natively** or with Docker inside the VM
 
 ```bash
 # In your VM:
-bash /media/sf_authorclaw-transfer/run.sh
+bash /media/sf_bookclaw-transfer/run.sh
 ```
 
 **Why a VM helps:**
-- Isolates AuthorClaw from your host OS
+- Isolates BookClaw from your host OS
 - If something goes wrong, the VM is disposable
 - Shared folders let you copy files in/out safely
 - Snapshots let you roll back to a known-good state
@@ -405,12 +405,12 @@ bash /media/sf_authorclaw-transfer/run.sh
 Running directly on your machine works fine for development and testing:
 
 ```bash
-git clone https://github.com/Ckokoski/authorclaw.git
-cd authorclaw && npm install
+git clone https://github.com/Ckokoski/bookclaw.git
+cd bookclaw && npm install
 npx tsx gateway/src/index.ts
 ```
 
-By default this fork binds AuthorClaw to `0.0.0.0:3847` so the Docker image is reachable on the LAN. For a pure-local dev box, set `AUTHORCLAW_BIND=127.0.0.1` to restore loopback-only behavior. Either way, your API keys and manuscripts live on your main OS with no isolation layer.
+By default this fork binds BookClaw to `0.0.0.0:3847` so the Docker image is reachable on the LAN. For a pure-local dev box, set `BOOKCLAW_BIND=127.0.0.1` to restore loopback-only behavior. Either way, your API keys and manuscripts live on your main OS with no isolation layer.
 
 ### Security Layers Summary
 
@@ -447,26 +447,26 @@ It walks you through everything: OS detection, Node.js installation, Ollama setu
 All supporting guides live in [`docs/`](docs/). Start with whichever matches what you need to do:
 
 ### 📘 Getting started
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — Install AuthorClaw and run your first task in under 5 minutes.
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — Install BookClaw and run your first task in under 5 minutes.
 - **[docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md)** ✨ *new* — Step-by-step walkthrough from "I have an idea" to chapter files on disk. The how-to-use guide for the full novel pipeline (persona → planning → bible → production → revision → format → launch).
 
 ### 🛠 Operations
-- **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage AuthorClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
+- **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage BookClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
 - **[docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md)** ✨ *new* — End-to-end Telegram bot setup on Linux or macOS, with LAN access from other devices, firewall configuration, multi-user allowlists, and persistent service setup (systemd / launchd).
 - **[docs/SECURITY.md](docs/SECURITY.md)** — Vault, sandbox, audit log, network posture, deployment guidance for trusted LAN vs untrusted exposure.
 
 ### 🗺 Roadmap & planning
-- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** ✨ *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit AuthorClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
+- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** ✨ *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit BookClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
 - **[docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md)** ✨ *new* — Audit of StoryHackerAI (n8n-based author pipeline) for patterns to port. Top item: **make OpenRouter the canonical AI gateway** instead of one provider among five. Also covers the Selector → Brief → Draft → Check multi-pass chapter pattern, genre templates as reusable artifacts, and explicit Chronology / Style / Wordcount checks.
 - **[docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md)** ✨ *new* — Analysis of the `index.ts` (2,649 lines, 61 services, 35 init phases) and `routes.ts` (5,516 lines, 234 endpoints in one function) god classes. Compares against OpenClaw's plugin architecture and lays out a three-level incremental refactor plan (phase extraction → service registry → plugin contracts).
 - **[docs/TODO.md](docs/TODO.md)** — Tracked work items: security review, quick cleanups, larger refactors, and standing constraints not to "fix."
-- **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Runbook for the AuthorClaw → BookClaw rename. Decisions captured; not yet executed.
+- **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Runbook for the BookClaw → BookClaw rename. Decisions captured; not yet executed.
 
 ---
 
 ## Contributing
 
-AuthorClaw is open source and contributions are welcome! Whether you're an author with ideas for new skills, a developer who wants to improve the codebase, or a tinkerer who built a cool integration — we'd love your help.
+BookClaw is open source and contributions are welcome! Whether you're an author with ideas for new skills, a developer who wants to improve the codebase, or a tinkerer who built a cool integration — we'd love your help.
 
 ### Ways to Contribute
 
@@ -491,9 +491,9 @@ For new skills, create a folder in `skills/author/`, `skills/marketing/`, or `sk
 
 ## Disclaimer
 
-This software is provided "as is" without warranty of any kind. **Use at your own risk.** AuthorClaw is an experimental AI writing tool — some configuration and code tinkering may be required to get the agent working exactly the way you want it. AI outputs should always be reviewed by a human before publishing. The authors are not responsible for any content generated by the AI or any consequences of using this software.
+This software is provided "as is" without warranty of any kind. **Use at your own risk.** BookClaw is an experimental AI writing tool — some configuration and code tinkering may be required to get the agent working exactly the way you want it. AI outputs should always be reviewed by a human before publishing. The authors are not responsible for any content generated by the AI or any consequences of using this software.
 
-AuthorClaw relies on third-party AI providers (Gemini, Claude, OpenAI, DeepSeek, Ollama). Usage of those services is subject to their respective terms and pricing. API costs are your responsibility.
+BookClaw relies on third-party AI providers (Gemini, Claude, OpenAI, DeepSeek, Ollama). Usage of those services is subject to their respective terms and pricing. API costs are your responsibility.
 
 ## License
 

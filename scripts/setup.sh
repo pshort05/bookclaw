@@ -1,11 +1,11 @@
 #!/bin/bash
-# AuthorClaw Setup Wizard
+# BookClaw Setup Wizard
 # Interactive setup for first-time users
 
 set -e
 
 echo ""
-echo "  ✍️  AuthorClaw Setup Wizard"
+echo "  ✍️  BookClaw Setup Wizard"
 echo "  ═══════════════════════════════════"
 echo "  The Secure AI Writing Agent"
 echo ""
@@ -33,7 +33,7 @@ echo "  ✓ Dependencies installed"
 echo ""
 echo "  ═══ AI Provider Setup ═══"
 echo ""
-echo "  AuthorClaw supports free AND paid AI providers."
+echo "  BookClaw supports free AND paid AI providers."
 echo "  You need at least ONE provider configured."
 echo ""
 
@@ -102,13 +102,13 @@ fi
 echo ""
 echo "  ═══ Security Setup ═══"
 echo ""
-echo "  AuthorClaw encrypts all credentials with AES-256-GCM."
+echo "  BookClaw encrypts all credentials with AES-256-GCM."
 echo "  Set a vault passphrase (or press Enter for dev default)."
 read -sp "  Vault passphrase: " VAULT_PASS
 echo ""
 
 if [ -n "$VAULT_PASS" ]; then
-    echo "AUTHORCLAW_VAULT_KEY=$VAULT_PASS" > .env
+    echo "BOOKCLAW_VAULT_KEY=$VAULT_PASS" > .env
     echo "  ✓ Vault passphrase saved to .env"
 else
     echo "  ℹ  Using development default (change before production!)"
@@ -117,7 +117,7 @@ fi
 # ── Done ──
 echo ""
 echo "  ═══════════════════════════════════"
-echo "  ✍️  AuthorClaw is ready!"
+echo "  ✍️  BookClaw is ready!"
 echo ""
 echo "  Start with:  npm start"
 echo "  Or Docker:   npm run docker:up"

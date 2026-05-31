@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Gateway - Main Entry Point
+ * BookClaw Gateway - Main Entry Point
  * A secure, author-focused fork of OpenClaw
  *
  * Security: MoatBot-grade (encrypted vault, sandboxed, audited)
@@ -97,10 +97,10 @@ function bearerEquals(provided: string, expected: string): boolean {
 }
 
 // ═══════════════════════════════════════════════════════════
-// AuthorClaw Gateway
+// BookClaw Gateway
 // ═══════════════════════════════════════════════════════════
 
-class AuthorClawGateway {
+class BookClawGateway {
   private app: express.Application;
   private server: ReturnType<typeof createServer>;
   private io: SocketIO;
@@ -122,12 +122,12 @@ class AuthorClawGateway {
   private sandbox!: SandboxGuard;
   private injectionDetector!: InjectionDetector;
   // Bearer token gating /api/* and the Socket.IO handshake.
-  // null = auth disabled (AUTHORCLAW_AUTH_DISABLED=1); a string = enforced.
+  // null = auth disabled (BOOKCLAW_AUTH_DISABLED=1); a string = enforced.
   private authToken: string | null = null;
   // CORS posture, computed in the constructor and logged at startup.
   private corsSummary = '';
   private corsWildcard = false;
-  // Source-IP allowlist (AUTHORCLAW_ALLOWED_IPS). Empty = enforcement off (allow all).
+  // Source-IP allowlist (BOOKCLAW_ALLOWED_IPS). Empty = enforcement off (allow all).
   // Each entry is an ipaddr.js [address, prefixLength] CIDR (single IPs become /32 or /128).
   private allowedIps: Array<[ipaddr.IPv4 | ipaddr.IPv6, number]> = [];
   private ipAllowlistSummary = '';
@@ -201,20 +201,20 @@ class AuthorClawGateway {
     this.server = createServer(this.app);
 
     // ── CORS allowlist (security review item #2) ──
-    // AUTHORCLAW_CORS_ORIGINS is a comma-separated list of allowed browser origins.
+    // BOOKCLAW_CORS_ORIGINS is a comma-separated list of allowed browser origins.
     // Unset = deny all cross-origin (the dashboard is same-origin, so it is unaffected).
     // A literal "*" entry restores fully-permissive CORS (escape hatch, logged loudly).
     // Requests with no Origin header (curl, MCP, server-to-server, same-origin) are
     // always allowed — CORS only protects browsers; the bearer token is the real gate.
-    const corsEnv = (process.env.AUTHORCLAW_CORS_ORIGINS || '')
+    const corsEnv = (process.env.BOOKCLAW_CORS_ORIGINS || '')
       .split(',').map((s) => s.trim()).filter(Boolean);
     this.corsWildcard = corsEnv.includes('*');
     const corsAllowlist = corsEnv.filter((o) => o !== '*');
     this.corsSummary = this.corsWildcard
-      ? '⚠ CORS: wildcard (all origins allowed) — AUTHORCLAW_CORS_ORIGINS=*'
+      ? '⚠ CORS: wildcard (all origins allowed) — BOOKCLAW_CORS_ORIGINS=*'
       : corsAllowlist.length
         ? `✓ CORS: ${corsAllowlist.length} allowed origin(s) — ${corsAllowlist.join(', ')}`
-        : '✓ CORS: cross-origin denied (set AUTHORCLAW_CORS_ORIGINS to allow browser origins)';
+        : '✓ CORS: cross-origin denied (set BOOKCLAW_CORS_ORIGINS to allow browser origins)';
     const wildcard = this.corsWildcard;
     const corsOptions: cors.CorsOptions = {
       origin: (origin, cb) => {
@@ -250,18 +250,18 @@ class AuthorClawGateway {
     }));
     this.app.use(cors(corsOptions));
 
-    // ── Source-IP allowlist (AUTHORCLAW_ALLOWED_IPS) ──
+    // ── Source-IP allowlist (BOOKCLAW_ALLOWED_IPS) ──
     // A network-level gate in front of auth: only listed source IPs/CIDRs may reach
     // the server at all. Unset = allow all (enforcement off) — see startup notice.
-    // AUTHORCLAW_TRUST_PROXY=1 reads the client IP from X-Forwarded-For (only safe
+    // BOOKCLAW_TRUST_PROXY=1 reads the client IP from X-Forwarded-For (only safe
     // behind a sole-ingress reverse proxy; XFF is otherwise spoofable). Loopback is
     // always allowed when enforcing, as a recovery path.
     // NOTE: under Docker bridge networking with a published port, the container sees
     // the bridge gateway IP for every external client — enforce at the host firewall
-    // (or run host-net / set AUTHORCLAW_TRUST_PROXY behind a proxy) for real IPs.
-    this.trustProxy = process.env.AUTHORCLAW_TRUST_PROXY === '1';
+    // (or run host-net / set BOOKCLAW_TRUST_PROXY behind a proxy) for real IPs.
+    this.trustProxy = process.env.BOOKCLAW_TRUST_PROXY === '1';
     this.app.set('trust proxy', this.trustProxy);
-    for (const entry of (process.env.AUTHORCLAW_ALLOWED_IPS || '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    for (const entry of (process.env.BOOKCLAW_ALLOWED_IPS || '').split(',').map((s) => s.trim()).filter(Boolean)) {
       try {
         if (entry.includes('/')) {
           this.allowedIps.push(ipaddr.parseCIDR(entry));
@@ -270,11 +270,11 @@ class AuthorClawGateway {
           this.allowedIps.push([addr, addr.kind() === 'ipv6' ? 128 : 32]);
         }
       } catch {
-        console.warn(`  ⚠️  AUTHORCLAW_ALLOWED_IPS: ignoring invalid entry "${entry}"`);
+        console.warn(`  ⚠️  BOOKCLAW_ALLOWED_IPS: ignoring invalid entry "${entry}"`);
       }
     }
     this.ipAllowlistSummary = this.allowedIps.length === 0
-      ? 'ℹ IP allowlist: not set (all source IPs allowed — rely on AUTHORCLAW_BIND, the host firewall, and bearer auth)'
+      ? 'ℹ IP allowlist: not set (all source IPs allowed — rely on BOOKCLAW_BIND, the host firewall, and bearer auth)'
       : `✓ IP allowlist: ${this.allowedIps.length} rule(s) enforced${this.trustProxy ? ', trusting X-Forwarded-For' : ''} (loopback always allowed)`;
 
     this.app.use((req, res, next) => {
@@ -305,7 +305,7 @@ class AuthorClawGateway {
 
   async initialize(): Promise<void> {
     console.log('');
-    console.log('  ✍️  AuthorClaw v5.0.0');
+    console.log('  ✍️  BookClaw v5.0.0');
     console.log('  ═══════════════════════════════════');
     console.log('  The Autonomous AI Writing Agent');
     console.log('  An OpenClaw fork for authors');
@@ -335,29 +335,29 @@ class AuthorClawGateway {
     console.log('  ✓ Prompt injection detection active');
 
     // ── Phase 2c: API auth token ──
-    // Gates /api/* and the Socket.IO handshake. Mirrors the AUTHORCLAW_VAULT_KEY
+    // Gates /api/* and the Socket.IO handshake. Mirrors the BOOKCLAW_VAULT_KEY
     // pattern: read from env (.env already loaded by dotenv), else generate and
-    // persist to .env. AUTHORCLAW_AUTH_DISABLED=1 turns the gate off entirely.
-    if (process.env.AUTHORCLAW_AUTH_DISABLED === '1') {
+    // persist to .env. BOOKCLAW_AUTH_DISABLED=1 turns the gate off entirely.
+    if (process.env.BOOKCLAW_AUTH_DISABLED === '1') {
       this.authToken = null;
-      console.warn('  ⚠️  AUTH DISABLED — AUTHORCLAW_AUTH_DISABLED=1 is set.');
+      console.warn('  ⚠️  AUTH DISABLED — BOOKCLAW_AUTH_DISABLED=1 is set.');
       console.warn('     Every host that can reach this server can drive the agent unauthenticated.');
     } else {
-      let token = (process.env.AUTHORCLAW_AUTH_TOKEN || '').trim();
+      let token = (process.env.BOOKCLAW_AUTH_TOKEN || '').trim();
       if (!token) {
         token = randomBytes(32).toString('hex');
         const envPath = join(ROOT_DIR, '.env');
         try {
           await fs.appendFile(
             envPath,
-            `\n# Auto-generated by AuthorClaw — HTTP/WebSocket auth token\nAUTHORCLAW_AUTH_TOKEN=${token}\n`,
+            `\n# Auto-generated by BookClaw — HTTP/WebSocket auth token\nBOOKCLAW_AUTH_TOKEN=${token}\n`,
           );
           console.log('  🔑 Generated API auth token and saved to .env.');
         } catch {
           console.warn('  ⚠️  WARNING: Could not write auth token to .env — using a random session token.');
-          console.warn('     Set AUTHORCLAW_AUTH_TOKEN in the environment for production use.');
+          console.warn('     Set BOOKCLAW_AUTH_TOKEN in the environment for production use.');
         }
-        process.env.AUTHORCLAW_AUTH_TOKEN = token;
+        process.env.BOOKCLAW_AUTH_TOKEN = token;
       }
       this.authToken = token;
       console.log('  ✓ API authentication active (bearer token on /api/* and WebSocket)');
@@ -404,7 +404,7 @@ class AuthorClawGateway {
         console.warn(`  ⚠ Memory search reindex failed: ${(err as Error)?.message || err}`);
       }
     } else {
-      console.log('  ⚠ Memory search unavailable (search will be disabled, rest of AuthorClaw works)');
+      console.log('  ⚠ Memory search unavailable (search will be disabled, rest of BookClaw works)');
     }
 
     // ── Phase 4: AI Providers ──
@@ -449,15 +449,15 @@ class AuthorClawGateway {
     // ── Phase 6b: Author OS Tools ──
     // Author OS is a SEPARATE project (Author Workflow Engine, Book Bible Engine,
     // Manuscript Autopsy, AI Author Library, Creator Asset Suite, Format Factory Pro).
-    // If you have it installed alongside AuthorClaw, we auto-discover and integrate.
-    // If you don't, AuthorClaw works fine without it — this is purely additive.
+    // If you have it installed alongside BookClaw, we auto-discover and integrate.
+    // If you don't, BookClaw works fine without it — this is purely additive.
     const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
     const authorOSCandidates = [
       process.env.AUTHOR_OS_PATH || '',                           // Explicit env var (highest priority)
       '/app/author-os',                                           // Docker mount
       join(homeDir, 'author-os'),                                 // ~/author-os (Linux/macOS)
       join(homeDir, 'Author OS'),                                 // ~/Author OS (with space)
-      join(ROOT_DIR, '..', 'Author OS'),                          // Sibling to AuthorClaw
+      join(ROOT_DIR, '..', 'Author OS'),                          // Sibling to BookClaw
       join(ROOT_DIR, '..', '..', 'Author OS'),                    // Automations/Author OS/ (Windows default)
       join(ROOT_DIR, '..', 'author-os'),                          // sibling lowercase
     ].filter(Boolean);
@@ -489,8 +489,8 @@ class AuthorClawGateway {
         console.log(`    Expected subfolders: "Author Workflow Engine", "Book Bible Engine", "Manuscript Autopsy", "AI Author Library".`);
       }
     } else {
-      console.log('  ℹ Author OS: not installed (optional — AuthorClaw works without it).');
-      console.log('    To enable: place the Author OS folder next to AuthorClaw, or set AUTHOR_OS_PATH in .env');
+      console.log('  ℹ Author OS: not installed (optional — BookClaw works without it).');
+      console.log('    To enable: place the Author OS folder next to BookClaw, or set AUTHOR_OS_PATH in .env');
     }
 
     // ── Phase 6c: TTS Service (Piper) — silent init, optional feature ──
@@ -638,7 +638,7 @@ class AuthorClawGateway {
         if (linkedSites.length === 0) return;
 
         const persona = project.personaId ? this.personas.get?.(project.personaId) : null;
-        const authorName = persona?.penName || 'AuthorClaw';
+        const authorName = persona?.penName || 'BookClaw';
         const slug = String(project.title || 'untitled').toLowerCase()
           .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -873,7 +873,7 @@ class AuthorClawGateway {
               });
 
               const coreLessonsPath = join(agentDir, 'core-lessons.md');
-              const coreLessonsContent = `# AuthorClaw Core Lessons\n\n` +
+              const coreLessonsContent = `# BookClaw Core Lessons\n\n` +
                 `*Auto-consolidated from ${log.length} project analyses on ${new Date().toISOString().split('T')[0]}*\n\n` +
                 consolidateResult.text;
               await fs.writeFile(coreLessonsPath, coreLessonsContent, 'utf-8');
@@ -945,7 +945,7 @@ class AuthorClawGateway {
           const provider = this.aiRouter.selectProvider('general');
           const result = await this.aiRouter.complete({
             provider: provider.id,
-            system: 'You are AuthorClaw, an AI writing agent for authors. Be detailed, actionable, and expert-level.',
+            system: 'You are BookClaw, an AI writing agent for authors. Be detailed, actionable, and expert-level.',
             messages: [{ role: 'user' as const, content: task.prompt }],
             maxTokens: 2000,
           });
@@ -1023,16 +1023,16 @@ class AuthorClawGateway {
     const dashboardHtmlFile = join(dashboardPath, 'index.html');
 
     // Serve the dashboard HTML with the auth token injected so its fetch calls can
-    // authenticate. The __AUTHORCLAW_AUTH_TOKEN__ placeholder is replaced at serve
+    // authenticate. The __BOOKCLAW_AUTH_TOKEN__ placeholder is replaced at serve
     // time (empty string when auth is disabled). index:false on express.static below
     // ensures "/" reaches this handler instead of the raw file.
     const serveDashboard = async (_req: any, res: any) => {
       try {
         const html = await fs.readFile(dashboardHtmlFile, 'utf-8');
-        res.type('html').send(html.replaceAll('__AUTHORCLAW_AUTH_TOKEN__', this.authToken ?? ''));
+        res.type('html').send(html.replaceAll('__BOOKCLAW_AUTH_TOKEN__', this.authToken ?? ''));
       } catch {
         if (!res.headersSent) {
-          res.status(500).json({ status: 'error', message: 'AuthorClaw running but dashboard HTML not found.' });
+          res.status(500).json({ status: 'error', message: 'BookClaw running but dashboard HTML not found.' });
         }
       }
     };
@@ -1067,7 +1067,7 @@ class AuthorClawGateway {
     await this.activityLog.log({
       type: 'system',
       source: 'internal',
-      message: `AuthorClaw started — ${providers.length} AI provider(s), ${this.skills.getLoadedCount()} skills`,
+      message: `BookClaw started — ${providers.length} AI provider(s), ${this.skills.getLoadedCount()} skills`,
       metadata: {
         providers: providers.map(p => p.id),
         skillCount: this.skills.getLoadedCount(),
@@ -1076,7 +1076,7 @@ class AuthorClawGateway {
 
     console.log('');
     console.log('  ═══════════════════════════════════');
-    console.log('  ✍️  AuthorClaw is ready to write');
+    console.log('  ✍️  BookClaw is ready to write');
     console.log(`  📡 Dashboard: http://localhost:${this.config.get('server.port', 3847)}`);
     console.log('  ═══════════════════════════════════');
     console.log('');
@@ -1433,7 +1433,7 @@ class AuthorClawGateway {
       const skillsRefPath = join(rootDir, 'workspace', 'SKILLS.txt');
       const catalog = this.skills.getSkillCatalog();
       const byCategory = this.skills.getSkillsByCategory();
-      let refContent = 'AUTHORCLAW SKILLS REFERENCE\n';
+      let refContent = 'BOOKCLAW SKILLS REFERENCE\n';
       refContent += `Auto-generated on startup — ${catalog.length} skills loaded\n`;
       refContent += '═'.repeat(60) + '\n\n';
 
@@ -1855,7 +1855,7 @@ class AuthorClawGateway {
         const paused = projects.filter(p => p.status === 'paused');
         const autoStatus = this.heartbeat.getAutonomousStatus();
         const stats = this.heartbeat.getStats();
-        let status = `**AuthorClaw Status**\n\n`;
+        let status = `**BookClaw Status**\n\n`;
         status += `📊 Projects: ${active.length} active, ${paused.length} paused, ${completed.length} completed\n`;
         status += `🤖 Agent: ${autoStatus.enabled ? (autoStatus.running ? '**WORKING**' : '**ON**') : 'OFF'}\n`;
         status += `📝 Words today: ${stats.todayWords.toLocaleString()}/${stats.dailyWordGoal.toLocaleString()} (${stats.goalPercent}%)`;
@@ -2565,7 +2565,7 @@ class AuthorClawGateway {
               // Generate DOCX version
               const docxBuffer = await generateDocxBuffer({
                 title: project.title,
-                author: 'AuthorClaw',
+                author: 'BookClaw',
                 content: manuscriptMd,
               });
               await fs.writeFile(join(projectDir, 'manuscript.docx'), docxBuffer);
@@ -2812,30 +2812,30 @@ class AuthorClawGateway {
   async start(): Promise<void> {
     await this.initialize();
     const port = this.config.get('server.port', 3847);
-    this.server.listen(port, process.env.AUTHORCLAW_BIND || '0.0.0.0', () => {
-      // Bind address: AUTHORCLAW_BIND env var, defaults to 0.0.0.0 (all interfaces).
-      // Set AUTHORCLAW_BIND=127.0.0.1 to restore localhost-only behavior.
+    this.server.listen(port, process.env.BOOKCLAW_BIND || '0.0.0.0', () => {
+      // Bind address: BOOKCLAW_BIND env var, defaults to 0.0.0.0 (all interfaces).
+      // Set BOOKCLAW_BIND=127.0.0.1 to restore localhost-only behavior.
     });
   }
 
   async shutdown(): Promise<void> {
-    console.log('\n  Shutting down AuthorClaw...');
+    console.log('\n  Shutting down BookClaw...');
     this.heartbeat?.stop();
     this.telegram?.disconnect();
     this.discord?.disconnect();
     await this.activityLog?.log({
       type: 'system',
       source: 'internal',
-      message: 'AuthorClaw shutting down',
+      message: 'BookClaw shutting down',
     });
     await this.audit?.log('system', 'shutdown', {});
     this.server.close();
-    console.log('  ✍️  AuthorClaw stopped. Happy writing!\n');
+    console.log('  ✍️  BookClaw stopped. Happy writing!\n');
   }
 }
 
 // ── Start ──
-const gateway = new AuthorClawGateway();
+const gateway = new BookClawGateway();
 
 process.on('SIGINT', async () => {
   await gateway.shutdown();
@@ -2848,8 +2848,8 @@ process.on('SIGTERM', async () => {
 });
 
 gateway.start().catch((error) => {
-  console.error('Failed to start AuthorClaw:', error);
+  console.error('Failed to start BookClaw:', error);
   process.exit(1);
 });
 
-export { AuthorClawGateway };
+export { BookClawGateway };

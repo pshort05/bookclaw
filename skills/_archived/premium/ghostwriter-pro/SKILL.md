@@ -122,7 +122,7 @@ Build chapters from individual scenes:
 
 ## Deep Write Mode
 
-An intensive co-writing session where AuthorClaw:
+An intensive co-writing session where BookClaw:
 1. Reviews the outline beat for this section
 2. Loads all relevant Book Bible context
 3. Applies the Voice Profile

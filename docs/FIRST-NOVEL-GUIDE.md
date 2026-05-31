@@ -1,19 +1,19 @@
-# AuthorClaw — Your First Novel, Step by Step
+# BookClaw — Your First Novel, Step by Step
 
-A practical, end-to-end walkthrough: from a one-sentence idea to chapter files on disk. Assumes you've already installed AuthorClaw and the dashboard loads at **http://localhost:3847**. If you haven't, see [QUICKSTART.md](QUICKSTART.md) and come back here.
+A practical, end-to-end walkthrough: from a one-sentence idea to chapter files on disk. Assumes you've already installed BookClaw and the dashboard loads at **http://localhost:3847**. If you haven't, see [QUICKSTART.md](QUICKSTART.md) and come back here.
 
-This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with AuthorClaw — pipeline mode, dashboard-driven, with Telegram on the side for mobile control. Once you've shipped one book this way, branch out.
+This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with BookClaw — pipeline mode, dashboard-driven, with Telegram on the side for mobile control. Once you've shipped one book this way, branch out.
 
 ---
 
-## Mental model — what AuthorClaw actually does
+## Mental model — what BookClaw actually does
 
 Before you click anything, internalize this:
 
-- **You give AuthorClaw a *persona* and a *premise.*** Everything downstream is built off those two anchors.
+- **You give BookClaw a *persona* and a *premise.*** Everything downstream is built off those two anchors.
 - **A book is a *pipeline* — 6 phases, run end to end.** Planning → Bible → Production → Revision → Format → Launch. You can run the whole pipeline with one command, or run each phase individually if you want to review between steps.
 - **Every phase produces files** under `workspace/projects/<project-id>/`. You can open them, edit them, and the next phase will read your edits.
-- **Skills, not templates, do the actual writing.** AuthorClaw dynamically picks 19 focused skills per step. You don't pick skills — the planner does.
+- **Skills, not templates, do the actual writing.** BookClaw dynamically picks 19 focused skills per step. You don't pick skills — the planner does.
 - **Pipeline state is durable.** You can `/stop` mid-novel, close your laptop, and resume from the dashboard or Telegram days later.
 - **You are the editor, not the typist.** Plan to spend 10–15 minutes reviewing each phase's output before unlocking the next. Set that expectation now and the rest is easy.
 
@@ -50,9 +50,9 @@ Two paths:
 - A one-line author bio vibe ("seasoned thriller writer with a finance background" / "warm voice, small-town romance specialist")
 - Preferred TTS voice (optional — affects `/speak` output later)
 
-AuthorClaw drafts a full persona profile: voice characteristics, style markers, common tropes, banned vocabulary, bio for back-matter. Review it. Edit anything that feels off.
+BookClaw drafts a full persona profile: voice characteristics, style markers, common tropes, banned vocabulary, bio for back-matter. Review it. Edit anything that feels off.
 
-**Path B — Manual.** Click **New Persona** and fill the fields yourself. Slower but tighter if you have a strong sense of voice already (e.g., you're a working author bringing your existing style to AuthorClaw).
+**Path B — Manual.** Click **New Persona** and fill the fields yourself. Slower but tighter if you have a strong sense of voice already (e.g., you're a working author bringing your existing style to BookClaw).
 
 ### 1c. Lock the persona before continuing
 Open the persona detail view and confirm:
@@ -62,7 +62,7 @@ Open the persona detail view and confirm:
 - Style notes that mention POV preference (1st/3rd, single/dual) — this drives chapter structure
 
 ### 1d. Where the persona lives on disk
-`workspace/.config/personas.json` — back this up the first time you tune one you like. Personas survive AuthorClaw updates, but a hand-tuned persona is too valuable to lose to a fat-fingered reset.
+`workspace/.config/personas.json` — back this up the first time you tune one you like. Personas survive BookClaw updates, but a hand-tuned persona is too valuable to lose to a fat-fingered reset.
 
 ---
 
@@ -97,7 +97,7 @@ Concrete example:
 Press **Send**.
 
 ### 3b. From Telegram (alternative)
-Same `/novel` command, same body. AuthorClaw will reply with the pipeline plan.
+Same `/novel` command, same body. BookClaw will reply with the pipeline plan.
 
 ### 3c. What you'll see immediately
 The agent replies with the pipeline outline:
@@ -156,7 +156,7 @@ Open the files directly:
 ```
 workspace/projects/<project-id>/01-planning/outline.md
 ```
-Edit in any text editor. Save. AuthorClaw will read your edits when Phase 2 starts.
+Edit in any text editor. Save. BookClaw will read your edits when Phase 2 starts.
 
 Things to fix at this stage:
 - **Generic character names** — change them. The leads are stuck with whatever name lands here.
@@ -187,7 +187,7 @@ Phase 2 produces the documents that every subsequent chapter will be checked aga
 ### 5a. Same checkpoint pattern as Phase 1
 Let Phase 2 finish, then `/stop`. Read every file. Edit aggressively.
 
-The character bible is the single highest-leverage edit you can make in the whole pipeline. The chapters in Phase 3 will be only as alive as these profiles are. If a character bible reads "ambitious, smart, hardworking" — rewrite it. Make them *specific.* The bible AuthorClaw drafts is a starting point, not a finish line.
+The character bible is the single highest-leverage edit you can make in the whole pipeline. The chapters in Phase 3 will be only as alive as these profiles are. If a character bible reads "ambitious, smart, hardworking" — rewrite it. Make them *specific.* The bible BookClaw drafts is a starting point, not a finish line.
 
 ### 5b. Add your own files if you have them
 Drop additional reference docs into `workspace/projects/<project-id>/02-bible/` and they'll be picked up by the production phase. This is where you'd paste a hand-written character backstory, a real-world location guide, or research notes.
@@ -207,7 +207,7 @@ This is the long phase. For a 90k-word book, expect:
 - Run time depends entirely on which AI provider you've routed creative writing to (free Gemini = slower per-token, premium Claude = faster + tighter prose, costs more)
 
 ### 6a. What gets produced
-For each chapter, AuthorClaw writes:
+For each chapter, BookClaw writes:
 ```
 workspace/projects/<project-id>/03-production/ch-01.md
 workspace/projects/<project-id>/03-production/ch-02.md
@@ -371,7 +371,7 @@ Don't aim to ship a publish-ready novel on the first run. Aim to ship a *complet
 - **Save the project's bible.** Future books in the same world should reuse `02-bible/world-building.md` and `02-bible/continuity.md`.
 - **Note which phases you babysat.** That's the editing pass you'll always need for this genre/voice combination. Bake the lesson into the persona's style notes.
 - **Add a paid provider if you're going to ship the book.** Free Gemini is fine for drafts. For revision and final polish, Claude or GPT-4o materially improves the line-edit quality. Costs are typically $1–4 per full-novel revision pass.
-- **Run a second book.** This is where AuthorClaw earns its keep. Book 2 in the same persona, in the same world, with the same bible, will run faster and tighter than book 1 ever could.
+- **Run a second book.** This is where BookClaw earns its keep. Book 2 in the same persona, in the same world, with the same bible, will run faster and tighter than book 1 ever could.
 
 ---
 

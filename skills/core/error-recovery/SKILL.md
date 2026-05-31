@@ -20,7 +20,7 @@ permissions:
 
 # Error Recovery — Core Skill
 
-When things go wrong, AuthorClaw doesn't just report the error — it diagnoses the root cause, attempts automatic recovery, and remembers the fix for next time.
+When things go wrong, BookClaw doesn't just report the error — it diagnoses the root cause, attempts automatic recovery, and remembers the fix for next time.
 
 ## Error Categories
 

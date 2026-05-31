@@ -1,6 +1,6 @@
 # Telegram Bot + LAN Setup Guide
 
-End-to-end setup for running AuthorClaw on a Linux or macOS host, exposing the dashboard to other devices on your LAN, and driving the agent from Telegram on your phone.
+End-to-end setup for running BookClaw on a Linux or macOS host, exposing the dashboard to other devices on your LAN, and driving the agent from Telegram on your phone.
 
 This guide is for the common home/lab case: one host machine on a trusted LAN, one or more authors who want to send `/novel` commands from their phones, and dashboard access from any device on the network.
 
@@ -17,7 +17,7 @@ This guide is for the common home/lab case: one host machine on a trusted LAN, o
                                                        │ long-poll (outbound)
                                                        ▼
    ┌─────────────────────┐  LAN HTTP   ┌─────────────────────────┐
-   │  Other devices on   │ ──────────▶ │  AuthorClaw host        │
+   │  Other devices on   │ ──────────▶ │  BookClaw host        │
    │  your LAN (laptop,  │   :3847     │  (Linux or macOS)       │
    │  tablet, phone)     │             │  bind 0.0.0.0           │
    └─────────────────────┘             └─────────────────────────┘
@@ -27,10 +27,10 @@ Two networks are in play, and the distinction matters:
 
 | Network | Direction | What it's for |
 |---|---|---|
-| **Telegram cloud** | Outbound only (AuthorClaw → `api.telegram.org`) | Receiving bot messages, sending bot replies. **No inbound port needed.** |
+| **Telegram cloud** | Outbound only (BookClaw → `api.telegram.org`) | Receiving bot messages, sending bot replies. **No inbound port needed.** |
 | **Your LAN** | Inbound to port 3847 from local devices | Browser dashboard access from other devices on the LAN. |
 
-Because AuthorClaw uses long polling (not webhooks), Telegram works even if your router blocks all inbound connections, your ISP doesn't give you a public IP, or you're behind CGNAT. **You never have to forward a port for Telegram.** Easy and safe.
+Because BookClaw uses long polling (not webhooks), Telegram works even if your router blocks all inbound connections, your ISP doesn't give you a public IP, or you're behind CGNAT. **You never have to forward a port for Telegram.** Easy and safe.
 
 ---
 
@@ -38,7 +38,7 @@ Because AuthorClaw uses long polling (not webhooks), Telegram works even if your
 
 - **Host machine** — a Linux PC, Raspberry Pi, mini-PC, Mac mini, or macOS laptop that stays on
 - **Node.js 22+** installed (`node --version` to check)
-- **AuthorClaw installed** — see [QUICKSTART.md](QUICKSTART.md) if you haven't yet
+- **BookClaw installed** — see [QUICKSTART.md](QUICKSTART.md) if you haven't yet
 - **A Telegram account** on your phone
 - **Both your host and your phone need internet.** They don't need to be on the same network — Telegram bridges them.
 
@@ -46,7 +46,7 @@ Because AuthorClaw uses long polling (not webhooks), Telegram works even if your
 
 ## STEP 1 — Create your Telegram bot
 
-You'll create the bot once. The token Telegram gives you back is what AuthorClaw uses to authenticate every message.
+You'll create the bot once. The token Telegram gives you back is what BookClaw uses to authenticate every message.
 
 ### 1a. Open Telegram and message [@BotFather](https://t.me/BotFather)
 BotFather is Telegram's official bot-creation bot. It's safe.
@@ -55,16 +55,16 @@ BotFather is Telegram's official bot-creation bot. It's safe.
 ```
 You:        /newbot
 BotFather:  Alright, a new bot. How are we going to call it?
-You:        AuthorClaw Home
+You:        BookClaw Home
 BotFather:  Good. Now let's choose a username for your bot.
             It must end in `bot`.
-You:        authorclaw_home_bot
+You:        bookclaw_home_bot
 BotFather:  Done! Congratulations on your new bot. ...
             Use this token to access the HTTP API:
             1234567890:AAEhBP1f-real-token-goes-here
 ```
 
-The display name (`AuthorClaw Home`) is what users see in chat. The username (`@authorclaw_home_bot`) is how they find it. The username has to be globally unique and end in `bot`.
+The display name (`BookClaw Home`) is what users see in chat. The username (`@bookclaw_home_bot`) is how they find it. The username has to be globally unique and end in `bot`.
 
 ### 1c. Copy the token
 The long string after `Use this token to access the HTTP API:` is your **bot token.** Treat it like a password — anyone with this token can impersonate your bot.
@@ -78,7 +78,7 @@ Still in the BotFather chat:
 /setcommands      ← register the slash command list so it autocompletes
 ```
 
-A good `/setcommands` payload for AuthorClaw:
+A good `/setcommands` payload for BookClaw:
 ```
 novel - Create a full novel pipeline
 project - Plan and run any task
@@ -95,7 +95,7 @@ clean - Workspace cleanup
 
 ## STEP 2 — Find your Telegram user ID
 
-AuthorClaw uses a per-user allowlist. You need the numeric user ID of every Telegram account that should be allowed to drive the bot. (Without this, the bot is open to anyone who finds the username — fix this before you put a paid API key in the vault.)
+BookClaw uses a per-user allowlist. You need the numeric user ID of every Telegram account that should be allowed to drive the bot. (Without this, the bot is open to anyone who finds the username — fix this before you put a paid API key in the vault.)
 
 ### 2a. Get your own user ID
 In Telegram, search for **[@userinfobot](https://t.me/userinfobot)**, open it, and press **Start**. It replies with your account info, including:
@@ -111,7 +111,7 @@ Each LAN user does the same: message `@userinfobot`, copy their `Id`, send it to
 
 ---
 
-## STEP 3 — Start AuthorClaw with LAN access
+## STEP 3 — Start BookClaw with LAN access
 
 By default this fork already binds to `0.0.0.0:3847`, so the dashboard is reachable from any device on your LAN with no extra configuration. You just need to know the host's IP address.
 
@@ -135,14 +135,14 @@ ipconfig getifaddr en1
 
 Write down the result. It will look something like `192.168.1.42` or `10.0.0.17`. This is your **`<host-ip>`** for everything below.
 
-### 3b. Start AuthorClaw
-From the AuthorClaw repo root on the host:
+### 3b. Start BookClaw
+From the BookClaw repo root on the host:
 ```bash
 npx tsx gateway/src/index.ts
 ```
 You should see:
 ```
-AuthorClaw is ready to write
+BookClaw is ready to write
 Dashboard: http://localhost:3847
 ```
 The console says `localhost`, but because the bind is `0.0.0.0`, it's actually listening on every interface — including your LAN IP.
@@ -154,11 +154,11 @@ http://<host-ip>:3847
 ```
 If the dashboard loads, LAN access works. If it doesn't, jump to the **Firewall** section below.
 
-> **Trusted LAN only.** AuthorClaw has no HTTP/WebSocket authentication on the dashboard. Anyone who can reach `<host-ip>:3847` can drive the agent and read your workspace. Only do this on a network you trust. For untrusted networks, see [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md#network-access) for the loopback + reverse-proxy pattern.
+> **Trusted LAN only.** BookClaw has no HTTP/WebSocket authentication on the dashboard. Anyone who can reach `<host-ip>:3847` can drive the agent and read your workspace. Only do this on a network you trust. For untrusted networks, see [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md#network-access) for the loopback + reverse-proxy pattern.
 
 ---
 
-## STEP 4 — Connect the bot to AuthorClaw
+## STEP 4 — Connect the bot to BookClaw
 
 ### 4a. Open the dashboard
 On the host machine (or any LAN device): `http://<host-ip>:3847`
@@ -174,11 +174,11 @@ Still in Settings, find the **Telegram Allowed Users** (or "Telegram User ID") f
 Click **Save**.
 
 ### 4d. Connect the bot
-Click **Connect Telegram** (or restart AuthorClaw — the bridge auto-connects on startup if a token is saved).
+Click **Connect Telegram** (or restart BookClaw — the bridge auto-connects on startup if a token is saved).
 
 In the console you should see:
 ```
-🤖 Telegram bridge connected as @authorclaw_home_bot
+🤖 Telegram bridge connected as @bookclaw_home_bot
    Allowed users: 3
    Polling started
 ```
@@ -188,7 +188,7 @@ In the console you should see:
 ## STEP 5 — Verify end-to-end
 
 ### 5a. Phone test (Telegram)
-On your phone, open Telegram, search for `@authorclaw_home_bot`, press **Start**, and send:
+On your phone, open Telegram, search for `@bookclaw_home_bot`, press **Start**, and send:
 ```
 /status
 ```
@@ -232,7 +232,7 @@ sudo firewall-cmd --reload
 ```
 
 ### macOS
-macOS's built-in Application Firewall is per-process, not per-port. The first time AuthorClaw tries to listen on a network interface, you'll get a system dialog: **"Do you want the application 'node' to accept incoming network connections?"** — click **Allow**.
+macOS's built-in Application Firewall is per-process, not per-port. The first time BookClaw tries to listen on a network interface, you'll get a system dialog: **"Do you want the application 'node' to accept incoming network connections?"** — click **Allow**.
 
 If you dismissed the dialog or want to verify:
 1. **System Settings → Network → Firewall**
@@ -248,30 +248,30 @@ From another LAN device:
 # Replace with your host IP
 curl -v http://192.168.1.42:3847/api/status
 ```
-A `200 OK` with JSON means the firewall is open and AuthorClaw is reachable. A connection timeout means the firewall is still blocking.
+A `200 OK` with JSON means the firewall is open and BookClaw is reachable. A connection timeout means the firewall is still blocking.
 
 ---
 
 ## STEP 7 — Make it persistent (run in the background)
 
-So far you've been running AuthorClaw with `npx tsx gateway/src/index.ts` in a terminal. Close the terminal and the agent dies. For real use, run it as a background service so Telegram works 24/7.
+So far you've been running BookClaw with `npx tsx gateway/src/index.ts` in a terminal. Close the terminal and the agent dies. For real use, run it as a background service so Telegram works 24/7.
 
 ### Linux — systemd user service
 
-Create `~/.config/systemd/user/authorclaw.service`:
+Create `~/.config/systemd/user/bookclaw.service`:
 ```ini
 [Unit]
-Description=AuthorClaw Agent
+Description=BookClaw Agent
 After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/YOURUSER/data/dev/authorclaw
+WorkingDirectory=/home/YOURUSER/data/dev/bookclaw
 ExecStart=/usr/bin/npx tsx gateway/src/index.ts
 Restart=on-failure
 RestartSec=10
 # Optional: pin the bind explicitly
-Environment=AUTHORCLAW_BIND=0.0.0.0
+Environment=BOOKCLAW_BIND=0.0.0.0
 
 [Install]
 WantedBy=default.target
@@ -284,27 +284,27 @@ sudo loginctl enable-linger $USER
 
 # Load and start
 systemctl --user daemon-reload
-systemctl --user enable --now authorclaw
+systemctl --user enable --now bookclaw
 
 # Check status
-systemctl --user status authorclaw
+systemctl --user status bookclaw
 
 # Tail logs
-journalctl --user -u authorclaw -f
+journalctl --user -u bookclaw -f
 ```
 
 ### macOS — launchd agent
 
-Create `~/Library/LaunchAgents/com.authorclaw.agent.plist`:
+Create `~/Library/LaunchAgents/com.bookclaw.agent.plist`:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.authorclaw.agent</string>
+    <string>com.bookclaw.agent</string>
     <key>WorkingDirectory</key>
-    <string>/Users/YOURUSER/data/dev/authorclaw</string>
+    <string>/Users/YOURUSER/data/dev/bookclaw</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/npx</string>
@@ -313,7 +313,7 @@ Create `~/Library/LaunchAgents/com.authorclaw.agent.plist`:
     </array>
     <key>EnvironmentVariables</key>
     <dict>
-        <key>AUTHORCLAW_BIND</key>
+        <key>BOOKCLAW_BIND</key>
         <string>0.0.0.0</string>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin</string>
@@ -323,9 +323,9 @@ Create `~/Library/LaunchAgents/com.authorclaw.agent.plist`:
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/YOURUSER/Library/Logs/authorclaw.log</string>
+    <string>/Users/YOURUSER/Library/Logs/bookclaw.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/YOURUSER/Library/Logs/authorclaw.err.log</string>
+    <string>/Users/YOURUSER/Library/Logs/bookclaw.err.log</string>
 </dict>
 </plist>
 ```
@@ -334,22 +334,22 @@ Create `~/Library/LaunchAgents/com.authorclaw.agent.plist`:
 
 Then:
 ```bash
-launchctl load ~/Library/LaunchAgents/com.authorclaw.agent.plist
+launchctl load ~/Library/LaunchAgents/com.bookclaw.agent.plist
 
 # Verify it's running
-launchctl list | grep authorclaw
+launchctl list | grep bookclaw
 
 # Tail logs
-tail -f ~/Library/Logs/authorclaw.log
+tail -f ~/Library/Logs/bookclaw.log
 ```
 
 To stop it:
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.authorclaw.agent.plist
+launchctl unload ~/Library/LaunchAgents/com.bookclaw.agent.plist
 ```
 
 ### Both platforms
-Once the service is running, you can close your terminal, log out, or even reboot. AuthorClaw will come back up automatically and the Telegram bot will resume polling within ~30 seconds.
+Once the service is running, you can close your terminal, log out, or even reboot. BookClaw will come back up automatically and the Telegram bot will resume polling within ~30 seconds.
 
 ---
 
@@ -363,8 +363,8 @@ Two options:
 In your router's admin panel, find DHCP → Reservations (sometimes called "static leases" or "bind MAC to IP"). Reserve the host's MAC address to its current IP. The host still uses DHCP — it just always gets the same address.
 
 **Option B — mDNS / hostname.**
-Linux (with avahi-daemon) and macOS (built-in Bonjour) advertise themselves on the LAN as `<hostname>.local`. So instead of `http://192.168.1.42:3847` you can use `http://authorclaw-host.local:3847`. Works on most LANs without router changes. Hostname can be set with:
-- **Linux:** `sudo hostnamectl set-hostname authorclaw-host`
+Linux (with avahi-daemon) and macOS (built-in Bonjour) advertise themselves on the LAN as `<hostname>.local`. So instead of `http://192.168.1.42:3847` you can use `http://bookclaw-host.local:3847`. Works on most LANs without router changes. Hostname can be set with:
+- **Linux:** `sudo hostnamectl set-hostname bookclaw-host`
 - **macOS:** **System Settings → General → Sharing → Local Hostname**
 
 ---
@@ -378,7 +378,7 @@ When several people on your LAN drive the same bot:
 - **Anything destructive is gated.** The confirmation gate applies regardless of who initiated the action. The owner (you) sets policy in `config/default.json`.
 - **The dashboard shows global state.** Any LAN user opening `http://<host-ip>:3847` sees every project, every persona, every file. There's no per-user view. Treat the bot allowlist as "trusted co-authors," not "isolated tenants."
 
-For genuinely isolated multi-tenant use (one bot per pen name, separate workspaces, separate API keys per author), AuthorClaw doesn't support it yet — see [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #8 ("Multi-agent routing with isolated workspaces") for the upstream feature being tracked.
+For genuinely isolated multi-tenant use (one bot per pen name, separate workspaces, separate API keys per author), BookClaw doesn't support it yet — see [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #8 ("Multi-agent routing with isolated workspaces") for the upstream feature being tracked.
 
 ---
 
@@ -386,11 +386,11 @@ For genuinely isolated multi-tenant use (one bot per pen name, separate workspac
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Bot doesn't reply to anything | Token wrong, or AuthorClaw not actually running | Check console: `🤖 Telegram bridge connected` should appear. If not, verify the token in Settings. |
-| Bot replies "Not authorized" | Your Telegram user ID isn't in the allowlist | Settings → Telegram Allowed Users → add your ID → Save → restart AuthorClaw |
+| Bot doesn't reply to anything | Token wrong, or BookClaw not actually running | Check console: `🤖 Telegram bridge connected` should appear. If not, verify the token in Settings. |
+| Bot replies "Not authorized" | Your Telegram user ID isn't in the allowlist | Settings → Telegram Allowed Users → add your ID → Save → restart BookClaw |
 | Bot was working, suddenly stops | Network blip or token revoked | `curl https://api.telegram.org/bot<TOKEN>/getMe` from the host. `ok: true` means token is fine. If not, regenerate via `/token` in BotFather. |
 | LAN device can't open dashboard | Firewall on host, or host IP changed | See **Firewall** section. Re-check `<host-ip>` with `hostname -I` (Linux) or `ipconfig getifaddr en0` (macOS). |
-| LAN device gets "connection refused" | AuthorClaw is bound to loopback only | Check the env: `echo $AUTHORCLAW_BIND`. Should be empty or `0.0.0.0`. If it's `127.0.0.1`, unset it and restart. |
+| LAN device gets "connection refused" | BookClaw is bound to loopback only | Check the env: `echo $BOOKCLAW_BIND`. Should be empty or `0.0.0.0`. If it's `127.0.0.1`, unset it and restart. |
 | LAN device sees the page, but it's blank | Browser is on a different subnet, or CSP blocking WebSocket | Open browser devtools → console. WebSocket connection errors usually mean the LAN device is on a guest network the host can't talk back to. |
 | Multiple chats but only one gets replies | The bridge tracks chat IDs per known user — try sending any message from the other Telegram account first | The bridge auto-registers chat IDs on the first authorized message. |
 | Service started but bot offline after reboot | Service didn't survive reboot — lingering not enabled (Linux) or KeepAlive missing (macOS) | Linux: `sudo loginctl enable-linger $USER`. macOS: confirm `KeepAlive` and `RunAtLoad` are both `<true/>` in the plist. |
@@ -407,7 +407,7 @@ For genuinely isolated multi-tenant use (one bot per pen name, separate workspac
 - [ ] Telegram allowlist has at least one ID (never leave it empty — that means *anyone* who finds the bot can drive it)
 - [ ] Host firewall allows 3847 **from your LAN subnet only**, not from `0.0.0.0/0`
 - [ ] Host is on a trusted LAN — not a coffee-shop Wi-Fi, not a guest network
-- [ ] If the host is a laptop that travels: either stop the service before leaving the trusted LAN, or set `AUTHORCLAW_BIND=127.0.0.1` and use it locally-only until you're home again
+- [ ] If the host is a laptop that travels: either stop the service before leaving the trusted LAN, or set `BOOKCLAW_BIND=127.0.0.1` and use it locally-only until you're home again
 - [ ] You know how to revoke the bot token if it leaks (`/revoke` to BotFather)
 
 ---

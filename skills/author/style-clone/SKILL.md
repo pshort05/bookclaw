@@ -1,7 +1,7 @@
 ---
 name: style-clone
 description: Analyze and match the author's unique writing voice
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "learn my style"

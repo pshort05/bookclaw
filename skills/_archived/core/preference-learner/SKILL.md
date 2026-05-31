@@ -21,7 +21,7 @@ permissions:
 
 # Preference Learner — Core Skill
 
-Every author is different. This skill builds a living profile of the user's preferences, habits, and working style — then applies it to every interaction so AuthorClaw feels increasingly personalized.
+Every author is different. This skill builds a living profile of the user's preferences, habits, and working style — then applies it to every interaction so BookClaw feels increasingly personalized.
 
 ## What Gets Learned
 
@@ -103,7 +103,7 @@ tools:
 ## How Preferences Are Learned
 
 ### Explicit Statements (Highest Priority)
-The user directly tells AuthorClaw their preferences:
+The user directly tells BookClaw their preferences:
 - "I prefer short chapters"
 - "Never use adverbs"
 - "Always use Oxford comma"
@@ -134,12 +134,12 @@ When the user rates output or gives feedback:
 
 Stored as YAML at `workspace/memory/user-preferences.yaml`:
 - Human-readable (the user can edit it directly)
-- Machine-parseable (AuthorClaw loads it into context)
+- Machine-parseable (BookClaw loads it into context)
 - Versioned (changes are logged with timestamps)
 
 ## Applying Preferences
 
-Before each interaction, AuthorClaw:
+Before each interaction, BookClaw:
 1. Loads the preference profile
 2. Selects relevant preferences for the current task type
 3. Injects them into the system prompt as constraints
@@ -197,7 +197,7 @@ Some preferences are per-project, not global:
 - Tone might shift between projects
 - Word count targets vary by genre
 
-AuthorClaw maintains both:
+BookClaw maintains both:
 - **Global preferences** — apply everywhere (communication style, formatting, dos/don'ts)
 - **Project preferences** — apply only within a specific project (POV, tense, tone, genre)
 

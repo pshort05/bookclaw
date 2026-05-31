@@ -1,8 +1,11 @@
-Add sentinel-triggered test-build watcher for Mercury
+Rename project: AuthorClaw -> BookClaw (code + env vars + class)
 
-- scripts/build-watch.sh: rebuild + docker compose up from the live working tree when a build_now sentinel exists; consumes the sentinel up front, flock-guarded, reuses the stable vault key from .env, logs to .build-logs/, reports FAIL to systemd
-- scripts/systemd/authorclaw-build.{service,timer}: 1-min poll running as paul in the docker group
-- scripts/systemd/README.md: install/check/uninstall steps
-- scripts/deploy.sh: healthcheck polls /healthz instead of the now-auth-gated /api/health
-- .gitignore: ignore build_now and .build-logs/
-- docs/TODO.md: record the as-built sentinel approach on the Mercury-deploy item
+- Bulk-rename all occurrences across 147 tracked files: AuthorClaw->BookClaw,
+  AUTHORCLAW->BOOKCLAW (incl. standalone all-caps banners the runbook's
+  AUTHORCLAW_ rule would have missed), authorclaw->bookclaw
+- Decision 2a (hard env rename): AUTHORCLAW_* env vars -> BOOKCLAW_*; no
+  dual-read fallback. Local .env updated in place (var value preserved); no
+  vault.enc existed, so no credential migration needed
+- Decision 4a: AuthorClawGateway class -> BookClawGateway
+- Verified: tsc --noEmit clean, smoke test 16/16 pass, 0 residual references
+- Remote rename (1a) and local directory rename (3a) handled separately

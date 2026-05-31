@@ -1,7 +1,7 @@
 ---
 name: promote
 description: Write blurbs, taglines, social media posts, ad copy, author bios
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "promote"

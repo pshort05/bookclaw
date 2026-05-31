@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Permission Manager
+ * BookClaw Permission Manager
  * Capability-based access control with 4 presets
  */
 

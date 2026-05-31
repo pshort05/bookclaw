@@ -1,7 +1,7 @@
 ---
 name: series-bible
 description: Track multi-book continuity, character arcs across books, series-level planning
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "series"

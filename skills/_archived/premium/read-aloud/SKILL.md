@@ -37,7 +37,7 @@ This skill automates that process with natural-sounding AI voices.
 
 ## Engine: Piper TTS
 
-AuthorClaw uses **Piper TTS** — a fast, free, open-source text-to-speech engine:
+BookClaw uses **Piper TTS** — a fast, free, open-source text-to-speech engine:
 - **MIT licensed** — completely free, no API costs, no subscriptions
 - **Runs locally** — your manuscript never leaves your machine
 - **CPU-only** — no GPU required (works on any computer)
@@ -47,11 +47,11 @@ AuthorClaw uses **Piper TTS** — a fast, free, open-source text-to-speech engin
 
 ### Setup (One-Time)
 ```bash
-# Install Piper (included in AuthorClaw setup wizard)
+# Install Piper (included in BookClaw setup wizard)
 pip install piper-tts
 
 # Download a voice model (~100MB each)
-# AuthorClaw will prompt you to pick one on first use
+# BookClaw will prompt you to pick one on first use
 ```
 
 ### Available Voice Styles

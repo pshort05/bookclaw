@@ -1,8 +1,8 @@
 /**
- * AuthorClaw Website Deploy
+ * BookClaw Website Deploy
  *
  * Adapter pattern over the few static-site hosts authors actually use.
- * AuthorClaw's job is to produce the static site (WebsiteBuilder) and
+ * BookClaw's job is to produce the static site (WebsiteBuilder) and
  * track it (WebsiteSiteService). This service shells out to the host's
  * existing CLI to push the rendered files. We do NOT bundle these CLIs;
  * authors install Netlify / Vercel / etc. themselves. We probe at runtime

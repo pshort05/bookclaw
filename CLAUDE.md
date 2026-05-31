@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What AuthorClaw is
+## What BookClaw is
 
 A Node.js/TypeScript writing-agent gateway. One process runs an Express + Socket.IO server on port `3847`, serves a single-file dashboard, exposes a REST + WebSocket API, and optionally bridges to Telegram/Discord. The agent autonomously executes "projects" (multi-step writing pipelines: planning → bible → production → revision → format → launch) by chaining AI calls and injecting skill content into each step's prompt.
 
@@ -120,20 +120,20 @@ curl http://localhost:3847/api/projects/list # project state
 
 Current scripted tests:
 
-- `tests/smoke-test.sh` (`npm run test:smoke`) — boots the gateway and asserts the security perimeter across 4 phases (16 checks). **Auth:** `401` without a token, `200` with a valid bearer, `200` via the `?token=` query fallback, `401` on a wrong token, dashboard token injection, and the `AUTHORCLAW_AUTH_DISABLED=1` escape hatch. **CORS:** cross-origin denied by default, and with `AUTHORCLAW_CORS_ORIGINS` set a listed origin is echoed while an unlisted one is not. **Source-IP allowlist** (with `AUTHORCLAW_TRUST_PROXY=1` so the client IP is driven via `X-Forwarded-For`): exact IP and CIDR members allowed, unlisted IP → `403` even with a valid token (the gate sits in front of auth), and loopback always allowed. Hermetic and non-destructive: supplies the token via env (no `.env` write), binds loopback only, and leaves no stray process. Run `tests/smoke-test.sh -v` to stream the server log.
+- `tests/smoke-test.sh` (`npm run test:smoke`) — boots the gateway and asserts the security perimeter across 4 phases (16 checks). **Auth:** `401` without a token, `200` with a valid bearer, `200` via the `?token=` query fallback, `401` on a wrong token, dashboard token injection, and the `BOOKCLAW_AUTH_DISABLED=1` escape hatch. **CORS:** cross-origin denied by default, and with `BOOKCLAW_CORS_ORIGINS` set a listed origin is echoed while an unlisted one is not. **Source-IP allowlist** (with `BOOKCLAW_TRUST_PROXY=1` so the client IP is driven via `X-Forwarded-For`): exact IP and CIDR members allowed, unlisted IP → `403` even with a valid token (the gate sits in front of auth), and loopback always allowed. Hermetic and non-destructive: supplies the token via env (no `.env` write), binds loopback only, and leaves no stray process. Run `tests/smoke-test.sh -v` to stream the server log.
 
 ## High-level architecture
 
 ### Entry point and wiring
 
-`gateway/src/index.ts` is **the** entry point — a single ~2,650-line `AuthorClawGateway` class that owns every service instance and wires them together in a numbered init sequence (Phase 1: config → Phase 2: security → Phase 3: soul/memory → Phase 4: AI providers → Phase 5: research gate → Phase 6: skills → Phase 6b-k: ~30 feature services → finally start HTTP + Socket.IO). When adding a new service, follow the existing pattern: instantiate it in a Phase block, wire its dependencies via setter methods (not constructor injection), and pass it through to `createAPIRoutes()` if it needs HTTP endpoints.
+`gateway/src/index.ts` is **the** entry point — a single ~2,650-line `BookClawGateway` class that owns every service instance and wires them together in a numbered init sequence (Phase 1: config → Phase 2: security → Phase 3: soul/memory → Phase 4: AI providers → Phase 5: research gate → Phase 6: skills → Phase 6b-k: ~30 feature services → finally start HTTP + Socket.IO). When adding a new service, follow the existing pattern: instantiate it in a Phase block, wire its dependencies via setter methods (not constructor injection), and pass it through to `createAPIRoutes()` if it needs HTTP endpoints.
 
 REST routes live in `gateway/src/api/routes.ts` (~5,500 lines) — a single factory function that mounts everything onto an Express router. Dashboard is `dashboard/dist/index.html` (single ~3,800-line HTML file with inline JS, served statically).
 
 ### Three concentric layers
 
 1. **Security perimeter** (`gateway/src/security/`):
-   - `Vault` — AES-256-GCM credential store at `config/.vault/vault.enc`. Master key from `AUTHORCLAW_VAULT_KEY` env var; auto-generated into `.env` on first run if missing.
+   - `Vault` — AES-256-GCM credential store at `config/.vault/vault.enc`. Master key from `BOOKCLAW_VAULT_KEY` env var; auto-generated into `.env` on first run if missing.
    - `SandboxGuard` — enforces that all file access stays under `workspace/`.
    - `InjectionDetector` — pattern-matches inbound user messages for prompt-injection attempts.
    - `AuditLog` — JSONL daily logs under `workspace/.audit/`.
@@ -175,11 +175,11 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 
 - **Imports use `.js` extensions** even though source is `.ts` — required by the `NodeNext` module resolution in `tsconfig.json`. Match this when adding files.
 - **Node 22+** required (`engines` in `package.json`); `--import tsx` is how TS is loaded — don't switch to `ts-node`.
-- **Server bind is configurable via `AUTHORCLAW_BIND` env var, defaulting to `0.0.0.0`** (changed from hardcoded `127.0.0.1` so the published Docker port is reachable on the LAN). To restore the old behavior, set `AUTHORCLAW_BIND=127.0.0.1`. (Helmet `connectSrc` was tightened to `'self'` on 2026-05-30 — the dashboard is same-origin only; `SECURITY.md`/README localhost-only language is stale — update when next touched.)
+- **Server bind is configurable via `BOOKCLAW_BIND` env var, defaulting to `0.0.0.0`** (changed from hardcoded `127.0.0.1` so the published Docker port is reachable on the LAN). To restore the old behavior, set `BOOKCLAW_BIND=127.0.0.1`. (Helmet `connectSrc` was tightened to `'self'` on 2026-05-30 — the dashboard is same-origin only; `SECURITY.md`/README localhost-only language is stale — update when next touched.)
 - **Security perimeter env vars** (from the security review — see `docs/COMPLETED.md`). Each is opt-out or opt-in via env; the constructor wires them and startup logs the posture:
-  - `AUTHORCLAW_AUTH_TOKEN` — bearer token gating `/api/*` + the Socket.IO handshake. Auto-generated into `.env` on first run; `AUTHORCLAW_AUTH_DISABLED=1` turns auth off (loud warning). Native-element GETs use a `?token=` query fallback.
-  - `AUTHORCLAW_CORS_ORIGINS` — comma-separated browser-origin allowlist (Express + Socket.IO). **Unset = deny all cross-origin** (dashboard is same-origin, unaffected); a literal `*` restores permissive CORS (logged).
-  - `AUTHORCLAW_ALLOWED_IPS` — comma-separated source IPs/CIDRs gating *all* clients, in front of auth. **Unset = allow all** (notice logged); loopback always allowed. `AUTHORCLAW_TRUST_PROXY=1` reads the client IP from `X-Forwarded-For` (only safe behind a sole-ingress proxy). **Docker caveat:** default bridge + published port masks source IPs — enforce at the host firewall / provider security group, or use host-net / a trusted proxy, for real per-IP control.
+  - `BOOKCLAW_AUTH_TOKEN` — bearer token gating `/api/*` + the Socket.IO handshake. Auto-generated into `.env` on first run; `BOOKCLAW_AUTH_DISABLED=1` turns auth off (loud warning). Native-element GETs use a `?token=` query fallback.
+  - `BOOKCLAW_CORS_ORIGINS` — comma-separated browser-origin allowlist (Express + Socket.IO). **Unset = deny all cross-origin** (dashboard is same-origin, unaffected); a literal `*` restores permissive CORS (logged).
+  - `BOOKCLAW_ALLOWED_IPS` — comma-separated source IPs/CIDRs gating *all* clients, in front of auth. **Unset = allow all** (notice logged); loopback always allowed. `BOOKCLAW_TRUST_PROXY=1` reads the client IP from `X-Forwarded-For` (only safe behind a sole-ingress proxy). **Docker caveat:** default bridge + published port masks source IPs — enforce at the host firewall / provider security group, or use host-net / a trusted proxy, for real per-IP control.
 - **Errors during init are logged with `console.log('  ✓ …')` / `'  ⚠ …'` / `'  ℹ …'`** and the gateway continues with degraded capability when a service can't initialize (e.g. memory-search if `better-sqlite3` won't build, video-research if `yt-dlp` is missing). Preserve this fail-soft pattern — don't make startup require optional dependencies.
 - **Premium skills are gitignored** (`skills/premium/*/`) — never commit them. The folder ships only with a `README.md`.
 - **Workspace runtime data is gitignored** but the directory must exist; the gateway creates subdirs on init.

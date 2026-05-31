@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# AuthorClaw smoke test
+# BookClaw smoke test
 # ─────────────────────
 # Boots the gateway and verifies that bearer-token auth (security review item #1)
 # is enforced. Covers startup, the /api/* gate, the dashboard token injection,
-# and the AUTHORCLAW_AUTH_DISABLED=1 escape hatch.
+# and the BOOKCLAW_AUTH_DISABLED=1 escape hatch.
 #
 # Hermetic and non-destructive:
-#   - Supplies AUTHORCLAW_AUTH_TOKEN via the environment, so the server uses a
+#   - Supplies BOOKCLAW_AUTH_TOKEN via the environment, so the server uses a
 #     known token and never generates/writes one to .env.
 #   - Binds 127.0.0.1 only (never exposes the LAN, even in the auth-disabled phase).
 #   - Uses the project's normal vault-key handling and does not modify .env.
@@ -70,7 +70,7 @@ rheader() {
 # start_server <extra-env=val...> : launch the gateway and wait until it serves
 start_server() {
   : > "$SERVER_LOG"
-  env AUTHORCLAW_BIND="$HOST" "$@" \
+  env BOOKCLAW_BIND="$HOST" "$@" \
     node --import tsx "$ROOT_DIR/gateway/src/index.ts" > "$SERVER_LOG" 2>&1 &
   SERVER_PID=$!
   local i
@@ -92,7 +92,7 @@ stop_server() {
 }
 
 # ════════════════════════════════════════════════════════════
-log "AuthorClaw smoke test"
+log "BookClaw smoke test"
 
 # Preflight: the port must be free so we test our own process, not a stray one.
 if curl -s -o /dev/null --max-time 2 "$BASE/" 2>/dev/null; then
@@ -103,7 +103,7 @@ fi
 # ── Phase 1: auth ENABLED ──
 log ""
 log "Phase 1: startup + bearer-token auth enforced"
-start_server AUTHORCLAW_AUTH_TOKEN="$TEST_TOKEN" || exit 1
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" || exit 1
 pass "server started and serves ${BASE}/"
 
 [ "$(code "$BASE/api/status")" = "401" ] \
@@ -120,7 +120,7 @@ pass "server started and serves ${BASE}/"
 
 HTML="$(curl -s --max-time 5 "$BASE/")"
 case "$HTML" in
-  *"__AUTHORCLAW_AUTH_TOKEN__"*) fail "dashboard still contains the unsubstituted token placeholder" ;;
+  *"__BOOKCLAW_AUTH_TOKEN__"*) fail "dashboard still contains the unsubstituted token placeholder" ;;
   *"$TEST_TOKEN"*)               pass "dashboard / serves with token injected" ;;
   *)                             fail "dashboard / missing injected token" ;;
 esac
@@ -146,8 +146,8 @@ stop_server
 
 # ── Phase 2: auth DISABLED escape hatch ──
 log ""
-log "Phase 2: AUTHORCLAW_AUTH_DISABLED=1 escape hatch"
-start_server AUTHORCLAW_AUTH_DISABLED=1 || exit 1
+log "Phase 2: BOOKCLAW_AUTH_DISABLED=1 escape hatch"
+start_server BOOKCLAW_AUTH_DISABLED=1 || exit 1
 
 grep -q "AUTH DISABLED" "$SERVER_LOG" \
   && pass "startup prints the AUTH DISABLED warning" || fail "missing AUTH DISABLED warning"
@@ -157,11 +157,11 @@ grep -q "AUTH DISABLED" "$SERVER_LOG" \
 
 stop_server
 
-# ── Phase 3: CORS allowlist (AUTHORCLAW_CORS_ORIGINS) ──
+# ── Phase 3: CORS allowlist (BOOKCLAW_CORS_ORIGINS) ──
 log ""
 log "Phase 3: CORS allowlist"
 ALLOWED="http://allowed.test:9999"
-start_server AUTHORCLAW_AUTH_TOKEN="$TEST_TOKEN" AUTHORCLAW_CORS_ORIGINS="$ALLOWED" || exit 1
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" BOOKCLAW_CORS_ORIGINS="$ALLOWED" || exit 1
 
 [ "$(acao "$ALLOWED" -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/status")" = "$ALLOWED" ] \
   && pass "CORS: listed origin echoed in Access-Control-Allow-Origin" \
@@ -173,14 +173,14 @@ start_server AUTHORCLAW_AUTH_TOKEN="$TEST_TOKEN" AUTHORCLAW_CORS_ORIGINS="$ALLOW
 
 stop_server
 
-# ── Phase 4: source-IP allowlist (AUTHORCLAW_ALLOWED_IPS + trust-proxy) ──
+# ── Phase 4: source-IP allowlist (BOOKCLAW_ALLOWED_IPS + trust-proxy) ──
 # Trust-proxy lets us drive the client IP via X-Forwarded-For so allow/deny is
 # deterministic from loopback. Allowlist = one exact IP + one CIDR.
 log ""
 log "Phase 4: source-IP allowlist"
-start_server AUTHORCLAW_AUTH_TOKEN="$TEST_TOKEN" \
-             AUTHORCLAW_ALLOWED_IPS="203.0.113.7,10.0.0.0/24" \
-             AUTHORCLAW_TRUST_PROXY=1 || exit 1
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" \
+             BOOKCLAW_ALLOWED_IPS="203.0.113.7,10.0.0.0/24" \
+             BOOKCLAW_TRUST_PROXY=1 || exit 1
 AUTHH=(-H "Authorization: Bearer $TEST_TOKEN")
 
 grep -q "IP allowlist: 2 rule(s) enforced" "$SERVER_LOG" \

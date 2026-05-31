@@ -1,23 +1,23 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# AuthorClaw Quick Runner (Non-Docker)
+# BookClaw Quick Runner (Non-Docker)
 # Copies latest code from shared folder, installs deps, starts.
-# Usage: bash ~/authorclaw/scripts/run.sh
-#   or:  bash /media/sf_authorclaw-transfer/authorclaw/scripts/run.sh
+# Usage: bash ~/bookclaw/scripts/run.sh
+#   or:  bash /media/sf_bookclaw-transfer/bookclaw/scripts/run.sh
 # ═══════════════════════════════════════════════════════════
 
 set -e
 
 echo ""
-echo "  ✍️  AuthorClaw Quick Runner"
+echo "  ✍️  BookClaw Quick Runner"
 echo "  ═══════════════════════════════════"
 echo ""
 
 # ── Resolve project root ──
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # If running from shared folder, copy first
-SHARED="/media/sf_authorclaw-transfer/authorclaw"
-HOME_DIR="$HOME/authorclaw"
+SHARED="/media/sf_bookclaw-transfer/bookclaw"
+HOME_DIR="$HOME/bookclaw"
 
 if [ -d "$SHARED" ]; then
   echo "  [1/5] Syncing code from shared folder..."
@@ -35,7 +35,7 @@ else
 fi
 
 # Also copy premium skills if available
-PREMIUM="/media/sf_authorclaw-transfer/authorclaw-premium"
+PREMIUM="/media/sf_bookclaw-transfer/bookclaw-premium"
 if [ -d "$PREMIUM" ]; then
   echo "  ✓ Syncing premium skills..."
   rsync -a "$PREMIUM/" "$HOME_DIR/skills/premium/" 2>/dev/null || true
@@ -44,7 +44,7 @@ fi
 PROJECT_DIR="$HOME_DIR"
 cd "$PROJECT_DIR"
 
-# ── Stop any existing AuthorClaw processes ──
+# ── Stop any existing BookClaw processes ──
 echo "  [2/5] Stopping old instances..."
 pkill -f "tsx gateway/src/index.ts" 2>/dev/null && echo "  ✓ Old process killed" || echo "  ✓ No old process running"
 sleep 1
@@ -62,9 +62,9 @@ fi
 mkdir -p workspace/audio workspace/.config workspace/memory workspace/projects workspace/research
 mkdir -p logs
 
-# ── Start AuthorClaw (background, logs to file) ──
-echo "  [4/5] Starting AuthorClaw..."
-LOG_FILE="$PROJECT_DIR/logs/authorclaw-$(date +%Y%m%d-%H%M%S).log"
+# ── Start BookClaw (background, logs to file) ──
+echo "  [4/5] Starting BookClaw..."
+LOG_FILE="$PROJECT_DIR/logs/bookclaw-$(date +%Y%m%d-%H%M%S).log"
 nohup npx tsx gateway/src/index.ts > "$LOG_FILE" 2>&1 &
 AC_PID=$!
 echo "  ✓ Started (PID: $AC_PID, log: $LOG_FILE)"
@@ -77,7 +77,7 @@ while [ $RETRIES -lt $MAX_RETRIES ]; do
   if curl -sf http://localhost:3847/api/health > /dev/null 2>&1; then
     echo ""
     echo "  ═══════════════════════════════════"
-    echo "  ✅ AuthorClaw is running!"
+    echo "  ✅ BookClaw is running!"
     echo ""
     echo "  📡 Dashboard: http://localhost:3847"
     echo "  📱 Telegram:  Working (if configured)"

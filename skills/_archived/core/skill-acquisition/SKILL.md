@@ -15,7 +15,7 @@ premium: false
 
 # Skill Acquisition
 
-You are AuthorClaw's self-learning module. When the user says "go learn about X" or
+You are BookClaw's self-learning module. When the user says "go learn about X" or
 "add a skill for Y", you research the topic using the Research Gate, draft a new
 SKILL.md file, and present it for the user's review before saving.
 
@@ -43,7 +43,7 @@ Research strategy:
 - Max 5 fetches per skill acquisition session
 
 ### Step 3: Draft the SKILL.md
-Create a properly formatted skill file following AuthorClaw's skill schema:
+Create a properly formatted skill file following BookClaw's skill schema:
 
 ```markdown
 ---

@@ -1,6 +1,6 @@
 # The God Class Problem — Analysis and Three-Level Refactor Plan
 
-A standing architectural debt in AuthorClaw: two files (`gateway/src/index.ts` and `gateway/src/api/routes.ts`) own the wiring for the entire system. Together they're ~8,200 lines of intertwined initialization and routing that every new feature has to touch.
+A standing architectural debt in BookClaw: two files (`gateway/src/index.ts` and `gateway/src/api/routes.ts`) own the wiring for the entire system. Together they're ~8,200 lines of intertwined initialization and routing that every new feature has to touch.
 
 This document quantifies the problem, compares it to OpenClaw's plugin architecture (which decisively does **not** have this issue), and lays out a three-level incremental refactor — each level individually shippable.
 
@@ -15,7 +15,7 @@ Last analysis: 2026-05-28.
 | Metric | TODO.md estimate | Actual (2026-05-28) |
 |---|---|---|
 | `gateway/src/index.ts` lines | ~2,650 | **2,649** ✓ |
-| Single class declared | `AuthorClawGateway` | `AuthorClawGateway` ✓ |
+| Single class declared | `BookClawGateway` | `BookClawGateway` ✓ |
 | Services instantiated as `this.X = new …` | ~50 | **61** |
 | Methods on the god class | (not stated) | **77** |
 | Numbered init phases | (not stated) | **35** (Phase 1 → Phase 11, with sub-phases 6a–6k) |
@@ -28,7 +28,7 @@ Both files match the textbook god-class shape: one constructor (or one factory f
 ### Why this is the day-to-day cost, not a theoretical one
 1. **Merge conflicts** — any two parallel branches that add features will both touch `index.ts` and `routes.ts`.
 2. **Cognitive load** — finding the cron-scheduler init means scrolling past 2,000 lines of unrelated wiring.
-3. **Testability** — `AuthorClawGateway` constructs everything itself. There's no seam to inject a fake `Vault` or mock `AIRouter` for a unit test.
+3. **Testability** — `BookClawGateway` constructs everything itself. There's no seam to inject a fake `Vault` or mock `AIRouter` for a unit test.
 4. **Hidden coupling** — services reach into other services via `gateway.foo.bar()`. Cross-cutting concerns (audit, sandbox, vault) become god-pointers from a top-level object instead of explicit dependencies.
 5. **The "two `6h`" symptom** — the numbered phase sequence has overflowed. New init blocks are being shoehorned into adjacent numbers because there's no natural place to put them.
 
@@ -63,11 +63,11 @@ Broken down roughly by category:
 `macos`, `ios`, `android`, `macos-mlx-tts`, plus `shared/OpenClawKit` and `swabble`.
 
 ### The architectural delta
-Where AuthorClaw has *one* `AIRouter` class with 60 siblings inside `AuthorClawGateway`, OpenClaw has a **plugin contract** (`plugin-package-contract`) and every provider is a folder under `extensions/` that **registers itself** against that contract. The core gateway only knows how to *load plugins via the contract* — it doesn't `new` each one.
+Where BookClaw has *one* `AIRouter` class with 60 siblings inside `BookClawGateway`, OpenClaw has a **plugin contract** (`plugin-package-contract`) and every provider is a folder under `extensions/` that **registers itself** against that contract. The core gateway only knows how to *load plugins via the contract* — it doesn't `new` each one.
 
-That's why OpenClaw's gateway core doesn't accumulate god-class mass even at 5× AuthorClaw's surface area. Adding a new provider/channel/tool in OpenClaw is creating a folder under `extensions/`. Adding one in AuthorClaw is editing `index.ts`.
+That's why OpenClaw's gateway core doesn't accumulate god-class mass even at 5× BookClaw's surface area. Adding a new provider/channel/tool in OpenClaw is creating a folder under `extensions/`. Adding one in BookClaw is editing `index.ts`.
 
-The decision to pay for a plugin SDK up front is what kept their core gateway clean. AuthorClaw's path was different — fast feature velocity inside a single class — and now it's paying interest on that decision every time a new service shows up.
+The decision to pay for a plugin SDK up front is what kept their core gateway clean. BookClaw's path was different — fast feature velocity inside a single class — and now it's paying interest on that decision every time a new service shows up.
 
 ---
 
@@ -119,7 +119,7 @@ gateway/src/init/
   11-static-dashboard.ts
 ```
 
-The `AuthorClawGateway` constructor becomes a sequence:
+The `BookClawGateway` constructor becomes a sequence:
 
 ```typescript
 const config = await initConfig();
@@ -141,7 +141,7 @@ this.services = services;
 - Merge conflicts. Two parallel feature branches no longer collide on `index.ts`.
 - The two-`6h` smell — the rename to `06h` and `06h2` fixes it as part of the move.
 
-**Risk:** Very low. File moves with mechanical refactoring. No API changes, no behavior changes. If the AuthorClaw codebase had even one passing test, this would be the easiest review you've ever done.
+**Risk:** Very low. File moves with mechanical refactoring. No API changes, no behavior changes. If the BookClaw codebase had even one passing test, this would be the easiest review you've ever done.
 
 **Same pattern for `routes.ts`:**
 Split `createAPIRoutes(app, gateway)` into one mounter per feature area:

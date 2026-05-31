@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# AuthorClaw VM Setup Script
+# BookClaw VM Setup Script
 # Run this INSIDE the Ubuntu VM after copying files over
 # Sets up Node.js 22, shared folders, and SSH access
 # ═══════════════════════════════════════════════════════════
@@ -8,7 +8,7 @@
 set -e
 
 echo ""
-echo "  AuthorClaw VM Setup"
+echo "  BookClaw VM Setup"
 echo "  ======================================="
 echo ""
 
@@ -44,18 +44,18 @@ echo "    ssh $(whoami)@localhost -p 2222"
 echo "  (Requires VirtualBox port forwarding: Host 2222 -> Guest 22)"
 
 # ── Step 4: Create directory structure ──
-echo "  [4/5] Creating AuthorClaw directory structure..."
-mkdir -p ~/authorclaw
+echo "  [4/5] Creating BookClaw directory structure..."
+mkdir -p ~/bookclaw
 mkdir -p ~/author-os
 
 echo "  Directories created:"
-echo "    ~/authorclaw        - Main application"
+echo "    ~/bookclaw        - Main application"
 echo "    ~/author-os         - Author OS tools"
 
 # ── Step 5: Set hostname ──
-echo "  [5/5] Setting hostname to 'authorclaw'..."
-sudo hostnamectl set-hostname authorclaw 2>/dev/null || true
-echo "  Hostname set to 'authorclaw'"
+echo "  [5/5] Setting hostname to 'bookclaw'..."
+sudo hostnamectl set-hostname bookclaw 2>/dev/null || true
+echo "  Hostname set to 'bookclaw'"
 
 echo ""
 echo "  ======================================="
@@ -63,15 +63,15 @@ echo "  VM base setup complete!"
 echo ""
 echo "  Next steps:"
 echo "  1. Copy files from shared folder:"
-echo "     cp -r /media/sf_authorclaw-transfer/authorclaw ~/authorclaw"
-echo "     cp -r /media/sf_authorclaw-transfer/author-os ~/author-os"
+echo "     cp -r /media/sf_bookclaw-transfer/bookclaw ~/bookclaw"
+echo "     cp -r /media/sf_bookclaw-transfer/author-os ~/author-os"
 echo ""
-echo "  2. Install deps and start AuthorClaw:"
-echo "     cd ~/authorclaw && npm install"
+echo "  2. Install deps and start BookClaw:"
+echo "     cd ~/bookclaw && npm install"
 echo "     npx tsx gateway/src/index.ts &"
 echo ""
 echo "  3. Or use the quick deploy script:"
-echo "     bash /media/sf_authorclaw-transfer/run.sh"
+echo "     bash /media/sf_bookclaw-transfer/run.sh"
 echo ""
 echo "  4. Open dashboard: http://localhost:3847"
 echo "  ======================================="

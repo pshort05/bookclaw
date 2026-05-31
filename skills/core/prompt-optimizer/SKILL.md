@@ -18,7 +18,7 @@ permissions:
 
 # Prompt Optimizer — Core Skill
 
-AuthorClaw's prompts are its most important tool. This skill continuously optimizes them based on what actually produces good results — not guesswork, but measured outcomes.
+BookClaw's prompts are its most important tool. This skill continuously optimizes them based on what actually produces good results — not guesswork, but measured outcomes.
 
 ## The Problem
 

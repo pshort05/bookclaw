@@ -1,5 +1,5 @@
 /**
- * AuthorClaw AI Router
+ * BookClaw AI Router
  * Smart routing across free and paid LLM providers
  * Optimized for writing tasks
  */
@@ -691,11 +691,11 @@ export class AIRouter {
       'Authorization': `Bearer ${apiKey}`,
     };
     // OpenRouter recommends (but doesn't require) HTTP-Referer + X-Title
-    // headers for ranking on their leaderboard. Since AuthorClaw is local-only,
+    // headers for ranking on their leaderboard. Since BookClaw is local-only,
     // we send a stable referrer string. Harmless for other providers.
     if (provider.id === 'openrouter') {
-      headers['HTTP-Referer'] = 'https://github.com/Ckokoski/authorclaw';
-      headers['X-Title'] = 'AuthorClaw';
+      headers['HTTP-Referer'] = 'https://github.com/Ckokoski/bookclaw';
+      headers['X-Title'] = 'BookClaw';
     }
 
     const response = await fetch(endpoint, {

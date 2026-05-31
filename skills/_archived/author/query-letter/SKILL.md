@@ -1,7 +1,7 @@
 ---
 name: query-letter
 description: Craft compelling query letters and track submissions to literary agents
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "query letter"

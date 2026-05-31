@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Rapid-Release Calendar
+ * BookClaw Rapid-Release Calendar
  *
  * Per-title schedule of key release milestones with iCal/ICS export.
  * Works alongside the Launch Orchestrator: the Orchestrator generates the
@@ -131,7 +131,7 @@ export class ReleaseCalendarService {
   /**
    * Export all events (or a filtered subset) as a valid iCalendar .ics string.
    * Import this into Google Calendar / Apple Calendar / Outlook to get
-   * anti-miss reminders outside of AuthorClaw itself.
+   * anti-miss reminders outside of BookClaw itself.
    */
   exportICS(filter?: { projectId?: string; from?: string; to?: string }): string {
     const events = this.list(filter);
@@ -140,7 +140,7 @@ export class ReleaseCalendarService {
     const lines: string[] = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//AuthorClaw//ReleaseCalendar//EN',
+      'PRODID:-//BookClaw//ReleaseCalendar//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
     ];
@@ -151,7 +151,7 @@ export class ReleaseCalendarService {
       const dateOnly = dt.substring(0, 8);
       lines.push(
         'BEGIN:VEVENT',
-        `UID:${e.id}@authorclaw.local`,
+        `UID:${e.id}@bookclaw.local`,
         `DTSTAMP:${now}`,
         `DTSTART;VALUE=DATE:${dateOnly}`,
         `DTEND;VALUE=DATE:${dateOnly}`,

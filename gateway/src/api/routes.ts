@@ -1,5 +1,5 @@
 /**
- * AuthorClaw API Routes
+ * BookClaw API Routes
  * REST API for the dashboard and external integrations
  */
 
@@ -7,7 +7,7 @@
 // source-IP allowlist) wired in gateway/src/index.ts — see the auth middleware
 // there. The server bind defaults to 0.0.0.0 (LAN/Docker), NOT loopback, so
 // do not assume localhost is a trust boundary. Auth can be disabled explicitly
-// via AUTHORCLAW_AUTH_DISABLED=1 (loud startup warning).
+// via BOOKCLAW_AUTH_DISABLED=1 (loud startup warning).
 
 import { Application, Request, Response } from 'express';
 import multer from 'multer';
@@ -32,7 +32,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
     res.json({
       status: 'ok',
       version: '4.0.0',
-      name: 'AuthorClaw',
+      name: 'BookClaw',
       brand: 'Writing Secrets',
       uptime: process.uptime(),
       links: {
@@ -289,8 +289,8 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
 
     // Check common shared folder locations (VM, Docker, or user-set env var)
     const candidates = [
-      process.env.AUTHORCLAW_KEYS_DIR,
-      '/media/sf_authorclaw-transfer',
+      process.env.BOOKCLAW_KEYS_DIR,
+      '/media/sf_bookclaw-transfer',
       '/media/sf_vm-transfer',
       j(baseDir, '..', 'vm-transfer'),
     ].filter(Boolean) as string[];
@@ -1283,7 +1283,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
 
               const docxBuffer = await generateDocxBuffer({
                 title: currentProject.title,
-                author: 'AuthorClaw',
+                author: 'BookClaw',
                 content: manuscriptMd,
               });
               await writeFile(join(projectDir, 'manuscript.docx'), docxBuffer);
@@ -2148,7 +2148,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
       // Get persona info for metadata
       const personaId = (project as any).personaId;
       const persona = personaId ? services.personas?.get(personaId) : null;
-      const authorName = persona?.penName || 'AuthorClaw';
+      const authorName = persona?.penName || 'BookClaw';
 
       const exportFiles = [`${outputBaseName}.md`];
 
@@ -2519,7 +2519,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
 
     const content = await rf(resolvedInput, 'utf-8');
     const docTitle = title || bn(resolvedInput, '.md');
-    const docAuthor = author || 'AuthorClaw';
+    const docAuthor = author || 'BookClaw';
     const requestedFormats = formats || ['docx'];
     const results: string[] = [];
 
@@ -2598,7 +2598,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
     }
 
     const targetCategory = category || 'author';
-    const ingestPrompt = `You are analyzing source code to create an AuthorClaw SKILL.md file.
+    const ingestPrompt = `You are analyzing source code to create an BookClaw SKILL.md file.
 
 Tool name hint: ${toolName || '(infer from code)'}
 Target category: ${targetCategory}
@@ -2608,7 +2608,7 @@ Analyze the following source code and generate a complete SKILL.md file with:
 2. Detailed usage instructions
 3. Input/output documentation
 4. Example commands or workflows
-5. How AuthorClaw should invoke or reference the tool
+5. How BookClaw should invoke or reference the tool
 
 Return ONLY the complete SKILL.md content (starting with ---).
 
@@ -2621,7 +2621,7 @@ ${sourceCode.substring(0, 15000)}
       const provider = services.aiRouter.selectProvider('general');
       const result = await services.aiRouter.complete({
         provider: provider.id,
-        system: 'You are a technical documentation expert. Generate AuthorClaw SKILL.md files from source code analysis.',
+        system: 'You are a technical documentation expert. Generate BookClaw SKILL.md files from source code analysis.',
         messages: [{ role: 'user', content: ingestPrompt }],
         maxTokens: 4096,
         temperature: 0.3,
@@ -2916,7 +2916,7 @@ ${sourceCode.substring(0, 15000)}
     try {
       const result = await imageGen.generateBookCover({
         title: title || 'Untitled',
-        author: author || 'AuthorClaw',
+        author: author || 'BookClaw',
         genre: genre || 'fiction',
         description,
         style,
@@ -2948,7 +2948,7 @@ ${sourceCode.substring(0, 15000)}
     try {
       const result = await imageGen.generateCoverSet({
         title: req.body.title || 'Untitled',
-        author: req.body.author || 'AuthorClaw',
+        author: req.body.author || 'BookClaw',
         genre: req.body.genre || 'fiction',
         description: req.body.description,
         style: req.body.style,
@@ -2984,7 +2984,7 @@ ${sourceCode.substring(0, 15000)}
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
     // Resolve author name from linked persona if present.
-    let authorName = 'AuthorClaw';
+    let authorName = 'BookClaw';
     if ((project as any).personaId && services.personas) {
       const persona = services.personas.get?.((project as any).personaId);
       if (persona?.penName) authorName = persona.penName;
@@ -4279,7 +4279,7 @@ ${sourceCode.substring(0, 15000)}
 
   // Universal disclaimer returned with every Wave 3 response header.
   const addWaveDisclaimer = (res: Response) => {
-    res.setHeader('X-AuthorClaw-Disclaimer', 'Wave 3 actions create confirmation requests but do not execute irreversible actions autonomously. You are responsible for every approved action. See SECURITY.md.');
+    res.setHeader('X-BookClaw-Disclaimer', 'Wave 3 actions create confirmation requests but do not execute irreversible actions autonomously. You are responsible for every approved action. See SECURITY.md.');
   };
 
   // ── Confirmation Gate ──
@@ -4853,7 +4853,7 @@ ${sourceCode.substring(0, 15000)}
 
   // ─── Browser Doctor ───
   // Read-only probe inspired by OpenClaw's `browser doctor` command. Reports
-  // whether AuthorClaw can plan browser actions for each major author platform.
+  // whether BookClaw can plan browser actions for each major author platform.
   // Does NOT navigate or click anything — purely descriptive.
   app.get('/api/browser/doctor', (_req: Request, res: Response) => {
     const planners = {
@@ -4861,7 +4861,7 @@ ${sourceCode.substring(0, 15000)}
         planner: !!services.launchOrchestrator,
         description: 'Amazon KDP — pre-order setup, launch-day publish, price pulse',
         confirmationGated: true,
-        notes: 'KDP automation requires a Claude-in-Chrome MCP session in the user\'s authenticated browser. AuthorClaw produces the plan; the MCP executes after explicit approval.',
+        notes: 'KDP automation requires a Claude-in-Chrome MCP session in the user\'s authenticated browser. BookClaw produces the plan; the MCP executes after explicit approval.',
       },
       amsAds: {
         planner: !!services.amsAds,
@@ -4873,7 +4873,7 @@ ${sourceCode.substring(0, 15000)}
         planner: !!services.bookbub,
         description: 'BookBub Featured Deal — submission draft + rationale',
         confirmationGated: true,
-        notes: 'AuthorClaw never fabricates editorial review quotes. Review snippets must be flagged as verified before submission.',
+        notes: 'BookClaw never fabricates editorial review quotes. Review snippets must be flagged as verified before submission.',
       },
       website: {
         planner: !!services.websiteBuilder,
@@ -4892,7 +4892,7 @@ ${sourceCode.substring(0, 15000)}
     const ready = all.filter(p => p.planner).length;
     res.json({
       version: 'browser-doctor/v1',
-      summary: `${ready} of ${all.length} planners ready. AuthorClaw is planner-first; an external browser MCP (e.g., Claude in Chrome) executes approved actions.`,
+      summary: `${ready} of ${all.length} planners ready. BookClaw is planner-first; an external browser MCP (e.g., Claude in Chrome) executes approved actions.`,
       planners,
       gateStatus: services.confirmationGate
         ? `Confirmation gate active. ${services.confirmationGate.list({ status: 'pending' }).length} pending request(s).`
@@ -4900,7 +4900,7 @@ ${sourceCode.substring(0, 15000)}
       executor: {
         kind: 'external-mcp',
         recommended: 'Claude in Chrome',
-        details: 'AuthorClaw does not bundle a browser driver. Connect Claude-in-Chrome MCP (or your preferred browser-automation MCP) and it will pick up approved confirmations.',
+        details: 'BookClaw does not bundle a browser driver. Connect Claude-in-Chrome MCP (or your preferred browser-automation MCP) and it will pick up approved confirmations.',
       },
       safetyRails: [
         'Every irreversible action passes through ConfirmationGateService',
@@ -5168,7 +5168,7 @@ ${sourceCode.substring(0, 15000)}
       to: req.query.to as any,
     });
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="authorclaw-calendar.ics"');
+    res.setHeader('Content-Disposition', 'attachment; filename="bookclaw-calendar.ics"');
     res.send(ics);
   });
 

@@ -1,6 +1,6 @@
 ---
 name: skill-acquisition
-description: Research topics and create new skills for AuthorClaw to learn
+description: Research topics and create new skills for BookClaw to learn
 triggers:
   - learn how to
   - add a skill for
@@ -18,7 +18,7 @@ permissions:
 
 # Skill Acquisition
 
-AuthorClaw's self-learning module. Research topics, draft new SKILL.md files,
+BookClaw's self-learning module. Research topics, draft new SKILL.md files,
 and present them for user review before saving.
 
 ## Workflow

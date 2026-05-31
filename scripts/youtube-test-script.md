@@ -1,4 +1,4 @@
-# AuthorClaw v2.0.0 — YouTube Demo Testing Script
+# BookClaw v2.0.0 — YouTube Demo Testing Script
 
 Fast-paced testing sequence. Each test should take 30-60 seconds.
 Total demo time: ~15-20 minutes.
@@ -9,7 +9,7 @@ Total demo time: ~15-20 minutes.
 
 1. **VM running** — SSH into VM: `ssh user@localhost -p 2222`
 2. **Copy latest code**: `.\scripts\copy-to-vm.ps1` (on Windows)
-3. **Deploy on VM**: `bash /media/sf_authorclaw-transfer/run.sh`
+3. **Deploy on VM**: `bash /media/sf_bookclaw-transfer/run.sh`
 4. **Verify health**: `curl http://localhost:3847/api/health` → `{"status":"ok"}`
 5. **Telegram bot** — Ensure token + allowed users configured in dashboard Settings
 6. **API key** — Ensure Gemini or other AI key is stored in vault
@@ -26,7 +26,7 @@ Total demo time: ~15-20 minutes.
 
 ### 2. Chat Test (1 min)
 - Type: `Hello, who are you?`
-- Show the AI responds with AuthorClaw personality
+- Show the AI responds with BookClaw personality
 - Type: `What skills do you have?`
 - Show skill list
 

@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Confirmation Gate
+ * BookClaw Confirmation Gate
  *
  * Universal safety rail. EVERY irreversible action in Wave 3 (publish, send,
  * submit, purchase, bid change, delete, upload-to-store) must create a

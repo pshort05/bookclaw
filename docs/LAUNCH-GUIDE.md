@@ -1,12 +1,12 @@
-# AuthorClaw Launch Guide
+# BookClaw Launch Guide
 
-Quick reference for starting, stopping, and managing AuthorClaw.
+Quick reference for starting, stopping, and managing BookClaw.
 
 ---
 
 ## Windows — via Docker Desktop or WSL2
 
-AuthorClaw v5+ does not ship a supported Windows-direct install. Windows users should run AuthorClaw through Docker Desktop or under WSL2; both flows reuse the steps in the **VPS / Remote Server (Docker)** section below.
+BookClaw v5+ does not ship a supported Windows-direct install. Windows users should run BookClaw through Docker Desktop or under WSL2; both flows reuse the steps in the **VPS / Remote Server (Docker)** section below.
 
 - **Docker Desktop:** install Docker Desktop for Windows, clone the repo in PowerShell or Git Bash, then follow the **Start with Docker** subsection below. The dashboard is reachable at `http://localhost:3847` from the Windows host.
 - **WSL2 (Ubuntu / Debian):** open your WSL distro and follow the **First-time setup** + **Start without Docker** steps below as if it were a Linux box.
@@ -20,15 +20,15 @@ Direct `npm start` from a Windows command prompt or PowerShell is not a supporte
 ### First-time setup
 ```bash
 # 1. Clone the repo
-git clone https://github.com/Ckokoski/authorclaw.git
-cd authorclaw
+git clone https://github.com/Ckokoski/bookclaw.git
+cd bookclaw
 
 # 2. Install Node 22+ (if running without Docker)
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # 3. Create .env with your vault key
-echo "AUTHORCLAW_VAULT_KEY=your-64-char-hex-key-here" > .env
+echo "BOOKCLAW_VAULT_KEY=your-64-char-hex-key-here" > .env
 chmod 600 .env
 
 # 4. Install dependencies (if running without Docker)
@@ -56,7 +56,7 @@ npm start
 
 This fork binds to `0.0.0.0:3847` by default — the Docker image is reachable
 from any host on the same LAN, no tunnel required. The bind address is
-controlled by the `AUTHORCLAW_BIND` env var.
+controlled by the `BOOKCLAW_BIND` env var.
 
 **Trusted LAN (preferred for home / lab Docker deployment):**
 ```bash
@@ -64,7 +64,7 @@ controlled by the `AUTHORCLAW_BIND` env var.
 http://<docker-host-ip>:3847
 
 # Explicit (already the default in docker/docker-compose.yml):
-AUTHORCLAW_BIND=0.0.0.0 npm start
+BOOKCLAW_BIND=0.0.0.0 npm start
 ```
 There is no built-in HTTP/WebSocket authentication. Only do this on a
 trusted single-user LAN.
@@ -73,7 +73,7 @@ trusted single-user LAN.
 through a tunnel or an authenticating reverse proxy.
 ```bash
 # 1. Restrict the bind:
-AUTHORCLAW_BIND=127.0.0.1 npm start   # or set in docker-compose.yml
+BOOKCLAW_BIND=127.0.0.1 npm start   # or set in docker-compose.yml
 
 # 2a. SSH tunnel from your PC:
 ssh -L 3847:localhost:3847 user@your-vps-ip
@@ -146,7 +146,7 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 
 | Service | Port | Binding |
 |---|---|---|
-| AuthorClaw | 3847 | configurable via `AUTHORCLAW_BIND` (default `0.0.0.0`; set `127.0.0.1` for loopback-only) |
+| BookClaw | 3847 | configurable via `BOOKCLAW_BIND` (default `0.0.0.0`; set `127.0.0.1` for loopback-only) |
 | Ollama (if installed) | 11434 | localhost only |
 
 ## Security Checklist
@@ -156,5 +156,5 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 - [ ] No API keys in plain text files
 - [ ] Telegram bot token only in vault
 - [ ] `.gitignore` covers `.env`, `vault.enc`, `user.json`, `workspace/`
-- [ ] Bind address is appropriate for the environment: `AUTHORCLAW_BIND=0.0.0.0` (default) only on a trusted LAN; `AUTHORCLAW_BIND=127.0.0.1` for loopback-only when fronted by a tunnel or auth proxy
+- [ ] Bind address is appropriate for the environment: `BOOKCLAW_BIND=0.0.0.0` (default) only on a trusted LAN; `BOOKCLAW_BIND=127.0.0.1` for loopback-only when fronted by a tunnel or auth proxy
 - [ ] SSH tunnel or auth-enforcing reverse proxy (Caddy / Nginx / Traefik) in front of any non-trusted-LAN deployment

@@ -1,7 +1,7 @@
 ---
 name: market-research
 description: Analyze comp titles, genre trends, pricing strategies, and market positioning
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "market research"

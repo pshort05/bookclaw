@@ -128,7 +128,7 @@ Time saved:       ~45 minutes
 
 ## Workflow Integration
 
-Works seamlessly with other AuthorClaw skills:
+Works seamlessly with other BookClaw skills:
 - **Ghostwriter Pro** — Clean dictation → Deep Write polish
 - **Book Bible** — Auto-check character names and locations after cleanup
 - **Voice Profile** — Cleanup adapts to your established voice markers

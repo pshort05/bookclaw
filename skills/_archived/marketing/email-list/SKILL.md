@@ -1,7 +1,7 @@
 ---
 name: email-list
 description: Write email sequences for reader magnets, launches, and ongoing newsletters
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "email"

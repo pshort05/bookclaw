@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════
-# AuthorClaw - Prepare VirtualBox VM
+# BookClaw - Prepare VirtualBox VM
 # Run this on Windows BEFORE starting the VM
 # Resizes disk, increases RAM, renames VM
 #
@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $VBoxManage = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
 $VMName = "Moat Mini Sandbox"
-$NewVMName = "AuthorClaw"
+$NewVMName = "BookClaw"
 $VDIPath = Join-Path $env:USERPROFILE "VirtualBox VMs\$VMName\$VMName.vdi"
 
 # ── Check VBoxManage exists ──
@@ -28,7 +28,7 @@ if ($vmInfo -match 'VMState="running"') {
 }
 
 Write-Host ""
-Write-Host "  AuthorClaw - VM Preparation" -ForegroundColor Cyan
+Write-Host "  BookClaw - VM Preparation" -ForegroundColor Cyan
 Write-Host "  ======================================="
 Write-Host ""
 
@@ -54,27 +54,27 @@ Write-Host "  [3/5] Setting CPU count to 4..."
 & $VBoxManage modifyvm $VMName --cpus 4
 Write-Host "  OK: CPUs set to 4" -ForegroundColor Green
 
-# ── Step 4: Update shared folder to point to AuthorClaw transfer directory ──
+# ── Step 4: Update shared folder to point to BookClaw transfer directory ──
 Write-Host "  [4/5] Configuring shared folder..."
 $SharedPath = Join-Path (Split-Path $PSScriptRoot) "vm-transfer"
 
 # Remove old shared folders and add new one
 try { & $VBoxManage sharedfolder remove $VMName --name "moat-bot-mini" 2>$null } catch {}
-try { & $VBoxManage sharedfolder remove $VMName --name "authorclaw-transfer" 2>$null } catch {}
-& $VBoxManage sharedfolder add $VMName --name "authorclaw-transfer" --hostpath $SharedPath --automount
+try { & $VBoxManage sharedfolder remove $VMName --name "bookclaw-transfer" 2>$null } catch {}
+& $VBoxManage sharedfolder add $VMName --name "bookclaw-transfer" --hostpath $SharedPath --automount
 Write-Host "  OK: Shared folder configured at $SharedPath" -ForegroundColor Green
 
-# ── Step 5: Add port forwarding for AuthorClaw dashboard ──
+# ── Step 5: Add port forwarding for BookClaw dashboard ──
 Write-Host "  [5/5] Adding port forwarding (host:3847 -> guest:3847)..."
 try {
-    & $VBoxManage modifyvm $VMName --natpf1 delete "authorclaw" 2>$null
+    & $VBoxManage modifyvm $VMName --natpf1 delete "bookclaw" 2>$null
 } catch {}
-& $VBoxManage modifyvm $VMName --natpf1 "authorclaw,tcp,,3847,,3847"
+& $VBoxManage modifyvm $VMName --natpf1 "bookclaw,tcp,,3847,,3847"
 Write-Host "  OK: Port 3847 forwarded (access dashboard from Windows)" -ForegroundColor Green
 
 # ── Rename VM (optional - do this last) ──
 Write-Host ""
-Write-Host "  To rename the VM to 'AuthorClaw', run:" -ForegroundColor Yellow
+Write-Host "  To rename the VM to 'BookClaw', run:" -ForegroundColor Yellow
 Write-Host "    & '$VBoxManage' modifyvm '$VMName' --name '$NewVMName'" -ForegroundColor Yellow
 Write-Host "  (Not done automatically to avoid path confusion)" -ForegroundColor Yellow
 
@@ -86,9 +86,9 @@ Write-Host "  After starting the VM:" -ForegroundColor White
 Write-Host "  1. Expand the disk partition inside Ubuntu:" -ForegroundColor White
 Write-Host "     sudo growpart /dev/sda 2 && sudo resize2fs /dev/sda2" -ForegroundColor White
 Write-Host "  2. Copy files from shared folder:" -ForegroundColor White
-Write-Host "     cp -r /media/sf_authorclaw-transfer/authorclaw ~/authorclaw" -ForegroundColor White
-Write-Host "     cp -r /media/sf_authorclaw-transfer/author-os ~/author-os" -ForegroundColor White
-Write-Host "  3. Run setup: ~/authorclaw/scripts/vm-setup.sh" -ForegroundColor White
-Write-Host "  4. Log out/in, then deploy: ~/authorclaw/scripts/deploy.sh" -ForegroundColor White
+Write-Host "     cp -r /media/sf_bookclaw-transfer/bookclaw ~/bookclaw" -ForegroundColor White
+Write-Host "     cp -r /media/sf_bookclaw-transfer/author-os ~/author-os" -ForegroundColor White
+Write-Host "  3. Run setup: ~/bookclaw/scripts/vm-setup.sh" -ForegroundColor White
+Write-Host "  4. Log out/in, then deploy: ~/bookclaw/scripts/deploy.sh" -ForegroundColor White
 Write-Host "  =======================================" -ForegroundColor Cyan
 Write-Host ""

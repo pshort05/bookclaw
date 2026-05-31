@@ -1,7 +1,7 @@
 ---
 name: social-media
 description: Create engaging social media content for book promotion across platforms
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "social media"

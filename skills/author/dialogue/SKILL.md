@@ -1,7 +1,7 @@
 ---
 name: dialogue
 description: Craft authentic dialogue with distinct character voices and subtext
-author: AuthorClaw
+author: BookClaw
 version: 1.0.0
 triggers:
   - "dialogue"

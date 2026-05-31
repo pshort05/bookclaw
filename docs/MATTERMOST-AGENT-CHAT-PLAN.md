@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-31
 **Status:** Design approved, not yet implemented (no code/infra changed yet)
-**Goal:** A self-hosted, Telegram-like chat **UI on neptune** where a human can watch and join the **AuthorClaw ⇄ OpenClaw** conversation.
+**Goal:** A self-hosted, Telegram-like chat **UI on neptune** where a human can watch and join the **BookClaw ⇄ OpenClaw** conversation.
 
 ---
 
@@ -36,14 +36,14 @@ There is **no fully self-hostable Telegram server** — Telegram's server softwa
 
 The two agents are NOT equally easy to extend:
 
-- **AuthorClaw** runs **from source** (`/home/paul/data/dev/authorclaw`, launched via `tsx`). It has a clean bridge seam and a `discord.ts` stub showing exactly where a new bridge slots in. **Adding a Mattermost bridge here is genuinely light.**
+- **BookClaw** runs **from source** (`/home/paul/data/dev/bookclaw`, launched via `tsx`). It has a clean bridge seam and a `discord.ts` stub showing exactly where a new bridge slots in. **Adding a Mattermost bridge here is genuinely light.**
 - **OpenClaw** runs as a **packaged npm app from compiled `dist/`** inside a container (`@openclaw/openclaw`, gateway on 18789–18790). Its channels use a plugin-SDK "channel contract," but it is **not our source to freely edit**. So OpenClaw glue needs a **spike** to choose between a loadable extension vs. a sidecar bridge.
 
 ---
 
 ## Integration seams (from code exploration)
 
-### AuthorClaw (Node 22 / TypeScript, `tsx`, port 3847)
+### BookClaw (Node 22 / TypeScript, `tsx`, port 3847)
 
 - **Bridge dir:** `gateway/src/bridges/` — `telegram.ts` (working reference), `discord.ts` (empty stub).
 - **Inbound seam:** the gateway registers a handler at `index.ts:991–992`:
@@ -64,7 +64,7 @@ The two agents are NOT equally easy to extend:
 - **Plugin architecture:** `extensions/telegram/src/` — ingress resolver (`ingress.ts`), outbound (`send.ts` → `sendMessageTelegram`), message adapter glue (`channel.ts` via `createTelegramOutboundAdapter` / `createChannelMessageAdapterFromOutbound`).
 - **Channel contract (SDK):** ingress resolver + outbound adapter + message adapter, registered via `createChatChannelPlugin()`.
 - **Secrets:** env-based (`TELEGRAM_BOT_TOKEN`), resolved by `resolveTelegramToken()`; config in `openclaw.json` (`channels.*`). No runtime vault in production — tokens are env vars / mounted files.
-- **Constraint:** source is shipped inside the container as compiled `dist/`. Editing it in-place is not as clean as AuthorClaw. Hence the spike.
+- **Constraint:** source is shipped inside the container as compiled `dist/`. Editing it in-place is not as clean as BookClaw. Hence the spike.
 
 ---
 
@@ -75,18 +75,18 @@ The two agents are NOT equally easy to extend:
 - **Stack:** `mattermost/mattermost-team-edition` container + dedicated `postgres` container via `docker-compose.yml`, following existing appdata conventions (data under `/opt/appdata/mattermost/...` — **verify exact path against disk before writing**).
 - **Footprint:** idle ~200–300 MB RAM + light Postgres. No GPU, negligible CPU.
 - **Network:** LAN-only, bind neptune LAN IP : **8065**. No public exposure. UFW rule scoped to the LAN subnet only (mirror `TELEGRAM-SETUP.md` firewall guidance).
-- **Inside Mattermost:** one team `agents`; channels `#authorclaw`, `#openclaw`, `#agent-chatter`, `#alerts`; two bot accounts `authorclaw-bot`, `openclaw-bot`, each with a personal access token.
+- **Inside Mattermost:** one team `agents`; channels `#bookclaw`, `#openclaw`, `#agent-chatter`, `#alerts`; two bot accounts `bookclaw-bot`, `openclaw-bot`, each with a personal access token.
 - **Usable immediately** after this step — you can chat in it before any agent is wired.
 
-### Section 2 — AuthorClaw adapter (low risk)
+### Section 2 — BookClaw adapter (low risk)
 
 - New `gateway/src/bridges/mattermost.ts`, mirroring `telegram.ts`:
   - **Inbound:** Mattermost **WebSocket** (`/api/v4/websocket`) for real-time events (no polling). On a `posted` event in a watched channel, call the registered `messageHandler(content, "mattermost:<channel-id>", respond)`.
-  - **Outbound:** `respond(text)` → `POST /api/v4/posts` as `authorclaw-bot` (chunk long messages; Markdown supported natively).
+  - **Outbound:** `respond(text)` → `POST /api/v4/posts` as `bookclaw-bot` (chunk long messages; Markdown supported natively).
   - **Auth/identity:** ignore posts authored by bot accounts by default (foundation for the agent-to-agent flag).
 - **Config:** `bridges.mattermost` in `config/default.json`. **Token** in vault as `mattermost_bot_token`.
 - **Wiring:** `index.ts` Phase 8, next to Telegram.
-- **Verify:** message in `#authorclaw` → bot replies; round-trip confirmed.
+- **Verify:** message in `#bookclaw` → bot replies; round-trip confirmed.
 
 ### Section 3 — OpenClaw adapter (spike first)
 
@@ -107,7 +107,7 @@ The two agents are NOT equally easy to extend:
 ## Build order (interruption-resilient)
 
 1. **Mattermost + Postgres** up; team/channels/bots created; LAN access verified. *(Usable immediately.)*
-2. **AuthorClaw bridge** → verify round-trip in `#authorclaw`.
+2. **BookClaw bridge** → verify round-trip in `#bookclaw`.
 3. **OpenClaw spike** → implement chosen path → verify round-trip in `#openclaw`.
 4. **Agent-to-agent** flag + loop-guard scaffolded, left **off**.
 

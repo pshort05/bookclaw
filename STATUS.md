@@ -1,10 +1,10 @@
-# AuthorClaw — Session Status
+# BookClaw — Session Status
 
 _Last updated: 2026-05-30_
 
 ## What this is
 
-A handoff file for resuming work on AuthorClaw between sessions. Source of truth for *where we are*; the memory entry under `/home/paul/.claude/projects/-home-paul-data-dev-authorclaw/memory/` points here.
+A handoff file for resuming work on BookClaw between sessions. Source of truth for *where we are*; the memory entry under `/home/paul/.claude/projects/-home-paul-data-dev-bookclaw/memory/` points here.
 
 The actual feature backlog lives in [`docs/TODO.md`](docs/TODO.md) and [`docs/COMPLETED.md`](docs/COMPLETED.md) — this file only tracks the *current in-flight task*.
 
@@ -12,7 +12,7 @@ The actual feature backlog lives in [`docs/TODO.md`](docs/TODO.md) and [`docs/CO
 
 1. Read this file.
 2. Read [`docs/TODO.md`](docs/TODO.md) and [`docs/COMPLETED.md`](docs/COMPLETED.md) to confirm state.
-3. Security review **6 items DONE** (2026-05-30): auth, CORS, source-IP allowlist (`AUTHORCLAW_ALLOWED_IPS`), Helmet CSP, the confirmation-gate "local requester" audit, and the hardcoded-`127.0.0.1`/`localhost` re-audit — see [`docs/COMPLETED.md`](docs/COMPLETED.md). **Two items investigated then deferred** (2026-05-30): API-level rate limiting, and audit logging (source IP + native Linux log manager) — designs captured in `docs/TODO.md`, implementations parked at the user's direction.
+3. Security review **6 items DONE** (2026-05-30): auth, CORS, source-IP allowlist (`BOOKCLAW_ALLOWED_IPS`), Helmet CSP, the confirmation-gate "local requester" audit, and the hardcoded-`127.0.0.1`/`localhost` re-audit — see [`docs/COMPLETED.md`](docs/COMPLETED.md). **Two items investigated then deferred** (2026-05-30): API-level rate limiting, and audit logging (source IP + native Linux log manager) — designs captured in `docs/TODO.md`, implementations parked at the user's direction.
 4. **No item is currently in-flight.** Remaining actionable items (user to pick): **outbound egress posture** and **vault key on a multi-host Docker volume** — both audits. The token-readable-from-dashboard finding is **accepted** for the home-LAN threat model (no work unless the deployment posture changes). Resume any item via the investigate → present options → implement pattern.
 
 ## Current phase
@@ -28,24 +28,24 @@ The actual feature backlog lives in [`docs/TODO.md`](docs/TODO.md) and [`docs/CO
 | New TODO entries added | ✅ done | Multi-book mgmt, Mercury Docker deploy, Playwright e2e |
 | Initial commit | ✅ done | `e531952 — v5.0.0 fork bump, feature-tracking workflow, doc and dep cleanup` |
 | **Security review item #1 — auth** | ✅ **done (2026-05-30)** | Bearer token; implemented + smoke-tested. See `docs/COMPLETED.md` |
-| **Security review item #2 — CORS** | ✅ **done (2026-05-30)** | Deny-by-default + `AUTHORCLAW_CORS_ORIGINS` allowlist + logged `*` escape hatch; smoke-tested (Phase 3) |
-| **Source-IP allowlist (`AUTHORCLAW_ALLOWED_IPS`)** | ✅ **done (2026-05-30)** | Unset=allow-all + notice; loopback always allowed; opt-in `AUTHORCLAW_TRUST_PROXY`; `ipaddr.js` CIDR matching; gate in front of auth; smoke-tested (Phase 4) |
+| **Security review item #2 — CORS** | ✅ **done (2026-05-30)** | Deny-by-default + `BOOKCLAW_CORS_ORIGINS` allowlist + logged `*` escape hatch; smoke-tested (Phase 3) |
+| **Source-IP allowlist (`BOOKCLAW_ALLOWED_IPS`)** | ✅ **done (2026-05-30)** | Unset=allow-all + notice; loopback always allowed; opt-in `BOOKCLAW_TRUST_PROXY`; `ipaddr.js` CIDR matching; gate in front of auth; smoke-tested (Phase 4) |
 | **Helmet CSP** | ✅ **done (2026-05-30)** | `connectSrc: ["'self'"]` (dashboard is same-origin only); `upgradeInsecureRequests` kept off (HTTP-on-LAN); smoke-tested (Phase 1, +2 checks → 18) |
 | **Confirmation-gate "local requester" audit** | ✅ **done (2026-05-30)** | No active vuln (gate never trusts IP/loopback; approval only via auth-gated `/api/*`, no bridge/WS path). Fixed one stale docstring asserting the old `127.0.0.1`-bind protection. See `docs/COMPLETED.md` |
 | **Hardcoded `127.0.0.1`/`localhost` re-audit** | ✅ **done (2026-05-30)** | Fixed 2 findings: stale "unauthenticated/localhost is acceptable" comment in `routes.ts`; **Telegram bridge self-calls to `/api/*` sent no token → 401 under auth (functional regression from item #1)** — added `apiHeaders()` token injection to all 6 + the `index.ts` /export self-call. tsc clean; 18 smoke checks pass. See `docs/COMPLETED.md` |
 | **Audit logging (source IP + native Linux log manager)** | ⏸️ **deferred (2026-05-30)** | Design captured. Docker has no in-container journald/syslog → stdout-to-platform-driver is the cross-env mechanism; add as a 2nd sink beside the hash-chained JSONL; off-switch on the native sink. See `docs/TODO.md` |
 | **API-level rate limiting** | ⏸️ **deferred (2026-05-30)** | Design settled (auth-aware + exempt trusted IPs; won't throttle MCP), implementation parked. Chat path already limited 30/min/channel via `permissions.ts` (inherited from OpenClaw); gap is REST `/api/*`. OpenClaw has no `/api/*` limiting. See `docs/TODO.md` |
 | Security review remaining (actionable) items: egress, vault volume | ⬜ pending | User to pick next. See `docs/TODO.md` "Full security review" section |
-| Security review accepted (no work): token-readable-from-dashboard | ✅ accepted | Within home-LAN threat model; close via `AUTHORCLAW_ALLOWED_IPS`/firewall if posture changes |
+| Security review accepted (no work): token-readable-from-dashboard | ✅ accepted | Within home-LAN threat model; close via `BOOKCLAW_ALLOWED_IPS`/firewall if posture changes |
 | Pending plans, Larger items | ⬜ pending | See `docs/TODO.md` |
 
 ## Open questions (security item #1) — ANSWERED 2026-05-30
 
 All four resolved by the user; all matched the prior leans.
 
-1. **Missing-token startup behavior:** ✅ **auto-generate-and-persist to `.env`** (matches the existing `AUTHORCLAW_VAULT_KEY` pattern, zero-config).
-2. **No-auth escape hatch:** ✅ **include `AUTHORCLAW_AUTH_DISABLED=1`** with a loud startup warning.
-3. **Token storage:** ✅ **plain `AUTHORCLAW_AUTH_TOKEN` in `.env`** alongside `AUTHORCLAW_VAULT_KEY` (dashboard injection needs plaintext at request time).
+1. **Missing-token startup behavior:** ✅ **auto-generate-and-persist to `.env`** (matches the existing `BOOKCLAW_VAULT_KEY` pattern, zero-config).
+2. **No-auth escape hatch:** ✅ **include `BOOKCLAW_AUTH_DISABLED=1`** with a loud startup warning.
+3. **Token storage:** ✅ **plain `BOOKCLAW_AUTH_TOKEN` in `.env`** alongside `BOOKCLAW_VAULT_KEY` (dashboard injection needs plaintext at request time).
 4. **Telegram/Discord bridges:** ✅ **leave them alone** (they have their own platform auth).
 
 Item #1 is now fully unblocked — implement per **What still ought to happen** below.
@@ -65,8 +65,8 @@ Item #1 is now fully unblocked — implement per **What still ought to happen** 
 
 Bearer-token auth implemented and smoke-tested. Full implementation + verification notes in [`docs/COMPLETED.md`](docs/COMPLETED.md). Key facts for follow-on items:
 
-- Token lives in `.env` as `AUTHORCLAW_AUTH_TOKEN` (auto-generated on first start). `.env` is gitignored; the smoke test's generated token was removed on cleanup — it regenerates on the next real `npm start`.
-- Gate is on `this.authToken` (`gateway/src/index.ts`): `null` = disabled (`AUTHORCLAW_AUTH_DISABLED=1`), string = enforced. Express middleware (constructor) and `io.use()` (`setupWebSocket`) both read it.
+- Token lives in `.env` as `BOOKCLAW_AUTH_TOKEN` (auto-generated on first start). `.env` is gitignored; the smoke test's generated token was removed on cleanup — it regenerates on the next real `npm start`.
+- Gate is on `this.authToken` (`gateway/src/index.ts`): `null` = disabled (`BOOKCLAW_AUTH_DISABLED=1`), string = enforced. Express middleware (constructor) and `io.use()` (`setupWebSocket`) both read it.
 - Native-element GETs (img/href/Audio in the dashboard) authenticate via `?token=` query fallback, not the header.
 - **Repeatable verification:** `npm run test:smoke` (`tests/smoke-test.sh`) boots the gateway and asserts auth, CORS, **and the source-IP allowlist** (16 checks across 4 phases). Re-run it after any change to auth, CORS, the IP gate, the dashboard fetch path, or startup. Per the `CLAUDE.md` `## Testing` directive, future security items should add their own assertions here rather than relying on manual curl runs.
 
@@ -74,7 +74,7 @@ Bearer-token auth implemented and smoke-tested. Full implementation + verificati
 
 CORS tightened. Full notes in [`docs/COMPLETED.md`](docs/COMPLETED.md). Key facts:
 
-- Shared `corsOptions` (one origin-callback) applied to both Express (`cors(corsOptions)`) and the Socket.IO server. Computed in the constructor from `AUTHORCLAW_CORS_ORIGINS`; posture stored in `this.corsSummary`/`this.corsWildcard` and logged in Phase 2c.
+- Shared `corsOptions` (one origin-callback) applied to both Express (`cors(corsOptions)`) and the Socket.IO server. Computed in the constructor from `BOOKCLAW_CORS_ORIGINS`; posture stored in `this.corsSummary`/`this.corsWildcard` and logged in Phase 2c.
 - Default (unset) = **deny cross-origin**; comma-separated list = override; literal `*` = permissive escape hatch (logged `⚠`). No-Origin requests (curl/MCP/same-origin) always allowed.
 - Smoke test Phase 1 asserts default-deny; Phase 3 asserts allowlist echo + unlisted-deny.
 
@@ -82,16 +82,16 @@ CORS tightened. Full notes in [`docs/COMPLETED.md`](docs/COMPLETED.md). Key fact
 
 Full notes in [`docs/COMPLETED.md`](docs/COMPLETED.md). Key facts for follow-on items:
 
-- Env: `AUTHORCLAW_ALLOWED_IPS` (comma-separated IPs/CIDRs; unset = allow all + `ℹ` notice; loopback always allowed when enforcing). `AUTHORCLAW_TRUST_PROXY=1` reads the client IP from `X-Forwarded-For` (off by default; spoofable unless behind a sole-ingress proxy).
+- Env: `BOOKCLAW_ALLOWED_IPS` (comma-separated IPs/CIDRs; unset = allow all + `ℹ` notice; loopback always allowed when enforcing). `BOOKCLAW_TRUST_PROXY=1` reads the client IP from `X-Forwarded-For` (off by default; spoofable unless behind a sole-ingress proxy).
 - `gateway/src/index.ts`: `this.allowedIps` (`ipaddr.js` `[addr, prefix]` tuples), `isIpAllowed()`, `socketClientIp()`. Express gate (403 + audit `ip_blocked`) and `io.use()` gate both sit **in front of** the auth gate. `ipaddr.js` is now a direct dep.
-- **Docker caveat (important):** default bridge + published port masks source IPs (container sees `172.x` for all external clients). For real per-IP enforcement use the host firewall / provider security group, or run host-net / behind a proxy with `AUTHORCLAW_TRUST_PROXY=1`. This is the most robust control for the VPS "only my home IP" case.
+- **Docker caveat (important):** default bridge + published port masks source IPs (container sees `172.x` for all external clients). For real per-IP enforcement use the host firewall / provider security group, or run host-net / behind a proxy with `BOOKCLAW_TRUST_PROXY=1`. This is the most robust control for the VPS "only my home IP" case.
 - Smoke test Phase 4 (trust-proxy on) asserts exact-IP allow, CIDR allow, unlisted → 403 (proving the gate precedes auth), loopback recovery, and the enforcement log.
 
 ## Helmet CSP — DONE (2026-05-30)
 
 Full notes in [`docs/COMPLETED.md`](docs/COMPLETED.md). Key facts:
 
-- `connectSrc: ["'self'"]` in the constructor `helmet({ contentSecurityPolicy: … })` block (`gateway/src/index.ts`). Investigation confirmed the dashboard is same-origin only (`var API = ''`), loads no external subresources, and opens no browser WebSocket — so `'self'` is exact, not a compromise. **CSP governs the browser dashboard only; MCP/server-to-server clients are unaffected by it** (relevant to the planned AuthorClaw MCP server — see TODO).
+- `connectSrc: ["'self'"]` in the constructor `helmet({ contentSecurityPolicy: … })` block (`gateway/src/index.ts`). Investigation confirmed the dashboard is same-origin only (`var API = ''`), loads no external subresources, and opens no browser WebSocket — so `'self'` is exact, not a compromise. **CSP governs the browser dashboard only; MCP/server-to-server clients are unaffected by it** (relevant to the planned BookClaw MCP server — see TODO).
 - `upgradeInsecureRequests: null` (off) kept deliberately — the server speaks plain HTTP on the LAN; flip to `{}` once an HTTPS/reverse-proxy deployment is recommended.
 - Smoke test Phase 1 (+2 checks, now 18): `connect-src` is exactly `'self'` and has no permissive `*`. New `rheader` helper reads arbitrary response headers.
 
@@ -112,7 +112,7 @@ Investigated and parked at the user's direction. Full context in `docs/TODO.md` 
 No item is in-flight. Both audit logging and rate limiting are deferred (designs captured). Two actionable security items remain, either resumable via investigate → present options → implement:
 
 1. **Outbound egress posture** — audit the server-side AI/research egress path (not CSP): which outbound hosts the AI router + `ResearchGate` reach, and whether anything constrains them.
-2. **Vault key on a multi-host Docker volume** — verify `vault.enc` perms survive volume mounts; document `AUTHORCLAW_VAULT_KEY` backup/restore (mostly operational/docs).
+2. **Vault key on a multi-host Docker volume** — verify `vault.enc` perms survive volume mounts; document `BOOKCLAW_VAULT_KEY` backup/restore (mostly operational/docs).
 
 Everything done this session is committed-message-ready in `commit_message` (working tree; user handles `git push`).
 
@@ -129,8 +129,8 @@ Everything done this session is committed-message-ready in `commit_message` (wor
 | Project conventions | `CLAUDE.md` (project-level) |
 | User conventions | `/home/paul/.claude/CLAUDE.md` |
 | This handoff | `STATUS.md` (this file) |
-| Memory entry | `/home/paul/.claude/projects/-home-paul-data-dev-authorclaw/memory/security_review_in_flight.md` |
+| Memory entry | `/home/paul/.claude/projects/-home-paul-data-dev-bookclaw/memory/security_review_in_flight.md` |
 | Express + Socket.IO init | `gateway/src/index.ts:180-198` |
-| Env-var pattern reference | `gateway/src/index.ts:2609` (existing `AUTHORCLAW_BIND` handling) |
+| Env-var pattern reference | `gateway/src/index.ts:2609` (existing `BOOKCLAW_BIND` handling) |
 | Dashboard fetch wrapper | `dashboard/dist/index.html:1197, 1215` |
 | Dockerfile | `docker/Dockerfile` |

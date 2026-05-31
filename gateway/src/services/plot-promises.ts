@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Plot Promises
+ * BookClaw Plot Promises
  *
  * Sanderson's "promises and payoffs" framework, made concrete:
  *

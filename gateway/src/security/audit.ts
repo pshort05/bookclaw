@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Audit Log
+ * BookClaw Audit Log
  * Tamper-resistant logging of all agent actions
  */
 

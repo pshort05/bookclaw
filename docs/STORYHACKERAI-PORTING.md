@@ -1,10 +1,10 @@
-# StoryHackerAI → AuthorClaw Feature-Porting Candidates
+# StoryHackerAI → BookClaw Feature-Porting Candidates
 
-Snapshot taken 2026-05-28. Compares **StoryHackerAI** (`~/data/Writing/StoryHackerAI/`) against the current AuthorClaw tree.
+Snapshot taken 2026-05-28. Compares **StoryHackerAI** (`~/data/Writing/StoryHackerAI/`) against the current BookClaw tree.
 
-StoryHackerAI is a local-filesystem port of the Story Hacker "Book Builder" n8n workflow set — 6 workflow JSONs (1 orchestrator + 5 stage workflows, ~4,600 lines total) running entirely on **OpenRouter** as the LLM gateway. It's a different product than AuthorClaw architecturally (n8n vs. custom Node daemon), but it solves the same author problem with a meaningfully different decomposition. Several patterns from it would materially improve AuthorClaw, and one of them — making **OpenRouter** the canonical AI gateway — was specifically called out as a priority.
+StoryHackerAI is a local-filesystem port of the Story Hacker "Book Builder" n8n workflow set — 6 workflow JSONs (1 orchestrator + 5 stage workflows, ~4,600 lines total) running entirely on **OpenRouter** as the LLM gateway. It's a different product than BookClaw architecturally (n8n vs. custom Node daemon), but it solves the same author problem with a meaningfully different decomposition. Several patterns from it would materially improve BookClaw, and one of them — making **OpenRouter** the canonical AI gateway — was specifically called out as a priority.
 
-Ranking criterion: marginal value for AuthorClaw's novelist workflow — not workflow-for-workflow parity. Patterns that change the structure of a chapter or the structure of model routing rank above patterns that change file layout.
+Ranking criterion: marginal value for BookClaw's novelist workflow — not workflow-for-workflow parity. Patterns that change the structure of a chapter or the structure of model routing rank above patterns that change file layout.
 
 ---
 
@@ -13,13 +13,13 @@ Ranking criterion: marginal value for AuthorClaw's novelist workflow — not wor
 ### 1. OpenRouter as the canonical AI gateway (replaces per-provider wiring)
 **StoryHackerAI today:** Every LLM node is `lmChatOpenRouter` with a single shared OpenRouter credential. The 11 models referenced across the 6 workflows span three providers — Anthropic (Claude Haiku 4.5, Sonnet 4.5/4.6, Opus 4.5/4.6), Google (Gemini 3 Flash, Pro, 3.1 Flash Lite, 3.1 Pro), and Moonshot (Kimi K2.5, Kimi K2 Thinking) — and switching models is a string change in one config field.
 
-**AuthorClaw today:** Five providers (Gemini, Claude, OpenAI, DeepSeek, Ollama) hard-wired in `AIRouter` (`gateway/src/ai/router.ts`, 737 lines). A recent commit (`212feef "Fix outline truncation, add retry/restart, wire OpenRouter"`) added OpenRouter as **one provider among five**, not as the gateway. Each provider has its own auth path, its own retry semantics, its own cost model.
+**BookClaw today:** Five providers (Gemini, Claude, OpenAI, DeepSeek, Ollama) hard-wired in `AIRouter` (`gateway/src/ai/router.ts`, 737 lines). A recent commit (`212feef "Fix outline truncation, add retry/restart, wire OpenRouter"`) added OpenRouter as **one provider among five**, not as the gateway. Each provider has its own auth path, its own retry semantics, its own cost model.
 
 **Author payoff:**
 - **Instant access to ~200 models** through one credential. Adding Kimi, Mistral, Llama variants, Qwen, Cohere, AWS Bedrock, etc. becomes "use this model ID" — no new code.
 - **Unified billing.** One OpenRouter invoice instead of five separate provider accounts. Cost tracking simplifies dramatically.
 - **Built-in fallbacks.** OpenRouter handles provider outages and rate-limits transparently — if Anthropic is throttling, requests fall through to the next provider for the same model.
-- **Specialized models AuthorClaw can't reach today.** Kimi K2 Thinking, niche fine-tunes, smaller European providers, all reachable as soon as OpenRouter lists them.
+- **Specialized models BookClaw can't reach today.** Kimi K2 Thinking, niche fine-tunes, smaller European providers, all reachable as soon as OpenRouter lists them.
 - **Cheap exploration.** Trying a new model takes seconds (edit a config field), not hours of integration work.
 
 **Effort:** Medium. The change is *not* "delete the other providers." It's:
@@ -53,7 +53,7 @@ Ranking criterion: marginal value for AuthorClaw's novelist workflow — not wor
 12. **Chronology Check 2** (medium — second pass after draft)
 13. **Rewrite** (advanced — final pass incorporating check feedback)
 
-**AuthorClaw today:** `cross_outline.md` references "write + self-review per chapter" in Phase 3 — two steps, one writer + one critic. The Writing Judge service (`craft-critic.ts`, `dialogue-auditor.ts`, `writing-judge` in skills/) is closest in spirit but operates on whole drafts, not chapter-internal sub-passes.
+**BookClaw today:** `cross_outline.md` references "write + self-review per chapter" in Phase 3 — two steps, one writer + one critic. The Writing Judge service (`craft-critic.ts`, `dialogue-auditor.ts`, `writing-judge` in skills/) is closest in spirit but operates on whole drafts, not chapter-internal sub-passes.
 
 **Author payoff:**
 - **Materially better chapters.** The Selectors stop the drafter from hallucinating characters/locations/beats the outline didn't actually plan for it. The Briefs stop the drafter from being overwhelmed by the entire bible. The Checks catch timeline + style violations *before* the chapter lands on disk.
@@ -80,16 +80,16 @@ Ranking criterion: marginal value for AuthorClaw's novelist workflow — not wor
 
 The same six files apply to every novel of that genre. You write the romance templates once and run any number of romance novels through them.
 
-**AuthorClaw today:** Genre intelligence is split between (a) the author persona (`workspace/.config/personas.json`), (b) the `story-structures` service (smart-recommends a structure per project), and (c) the implicit knowledge in 19 skills. There's no standalone, swappable, genre-level reference layer that survives across books.
+**BookClaw today:** Genre intelligence is split between (a) the author persona (`workspace/.config/personas.json`), (b) the `story-structures` service (smart-recommends a structure per project), and (c) the implicit knowledge in 19 skills. There's no standalone, swappable, genre-level reference layer that survives across books.
 
 **Author payoff:**
 - **Multi-genre authors get cleaner separation.** Today, a persona = a voice. If KS Rhysdale writes both contemporary romance and romantasy, the persona has to span both. With genre templates, the persona stays voice-anchored and the genre layer carries the structural intelligence.
 - **Genre templates are shareable.** A romance writer can publish their `romance/prose_style.md` for other writers to use. Aligns with the ClawHub registry pattern in [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #12.
-- **Easier to evolve.** Improving the way AuthorClaw handles romance = editing six files in `templates/romance/`, not retraining a persona or editing skill internals.
+- **Easier to evolve.** Improving the way BookClaw handles romance = editing six files in `templates/romance/`, not retraining a persona or editing skill internals.
 
 **Effort:** Medium. Add a `workspace/templates/<genre-slug>/` convention, teach the project planner to load the six files into context for any project whose persona declares that genre, ship one starter genre (e.g., `templates/romance/`) populated from the existing skill knowledge. Backward-compatible: projects without a genre template fall back to today's behavior.
 
-**Why it's #3:** It's a *clean separation of concerns* that AuthorClaw is going to need anyway as it grows — and it costs much less to introduce now than after a hundred personas have been authored under the current model.
+**Why it's #3:** It's a *clean separation of concerns* that BookClaw is going to need anyway as it grows — and it costs much less to introduce now than after a hundred personas have been authored under the current model.
 
 ---
 
@@ -98,7 +98,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 4. Explicit Chronology Check as a per-chapter pass
 **StoryHackerAI today:** Runs a dedicated **Chronology Check** twice per chapter (once before drafting, once after). Catches timeline violations like "Riley was in Miami last chapter and Manhattan this chapter with no travel beat."
 
-**AuthorClaw today:** Continuity is implicit in the bible phase + the `series-bible` service. No per-chapter chronology pass. Plot-promises tracking (`plot-promises.ts`) gets close but is promise-shaped, not timeline-shaped.
+**BookClaw today:** Continuity is implicit in the bible phase + the `series-bible` service. No per-chapter chronology pass. Plot-promises tracking (`plot-promises.ts`) gets close but is promise-shaped, not timeline-shaped.
 
 **Author payoff:** Eliminates the most common reader-trust break in long-form AI fiction. The continuity-tracker agent in the user's existing Crucible review suite (`crucible-suite:timeline-checker`) confirms timeline error is its own discipline — worth modeling after that agent's prompt structure.
 
@@ -111,7 +111,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 5. Explicit Style Check against a `prose_style.md` reference
 **StoryHackerAI today:** Every chapter draft is checked against the genre's `prose_style.md` (voice, pacing, sample paragraphs). The Style Check is a distinct LLM pass before the final rewrite.
 
-**AuthorClaw today:** `style-clone.ts` and `character-voices.ts` exist, but they're voice-fingerprinting tools used to *seed* generation, not *check* generation. The drafter sees the style guide; nothing audits the output against it.
+**BookClaw today:** `style-clone.ts` and `character-voices.ts` exist, but they're voice-fingerprinting tools used to *seed* generation, not *check* generation. The drafter sees the style guide; nothing audits the output against it.
 
 **Author payoff:** Catches the voice drift that compounds over 30 chapters. Authors using a hand-tuned persona feel this acutely — the persona is fine on chapter 1 and bleeds into generic by chapter 25.
 
@@ -122,7 +122,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 6. Wordcount Estimator as a pre-draft sanity check
 **StoryHackerAI today:** Before drafting each chapter, a cheap-model agent estimates how long the chapter will be based on the scene briefs. If the estimate is way off the target, the briefs get rewritten.
 
-**AuthorClaw today:** No equivalent. The drafter writes the chapter, and if it comes back at 800 words against a 2,500 target, the author re-prompts. The error compounds across 30 chapters into a book that's the wrong length.
+**BookClaw today:** No equivalent. The drafter writes the chapter, and if it comes back at 800 words against a 2,500 target, the author re-prompts. The error compounds across 30 chapters into a book that's the wrong length.
 
 **Author payoff:** Catches outline-vs-chapter-count drift that today only surfaces at the end of Phase 3 when you compile the manuscript and discover it's 60k instead of 90k. Same intervention point flagged as a troubleshooting item in [FIRST-NOVEL-GUIDE.md](FIRST-NOVEL-GUIDE.md) ("Output too short for word target").
 
@@ -133,7 +133,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 7. Stage re-runnability without re-running upstream
 **StoryHackerAI today:** Stages 1–5 are independently invokable. Re-run Stage 3 (worldbuilding) without redoing Stages 1–2, because each stage reads its inputs from disk and writes its outputs to disk. The orchestrator's "All" mode reloads state between stages.
 
-**AuthorClaw today:** The pipeline has `/stop` and `continue`, but those resume from where you stopped — they don't *replay an earlier phase*. To redo Phase 2 (Bible) after Phase 3 (Production) has started, you have to manually edit phase-output files and hope nothing downstream is invalidated.
+**BookClaw today:** The pipeline has `/stop` and `continue`, but those resume from where you stopped — they don't *replay an earlier phase*. To redo Phase 2 (Bible) after Phase 3 (Production) has started, you have to manually edit phase-output files and hope nothing downstream is invalidated.
 
 **Author payoff:** First-book editing dramatically smoother. "Phase 2 produced a thin character bible — let me regenerate it with new prompts" becomes a one-command operation, not a reset.
 
@@ -144,7 +144,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 8. Loop-append single-file output for batched artifacts (characters / worldbuilding)
 **StoryHackerAI today:** Stage 2 generates 8–12 characters, each appended to a single `02_characters.md` with `## <CharacterName>` headers. Same for `03_worldbuilding.md`. Authors get one file to scroll, edit, and share.
 
-**AuthorClaw today:** Output files exist per project (`workspace/projects/<id>/01-planning/characters.md`) but follow the AuthorClaw convention of one file per artifact type, not loop-append.
+**BookClaw today:** Output files exist per project (`workspace/projects/<id>/01-planning/characters.md`) but follow the BookClaw convention of one file per artifact type, not loop-append.
 
 **Author payoff:** Minor UX preference, but several authors prefer the single-file pattern for batched artifacts. Easier to grep, easier to edit, easier to paste into a reference doc.
 
@@ -157,7 +157,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 9. Tighter cheap/mid/advanced model-tier semantics within a single phase
 **StoryHackerAI today:** Stage 5 uses the cheap model for 6 sub-steps (selectors, briefs, wordcount), the medium/advanced model for 7 sub-steps (brief rewrite, draft, check, rewrite). Tier assignment is *per-step*, not *per-phase*.
 
-**AuthorClaw today:** Per the README, tier routing is per-phase: planning/research = free, creative = mid, final editing = premium. Coarser-grained.
+**BookClaw today:** Per the README, tier routing is per-phase: planning/research = free, creative = mid, final editing = premium. Coarser-grained.
 
 **Author payoff:** Cost reduction without quality loss. Today's "premium for the whole production phase" overspends on sub-tasks that a cheap model handles fine.
 
@@ -168,7 +168,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 10. The `meta.json` per-novel convention
 **StoryHackerAI today:** Each novel directory has a tiny `meta.json` like `{ "genre": "romantasy", "tense": "third person limited" }`. Workflows read it to know which genre templates to load and what tense to write in.
 
-**AuthorClaw today:** Project metadata is stored in `workspace/.config/projects-state.json` — a single global file across all projects.
+**BookClaw today:** Project metadata is stored in `workspace/.config/projects-state.json` — a single global file across all projects.
 
 **Author payoff:** Per-project metadata next to the project files is more portable. Easier to ship a project to a collaborator, archive a finished book, or version-control a single novel.
 
@@ -179,7 +179,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 ### 11. Workflow-style stage transformer pattern
 **StoryHackerAI today:** `workflows/_transform.mjs` (371 lines) auto-converts upstream Skool workflow JSONs into the local-filesystem variants. The five stage files are *generated*, not hand-written. Changes that should survive upstream re-imports live in the transformer, not in the JSON output.
 
-**AuthorClaw equivalent:** N/A — AuthorClaw isn't a workflow-import system. But the *pattern* (codify the upstream→local delta as a transformer, regenerate on upstream change) is exactly the right pattern for [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #12 (ClawHub-style skill registry) and would also apply to absorbing OpenClaw `extensions/*` plugins as they arrive.
+**BookClaw equivalent:** N/A — BookClaw isn't a workflow-import system. But the *pattern* (codify the upstream→local delta as a transformer, regenerate on upstream change) is exactly the right pattern for [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #12 (ClawHub-style skill registry) and would also apply to absorbing OpenClaw `extensions/*` plugins as they arrive.
 
 **Effort:** N/A for direct port. Worth borrowing the philosophy when designing the eventual skill-import pipeline.
 
@@ -188,13 +188,13 @@ The same six files apply to every novel of that genre. You write the romance tem
 ## 🟩 TIER 4 — Out of scope for porting
 
 ### 12. n8n as a runtime
-StoryHackerAI runs entirely inside n8n. AuthorClaw is a custom Node daemon with a custom dashboard. The workflow patterns inside StoryHackerAI's n8n graphs are portable (Tiers 1–3 above); n8n-the-runtime is not. AuthorClaw should not become n8n-based.
+StoryHackerAI runs entirely inside n8n. BookClaw is a custom Node daemon with a custom dashboard. The workflow patterns inside StoryHackerAI's n8n graphs are portable (Tiers 1–3 above); n8n-the-runtime is not. BookClaw should not become n8n-based.
 
 ### 13. Google Docs in / Google Docs out
-The upstream Story Hacker workflows used Google Docs for every read/write. StoryHackerAI ports *away* from that to local files. AuthorClaw also writes to local files. The Google Docs path is a non-feature, intentionally dropped.
+The upstream Story Hacker workflows used Google Docs for every read/write. StoryHackerAI ports *away* from that to local files. BookClaw also writes to local files. The Google Docs path is a non-feature, intentionally dropped.
 
 ### 14. The downloaded "Skool" workflow set as canonical
-StoryHackerAI maintains a relationship with an upstream source-of-truth (`/home/paul/data/Writing/Skool/n8n_workflows/`). AuthorClaw has no equivalent upstream, doesn't need one.
+StoryHackerAI maintains a relationship with an upstream source-of-truth (`/home/paul/data/Writing/Skool/n8n_workflows/`). BookClaw has no equivalent upstream, doesn't need one.
 
 ---
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=Poll for the AuthorClaw build_now sentinel once a minute
+Description=Poll for the BookClaw build_now sentinel once a minute
 
 [Timer]
 OnBootSec=60

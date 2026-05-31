@@ -165,7 +165,7 @@ Shows which voice markers shifted and whether the changes strengthened or weaken
 
 ## Voice Profile Export
 
-Generate a portable voice profile that other AuthorClaw skills use:
+Generate a portable voice profile that other BookClaw skills use:
 - Ghostwriter Pro uses it to write in your voice
 - Dictation Cleanup uses it to preserve your patterns
 - Deep Write Mode matches its output to your markers
@@ -173,7 +173,7 @@ Generate a portable voice profile that other AuthorClaw skills use:
 
 ## Progressive Learning
 
-The more you write with AuthorClaw, the better it knows your voice:
+The more you write with BookClaw, the better it knows your voice:
 - First 10,000 words: Basic voice profile
 - 25,000 words: Reliable voice markers established
 - 50,000+ words: Full 47-marker profile with high confidence

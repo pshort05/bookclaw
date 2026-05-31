@@ -1,5 +1,5 @@
 /**
- * AuthorClaw Configuration Service
+ * BookClaw Configuration Service
  */
 
 import { readFile, writeFile } from 'fs/promises';
@@ -31,8 +31,8 @@ export class ConfigService {
     }
 
     // Environment variable overrides
-    if (process.env.AUTHORCLAW_PORT) this.set('server.port', parseInt(process.env.AUTHORCLAW_PORT));
-    if (process.env.AUTHORCLAW_PRESET) this.set('security.permissionPreset', process.env.AUTHORCLAW_PRESET);
+    if (process.env.BOOKCLAW_PORT) this.set('server.port', parseInt(process.env.BOOKCLAW_PORT));
+    if (process.env.BOOKCLAW_PRESET) this.set('security.permissionPreset', process.env.BOOKCLAW_PRESET);
   }
 
   get(path: string, defaultValue?: any): any {
