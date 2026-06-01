@@ -41,7 +41,7 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       await services.audit.log('vault', 'key_stored', { key });
 
       // Auto-refresh AI providers when an API key is stored
-      const apiKeyNames = ['gemini_api_key', 'deepseek_api_key', 'anthropic_api_key', 'openai_api_key'];
+      const apiKeyNames = ['gemini_api_key', 'deepseek_api_key', 'anthropic_api_key', 'openai_api_key', 'openrouter_api_key'];
       let refreshedProviders: string[] | undefined;
       if (apiKeyNames.includes(key)) {
         refreshedProviders = await services.aiRouter.reinitialize();

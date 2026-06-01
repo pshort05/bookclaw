@@ -51,7 +51,6 @@ cover at minimum:
 
 ## Quick cleanups (minutes)
 
-- [ ] **OpenRouter key doesn't auto-register providers on save** — `POST /api/vault` only reinitializes the AI router for the keys in the `apiKeyNames` list (`routes.ts:257`: gemini/deepseek/anthropic/openai). `openrouter_api_key` is missing, so storing it leaves OpenRouter unregistered until a manual `/api/providers/refresh` or restart. Fix: add `'openrouter_api_key'` to that array. Verify by storing the key and confirming `openrouter` appears in `/api/status` without a manual refresh.
 
 ## Investigations (under an hour each)
 

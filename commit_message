@@ -1,11 +1,17 @@
-Fix init-ordering bug: characterVoices wired with undefined styleClone
+Auto-register OpenRouter provider when its key is saved
 
-- Phase 6g9 wired characterVoices.setStyleClone(gw.styleClone) before
-  styleClone was constructed in Phase 6j, passing undefined.
-- Move the wiring to Phase 6j (init/phase-09-export-wave.ts), right after
-  styleClone is constructed; characterVoices.initialize() only does mkdir and
-  never touches styleClone, so this ordering is safe.
-- Update the phase doc-comments to describe the deferred wiring.
+- settings.routes.ts: add 'openrouter_api_key' to the POST /api/vault
+  apiKeyNames list so saving the key triggers an AI-router reinitialize,
+  registering OpenRouter immediately instead of only after a manual
+  /api/providers/refresh or restart.
+- tests/openrouter-autoregister.sh: hermetic, non-destructive regression
+  test — stores a dummy key (registration is key-presence only) and asserts
+  OpenRouter appears in /api/status without a manual refresh; refuses to
+  clobber a real key and cleans up the vault on exit.
 - docs: move the item from TODO.md to COMPLETED.md.
 
-Verified: tsc --noEmit clean; npm run test:smoke all pass.
+Scope note: /api/vault/load-from-files omits OpenRouter too, but its keyFiles
+map has no openrouter_api_key.txt entry, so that path can't load the key at
+all — left as-is (out of scope for this cleanup).
+
+Verified: tsc --noEmit clean; tests/openrouter-autoregister.sh 4/4 pass.
