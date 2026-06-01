@@ -2120,199 +2120,7 @@ textarea { resize: vertical; min-height: 60px; }
     });
   });
 
-  // dashboard/src/main.js
-  var panelTitles = { home: "Home", hq: "Author HQ", projects: "Projects", personas: "Personas", library: "Library", settings: "Settings" };
-  var navItems = document.querySelectorAll(".nav-item");
-  function switchPanel(name) {
-    state.currentPanel = name;
-    navItems.forEach(function(n) {
-      n.classList.toggle("active", n.getAttribute("data-panel") === name);
-    });
-    document.querySelectorAll(".panel").forEach(function(p) {
-      p.classList.remove("active");
-    });
-    var panel = document.getElementById("panel-" + name);
-    if (panel) panel.classList.add("active");
-    document.getElementById("panelTitle").textContent = panelTitles[name] || name;
-    if (name === "projects") {
-      loadTemplates();
-      loadProjects();
-      showProjectList();
-    } else if (name === "personas") {
-      loadPersonas();
-    } else if (name === "library") {
-      loadDocuments();
-    } else if (name === "settings") {
-      updateQuickStartBanner();
-      loadKeys();
-      loadOllamaConfig();
-      loadOpenrouterConfig();
-      loadGlobalProvider();
-      loadGlobalImageProvider();
-      loadResearchDomains();
-      loadAutonomousStatus();
-      loadTelegramStatus();
-      loadVoices();
-      loadIdleTasks();
-      loadBackups();
-      loadLessons();
-      loadPreferences();
-      loadOrchestrator();
-    } else if (name === "home") {
-      loadProjects();
-      loadHomeStats();
-      loadHub();
-    } else if (name === "hq") {
-      loadHQ();
-    }
-  }
-  navItems.forEach(function(n) {
-    n.addEventListener("click", function() {
-      switchPanel(n.getAttribute("data-panel"));
-    });
-  });
-  function loadStatus() {
-    api("GET", "/api/status").then(function(data) {
-      var dot = document.getElementById("heartbeatDot");
-      var label = document.getElementById("heartbeatLabel");
-      dot.className = "heartbeat-dot ok";
-      label.textContent = "Online";
-      var headerSt = document.getElementById("headerStatus");
-      if (data.providers && data.providers.length > 0) {
-        headerSt.textContent = data.providers.length + " provider(s) active";
-      } else {
-        headerSt.textContent = "No AI providers";
-      }
-      var activeCount = 0;
-      var totalWords = 0;
-      if (data.projects) {
-        activeCount = data.projects.active || 0;
-        totalWords = data.projects.totalWords || 0;
-      }
-      if (state.allProjects.length > 0) {
-        activeCount = state.allProjects.filter(function(p) {
-          return p.status === "active";
-        }).length;
-      }
-      document.getElementById("statProjects").textContent = activeCount;
-      document.getElementById("statWords").textContent = totalWords ? totalWords.toLocaleString() : "0";
-      var hbStat = document.getElementById("statHeartbeat");
-      if (data.heartbeat && data.heartbeat.enabled !== false) {
-        hbStat.textContent = "OK";
-        hbStat.style.color = "";
-      } else {
-        hbStat.textContent = "OK";
-      }
-      document.getElementById("statPersonas").textContent = state.allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
-    }).catch(function() {
-      document.getElementById("heartbeatDot").className = "heartbeat-dot err";
-      document.getElementById("heartbeatLabel").textContent = "Offline";
-      document.getElementById("headerStatus").textContent = "Disconnected";
-    });
-  }
-  function startPolling() {
-    loadStatus();
-    loadProjects();
-    loadPersonas();
-    loadActivity();
-    loadHomeStats();
-    state.statusPollTimer = setInterval(loadStatus, 1e4);
-    state.projectPollTimer = setInterval(function() {
-      if (state.currentPanel === "home" || state.currentPanel === "projects") {
-        loadProjects();
-      }
-      if (state.currentPanel === "home") {
-        loadActivity();
-        loadHomeStats();
-      }
-    }, 15e3);
-  }
-  function renderHomeProjects() {
-    var container = document.getElementById("homeProjectScroll");
-    var active = state.allProjects.filter(function(p) {
-      return p.status === "active" || p.status === "paused";
-    });
-    if (active.length === 0) {
-      container.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;width:100%;">No active projects. Go to Projects to create one.</div>';
-      return;
-    }
-    container.innerHTML = "";
-    active.forEach(function(p) {
-      var card = document.createElement("div");
-      card.className = "project-scroll-card";
-      var currentStep = "";
-      if (p.steps) {
-        var act = p.steps.find(function(s) {
-          return s.status === "active";
-        });
-        if (act) currentStep = act.label || act.name || "";
-      }
-      var personaText = p.persona ? p.persona.penName || p.persona : "";
-      card.innerHTML = '<div class="psc-title">' + esc(p.title) + '</div><div class="psc-meta"><span class="badge badge-type">' + esc(p.type || "general") + '</span><span class="badge badge-status badge-' + esc(p.status) + '">' + esc(p.status) + '</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + (p.progress || 0) + '%">' + (p.progress || 0) + "%</div></div>" + (currentStep ? '<div class="psc-step">Current: ' + esc(currentStep) + "</div>" : "") + (personaText ? '<div class="psc-step" style="color:var(--info);">Persona: ' + esc(typeof personaText === "string" ? personaText : "") + "</div>" : "");
-      card.addEventListener("click", function() {
-        switchPanel("projects");
-        setTimeout(function() {
-          openProjectDetail(p.id);
-        }, 100);
-      });
-      container.appendChild(card);
-    });
-  }
-  function addChatMsg(text, role) {
-    var el = document.getElementById("chatMessages");
-    var msg = document.createElement("div");
-    msg.className = "chat-msg " + role;
-    msg.textContent = text;
-    el.appendChild(msg);
-    el.scrollTop = el.scrollHeight;
-  }
-  function showTyping() {
-    removeTyping();
-    var el = document.getElementById("chatMessages");
-    var ind = document.createElement("div");
-    ind.className = "typing-indicator";
-    ind.id = "typingIndicator";
-    ind.innerHTML = "<span>.</span><span>.</span><span>.</span> BookClaw is thinking";
-    el.appendChild(ind);
-    el.scrollTop = el.scrollHeight;
-  }
-  function removeTyping() {
-    var ind = document.getElementById("typingIndicator");
-    if (ind) ind.remove();
-  }
-  function sendChat() {
-    var input = document.getElementById("chatInput");
-    var text = input.value.trim();
-    if (!text || state.chatWaiting) return;
-    addChatMsg(text, "user");
-    input.value = "";
-    state.chatWaiting = true;
-    showTyping();
-    api("POST", "/api/chat", { message: text }).then(function(data) {
-      removeTyping();
-      state.chatWaiting = false;
-      addChatMsg(data.response || "No response received.", "bot");
-      if (text.startsWith("/")) {
-        loadProjects();
-      }
-    }).catch(function(e) {
-      removeTyping();
-      state.chatWaiting = false;
-      addChatMsg("Error: " + e.message, "system");
-    });
-  }
-  document.getElementById("btnChatSend").addEventListener("click", sendChat);
-  document.getElementById("chatInput").addEventListener("keydown", function(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendChat();
-    }
-  });
-  document.getElementById("btnChatClear").addEventListener("click", function() {
-    var el = document.getElementById("chatMessages");
-    el.innerHTML = `<div class="chat-msg bot">Hello! I'm BookClaw, your AI writing partner. How can I help you today?</div>`;
-    state.chatWaiting = false;
-  });
+  // dashboard/src/panels/projects.js
   var defaultTemplates = [
     { id: "book-planning", icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>', name: "Book Planning", desc: "Outline and plan your book structure", steps: "5-8 steps", type: "book-planning" },
     { id: "book-bible", icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="13" y2="11"/></svg>', name: "Book Bible", desc: "Build your story world bible", steps: "6-10 steps", type: "book-bible" },
@@ -3097,6 +2905,200 @@ textarea { resize: vertical; min-height: 60px; }
     html += '<div style="font-size:11px;color:var(--muted);margin-top:12px;">Generated: ' + esc(report.generatedAt || "") + "</div>";
     el.innerHTML = html;
   }
+
+  // dashboard/src/main.js
+  var panelTitles = { home: "Home", hq: "Author HQ", projects: "Projects", personas: "Personas", library: "Library", settings: "Settings" };
+  var navItems = document.querySelectorAll(".nav-item");
+  function switchPanel(name) {
+    state.currentPanel = name;
+    navItems.forEach(function(n) {
+      n.classList.toggle("active", n.getAttribute("data-panel") === name);
+    });
+    document.querySelectorAll(".panel").forEach(function(p) {
+      p.classList.remove("active");
+    });
+    var panel = document.getElementById("panel-" + name);
+    if (panel) panel.classList.add("active");
+    document.getElementById("panelTitle").textContent = panelTitles[name] || name;
+    if (name === "projects") {
+      loadTemplates();
+      loadProjects();
+      showProjectList();
+    } else if (name === "personas") {
+      loadPersonas();
+    } else if (name === "library") {
+      loadDocuments();
+    } else if (name === "settings") {
+      updateQuickStartBanner();
+      loadKeys();
+      loadOllamaConfig();
+      loadOpenrouterConfig();
+      loadGlobalProvider();
+      loadGlobalImageProvider();
+      loadResearchDomains();
+      loadAutonomousStatus();
+      loadTelegramStatus();
+      loadVoices();
+      loadIdleTasks();
+      loadBackups();
+      loadLessons();
+      loadPreferences();
+      loadOrchestrator();
+    } else if (name === "home") {
+      loadProjects();
+      loadHomeStats();
+      loadHub();
+    } else if (name === "hq") {
+      loadHQ();
+    }
+  }
+  navItems.forEach(function(n) {
+    n.addEventListener("click", function() {
+      switchPanel(n.getAttribute("data-panel"));
+    });
+  });
+  function loadStatus() {
+    api("GET", "/api/status").then(function(data) {
+      var dot = document.getElementById("heartbeatDot");
+      var label = document.getElementById("heartbeatLabel");
+      dot.className = "heartbeat-dot ok";
+      label.textContent = "Online";
+      var headerSt = document.getElementById("headerStatus");
+      if (data.providers && data.providers.length > 0) {
+        headerSt.textContent = data.providers.length + " provider(s) active";
+      } else {
+        headerSt.textContent = "No AI providers";
+      }
+      var activeCount = 0;
+      var totalWords = 0;
+      if (data.projects) {
+        activeCount = data.projects.active || 0;
+        totalWords = data.projects.totalWords || 0;
+      }
+      if (state.allProjects.length > 0) {
+        activeCount = state.allProjects.filter(function(p) {
+          return p.status === "active";
+        }).length;
+      }
+      document.getElementById("statProjects").textContent = activeCount;
+      document.getElementById("statWords").textContent = totalWords ? totalWords.toLocaleString() : "0";
+      var hbStat = document.getElementById("statHeartbeat");
+      if (data.heartbeat && data.heartbeat.enabled !== false) {
+        hbStat.textContent = "OK";
+        hbStat.style.color = "";
+      } else {
+        hbStat.textContent = "OK";
+      }
+      document.getElementById("statPersonas").textContent = state.allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
+    }).catch(function() {
+      document.getElementById("heartbeatDot").className = "heartbeat-dot err";
+      document.getElementById("heartbeatLabel").textContent = "Offline";
+      document.getElementById("headerStatus").textContent = "Disconnected";
+    });
+  }
+  function startPolling() {
+    loadStatus();
+    loadProjects();
+    loadPersonas();
+    loadActivity();
+    loadHomeStats();
+    state.statusPollTimer = setInterval(loadStatus, 1e4);
+    state.projectPollTimer = setInterval(function() {
+      if (state.currentPanel === "home" || state.currentPanel === "projects") {
+        loadProjects();
+      }
+      if (state.currentPanel === "home") {
+        loadActivity();
+        loadHomeStats();
+      }
+    }, 15e3);
+  }
+  function renderHomeProjects() {
+    var container = document.getElementById("homeProjectScroll");
+    var active = state.allProjects.filter(function(p) {
+      return p.status === "active" || p.status === "paused";
+    });
+    if (active.length === 0) {
+      container.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;width:100%;">No active projects. Go to Projects to create one.</div>';
+      return;
+    }
+    container.innerHTML = "";
+    active.forEach(function(p) {
+      var card = document.createElement("div");
+      card.className = "project-scroll-card";
+      var currentStep = "";
+      if (p.steps) {
+        var act = p.steps.find(function(s) {
+          return s.status === "active";
+        });
+        if (act) currentStep = act.label || act.name || "";
+      }
+      var personaText = p.persona ? p.persona.penName || p.persona : "";
+      card.innerHTML = '<div class="psc-title">' + esc(p.title) + '</div><div class="psc-meta"><span class="badge badge-type">' + esc(p.type || "general") + '</span><span class="badge badge-status badge-' + esc(p.status) + '">' + esc(p.status) + '</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + (p.progress || 0) + '%">' + (p.progress || 0) + "%</div></div>" + (currentStep ? '<div class="psc-step">Current: ' + esc(currentStep) + "</div>" : "") + (personaText ? '<div class="psc-step" style="color:var(--info);">Persona: ' + esc(typeof personaText === "string" ? personaText : "") + "</div>" : "");
+      card.addEventListener("click", function() {
+        switchPanel("projects");
+        setTimeout(function() {
+          openProjectDetail(p.id);
+        }, 100);
+      });
+      container.appendChild(card);
+    });
+  }
+  function addChatMsg(text, role) {
+    var el = document.getElementById("chatMessages");
+    var msg = document.createElement("div");
+    msg.className = "chat-msg " + role;
+    msg.textContent = text;
+    el.appendChild(msg);
+    el.scrollTop = el.scrollHeight;
+  }
+  function showTyping() {
+    removeTyping();
+    var el = document.getElementById("chatMessages");
+    var ind = document.createElement("div");
+    ind.className = "typing-indicator";
+    ind.id = "typingIndicator";
+    ind.innerHTML = "<span>.</span><span>.</span><span>.</span> BookClaw is thinking";
+    el.appendChild(ind);
+    el.scrollTop = el.scrollHeight;
+  }
+  function removeTyping() {
+    var ind = document.getElementById("typingIndicator");
+    if (ind) ind.remove();
+  }
+  function sendChat() {
+    var input = document.getElementById("chatInput");
+    var text = input.value.trim();
+    if (!text || state.chatWaiting) return;
+    addChatMsg(text, "user");
+    input.value = "";
+    state.chatWaiting = true;
+    showTyping();
+    api("POST", "/api/chat", { message: text }).then(function(data) {
+      removeTyping();
+      state.chatWaiting = false;
+      addChatMsg(data.response || "No response received.", "bot");
+      if (text.startsWith("/")) {
+        loadProjects();
+      }
+    }).catch(function(e) {
+      removeTyping();
+      state.chatWaiting = false;
+      addChatMsg("Error: " + e.message, "system");
+    });
+  }
+  document.getElementById("btnChatSend").addEventListener("click", sendChat);
+  document.getElementById("chatInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChat();
+    }
+  });
+  document.getElementById("btnChatClear").addEventListener("click", function() {
+    var el = document.getElementById("chatMessages");
+    el.innerHTML = `<div class="chat-msg bot">Hello! I'm BookClaw, your AI writing partner. How can I help you today?</div>`;
+    state.chatWaiting = false;
+  });
   function loadDocuments() {
     api("GET", "/api/documents").then(function(data) {
       var docs = data.documents || data || [];

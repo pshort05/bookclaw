@@ -1,21 +1,18 @@
-Dashboard split (3/?): extract settings panel + cost TODO
+Dashboard split (4/?): extract projects panel (the big one)
 
 Continues the per-feature module split. Behavior-preserving.
 
-- panels/settings.js: API keys, provider/model config, Telegram, voices,
-  research domains, backups, autonomous status (12 functions). Imports
-  loadStatus from the main shell (settings refreshes status after a change);
-  main.js now exports loadStatus and imports settings' 12 panel functions —
-  esbuild resolves the cycle via hoisted function declarations.
-- main.js: 2021 -> 1559 lines.
-- docs/TODO.md: added the "report real AI costs" follow-up — use OpenRouter's
-  inline usage.cost instead of the Sonnet-placeholder estimate (the source of
-  the inflated $2.43-vs-$0.09 figures); router.ts already reads usage tokens
-  but discards usage.cost.
+- panels/projects.js: 16 functions — templates, create/pipeline modal, project
+  list, detail view (steps + per-step model picker), files, compile, and the
+  context & continuity tabs. Keeps defaultTemplates internal. Uses lib +
+  state.*; imports renderHomeProjects from the main shell (home stays in main
+  for now). main.js exports renderHomeProjects and imports projects'
+  loadTemplates/loadProjects/showProjectList/openProjectDetail — esbuild
+  resolves the cycle.
+- main.js: 1559 -> 573 lines.
 
-Remaining (TODO): the interconnected core — projects (+ context-continuity),
-home, hq, chat, library; nav (switchPanel), status (polling), theme + init
-stay in main.js as the app shell.
+Remaining (TODO): the smaller panels — chat, library, home, hq, activity-feed;
+nav (switchPanel), status (polling), theme + init stay in main.js as the shell.
 
 Verified: build clean (token placeholder + the 3 window.* globals present,
 no dup symbols); npm test green (29 unit + API + smoke).
