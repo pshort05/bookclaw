@@ -1,18 +1,22 @@
-Dashboard split (4/?): extract projects panel (the big one)
+Dashboard split (5/5): extract chat, library, hq, home — split complete
 
-Continues the per-feature module split. Behavior-preserving.
+Finishes the per-feature module split. Behavior-preserving.
 
-- panels/projects.js: 16 functions — templates, create/pipeline modal, project
-  list, detail view (steps + per-step model picker), files, compile, and the
-  context & continuity tabs. Keeps defaultTemplates internal. Uses lib +
-  state.*; imports renderHomeProjects from the main shell (home stays in main
-  for now). main.js exports renderHomeProjects and imports projects'
-  loadTemplates/loadProjects/showProjectList/openProjectDetail — esbuild
-  resolves the cycle.
-- main.js: 1559 -> 573 lines.
+- panels/chat.js: message render + send (wires its own button/Enter on load;
+  side-effect import, no exports).
+- panels/library.js: documents list + compiled outputs + upload wiring.
+- panels/hq.js: Author HQ aggregate + relative-time helper.
+- panels/home.js: active-project cards + home stats / activity feed.
+- main.js is now a 175-line app shell: imports + nav (switchPanel) + status
+  (loadStatus/startPolling) + theme + init. switchPanel is exported (home +
+  library navigate); projects.js's renderHomeProjects import repointed from
+  the main shell to ./home.js (home now owns it).
 
-Remaining (TODO): the smaller panels — chat, library, home, hq, activity-feed;
-nav (switchPanel), status (polling), theme + init stay in main.js as the shell.
+Final structure: lib/{state,api,ui,format}.js + panels/{personas,idle-tasks,
+insights,settings,projects,chat,library,hq,home}.js + main.js. main.js went
+2677 -> 175 lines across the whole split.
 
 Verified: build clean (token placeholder + the 3 window.* globals present,
-no dup symbols); npm test green (29 unit + API + smoke).
+every cross-module function defined exactly once); a cross-panel import audit
+(no module calls an un-imported function); npm test green (29 unit + API +
+smoke); tsc clean. Acceptance gate: Mercury visual click-through.

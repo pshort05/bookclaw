@@ -4,7 +4,7 @@ import { state } from '../lib/state.js';
 import { api, authUrl } from '../lib/api.js';
 import { showToast } from '../lib/ui.js';
 import { esc, formatBytes, formatDate } from '../lib/format.js';
-import { renderHomeProjects } from '../main.js';
+import { renderHomeProjects } from './home.js';
 
 // PROJECTS PANEL
 // ================================================================
