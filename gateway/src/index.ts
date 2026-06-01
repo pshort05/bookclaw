@@ -81,12 +81,18 @@ import { WebsiteBuilderService } from './services/website-builder.js';
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { createAPIRoutes } from './api/routes.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT_DIR = __dirname.includes('dist')
-  ? join(__dirname, '..', '..', '..')
-  : join(__dirname, '..', '..');
+import { ROOT_DIR } from './paths.js';
+import { initConfig } from './init/phase-01-config.js';
+import { initSecurity } from './init/phase-02-security.js';
+import { initSoulMemory } from './init/phase-03-soul-memory.js';
+import { initAI } from './init/phase-04-ai.js';
+import { initResearchAndSkills } from './init/phase-05-research-skills.js';
+import { initContentServices } from './init/phase-06-content.js';
+import { initKnowledgeServices } from './init/phase-07-knowledge.js';
+import { initWebsiteAndOrchestrator } from './init/phase-08-website.js';
+import { initExportAndWaves } from './init/phase-09-export-wave.js';
+import { initHeartbeatAndBridges } from './init/phase-10-heartbeat-bridges.js';
+import { initHttp } from './init/phase-11-http.js';
 
 // Constant-time comparison of a request's bearer token against the expected token.
 // Length check first because timingSafeEqual throws on unequal-length buffers.
@@ -101,93 +107,93 @@ function bearerEquals(provided: string, expected: string): boolean {
 // ═══════════════════════════════════════════════════════════
 
 class BookClawGateway {
-  private app: express.Application;
-  private server: ReturnType<typeof createServer>;
-  private io: SocketIO;
+  public app: express.Application;
+  public server: ReturnType<typeof createServer>;
+  public io: SocketIO;
 
   // Core services
-  private config!: ConfigService;
-  private memory!: MemoryService;
-  private soul!: SoulService;
-  private heartbeat!: HeartbeatService;
-  private costs!: CostTracker;
-  private research!: ResearchGate;
-  private activityLog!: ActivityLog;
-  private aiRouter!: AIRouter;
+  public config!: ConfigService;
+  public memory!: MemoryService;
+  public soul!: SoulService;
+  public heartbeat!: HeartbeatService;
+  public costs!: CostTracker;
+  public research!: ResearchGate;
+  public activityLog!: ActivityLog;
+  public aiRouter!: AIRouter;
 
   // Security services
-  private vault!: Vault;
-  private permissions!: PermissionManager;
-  private audit!: AuditLog;
-  private sandbox!: SandboxGuard;
-  private injectionDetector!: InjectionDetector;
+  public vault!: Vault;
+  public permissions!: PermissionManager;
+  public audit!: AuditLog;
+  public sandbox!: SandboxGuard;
+  public injectionDetector!: InjectionDetector;
   // Bearer token gating /api/* and the Socket.IO handshake.
   // null = auth disabled (BOOKCLAW_AUTH_DISABLED=1); a string = enforced.
-  private authToken: string | null = null;
+  public authToken: string | null = null;
   // CORS posture, computed in the constructor and logged at startup.
-  private corsSummary = '';
-  private corsWildcard = false;
+  public corsSummary = '';
+  public corsWildcard = false;
   // Source-IP allowlist (BOOKCLAW_ALLOWED_IPS). Empty = enforcement off (allow all).
   // Each entry is an ipaddr.js [address, prefixLength] CIDR (single IPs become /32 or /128).
-  private allowedIps: Array<[ipaddr.IPv4 | ipaddr.IPv6, number]> = [];
-  private ipAllowlistSummary = '';
-  private trustProxy = false;
+  public allowedIps: Array<[ipaddr.IPv4 | ipaddr.IPv6, number]> = [];
+  public ipAllowlistSummary = '';
+  public trustProxy = false;
 
   // Skills, goals & bridges
-  private skills!: SkillLoader;
-  private authorOS!: AuthorOSService;
-  private tts!: TTSService;
-  private imageGen!: ImageGenService;
-  private personas!: PersonaService;
-  private projectEngine!: ProjectEngine;
-  private contextEngine!: ContextEngine;
-  private memorySearch!: MemorySearchService;
-  private userModel!: UserModelService;
-  private cronScheduler!: CronSchedulerService;
-  private autoSkill!: AutoSkillService;
-  private writingJudge!: WritingJudgeService;
-  private researchLookup!: ResearchLookupService;
-  private videoResearch!: VideoResearchService;
-  private storyStructures!: StoryStructureService;
-  private plotPromises!: PlotPromisesService;
-  private characterVoices!: CharacterVoicesService;
-  private websiteSites!: WebsiteSiteService;
-  private blogPostDrafter!: BlogPostDrafterService;
-  private websiteDeploy!: WebsiteDeployService;
-  private lessons!: LessonStore;
-  private preferences!: PreferenceStore;
-  private orchestrator!: OrchestratorService;
-  private kdpExporter!: KDPExporter;
-  private betaReader!: BetaReaderService;
-  private dialogueAuditor!: DialogueAuditor;
-  private manuscriptHub!: ManuscriptHubService;
-  private coverTypography!: CoverTypographyService;
-  private externalTools!: ExternalToolsService;
-  private trackChanges!: TrackChangesService;
-  private goalsService!: GoalsService;
-  private seriesBible!: SeriesBibleService;
-  private craftCritic!: CraftCriticService;
-  private audiobookPrep!: AudiobookPrepService;
-  private styleClone!: StyleCloneService;
+  public skills!: SkillLoader;
+  public authorOS!: AuthorOSService;
+  public tts!: TTSService;
+  public imageGen!: ImageGenService;
+  public personas!: PersonaService;
+  public projectEngine!: ProjectEngine;
+  public contextEngine!: ContextEngine;
+  public memorySearch!: MemorySearchService;
+  public userModel!: UserModelService;
+  public cronScheduler!: CronSchedulerService;
+  public autoSkill!: AutoSkillService;
+  public writingJudge!: WritingJudgeService;
+  public researchLookup!: ResearchLookupService;
+  public videoResearch!: VideoResearchService;
+  public storyStructures!: StoryStructureService;
+  public plotPromises!: PlotPromisesService;
+  public characterVoices!: CharacterVoicesService;
+  public websiteSites!: WebsiteSiteService;
+  public blogPostDrafter!: BlogPostDrafterService;
+  public websiteDeploy!: WebsiteDeployService;
+  public lessons!: LessonStore;
+  public preferences!: PreferenceStore;
+  public orchestrator!: OrchestratorService;
+  public kdpExporter!: KDPExporter;
+  public betaReader!: BetaReaderService;
+  public dialogueAuditor!: DialogueAuditor;
+  public manuscriptHub!: ManuscriptHubService;
+  public coverTypography!: CoverTypographyService;
+  public externalTools!: ExternalToolsService;
+  public trackChanges!: TrackChangesService;
+  public goalsService!: GoalsService;
+  public seriesBible!: SeriesBibleService;
+  public craftCritic!: CraftCriticService;
+  public audiobookPrep!: AudiobookPrepService;
+  public styleClone!: StyleCloneService;
   // Wave 3 — autonomous career agent with safety rails
-  private confirmationGate!: ConfirmationGateService;
-  private disclosures!: DisclosuresService;
-  private launchOrchestrator!: LaunchOrchestratorService;
-  private amsAds!: AMSAdsService;
-  private bookbub!: BookBubSubmitterService;
-  private releaseCalendar!: ReleaseCalendarService;
-  private readerIntel!: ReaderIntelService;
-  private translationPipeline!: TranslationPipelineService;
-  private websiteBuilder!: WebsiteBuilderService;
-  private telegram?: TelegramBridge;
-  private discord?: DiscordBridge;
+  public confirmationGate!: ConfirmationGateService;
+  public disclosures!: DisclosuresService;
+  public launchOrchestrator!: LaunchOrchestratorService;
+  public amsAds!: AMSAdsService;
+  public bookbub!: BookBubSubmitterService;
+  public releaseCalendar!: ReleaseCalendarService;
+  public readerIntel!: ReaderIntelService;
+  public translationPipeline!: TranslationPipelineService;
+  public websiteBuilder!: WebsiteBuilderService;
+  public telegram?: TelegramBridge;
+  public discord?: DiscordBridge;
 
   // State
   // Conversation history keyed by channel/session to prevent cross-contamination
   // between Telegram users, web chat, and API callers.
-  private conversationHistories: Map<string, Array<{ role: string; content: string; timestamp: Date }>> = new Map();
+  public conversationHistories: Map<string, Array<{ role: string; content: string; timestamp: Date }>> = new Map();
 
-  private getHistory(channel: string): Array<{ role: string; content: string; timestamp: Date }> {
+  public getHistory(channel: string): Array<{ role: string; content: string; timestamp: Date }> {
     let history = this.conversationHistories.get(channel);
     if (!history) {
       history = [];
@@ -311,780 +317,22 @@ class BookClawGateway {
     console.log('  An OpenClaw fork for authors');
     console.log('');
 
-    // ── Phase 1: Configuration ──
-    this.config = new ConfigService(join(ROOT_DIR, 'config'));
-    await this.config.load();
-    console.log('  ✓ Configuration loaded');
-
-    // ── Phase 2: Security Layer ──
-    this.vault = new Vault(join(ROOT_DIR, 'config', '.vault'));
-    await this.vault.initialize();
-    console.log('  ✓ Encrypted vault initialized (AES-256-GCM)');
-
-    this.permissions = new PermissionManager(this.config.get('security.permissionPreset', 'standard'));
-    console.log(`  ✓ Permissions: ${this.permissions.preset} mode`);
-
-    this.audit = new AuditLog(join(ROOT_DIR, 'workspace', '.audit'));
-    await this.audit.initialize();
-    console.log('  ✓ Audit logging active');
-
-    this.sandbox = new SandboxGuard(join(ROOT_DIR, 'workspace'));
-    console.log('  ✓ Sandbox: workspace-only file access');
-
-    this.injectionDetector = new InjectionDetector();
-    console.log('  ✓ Prompt injection detection active');
-
-    // ── Phase 2c: API auth token ──
-    // Gates /api/* and the Socket.IO handshake. Mirrors the BOOKCLAW_VAULT_KEY
-    // pattern: read from env (.env already loaded by dotenv), else generate and
-    // persist to .env. BOOKCLAW_AUTH_DISABLED=1 turns the gate off entirely.
-    if (process.env.BOOKCLAW_AUTH_DISABLED === '1') {
-      this.authToken = null;
-      console.warn('  ⚠️  AUTH DISABLED — BOOKCLAW_AUTH_DISABLED=1 is set.');
-      console.warn('     Every host that can reach this server can drive the agent unauthenticated.');
-    } else {
-      let token = (process.env.BOOKCLAW_AUTH_TOKEN || '').trim();
-      if (!token) {
-        token = randomBytes(32).toString('hex');
-        const envPath = join(ROOT_DIR, '.env');
-        try {
-          await fs.appendFile(
-            envPath,
-            `\n# Auto-generated by BookClaw — HTTP/WebSocket auth token\nBOOKCLAW_AUTH_TOKEN=${token}\n`,
-          );
-          console.log('  🔑 Generated API auth token and saved to .env.');
-        } catch {
-          console.warn('  ⚠️  WARNING: Could not write auth token to .env — using a random session token.');
-          console.warn('     Set BOOKCLAW_AUTH_TOKEN in the environment for production use.');
-        }
-        process.env.BOOKCLAW_AUTH_TOKEN = token;
-      }
-      this.authToken = token;
-      console.log('  ✓ API authentication active (bearer token on /api/* and WebSocket)');
-    }
-
-    // CORS posture (computed in the constructor; applied to Express + Socket.IO).
-    if (this.corsWildcard) {
-      console.warn(`  ${this.corsSummary}`);
-    } else {
-      console.log(`  ${this.corsSummary}`);
-    }
-
-    // Source-IP allowlist posture (computed in the constructor).
-    console.log(`  ${this.ipAllowlistSummary}`);
-
-    // ── Phase 2b: Activity Log ──
-    this.activityLog = new ActivityLog(join(ROOT_DIR, 'workspace'));
-    await this.activityLog.initialize();
-    console.log('  ✓ Activity log initialized');
-
-    // ── Phase 3: Soul & Memory ──
-    this.soul = new SoulService(join(ROOT_DIR, 'workspace', 'soul'));
-    await this.soul.load();
-    console.log(`  ✓ Soul loaded: "${this.soul.getName()}"`);
-
-    this.memory = new MemoryService(join(ROOT_DIR, 'workspace', 'memory'), this.config.get('memory'));
-    await this.memory.initialize();
-    console.log('  ✓ Memory system initialized');
-
-    // ── Phase 3b: Memory Search (FTS5 over conversations + project outputs) ──
-    // Hermes-inspired persistent cross-session search. Falls back gracefully
-    // if better-sqlite3 isn't available on this platform.
-    this.memorySearch = new MemorySearchService(join(ROOT_DIR, 'workspace'));
-    await this.memorySearch.initialize();
-    if (this.memorySearch.isAvailable()) {
-      // Wire memory.process() → live FTS indexing
-      this.memory.setLiveIndexHook((entry) => this.memorySearch.indexConversationTurn(entry));
-      // Index any pre-existing data on first boot — incremental on subsequent.
-      try {
-        const result = await this.memorySearch.reindexAll();
-        const stats = this.memorySearch.getStats();
-        console.log(`  ✓ Memory search ready: ${stats.totalEntries} entries indexed (added ${result.indexed}, skipped ${result.skipped})`);
-      } catch (err) {
-        console.warn(`  ⚠ Memory search reindex failed: ${(err as Error)?.message || err}`);
-      }
-    } else {
-      console.log('  ⚠ Memory search unavailable (search will be disabled, rest of BookClaw works)');
-    }
-
-    // ── Phase 4: AI Providers ──
-    const costsConfig = this.config.get('costs') || {};
-    costsConfig.persistPath = join(ROOT_DIR, 'workspace', 'costs.json');
-    this.costs = new CostTracker(costsConfig);
-    await this.costs.initialize();
-    console.log(`  ✓ Budget: $${this.costs.dailyLimit}/day, $${this.costs.monthlyLimit}/month (persisted)`);
-
-    this.aiRouter = new AIRouter(this.config.get('ai'), this.vault, this.costs);
-    await this.aiRouter.initialize();
-    // Load global preferred provider from config
-    const globalPref = this.config.get('ai.preferredProvider');
-    if (globalPref) {
-      this.aiRouter.setGlobalPreferredProvider(globalPref);
-      console.log(`  ✓ Global preferred provider: ${globalPref}`);
-    }
-    const providers = this.aiRouter.getActiveProviders();
-    for (const p of providers) {
-      const tier = p.tier === 'free' ? '🆓 FREE' : p.tier === 'cheap' ? '💰 CHEAP' : '💎 PAID';
-      console.log(`  ✓ AI: ${p.name} (${p.model}) — ${tier}`);
-    }
-
-    // ── Phase 5: Research Gate ──
-    this.research = new ResearchGate(
-      join(ROOT_DIR, 'config', 'research-allowlist.json'),
-      this.audit
-    );
-    await this.research.initialize();
-    console.log(`  ✓ Research gate: ${this.research.getAllowedDomainCount()} approved domains`);
-
-    // ── Phase 6: Skills ──
-    this.skills = new SkillLoader(join(ROOT_DIR, 'skills'), this.permissions);
-    await this.skills.loadAll();
-    const premiumCount = this.skills.getPremiumSkillCount();
-    const premiumLabel = premiumCount > 0 ? `, ${premiumCount} premium ★` : '';
-    console.log(`  ✓ Skills: ${this.skills.getLoadedCount()} loaded (${this.skills.getAuthorSkillCount()} author-specific${premiumLabel})`);
-
-    // ── Phase 6a: Auto-generate SKILLS.txt reference file ──
-    await this.writeSkillsReference(ROOT_DIR);
-
-    // ── Phase 6b: Author OS Tools ──
-    // Author OS is a SEPARATE project (Author Workflow Engine, Book Bible Engine,
-    // Manuscript Autopsy, AI Author Library, Creator Asset Suite, Format Factory Pro).
-    // If you have it installed alongside BookClaw, we auto-discover and integrate.
-    // If you don't, BookClaw works fine without it — this is purely additive.
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
-    const authorOSCandidates = [
-      process.env.AUTHOR_OS_PATH || '',                           // Explicit env var (highest priority)
-      '/app/author-os',                                           // Docker mount
-      join(homeDir, 'author-os'),                                 // ~/author-os (Linux/macOS)
-      join(homeDir, 'Author OS'),                                 // ~/Author OS (with space)
-      join(ROOT_DIR, '..', 'Author OS'),                          // Sibling to BookClaw
-      join(ROOT_DIR, '..', '..', 'Author OS'),                    // Automations/Author OS/ (Windows default)
-      join(ROOT_DIR, '..', 'author-os'),                          // sibling lowercase
-    ].filter(Boolean);
-    const authorOSPath = authorOSCandidates.find(p => existsSync(p)) || '';
-    this.authorOS = new AuthorOSService(authorOSPath);
-    if (authorOSPath) {
-      await this.authorOS.initialize();
-      const osTools = this.authorOS.getAvailableTools();
-      if (osTools.length > 0) {
-        console.log(`  ✓ Author OS: ${osTools.length} tools found at ${authorOSPath}`);
-        console.log(`    (${osTools.join(', ')})`);
-
-        // Auto-generate synthetic skills from Author OS so users don't have to
-        // hand-write SKILL.md files for every tool. The skills become matchable
-        // triggers in handleMessage and show up in the Available Skills system prompt.
-        try {
-          const synthSkills = await this.authorOS.generateSyntheticSkills();
-          const added = this.skills.registerSynthetic(synthSkills);
-          if (added > 0) {
-            console.log(`  ✓ Author OS skills auto-registered: ${added} skill(s) (${synthSkills.map(s => s.name).join(', ')})`);
-            // Refresh SKILLS.txt so the synthetic skills are visible to the AI's prompt context.
-            await this.writeSkillsReference(ROOT_DIR);
-          }
-        } catch (err) {
-          console.warn(`  ⚠ Could not auto-generate Author OS skills: ${(err as Error)?.message || err}`);
-        }
-      } else {
-        console.log(`  ℹ Author OS folder found at ${authorOSPath} but no recognized tools inside.`);
-        console.log(`    Expected subfolders: "Author Workflow Engine", "Book Bible Engine", "Manuscript Autopsy", "AI Author Library".`);
-      }
-    } else {
-      console.log('  ℹ Author OS: not installed (optional — BookClaw works without it).');
-      console.log('    To enable: place the Author OS folder next to BookClaw, or set AUTHOR_OS_PATH in .env');
-    }
-
-    // ── Phase 6c: TTS Service (Piper) — silent init, optional feature ──
-    this.tts = new TTSService(join(ROOT_DIR, 'workspace'), this.vault);
-    await this.tts.initialize();
-
-    // ── Phase 6c2: Image Generation Service ──
-    this.imageGen = new ImageGenService(join(ROOT_DIR, 'workspace'), this.vault);
-    await this.imageGen.initialize();
-
-    // ── Phase 6d: Author Personas ──
-    this.personas = new PersonaService(join(ROOT_DIR, 'workspace'));
-    await this.personas.initialize();
-    console.log(`  ✓ Personas: ${this.personas.getCount()} author persona(s) loaded`);
-
-    // ── Phase 6e: Project Engine ──
-    this.projectEngine = new ProjectEngine(this.authorOS, ROOT_DIR);
-    // Wire AI capabilities for dynamic planning
-    this.projectEngine.setAI(
-      (request) => this.aiRouter.complete(request),
-      (taskType) => this.aiRouter.selectProvider(taskType)
-    );
-    const templates = this.projectEngine.getTemplates();
-    console.log(`  ✓ Project engine: ${templates.length} templates + dynamic AI planning`);
-
-    // ── Phase 6f: Context Engine ──
-    this.contextEngine = new ContextEngine(join(ROOT_DIR, 'workspace'));
-    this.projectEngine.setContextEngine(this.contextEngine);
-    console.log('  ✓ Context Engine: manuscript memory + continuity checking');
-
-    // ── Phase 6g: Lessons & Preferences (from Sneakers) ──
-    this.lessons = new LessonStore(join(ROOT_DIR, 'workspace', 'memory'));
-    await this.lessons.initialize();
-    console.log(`  ✓ Lessons: ${this.lessons.getAll().length} learned`);
-
-    this.preferences = new PreferenceStore(join(ROOT_DIR, 'workspace', 'memory'));
-    await this.preferences.initialize();
-    const prefCount = Object.keys(this.preferences.getAll()).length;
-    console.log(`  ✓ Preferences: ${prefCount} tracked`);
-
-    // ── Phase 6g2: User Model (Honcho-style dialectic, simplified) ──
-    // Tracks behavioral observations + per-persona breakdown + periodically
-    // consolidates them into an LLM-generated narrative profile.
-    this.userModel = new UserModelService(join(ROOT_DIR, 'workspace'));
-    this.userModel.setAI(
-      (req) => this.aiRouter.complete(req),
-      (taskType: string) => this.aiRouter.selectProvider(taskType),
-    );
-    await this.userModel.initialize();
-    const um = this.userModel.getSnapshot();
-    console.log(`  ✓ User model: ${um?.observationCount || 0} observations${um?.narrative.confidence ? `, narrative confidence ${(um.narrative.confidence * 100).toFixed(0)}%` : ''}`);
-
-    // ── Phase 6g3: Cron Scheduler (Hermes-inspired) ──
-    this.cronScheduler = new CronSchedulerService(join(ROOT_DIR, 'workspace'));
-    await this.cronScheduler.initialize();
-    // Register built-in handlers — user-created jobs reference these by name.
-    this.cronScheduler.registerHandler('reindex-memory-search', async () => {
-      if (!this.memorySearch?.isAvailable()) return { success: false, message: 'Search unavailable' };
-      const r = await this.memorySearch.reindexAll();
-      return { success: true, message: `Indexed ${r.indexed}, skipped ${r.skipped}` };
-    });
-    this.cronScheduler.registerHandler('consolidate-user-model', async () => {
-      const snap = await this.userModel.maybeConsolidate(true);
-      return { success: !!snap, message: snap ? `Narrative refreshed (confidence ${(snap.narrative.confidence * 100).toFixed(0)}%)` : 'No AI provider available' };
-    });
-    this.cronScheduler.registerHandler('heartbeat-broadcast', async (payload) => {
-      const message = String(payload?.message || 'Scheduled check-in.');
-      try { this.io.emit('cron-broadcast', { message, at: new Date().toISOString() }); } catch {}
-      return { success: true, message: `Broadcast: ${message.substring(0, 80)}` };
-    });
-    this.cronScheduler.start();
-    console.log(`  ✓ Cron scheduler: ${this.cronScheduler.list().length} job(s) scheduled, ${this.cronScheduler.listHandlers().length} handlers`);
-
-    // ── Phase 6g4: Auto-Skill Creator ──
-    // Drafts SKILL.md files from completed projects. Drafts go to
-    // skills/_drafts and require user approval before promotion to ops/.
-    this.autoSkill = new AutoSkillService(ROOT_DIR);
-    this.autoSkill.setAI(
-      (req) => this.aiRouter.complete(req),
-      (taskType: string) => this.aiRouter.selectProvider(taskType),
-    );
-    this.autoSkill.setExistingSkillsLookup(() => {
-      const names = new Set<string>();
-      for (const s of this.skills?.getSkillCatalog() || []) names.add(s.name);
-      return names;
-    });
-    await this.autoSkill.initialize();
-    const drafts = this.autoSkill.list({ status: 'pending_review' });
-    console.log(`  ✓ Auto-skill drafter: ${drafts.length} draft(s) pending review`);
-
-    // ── Phase 6g5: Writing Judge (AutoNovel-inspired evaluate-retry loop) ──
-    // Mechanical screen (regex) + LLM judge runs on every chapter draft.
-    // If quality below threshold, the auto-execute path retries with the
-    // judge's feedback as steering input. Capped at 1 retry by default to
-    // keep AI cost predictable.
-    this.writingJudge = new WritingJudgeService();
-    console.log('  ✓ Writing judge: mechanical screen + LLM judge ready');
-
-    // ── Phase 6g6: Research services (sourced lookup + video extraction) ──
-    this.researchLookup = new ResearchLookupService();
-    this.researchLookup.setDependencies(this.vault, this.aiRouter);
-
-    this.videoResearch = new VideoResearchService(join(ROOT_DIR, 'workspace'));
-    this.videoResearch.setDependencies(this.vault, this.aiRouter);
-    const videoDoctor = await this.videoResearch.doctor();
-    if (videoDoctor.ready) {
-      console.log(`  ✓ Research lookup ready (Perplexity via OpenRouter or fallback) | Video research ready (yt-dlp${videoDoctor.ffmpegInstalled ? ' + ffmpeg' : ''}${videoDoctor.whisperKeyConfigured ? ' + Whisper' : ''})`);
-    } else {
-      console.log('  ✓ Research lookup ready | Video research disabled (yt-dlp not installed — see /api/video/doctor)');
-    }
-
-    // ── Phase 6g7: Story Structures (smart-recommend, not forced) ──
-    this.storyStructures = new StoryStructureService();
-    console.log(`  ✓ Story structures: ${this.storyStructures.list().length} structures available (Save the Cat, three-act, five-act / Freytag, Seven-Point / Wells, Hero's Journey, Romancing the Beat, Story Circle, Mystery 5-Stage, Martell Thematic, none)`);
-
-    // ── Phase 6g8: Plot Promises (Sanderson-style promises + payoffs) ──
-    this.plotPromises = new PlotPromisesService(join(ROOT_DIR, 'workspace'));
-    await this.plotPromises.initialize();
-    console.log(`  ✓ Plot promises: tracker ready`);
-
-    // ── Phase 6g9: Character voices (per-character StyleClone fingerprinting) ──
-    this.characterVoices = new CharacterVoicesService(join(ROOT_DIR, 'workspace'));
-    this.characterVoices.setStyleClone(this.styleClone);
-    await this.characterVoices.initialize();
-    console.log(`  ✓ Character voices: per-character voice drift tracker ready`);
-
-    // ── Phase 6h: Website management — auto-add-book, blog drafter, deploy ──
-    this.websiteSites = new WebsiteSiteService(join(ROOT_DIR, 'workspace'));
-    await this.websiteSites.initialize();
-    this.blogPostDrafter = new BlogPostDrafterService();
-    this.websiteDeploy = new WebsiteDeployService();
-    const sitesCount = this.websiteSites.list().length;
-    console.log(`  ✓ Website management: ${sitesCount} site${sitesCount === 1 ? '' : 's'} registered, blog drafter + deploy adapters ready`);
-
-    // Register the project-completion hook for auto-add-book.
-    // When a book-production project completes AND has linked sites, the
-    // book is auto-added to each site's books list (idempotent on slug).
-    // Author still has to render + deploy explicitly — auto-publishing
-    // would be too aggressive.
-    this.projectEngine.onProjectCompleted(async (project: any) => {
-      try {
-        const isBookProject = project.type === 'book-production' || project.type === 'novel-pipeline';
-        if (!isBookProject) return;
-        const linkedSites = this.websiteSites.findSitesForProject(project.id);
-        if (linkedSites.length === 0) return;
-
-        const persona = project.personaId ? this.personas.get?.(project.personaId) : null;
-        const authorName = persona?.penName || 'BookClaw';
-        const slug = String(project.title || 'untitled').toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-        const book: import('./services/website-builder.js').WebsiteBook = {
-          slug,
-          title: project.title,
-          subtitle: project.context?.subtitle,
-          blurb: this.escapeBasicHTML(String(project.description || '')),
-          releaseDate: new Date().toISOString().split('T')[0],
-          seriesName: project.context?.seriesName,
-          seriesNumber: project.context?.seriesNumber,
-          genre: project.context?.genre,
-          formats: ['ebook'],
-        };
-
-        for (const site of linkedSites) {
-          await this.websiteSites.autoAddBook(site.id, book);
-          this.activityLog.log({
-            type: 'file_saved',
-            source: 'internal',
-            goalId: project.id,
-            message: `Auto-added "${project.title}" to site "${site.config.siteName}". Render + deploy when ready.`,
-            metadata: { siteId: site.id, bookSlug: slug, authorName },
-          });
-        }
-      } catch (err) {
-        console.warn('  [website-sites] auto-add-book hook failed:', (err as Error)?.message || err);
-      }
-    });
-
-    // ── Wire project-completion hooks ──
-    // When a project finishes, observe the event for the user model AND
-    // give the auto-skill drafter a chance to capture the workflow.
-    this.projectEngine.onProjectCompleted((project: any) => {
-      // User-model observation
-      try {
-        this.userModel?.observe({
-          type: 'project_completed',
-          metadata: { projectId: project.id, type: project.type, stepCount: project.steps?.length || 0 },
-          personaId: project.personaId || this.memory.getActivePersonaId(),
-        });
-      } catch { /* never block completion */ }
-      // Auto-skill draft (fire-and-forget; AI may take a few seconds)
-      this.autoSkill?.maybeDraftFromProject({
-        id: project.id,
-        type: project.type,
-        title: project.title,
-        description: project.description,
-        steps: project.steps || [],
-      }).catch(err => console.error('[auto-skill] draft error:', err));
-    });
-
-    // ── Phase 6h: Orchestrator (script manager) ──
-    this.orchestrator = new OrchestratorService(join(ROOT_DIR, 'workspace'));
-    await this.orchestrator.initialize();
-    const scriptCount = this.orchestrator.getConfigs().length;
-    console.log(`  ✓ Orchestrator: ${scriptCount} script(s) configured`);
-    await this.orchestrator.autoStartAll();
-    this.orchestrator.startHealthCheck();
-
-    // ── Phase 6i: Author-facing export & feedback services ──
-    this.kdpExporter = new KDPExporter();
-    this.betaReader = new BetaReaderService();
-    this.dialogueAuditor = new DialogueAuditor();
-    this.manuscriptHub = new ManuscriptHubService();
-    this.coverTypography = new CoverTypographyService();
-    this.externalTools = new ExternalToolsService(ROOT_DIR);
-    this.trackChanges = new TrackChangesService();
-    console.log('  ✓ KDP exporter, beta reader, dialogue auditor, hub, cover typography, external tools, track-changes ready');
-
-    // ── Phase 6j: Wave 2 — career/craft/series/audiobook/voice ──
-    this.goalsService = new GoalsService(join(ROOT_DIR, 'workspace'));
-    await this.goalsService.initialize();
-    console.log(`  ✓ Author goals: ${this.goalsService.listGoals().length} tracked`);
-
-    this.seriesBible = new SeriesBibleService(join(ROOT_DIR, 'workspace'));
-    await this.seriesBible.initialize();
-    console.log(`  ✓ Series bible: ${this.seriesBible.listSeries().length} series`);
-
-    this.craftCritic = new CraftCriticService();
-    this.audiobookPrep = new AudiobookPrepService();
-    this.styleClone = new StyleCloneService();
-    console.log('  ✓ Craft critic, audiobook prep, style clone ready');
-
-    // ── Phase 6k: Wave 3 — autonomous career agent (gated) ──
-    this.confirmationGate = new ConfirmationGateService(join(ROOT_DIR, 'workspace'));
-    this.confirmationGate.setAuditLogger((category, action, meta) => this.audit.log(category, action, meta));
-    await this.confirmationGate.initialize();
-    console.log(`  ✓ Confirmation gate: ${this.confirmationGate.list({ status: 'pending' }).length} pending`);
-
-    this.disclosures = new DisclosuresService();
-
-    this.launchOrchestrator = new LaunchOrchestratorService(join(ROOT_DIR, 'workspace'));
-    this.launchOrchestrator.setDependencies(this.confirmationGate, this.disclosures);
-    await this.launchOrchestrator.initialize();
-    console.log(`  ✓ Launch orchestrator: ${this.launchOrchestrator.listLaunches().length} launch(es) tracked`);
-
-    this.amsAds = new AMSAdsService();
-    this.bookbub = new BookBubSubmitterService();
-
-    this.releaseCalendar = new ReleaseCalendarService(join(ROOT_DIR, 'workspace'));
-    await this.releaseCalendar.initialize();
-    console.log(`  ✓ Release calendar: ${this.releaseCalendar.list().length} event(s)`);
-
-    this.readerIntel = new ReaderIntelService();
-
-    this.translationPipeline = new TranslationPipelineService();
-    this.translationPipeline.setGate(this.confirmationGate);
-
-    this.websiteBuilder = new WebsiteBuilderService(join(ROOT_DIR, 'workspace'));
-    console.log('  ✓ AMS, BookBub, Reader Intel, Translation, Website Builder ready');
-    console.log('  ⚠ Wave 3 actions are gated — review SECURITY.md and confirm every external action.');
-
-    // ── Phase 7: Heartbeat ──
-    this.heartbeat = new HeartbeatService(this.config.get('heartbeat'), this.memory);
-
-    // Wire autonomous mode — heartbeat can now trigger project steps on a schedule
-    const commandHandlers = this.buildTelegramCommandHandlers();
-    this.heartbeat.setAutonomous(
-      // Run one project step (reuses the same logic as Telegram /project command)
-      async (projectId: string) => commandHandlers.startAndRunProject(projectId),
-      // List projects with remaining step counts
-      () => this.projectEngine.listProjects().map(g => ({
-        id: g.id,
-        title: g.title,
-        status: g.status,
-        progress: `${g.progress}%`,
-        progressNum: g.progress,
-        stepsRemaining: g.steps.filter(s => s.status === 'pending' || s.status === 'active').length,
-        type: g.type,
-      })),
-      // Broadcast status to dashboard (WebSocket) and Telegram
-      (message: string) => {
-        this.io.emit('autonomous-status', { message, timestamp: new Date().toISOString() });
-        if (this.telegram) {
-          this.telegram.broadcastToAllowed?.(message);
-        }
-      },
-      // Self-improvement analysis callback
-      async (projectId: string) => {
-        const project = this.projectEngine.getProject(projectId);
-        if (!project) return null;
-
-        // Read the last completed step results for analysis
-        const completedSteps = project.steps
-          .filter((s: any) => s.status === 'completed' && s.result)
-          .slice(-10);
-
-        if (completedSteps.length === 0) return null;
-
-        const sampleText = completedSteps
-          .map((s: any) => `### ${s.label}\n${(s.result || '').substring(0, 1500)}`)
-          .join('\n\n');
-
-        try {
-          const provider = this.aiRouter.selectProvider('general');
-          const result = await this.aiRouter.complete({
-            provider: provider.id,
-            system: 'You are a writing coach analyzing completed manuscript output. Be specific and actionable.',
-            messages: [{
-              role: 'user' as const,
-              content: `Analyze this writing from the completed project "${project.title}". Identify:\n\n` +
-                `1. 3-5 actionable insights for improving future writing\n` +
-                `2. 2-3 specific strengths to maintain\n` +
-                `3. 2-3 specific weaknesses to address\n\n` +
-                `Return ONLY valid JSON: {"insights":["..."],"strengths":["..."],"weaknesses":["..."]}\n\n` +
-                `Writing samples:\n\n${sampleText}`,
-            }],
-          });
-
-          // Parse AI response
-          const cleaned = result.text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-          const parsed = JSON.parse(cleaned);
-
-          // Save to self-improve log
-          const workspaceDir = join(ROOT_DIR, 'workspace');
-          const agentDir = join(workspaceDir, '.agent');
-          await fs.mkdir(agentDir, { recursive: true });
-          const logPath = join(agentDir, 'self-improve-log.json');
-          let log: any[] = [];
-          try {
-            if (existsSync(logPath)) {
-              log = JSON.parse(await fs.readFile(logPath, 'utf-8'));
-            }
-          } catch { /* start fresh */ }
-
-          log.push({
-            projectId,
-            projectTitle: project.title,
-            timestamp: new Date().toISOString(),
-            ...parsed,
-          });
-
-          // Keep last 50 entries
-          if (log.length > 50) log = log.slice(-50);
-          await fs.writeFile(logPath, JSON.stringify(log, null, 2), 'utf-8');
-
-          this.activityLog.log({
-            type: 'system',
-            source: 'internal',
-            goalId: projectId,
-            message: `Self-improvement analysis saved: ${parsed.insights?.length || 0} insights`,
-            metadata: { insights: parsed.insights?.length, strengths: parsed.strengths?.length },
-          });
-
-          // ── Core Lessons Consolidation ──
-          // Every 5 entries, distill ALL insights into a persistent "Core Lessons" file.
-          // This prevents old improvements from being forgotten as new ones are added.
-          // Core Lessons get injected into future project system prompts.
-          if (log.length % 5 === 0 && log.length >= 5) {
-            try {
-              const allInsights = log.flatMap((l: any) => l.insights || []);
-              const allStrengths = log.flatMap((l: any) => l.strengths || []);
-              const allWeaknesses = log.flatMap((l: any) => l.weaknesses || []);
-
-              const consolidateResult = await this.aiRouter.complete({
-                provider: provider.id,
-                system: 'You are a writing coach creating a persistent learning document. Distill patterns from many observations into timeless, actionable principles. Remove duplicates. Keep the most important lessons. Be concise — each lesson should be 1-2 sentences max.',
-                messages: [{
-                  role: 'user' as const,
-                  content: `Consolidate these observations from ${log.length} completed writing projects into Core Lessons.\n\n` +
-                    `ALL INSIGHTS:\n${allInsights.map((i: string, n: number) => `${n + 1}. ${i}`).join('\n')}\n\n` +
-                    `ALL STRENGTHS:\n${allStrengths.map((s: string, n: number) => `${n + 1}. ${s}`).join('\n')}\n\n` +
-                    `ALL WEAKNESSES:\n${allWeaknesses.map((w: string, n: number) => `${n + 1}. ${w}`).join('\n')}\n\n` +
-                    `Create a concise Core Lessons document with these sections:\n` +
-                    `1. TOP PRINCIPLES (5-7 most important writing lessons learned)\n` +
-                    `2. PROVEN STRENGTHS (3-5 things to keep doing)\n` +
-                    `3. RECURRING WEAKNESSES (3-5 things to actively avoid)\n` +
-                    `4. STYLE NOTES (any consistent voice/style observations)\n\n` +
-                    `Write in second person ("You tend to..." / "Your strength is..."). Be specific and actionable. Max 500 words total.`,
-                }],
-              });
-
-              const coreLessonsPath = join(agentDir, 'core-lessons.md');
-              const coreLessonsContent = `# BookClaw Core Lessons\n\n` +
-                `*Auto-consolidated from ${log.length} project analyses on ${new Date().toISOString().split('T')[0]}*\n\n` +
-                consolidateResult.text;
-              await fs.writeFile(coreLessonsPath, coreLessonsContent, 'utf-8');
-              console.log(`  🧠 Core Lessons consolidated from ${log.length} analyses`);
-            } catch (consolidateErr) {
-              console.log(`  ⚠ Core Lessons consolidation failed: ${consolidateErr}`);
-            }
-          }
-
-          return parsed;
-        } catch {
-          return null;
-        }
-      },
-      // Follow-up project creation for completed novel pipelines
-      async (originalProjectId: string, originalTitle: string, originalType: string) => {
-        if (originalType !== 'novel-pipeline') return null;
-
-        const followUpTitle = `Polish & Publish: ${originalTitle}`;
-        const followUpDesc = `Follow-up tasks after completing the first draft of "${originalTitle}". ` +
-          `Prepare for beta readers, write query letter, create synopsis.`;
-
-        const project = this.projectEngine.createProject('book-launch', followUpTitle, followUpDesc, {
-          parentProjectId: originalProjectId,
-          parentTitle: originalTitle,
-          autoCreated: true,
-        });
-
-        this.activityLog.log({
-          type: 'project_created',
-          source: 'internal',
-          goalId: project.id,
-          message: `Auto-created follow-up project: "${followUpTitle}"`,
-          metadata: { parentProjectId: originalProjectId, steps: project.steps.length },
-        });
-
-        return project.id;
-      },
-      // Idle task: run configurable author-focused tasks when no projects are active
-      // Loads tasks from workspace/.config/idle-tasks.json (user-editable via dashboard)
-      async () => {
-        // Load tasks from config file, falling back to defaults
-        const idleConfigPath = join(ROOT_DIR, 'workspace', '.config', 'idle-tasks.json');
-        let idleTasks: Array<{ label: string; prompt: string; enabled?: boolean }> = [];
-        try {
-          if ((await import('fs')).existsSync(idleConfigPath)) {
-            const raw = await fs.readFile(idleConfigPath, 'utf-8');
-            const parsed = JSON.parse(raw);
-            idleTasks = (parsed.tasks || []).filter((t: any) => t.enabled !== false);
-          }
-        } catch { /* fall through to defaults */ }
-
-        if (idleTasks.length === 0) {
-          idleTasks = (await import('./services/idle-tasks-defaults.js')).DEFAULT_IDLE_TASKS;
-          // Save defaults on first run
-          try {
-            const configDir = join(ROOT_DIR, 'workspace', '.config');
-            await fs.mkdir(configDir, { recursive: true });
-            await fs.writeFile(idleConfigPath, JSON.stringify({ tasks: idleTasks }, null, 2), 'utf-8');
-          } catch { /* non-fatal */ }
-        }
-
-        if (idleTasks.length === 0) return null;
-
-        // Pick a random task
-        const task = idleTasks[Math.floor(Math.random() * idleTasks.length)];
-
-        try {
-          const provider = this.aiRouter.selectProvider('general');
-          const result = await this.aiRouter.complete({
-            provider: provider.id,
-            system: 'You are BookClaw, an AI writing agent for authors. Be detailed, actionable, and expert-level.',
-            messages: [{ role: 'user' as const, content: task.prompt }],
-            maxTokens: 2000,
-          });
-
-          if (result.text && result.text.length > 20) {
-            // Save to workspace
-            const idleDir = join(ROOT_DIR, 'workspace', '.agent');
-            await fs.mkdir(idleDir, { recursive: true });
-            const dateStr = new Date().toISOString().split('T')[0];
-            await fs.writeFile(
-              join(idleDir, `idle-${dateStr}.md`),
-              `# ${task.label}\n*Generated ${new Date().toISOString()}*\n\n${result.text}`,
-              'utf-8'
-            );
-
-            this.activityLog.log({
-              type: 'system',
-              source: 'internal',
-              message: `Idle task: ${task.label}`,
-              metadata: { taskType: task.label },
-            });
-
-            return `${task.label}: ${result.text.substring(0, 200)}`;
-          }
-          return null;
-        } catch {
-          return null;
-        }
-      }
-    );
-
-    this.heartbeat.start();
-    const autonomousLabel = this.config.get('heartbeat.autonomousEnabled')
-      ? ` + autonomous every ${this.config.get('heartbeat.autonomousIntervalMinutes', 30)}min`
-      : '';
-    console.log(`  ✓ Heartbeat: every ${this.config.get('heartbeat.intervalMinutes', 15)} minutes${autonomousLabel}`);
-
-    // ── Phase 8: Bridges ──
-    if (this.config.get('bridges.telegram.enabled')) {
-      const token = await this.vault.get('telegram_bot_token');
-      if (token) {
-        this.telegram = new TelegramBridge(token, this.config.get('bridges.telegram'));
-        this.telegram.onMessage((content, channel, respond) =>
-          this.handleMessage(content, channel, respond)
-        );
-        this.telegram.setCommandHandlers(commandHandlers);
-        await this.telegram.connect();
-        console.log('  ✓ Telegram bridge connected (command center mode)');
-      } else {
-        console.log('  ⚠ Telegram enabled but no token in vault');
-      }
-    }
-
-    if (this.config.get('bridges.discord.enabled')) {
-      const token = await this.vault.get('discord_bot_token');
-      if (token) {
-        this.discord = new DiscordBridge(token, this.config.get('bridges.discord'));
-        await this.discord.connect();
-        console.log('  ✓ Discord bridge connected');
-      } else {
-        console.log('  ⚠ Discord enabled but no token in vault');
-      }
-    }
-
-    // ── Phase 9: API Routes ──
-    createAPIRoutes(this.app, this, ROOT_DIR);
-    console.log('  ✓ API routes registered');
-
-    // ── Phase 10: WebSocket ──
-    this.setupWebSocket();
-    console.log('  ✓ WebSocket ready');
-
-    // ── Phase 11: Static Dashboard ──
-    const dashboardPath = join(ROOT_DIR, 'dashboard', 'dist');
-    const dashboardHtmlFile = join(dashboardPath, 'index.html');
-
-    // Serve the dashboard HTML with the auth token injected so its fetch calls can
-    // authenticate. The __BOOKCLAW_AUTH_TOKEN__ placeholder is replaced at serve
-    // time (empty string when auth is disabled). index:false on express.static below
-    // ensures "/" reaches this handler instead of the raw file.
-    const serveDashboard = async (_req: any, res: any) => {
-      try {
-        const html = await fs.readFile(dashboardHtmlFile, 'utf-8');
-        res.type('html').send(html.replaceAll('__BOOKCLAW_AUTH_TOKEN__', this.authToken ?? ''));
-      } catch {
-        if (!res.headersSent) {
-          res.status(500).json({ status: 'error', message: 'BookClaw running but dashboard HTML not found.' });
-        }
-      }
-    };
-
-    this.app.get('/', serveDashboard);
-    this.app.use(express.static(dashboardPath, { index: false }));
-
-    // JSON 404 handler for API routes — MUST run before SPA fallback
-    // so unmatched /api/ requests get JSON errors instead of the dashboard HTML.
-    this.app.use((req: any, res: any, next: any) => {
-      if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
-      }
-      next();
-    });
-
-    // SPA fallback — any non-API path serves the dashboard HTML
-    this.app.get('*', (req, res) => {
-      if (req.path.startsWith('/api/')) return; // already handled above
-      serveDashboard(req, res);
-    });
-
-    // Global JSON error handler — ensures API errors never return HTML
-    this.app.use((err: any, _req: any, res: any, _next: any) => {
-      console.error('Unhandled API error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: String(err?.message || err || 'Internal server error') });
-      }
-    });
-
-    // Log startup to activity log
-    await this.activityLog.log({
-      type: 'system',
-      source: 'internal',
-      message: `BookClaw started — ${providers.length} AI provider(s), ${this.skills.getLoadedCount()} skills`,
-      metadata: {
-        providers: providers.map(p => p.id),
-        skillCount: this.skills.getLoadedCount(),
-      },
-    });
-
-    console.log('');
-    console.log('  ═══════════════════════════════════');
-    console.log('  ✍️  BookClaw is ready to write');
-    console.log(`  📡 Dashboard: http://localhost:${this.config.get('server.port', 3847)}`);
-    console.log('  ═══════════════════════════════════');
-    console.log('');
+    await initConfig(this);
+    await initSecurity(this);
+    await initSoulMemory(this);
+    await initAI(this);
+    await initResearchAndSkills(this);
+    await initContentServices(this);
+    await initKnowledgeServices(this);
+    await initWebsiteAndOrchestrator(this);
+    await initExportAndWaves(this);
+    await initHeartbeatAndBridges(this);
+    await initHttp(this);
   }
 
   // True if the given source IP is permitted by the allowlist. Loopback is always
   // allowed (recovery path). Unparseable addresses are denied while enforcing.
-  private isIpAllowed(rawIp: string): boolean {
+  public isIpAllowed(rawIp: string): boolean {
     let addr: ipaddr.IPv4 | ipaddr.IPv6;
     try {
       addr = ipaddr.process(rawIp); // normalizes IPv4-mapped IPv6 (::ffff:a.b.c.d) to IPv4
@@ -1101,7 +349,7 @@ class BookClawGateway {
   }
 
   // Resolve a Socket.IO client's source IP, honoring X-Forwarded-For when trust-proxy is on.
-  private socketClientIp(socket: { handshake: { address: string; headers: Record<string, unknown> } }): string {
+  public socketClientIp(socket: { handshake: { address: string; headers: Record<string, unknown> } }): string {
     if (this.trustProxy) {
       const xff = String(socket.handshake.headers['x-forwarded-for'] || '');
       const first = xff.split(',')[0].trim();
@@ -1110,7 +358,7 @@ class BookClawGateway {
     return socket.handshake.address || '';
   }
 
-  private setupWebSocket(): void {
+  public setupWebSocket(): void {
     // Source-IP gate on the handshake — same allowlist as the HTTP routes, in front of auth.
     this.io.use((socket, next) => {
       if (this.allowedIps.length === 0) return next(); // enforcement off
@@ -1390,7 +638,7 @@ class BookClawGateway {
   /**
    * Classify what type of writing task this is for tiered routing.
    */
-  private classifyTask(content: string): string {
+  public classifyTask(content: string): string {
     const lower = content.toLowerCase();
 
     if (lower.match(/consistency|continuity|timeline check|cross.?chapter|plot.?hole|contradiction/)) {
@@ -1428,7 +676,7 @@ class BookClawGateway {
    * Build the complete system prompt with soul, memory, skills, and project context
    */
   /** Write the human-readable SKILLS.txt reference file in workspace/. */
-  private async writeSkillsReference(rootDir: string): Promise<void> {
+  public async writeSkillsReference(rootDir: string): Promise<void> {
     try {
       const skillsRefPath = join(rootDir, 'workspace', 'SKILLS.txt');
       const catalog = this.skills.getSkillCatalog();
@@ -1464,12 +712,12 @@ class BookClawGateway {
 
   /** Escape HTML chars in a string. Used by the website-sites hook so we
    *  don't pass user-supplied project descriptions raw into a book blurb. */
-  private escapeBasicHTML(s: string): string {
+  public escapeBasicHTML(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  private buildSystemPrompt(context: {
+  public buildSystemPrompt(context: {
     soul: string;
     memories: string;
     activeProject: string | null;
@@ -1706,7 +954,7 @@ class BookClawGateway {
    * Mirrors Telegram command logic but returns strings.
    */
   // Dashboard file list cache for /read and /export number-picking
-  private dashboardLastFileList: string[] = [];
+  public dashboardLastFileList: string[] = [];
 
   async handleDashboardCommand(input: string): Promise<string> {
     const parts = input.split(/\s+/);
@@ -2271,7 +1519,7 @@ class BookClawGateway {
    * These let Telegram commands directly interact with GoalEngine,
    * file system, and AI — without dumping long responses into chat.
    */
-  private buildTelegramCommandHandlers() {
+  public buildTelegramCommandHandlers() {
     const gateway = this;
     const workspaceDir = join(ROOT_DIR, 'workspace');
 

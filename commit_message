@@ -1,12 +1,29 @@
-Add OpenRouter pipeline test, TODO items, and .keys ignore
+Refactor (Level 1, Stage B complete): routes.ts is a 59-line composition root
 
-- tests/openrouter-pipeline.sh: non-hermetic, manually-run verification that
-  drives a bounded novel pipeline through OpenRouter only (Ollama disabled via
-  an EXIT-trap that restores it) to confirm every pipeline task type — incl.
-  reasoning-high (consistency, final_edit) and 16K-output steps — completes.
-  Parameterized (BASE_URL / BOOKCLAW_AUTH_TOKEN / CONTAINER / CHAPTERS / WORDS)
-- docs/TODO.md: add OpenRouter key auto-register bug (routes.ts:257), per-step
-  model selection (Larger items), API-first frontend principle (enables MCP),
-  and a new "User experience & product features" group (start-a-project
-  tutorial, in-app help system, markdown file viewer)
-- .gitignore: ignore .keys (local API-key stash for testing)
+Behavior-preserving; verified tsc + route-registration diff (234/234) +
+called-vs-defined mounter check + smoke (18/18). routes.ts: ~1,973 -> 59 lines.
+
+This round's mounters: export (KDP blurb, track-changes, external tools, cover,
+hub, beta reader), wave (Wave 2 + Wave 3 gated career agent), knowledge (memory
+search, user model, cron, auto-skill, writing judge, character voices, research
+lookup + runMarketingPreset, video, structures, promises), website.
+
+- Dropped the inline gatherChapters + addWaveDisclaimer defs (now in _shared;
+  wave/export use the makeGatherChapters(baseDir) factory, knowledge/website
+  import addWaveDisclaimer).
+- Fixed the cron-scheduler dynamic-import path for the deeper routes/ folder.
+- Pruned routes.ts: removed now-unused imports (multer/path/docx/epub/safePath/
+  upload + Request/Response) and the unused `services` local. createAPIRoutes is
+  now a thin composition root that just calls the 12 mountX(app, gateway, baseDir)
+  functions, with a "don't grow this back into a god factory" note.
+
+Level 1 (god-class split) is now COMPLETE:
+  index.ts  2,649 -> 2,103  (Stage A: gateway/src/init/ phase modules)
+  routes.ts 5,518 ->    59  (Stage B: gateway/src/api/routes/ mounters)
+All behavior-preserving. Final gate PASSED: Docker rebuild on Mercury (build PASS
++ container healthy) and a full tests/openrouter-pipeline.sh run — 51/51 pipeline
+steps PASS through the refactored handlers across every task type.
+
+Docs: recorded Level 1 in COMPLETED.md (2026-06-01); reworked the TODO god-class
+item to Levels 2-3 (deferred) + an import-prune cleanup; added a STATUS banner to
+GOD-CLASS-REFACTOR.md and a Level-1-done note to the North Star bullet.
