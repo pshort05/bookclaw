@@ -1,8 +1,11 @@
-Remove footer author-links icons (Site/YT/Sub/Tools) from dashboard
+Fix init-ordering bug: characterVoices wired with undefined styleClone
 
-- dashboard/dist/index.html: delete the .footer-links block, its CSS, the
-  mobile display:none rule, and the applyFooterLinks() JS + boot call.
-- config/default.json + settings.routes.ts: drop the now-orphaned
-  branding.footerLinks config and the /api/config branding field (the
-  removed JS was their only consumer).
+- Phase 6g9 wired characterVoices.setStyleClone(gw.styleClone) before
+  styleClone was constructed in Phase 6j, passing undefined.
+- Move the wiring to Phase 6j (init/phase-09-export-wave.ts), right after
+  styleClone is constructed; characterVoices.initialize() only does mkdir and
+  never touches styleClone, so this ordering is safe.
+- Update the phase doc-comments to describe the deferred wiring.
 - docs: move the item from TODO.md to COMPLETED.md.
+
+Verified: tsc --noEmit clean; npm run test:smoke all pass.

@@ -18,9 +18,10 @@ import type { BookClawGateway } from '../index.js';
  * handlers), auto-skill drafter, writing judge, research services (sourced
  * lookup + video), story structures, plot promises, character voices.
  *
- * NOTE: characterVoices.setStyleClone(gw.styleClone) runs before styleClone is
- * constructed (Phase 6j) — preserved verbatim from the original ordering (it is
- * wired with `undefined`). See docs/TODO.md "Latent init-ordering bug".
+ * NOTE: characterVoices needs styleClone, which isn't constructed until Phase 6j
+ * — so the setStyleClone() wiring is deferred to that phase. initialize() here
+ * only creates the store dir and never touches styleClone, so this ordering is
+ * safe.
  */
 export async function initKnowledgeServices(gw: BookClawGateway): Promise<void> {
   // ── Phase 6g: Lessons & Preferences (from Sneakers) ──
@@ -106,8 +107,8 @@ export async function initKnowledgeServices(gw: BookClawGateway): Promise<void> 
   console.log(`  ✓ Plot promises: tracker ready`);
 
   // ── Phase 6g9: Character voices (per-character StyleClone fingerprinting) ──
+  // styleClone is wired in Phase 6j (initExportAndWaves), once it exists.
   gw.characterVoices = new CharacterVoicesService(join(ROOT_DIR, 'workspace'));
-  gw.characterVoices.setStyleClone(gw.styleClone);
   await gw.characterVoices.initialize();
   console.log(`  ✓ Character voices: per-character voice drift tracker ready`);
 }

@@ -51,6 +51,9 @@ export async function initExportAndWaves(gw: BookClawGateway): Promise<void> {
   gw.craftCritic = new CraftCriticService();
   gw.audiobookPrep = new AudiobookPrepService();
   gw.styleClone = new StyleCloneService();
+  // Deferred wiring from Phase 6g9: characterVoices needs styleClone, which only
+  // exists now. setStyleClone just stores the reference for its runtime methods.
+  gw.characterVoices.setStyleClone(gw.styleClone);
   console.log('  ✓ Craft critic, audiobook prep, style clone ready');
 
   // ── Phase 6k: Wave 3 — autonomous career agent (gated) ──
