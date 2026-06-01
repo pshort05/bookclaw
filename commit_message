@@ -1,22 +1,18 @@
-Dashboard split (1/2): shared state object + lib layer + personas panel
+Dashboard split (2/?): extract idle-tasks + insights panels
 
-First increment of the per-feature module split (esbuild build pipeline
-landed previously). Behavior-preserving — same code, reorganized.
+Continues the per-feature module split. Behavior-preserving (same code,
+relocated into modules; esbuild bundles back to one IIFE).
 
-- lib/state.js: shared mutable state object (currentPanel, allProjects,
-  currentDetailProject, projectPollTimer, chatWaiting, idleTasksCache, …).
-  ES modules can't reassign imported bindings, so cross-module mutable state
-  moves to state.X; all references in main.js rewritten.
-- lib/api.js: api/apiRaw/authHeaders/authUrl + the injected auth-token
-  placeholder. lib/ui.js: showToast. lib/format.js: esc/formatBytes/
-  formatDate/avatarColor/initials.
-- panels/personas.js: first panel extracted (self-contained, lib-only deps).
-- main.js imports the above; 2677 -> ~2390 lines.
+- panels/idle-tasks.js: idle-task queue CRUD + history (self-contained;
+  lib + state.idleTasksCache only).
+- panels/insights.js: lessons, preferences, orchestrator, manuscript-hub
+  cards. Preserves the window.deletePreference / orchAction / orchRemove
+  globals used by inline onclick handlers in this panel's HTML.
+- main.js imports the two; 2390 -> 2021 lines.
 
-Remaining panels (chat, library, idle-tasks, settings, insights,
-projects, home, hq, nav, status, theme) tracked in docs/TODO.md — done
-incrementally with a Mercury visual check as the acceptance gate, since a
-missed cross-panel import is a runtime break esbuild can't catch.
+Remaining (tracked in docs/TODO.md): settings, then the interconnected core
+(projects + context-continuity, home, hq, chat, library); nav (switchPanel),
+status (polling) and theme stay in main.js as the app shell.
 
-Verified: build clean (token placeholder preserved, no dup symbols);
-npm test green (29 unit + API + smoke incl. dashboard-serves-with-token).
+Verified: build clean (token placeholder + the 3 window.* globals present in
+the bundle, no dup symbols); npm test green (29 unit + API + smoke).
