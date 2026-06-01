@@ -168,9 +168,6 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       heartbeat: services.config.get('heartbeat'),
       costs: services.config.get('costs'),
       security: { permissionPreset: services.config.get('security.permissionPreset') },
-      // Public-by-design: footer link URLs the dashboard renders. Forks can
-      // override these in config/user.json without editing the HTML.
-      branding: services.config.get('branding'),
     });
   });
 

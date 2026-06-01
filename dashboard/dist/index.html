@@ -141,21 +141,6 @@ body {
   color: var(--muted);
   white-space: nowrap;
 }
-.footer-links {
-  display: flex;
-  gap: 12px;
-  padding-top: 4px;
-}
-.footer-links a {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 11px;
-  transition: color var(--transition);
-}
-.footer-links a:hover { color: var(--accent); }
 .heartbeat-dot {
   width: 10px;
   height: 10px;
@@ -183,7 +168,6 @@ body {
   .sidebar-brand { justify-content: center; padding: 16px 0; }
   .sidebar-footer { justify-content: center; padding: 12px 0; }
   .sidebar-footer .footer-label { display: none; }
-  .sidebar-footer .footer-links { display: none; }
 }
 
 /* ── Main Content Area ── */
@@ -660,27 +644,6 @@ textarea { resize: vertical; min-height: 60px; }
       <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">
         <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
-    </div>
-    <!-- Author/creator links — small, muted icons; no calls to action.
-         Default targets are Writing Secrets channels. Authors can override
-         them per-deployment (see authorLinks at the top of the JS section). -->
-    <div class="footer-links" id="footerAuthorLinks">
-      <a href="https://www.getwritingsecrets.com" target="_blank" rel="noopener" title="Writing Secrets — guides, frameworks, newsletter">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span>Site</span>
-      </a>
-      <a href="https://www.youtube.com/@WritingSecrets" target="_blank" rel="noopener" title="Writing Secrets YouTube channel">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.13C5.12 19.56 12 19.56 12 19.56s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
-        <span>YT</span>
-      </a>
-      <a href="https://writingbeginner.substack.com" target="_blank" rel="noopener" title="Writing Beginner Substack">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>
-        <span>Sub</span>
-      </a>
-      <a href="https://ko-fi.com/ckokoski/shop" target="_blank" rel="noopener" title="Writing Secrets Ko-Fi store — author tools">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-        <span>Tools</span>
-      </a>
     </div>
   </div>
 </div>
@@ -3780,32 +3743,9 @@ function humanAgo(date) {
 }
 
 // ================================================================
-// FOOTER AUTHOR LINKS — overridable via config/user.json
-// ================================================================
-// Pulls config.branding.footerLinks (website / youtube / substack / kofi)
-// from the gateway and rewrites the footer hrefs at boot. Defaults are the
-// Writing Secrets channels; forks can change these in config/user.json
-// without touching the HTML.
-function applyFooterLinks() {
-  api('GET', '/api/config').then(function(data) {
-    var links = data && data.branding && data.branding.footerLinks;
-    if (!links) return;
-    var container = document.getElementById('footerAuthorLinks');
-    if (!container) return;
-    var anchors = container.querySelectorAll('a');
-    var map = ['website', 'youtube', 'substack', 'kofi'];
-    anchors.forEach(function(a, i) {
-      var key = map[i];
-      if (key && links[key]) a.setAttribute('href', links[key]);
-    });
-  }).catch(function() { /* default hardcoded links remain */ });
-}
-
-// ================================================================
 // INITIALIZATION
 // ================================================================
 renderKeyProviders();
-applyFooterLinks();
 startPolling();
 
 })();

@@ -1,16 +1,8 @@
-Add product-direction doc (open-source studio for the prolific indie author)
+Remove footer author-links icons (Site/YT/Sub/Tools) from dashboard
 
-- docs/PRODUCT-DIRECTION.md: the why/for-whom companion to the North Star.
-  Positioning (open-source multi-book "studio"), primary user (prolific solo
-  indie author) + explicit non-targets, AuthorClaw/OpenClaw lineage and a
-  diverge-but-contribute-back stance, the five anchoring use cases with a
-  supportability map, the sharpened data model (Book = Author-profile +
-  Novel-type -> version-pinned data-driven pipeline with per-step models),
-  the vertical thin-slice strategy, roadmap sequencing (embeddings + per-step
-  model rise; security review holds; agency/voice defer), the WireGuard +
-  final-to-shared-folder portability pattern (edits-always-win), success
-  signals, and resolved open decisions.
-- docs/TODO.md: one-line back-pointer from the North Star section to the new
-  doc.
-- Produced via the brainstorming workflow; this is product direction, not a
-  build spec. The first vertical slice gets its own spec + plan later.
+- dashboard/dist/index.html: delete the .footer-links block, its CSS, the
+  mobile display:none rule, and the applyFooterLinks() JS + boot call.
+- config/default.json + settings.routes.ts: drop the now-orphaned
+  branding.footerLinks config and the /api/config branding field (the
+  removed JS was their only consumer).
+- docs: move the item from TODO.md to COMPLETED.md.

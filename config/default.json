@@ -38,14 +38,6 @@
     "maxMemoryEntries": 200,
     "autoSummarize": true
   },
-  "branding": {
-    "footerLinks": {
-      "website":  "https://www.getwritingsecrets.com",
-      "youtube":  "https://www.youtube.com/@WritingSecrets",
-      "substack": "https://writingbeginner.substack.com",
-      "kofi":     "https://ko-fi.com/ckokoski/shop"
-    }
-  },
   "heartbeat": {
     "intervalMinutes": 15,
     "dailyWordGoal": 1000,
