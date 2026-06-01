@@ -1,20 +1,13 @@
-Seed the test suite: AIRouter unit tests + curl API tests
+Prune unused imports left in index.ts after the Level 1 refactor
 
-- tests/unit/router.test.ts: 26-assertion AIRouter suite (node --test via
-  tsx) — tier routing, preferred-provider override, over-budget gate,
-  getFallbackProvider, and the output-budget/thinking helpers. Network-free
-  via a fake vault + disabled Ollama + fake cost tracker.
-- tests/unit/projects.test.ts: ProjectEngine pure surface — getTemplates and
-  the inferProjectType natural-language heuristic (inert temp state path).
-- tests/api/api-test.sh: hermetic curl API-contract tests (status, projects,
-  config incl. a regression guard for the removed branding block, vault keys,
-  and 400/404/401 error contracts).
-- package.json: add test:unit, test:api, and an aggregate test (unit+api+smoke).
-- docs: record the seed in COMPLETED.md; narrow the TODO item to the deferred
-  ProjectEngine orchestration coverage (needs an AI injection seam, tied to the
-  god-class Level 2-3 refactor).
-- docs: move the verified Mercury deploy-automation item to COMPLETED.
+- Remove 4 utility imports orphaned when their logic moved out of index.ts:
+  fileURLToPath (url) + dirname (path) -> moved to paths.ts; randomBytes
+  (crypto) -> moved to the security init phase; createAPIRoutes -> now used
+  only by init/phase-11-http.ts.
+- Surgical: drop the url and createAPIRoutes lines, keep join + timingSafeEqual
+  on their shared lines. The service-class imports are all still used as
+  public field type annotations, so none were removable.
+- docs: move the item from TODO.md to COMPLETED.md.
 
-tests/ is outside tsconfig include, so the production build is unaffected.
-
-Verified: npm test green — 26 unit + 17 API + 19 smoke, no stray processes.
+Verified: 0 unused imports remain (re-scan), tsc --noEmit clean, npm test green
+(26 unit + 17 API + 19 smoke).
