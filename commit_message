@@ -1,21 +1,26 @@
-Refactor (Level 1, part 1): extract init Phases 1-4 into init/ modules
+Refactor (Level 1, Stage A complete): extract all init phases into init/
 
-Scaffolding for the god-class split. Behavior-preserving (pure relocation,
-no interface/behavior changes); verified with tsc + smoke (18/18).
+Behavior-preserving (pure relocation, no interface/behavior changes); verified
+with tsc + smoke (18/18). index.ts: 2,649 -> 2,103 lines; initialize() is now a
+thin 12-call composition root.
 
-- Add gateway/src/paths.ts exporting ROOT_DIR (shared by index.ts and the new
-  init modules; avoids a circular value-import)
-- Make BookClawGateway service fields + helper methods public so init modules
-  can operate on the gateway instance (pass-gateway/mutate pattern; encapsulation
-  to be tightened in Level 2 service registry)
-- Extract initialize() Phases 1-4 into gateway/src/init/:
-  phase-01-config, phase-02-security (vault/permissions/audit/sandbox/injection
-  + auth token + CORS/IP posture + activity log), phase-03-soul-memory,
-  phase-04-ai. initialize() now calls initConfig/initSecurity/initSoulMemory/initAI.
-- Recompute `providers` locally at the startup activity-log (the const moved into
-  initAI) — same value, no behavior change.
-- docs/TODO.md: log a latent init-ordering bug found during extraction
-  (characterVoices wired with undefined styleClone — preserved, not fixed here).
+Init modules added under gateway/src/init/ (continuing from part 1's 01-04):
+- phase-05-research-skills  (research gate, skills, SKILLS.txt, Author OS)
+- phase-06-content          (tts, image-gen, personas, project engine, context)
+- phase-07-knowledge        (lessons/prefs, user-model, cron, auto-skill, judge,
+                             research services, structures, promises, char-voices)
+- phase-08-website          (website mgmt + both project-completion hooks + orchestrator)
+- phase-09-export-wave      (export/feedback, Wave 2, Wave 3 — constructs styleClone)
+- phase-10-heartbeat-bridges(heartbeat + autonomous wiring + Telegram/Discord; shares
+                             commandHandlers, so kept together)
+- phase-11-http             (API routes, WebSocket, static dashboard, error handlers,
+                             startup activity-log + ready banner)
 
-Remaining for Level 1: extract Phases 5-11 (init), then split api/routes.ts
-into per-feature mounters (Stage B).
+Notes:
+- Fixed dynamic-import paths for the new module depth (idle-tasks-defaults,
+  the inline WebsiteBook type); relabeled the duplicate "Phase 6h" -> "6h2" (comment).
+- styleClone undefined-wiring quirk preserved verbatim (tracked in docs/TODO.md).
+- index.ts retains now-unused service-class imports (harmless; noUnusedLocals is off) —
+  prune in a follow-up cleanup.
+
+Next: Stage B — split api/routes.ts (5,516 lines) into per-feature mounters.
