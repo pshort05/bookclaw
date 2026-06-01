@@ -1,26 +1,24 @@
-Refactor (Level 1, Stage A complete): extract all init phases into init/
+Refactor (Level 1, Stage B part 1): split routes.ts — _shared + core mounter
 
-Behavior-preserving (pure relocation, no interface/behavior changes); verified
-with tsc + smoke (18/18). index.ts: 2,649 -> 2,103 lines; initialize() is now a
-thin 12-call composition root.
+Behavior-preserving; verified tsc + smoke (18/18) + a route-registration diff
+(234/234 endpoints register identically, before vs after the split).
 
-Init modules added under gateway/src/init/ (continuing from part 1's 01-04):
-- phase-05-research-skills  (research gate, skills, SKILLS.txt, Author OS)
-- phase-06-content          (tts, image-gen, personas, project engine, context)
-- phase-07-knowledge        (lessons/prefs, user-model, cron, auto-skill, judge,
-                             research services, structures, promises, char-voices)
-- phase-08-website          (website mgmt + both project-completion hooks + orchestrator)
-- phase-09-export-wave      (export/feedback, Wave 2, Wave 3 — constructs styleClone)
-- phase-10-heartbeat-bridges(heartbeat + autonomous wiring + Telegram/Discord; shares
-                             commandHandlers, so kept together)
-- phase-11-http             (API routes, WebSocket, static dashboard, error handlers,
-                             startup activity-log + ready banner)
+- gateway/src/api/routes/_shared.ts: hoist safePath out of routes.ts so the
+  per-feature mounters can import it (one-way dep: routes.ts -> mounters).
+- gateway/src/api/routes/core.routes.ts (mountCore): health/liveness/readiness
+  probes, status dashboard, chat API, project listing, cost, audit, activity
+  feed + SSE. Handler bodies moved verbatim.
+- routes.ts: import safePath from _shared; replace the inline core section with
+  mountCore(app, gateway, baseDir).
 
-Notes:
-- Fixed dynamic-import paths for the new module depth (idle-tasks-defaults,
-  the inline WebsiteBook type); relabeled the duplicate "Phase 6h" -> "6h2" (comment).
-- styleClone undefined-wiring quirk preserved verbatim (tracked in docs/TODO.md).
-- index.ts retains now-unused service-class imports (harmless; noUnusedLocals is off) —
-  prune in a follow-up cleanup.
+Verification harness for the rest of Stage B: enumerate every app.METHOD('path')
+across routes.ts + routes/*.ts and diff vs the pre-split baseline. This guards
+against the main risk — a dropped/renamed route from a transcription slip — since
+gateway is `any`-typed and tsc can't catch service/method typos in handler bodies.
 
-Next: Stage B — split api/routes.ts (5,516 lines) into per-feature mounters.
+Remaining mounters: memory; settings (vault/config/telegram); projects (+ its
+local helpers buildStepUserMessage/getSmartExcerpt/stepNeedsFullManuscript);
+documents; personas; media (research/image/tts); ops (lessons/prefs/orchestrator);
+export; wave2/3; knowledge; website. The 3 cross-cutting helpers (upload,
+gatherChapters, addWaveDisclaimer) get lifted into _shared.ts as param-taking
+functions. Final gate before PR: rebuild on Mercury + full tests/openrouter-pipeline.sh.
