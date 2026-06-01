@@ -1,23 +1,29 @@
-Refactor (Level 1, Stage B part 3): lift shared helpers + 5 more mounters
+Refactor (Level 1, Stage B complete): routes.ts is a 59-line composition root
 
-Behavior-preserving; verified tsc + route-registration diff (234/234) + a
-called-vs-defined mounter check + smoke (18/18) after each step.
-routes.ts: ~4,128 -> 1,973 lines.
+Behavior-preserving; verified tsc + route-registration diff (234/234) +
+called-vs-defined mounter check + smoke (18/18). routes.ts: ~1,973 -> 59 lines.
 
-- routes/_shared.ts: lift the 3 cross-cutting helpers out of routes.ts —
-  `upload` (multer), `addWaveDisclaimer` (pure), and a `makeGatherChapters(baseDir)`
-  factory so call sites stay `gatherChapters(project)`, alongside `safePath`.
-- New mounters: documents (library/uploads/context engine), heartbeat (autonomous
-  mode, idle tasks, agent journal, native export, tool ingestion), personas,
-  media (research/image/tts incl. resolveVoiceForRequest), ops (lessons/prefs/
-  orchestrator).
-- Fixed relative dynamic-import paths for the deeper routes/ folder
-  (../ -> ../../: idle-tasks-defaults, image-gen, tts) and added `path` imports
-  where handlers used bare `path.`.
+This round's mounters: export (KDP blurb, track-changes, external tools, cover,
+hub, beta reader), wave (Wave 2 + Wave 3 gated career agent), knowledge (memory
+search, user model, cron, auto-skill, writing judge, character voices, research
+lookup + runMarketingPreset, video, structures, promises), website.
 
-Sections still inline in routes.ts (extracted next): export (KDP/track-changes/
-external/cover/hub/beta — uses shared gatherChapters + upload), wave2/3 (uses
-gatherChapters + addWaveDisclaimer), knowledge, website. routes.ts temporarily
-imports `upload` (for the still-inline track-changes route) and still holds the
-inline gatherChapters/addWaveDisclaimer defs — both removed when export/wave land.
-Final gate: Mercury rebuild + tests/openrouter-pipeline.sh.
+- Dropped the inline gatherChapters + addWaveDisclaimer defs (now in _shared;
+  wave/export use the makeGatherChapters(baseDir) factory, knowledge/website
+  import addWaveDisclaimer).
+- Fixed the cron-scheduler dynamic-import path for the deeper routes/ folder.
+- Pruned routes.ts: removed now-unused imports (multer/path/docx/epub/safePath/
+  upload + Request/Response) and the unused `services` local. createAPIRoutes is
+  now a thin composition root that just calls the 12 mountX(app, gateway, baseDir)
+  functions, with a "don't grow this back into a god factory" note.
+
+Level 1 (god-class split) is now COMPLETE:
+  index.ts  2,649 -> 2,103  (Stage A: gateway/src/init/ phase modules)
+  routes.ts 5,518 ->    59  (Stage B: gateway/src/api/routes/ mounters)
+All behavior-preserving. Final gate PASSED: Docker rebuild on Mercury (build PASS
++ container healthy) and a full tests/openrouter-pipeline.sh run — 51/51 pipeline
+steps PASS through the refactored handlers across every task type.
+
+Docs: recorded Level 1 in COMPLETED.md (2026-06-01); reworked the TODO god-class
+item to Levels 2-3 (deferred) + an import-prune cleanup; added a STATUS banner to
+GOD-CLASS-REFACTOR.md and a Level-1-done note to the North Star bullet.

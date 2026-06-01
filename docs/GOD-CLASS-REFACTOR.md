@@ -1,5 +1,7 @@
 # The God Class Problem — Analysis and Three-Level Refactor Plan
 
+> **STATUS — Level 1 COMPLETE (2026-06-01).** Both god classes were split into thin composition roots, behavior-preserving: `index.ts` 2,649 → 2,103 (init phases → `gateway/src/init/` modules) and `routes.ts` 5,518 → 59 (234 endpoints → 12 mounters under `gateway/src/api/routes/` + `_shared.ts`). Verified by tsc + a 234/234 route-registration diff + smoke + a Docker rebuild + a full end-to-end pipeline run. See [COMPLETED.md](COMPLETED.md). **Levels 2 (service registry) and 3 (plugin contracts) remain deferred** per the Recommendation below — do them feature-driven, after `AIRouter`/`ProjectEngine` have unit tests. The numbers and plan below describe the *original* (pre-Level-1) state and are retained for the Level 2–3 work.
+
 A standing architectural debt in BookClaw: two files (`gateway/src/index.ts` and `gateway/src/api/routes.ts`) own the wiring for the entire system. Together they're ~8,200 lines of intertwined initialization and routing that every new feature has to touch.
 
 This document quantifies the problem, compares it to OpenClaw's plugin architecture (which decisively does **not** have this issue), and lays out a three-level incremental refactor — each level individually shippable.
