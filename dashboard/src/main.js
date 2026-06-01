@@ -1,103 +1,8 @@
-
-// ================================================================
-// GLOBALS & STATE
-// ================================================================
-var API = '';
-// Auth token injected by the server into the served HTML. Empty when auth is disabled.
-var AUTH_TOKEN = '__BOOKCLAW_AUTH_TOKEN__';
-function authHeaders(base) {
-  base = base || {};
-  if (AUTH_TOKEN) base['Authorization'] = 'Bearer ' + AUTH_TOKEN;
-  return base;
-}
-// For native-element GETs (img/href/Audio) that can't send an Authorization header,
-// the server also accepts the token as a ?token= query param.
-function authUrl(path) {
-  if (!AUTH_TOKEN) return path;
-  return path + (path.indexOf('?') === -1 ? '?' : '&') + 'token=' + encodeURIComponent(AUTH_TOKEN);
-}
-var currentPanel = 'home';
-var projectFilter = 'all';
-var allProjects = [];
-var allPersonas = [];
-var allTemplates = [];
-var chatWaiting = false;
-var statusPollTimer = null;
-var projectPollTimer = null;
-var currentDetailProject = null;
-
-// ================================================================
-// UTILITIES
-// ================================================================
-function esc(str) {
-  if (!str) return '';
-  var d = document.createElement('div');
-  d.appendChild(document.createTextNode(String(str)));
-  return d.innerHTML;
-}
-
-function showToast(message, type) {
-  type = type || 'info';
-  document.querySelectorAll('.toast').forEach(function(t) { t.remove(); });
-  var toast = document.createElement('div');
-  toast.className = 'toast ' + type;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(function() { if (toast.parentNode) toast.remove(); }, 4500);
-}
-
-function api(method, path, body) {
-  var opts = { method: method, headers: authHeaders({ 'Content-Type': 'application/json' }) };
-  if (body) opts.body = JSON.stringify(body);
-  return fetch(API + path, opts).then(function(res) {
-    var ct = res.headers.get('content-type') || '';
-    if (!res.ok) {
-      if (ct.indexOf('application/json') !== -1) {
-        return res.json().then(function(d) { throw new Error(d.error || ('HTTP ' + res.status)); });
-      }
-      throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-    }
-    if (ct.indexOf('application/json') === -1) {
-      throw new Error('Server returned non-JSON response');
-    }
-    return res.json();
-  });
-}
-
-function apiRaw(method, path, body) {
-  var opts = { method: method, headers: authHeaders() };
-  if (body) { opts.body = body; }
-  return fetch(API + path, opts).then(function(res) {
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
-  });
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
-}
-
-function formatDate(ts) {
-  if (!ts) return '';
-  var d = new Date(ts);
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-}
-
-function avatarColor(name) {
-  var colors = ['#e67e22','#2980b9','#8e44ad','#c0392b','#27ae60','#d35400','#2c3e50','#16a085'];
-  var hash = 0;
-  for (var i = 0; i < (name||'').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function initials(name) {
-  if (!name) return '?';
-  var parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
+import { state } from './lib/state.js';
+import { api, apiRaw, authHeaders, authUrl } from './lib/api.js';
+import { showToast } from './lib/ui.js';
+import { esc, formatBytes, formatDate, avatarColor, initials } from './lib/format.js';
+import { loadPersonas } from './panels/personas.js';
 
 // ================================================================
 // NAVIGATION
@@ -106,7 +11,7 @@ var panelTitles = { home: 'Home', hq: 'Author HQ', projects: 'Projects', persona
 var navItems = document.querySelectorAll('.nav-item');
 
 function switchPanel(name) {
-  currentPanel = name;
+  state.currentPanel = name;
   navItems.forEach(function(n) { n.classList.toggle('active', n.getAttribute('data-panel') === name); });
   document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
   var panel = document.getElementById('panel-' + name);
@@ -179,9 +84,9 @@ function loadStatus() {
       activeCount = data.projects.active || 0;
       totalWords = data.projects.totalWords || 0;
     }
-    // Fallback: count from allProjects
-    if (allProjects.length > 0) {
-      activeCount = allProjects.filter(function(p) { return p.status === 'active'; }).length;
+    // Fallback: count from state.allProjects
+    if (state.allProjects.length > 0) {
+      activeCount = state.allProjects.filter(function(p) { return p.status === 'active'; }).length;
     }
     document.getElementById('statProjects').textContent = activeCount;
     document.getElementById('statWords').textContent = totalWords ? totalWords.toLocaleString() : '0';
@@ -196,7 +101,7 @@ function loadStatus() {
     }
 
     // Personas stat
-    document.getElementById('statPersonas').textContent = allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
+    document.getElementById('statPersonas').textContent = state.allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
 
   }).catch(function() {
     document.getElementById('heartbeatDot').className = 'heartbeat-dot err';
@@ -211,12 +116,12 @@ function startPolling() {
   loadPersonas();
   loadActivity();
   loadHomeStats();
-  statusPollTimer = setInterval(loadStatus, 10000);
-  projectPollTimer = setInterval(function() {
-    if (currentPanel === 'home' || currentPanel === 'projects') {
+  state.statusPollTimer = setInterval(loadStatus, 10000);
+  state.projectPollTimer = setInterval(function() {
+    if (state.currentPanel === 'home' || state.currentPanel === 'projects') {
       loadProjects();
     }
-    if (currentPanel === 'home') {
+    if (state.currentPanel === 'home') {
       loadActivity();
       loadHomeStats();
     }
@@ -228,7 +133,7 @@ function startPolling() {
 // ================================================================
 function renderHomeProjects() {
   var container = document.getElementById('homeProjectScroll');
-  var active = allProjects.filter(function(p) { return p.status === 'active' || p.status === 'paused'; });
+  var active = state.allProjects.filter(function(p) { return p.status === 'active' || p.status === 'paused'; });
   if (active.length === 0) {
     container.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;width:100%;">No active projects. Go to Projects to create one.</div>';
     return;
@@ -291,21 +196,21 @@ function removeTyping() {
 function sendChat() {
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
-  if (!text || chatWaiting) return;
+  if (!text || state.chatWaiting) return;
   addChatMsg(text, 'user');
   input.value = '';
-  chatWaiting = true;
+  state.chatWaiting = true;
   showTyping();
 
   api('POST', '/api/chat', { message: text }).then(function(data) {
     removeTyping();
-    chatWaiting = false;
+    state.chatWaiting = false;
     addChatMsg(data.response || 'No response received.', 'bot');
     // Refresh projects if a command might have created/changed one
     if (text.startsWith('/')) { loadProjects(); }
   }).catch(function(e) {
     removeTyping();
-    chatWaiting = false;
+    state.chatWaiting = false;
     addChatMsg('Error: ' + e.message, 'system');
   });
 }
@@ -317,7 +222,7 @@ document.getElementById('chatInput').addEventListener('keydown', function(e) {
 document.getElementById('btnChatClear').addEventListener('click', function() {
   var el = document.getElementById('chatMessages');
   el.innerHTML = '<div class="chat-msg bot">Hello! I\'m BookClaw, your AI writing partner. How can I help you today?</div>';
-  chatWaiting = false;
+  state.chatWaiting = false;
 });
 
 // ================================================================
@@ -338,10 +243,10 @@ var defaultTemplates = [
 
 function loadTemplates() {
   api('GET', '/api/projects/templates').then(function(data) {
-    allTemplates = data.templates || [];
+    state.allTemplates = data.templates || [];
     renderTemplates();
   }).catch(function() {
-    allTemplates = [];
+    state.allTemplates = [];
     renderTemplates();
   });
 }
@@ -351,7 +256,7 @@ function renderTemplates() {
   grid.innerHTML = '';
   // Use defaults, but map in server template data if available
   defaultTemplates.forEach(function(dt) {
-    var serverT = allTemplates.find(function(st) { return st.type === dt.type || st.id === dt.id; });
+    var serverT = state.allTemplates.find(function(st) { return st.type === dt.type || st.id === dt.id; });
     var tile = document.createElement('div');
     tile.className = 'template-tile' + (dt.highlighted ? ' highlighted' : '') + (dt.span2 ? ' span-2' : '');
     var stepsText = serverT ? (serverT.stepCountLabel || serverT.stepCount + ' steps') : dt.steps;
@@ -378,7 +283,7 @@ function openCreateProjectModal(template, serverTemplate) {
   var isCustom = template.type === 'custom';
 
   var personaOpts = '<option value="">None</option>';
-  allPersonas.forEach(function(p) {
+  state.allPersonas.forEach(function(p) {
     personaOpts += '<option value="' + esc(p.id) + '">' + esc(p.penName || p.name) + '</option>';
   });
 
@@ -479,16 +384,16 @@ function openCreateProjectModal(template, serverTemplate) {
             var completed = (result.results || []).filter(function(r) { return r.success; }).length;
             showToast('Project finished! ' + completed + ' steps completed.', 'success');
             loadProjects();
-            if (currentDetailProject === projectId) openProjectDetail(projectId);
+            if (state.currentDetailProject === projectId) openProjectDetail(projectId);
           }).catch(function(err) {
             showToast('Execution error: ' + err.message, 'error');
             loadProjects();
-            if (currentDetailProject === projectId) openProjectDetail(projectId);
+            if (state.currentDetailProject === projectId) openProjectDetail(projectId);
           });
           // Poll for step progress while running
           var pollId = setInterval(function() {
             loadProjects();
-            if (currentDetailProject === projectId) openProjectDetail(projectId);
+            if (state.currentDetailProject === projectId) openProjectDetail(projectId);
           }, 8000);
           setTimeout(function() { clearInterval(pollId); }, 600000); // 10 min max poll
         }, 500);
@@ -507,13 +412,13 @@ function openCreateProjectModal(template, serverTemplate) {
 // ── Load Projects ──
 function loadProjects() {
   api('GET', '/api/projects/list').then(function(data) {
-    allProjects = data.projects || [];
-    if (currentPanel === 'projects' && !currentDetailProject) {
+    state.allProjects = data.projects || [];
+    if (state.currentPanel === 'projects' && !state.currentDetailProject) {
       renderProjectList();
     }
     renderHomeProjects();
     // Update active count stat
-    var ac = allProjects.filter(function(p) { return p.status === 'active'; }).length;
+    var ac = state.allProjects.filter(function(p) { return p.status === 'active'; }).length;
     document.getElementById('statProjects').textContent = ac;
   }).catch(function() {});
 }
@@ -523,19 +428,19 @@ document.querySelectorAll('#projectFilterTabs .filter-tab').forEach(function(tab
   tab.addEventListener('click', function() {
     document.querySelectorAll('#projectFilterTabs .filter-tab').forEach(function(t) { t.classList.remove('active'); });
     tab.classList.add('active');
-    projectFilter = tab.getAttribute('data-filter');
+    state.projectFilter = tab.getAttribute('data-filter');
     renderProjectList();
   });
 });
 
 function renderProjectList() {
   var el = document.getElementById('projectList');
-  var filtered = allProjects;
-  if (projectFilter !== 'all') {
-    filtered = allProjects.filter(function(p) { return p.status === projectFilter; });
+  var filtered = state.allProjects;
+  if (state.projectFilter !== 'all') {
+    filtered = state.allProjects.filter(function(p) { return p.status === state.projectFilter; });
   }
   if (filtered.length === 0) {
-    el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No ' + (projectFilter === 'all' ? '' : projectFilter + ' ') + 'projects found.</div>';
+    el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No ' + (state.projectFilter === 'all' ? '' : state.projectFilter + ' ') + 'projects found.</div>';
     return;
   }
   el.innerHTML = '';
@@ -625,7 +530,7 @@ function projectAction(action, id) {
       showToast('Project ' + action + 'd!', 'success');
     }
     loadProjects();
-    if (currentDetailProject === id) openProjectDetail(id);
+    if (state.currentDetailProject === id) openProjectDetail(id);
   }).catch(function(e) {
     showToast('Failed: ' + e.message, 'error');
     loadProjects();
@@ -642,14 +547,14 @@ function deleteProject(id) {
   if (!confirm('Delete this project?')) return;
   api('DELETE', '/api/projects/' + id).then(function() {
     showToast('Project deleted', 'info');
-    if (currentDetailProject === id) showProjectList();
+    if (state.currentDetailProject === id) showProjectList();
     loadProjects();
   }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
 }
 
 // ── Project Detail View ──
 function showProjectList() {
-  currentDetailProject = null;
+  state.currentDetailProject = null;
   document.getElementById('projectTemplatesCard').style.display = '';
   document.getElementById('projectListCard').style.display = '';
   document.getElementById('projectDetailView').style.display = 'none';
@@ -721,14 +626,14 @@ function continueProjectToPhase(sourceProject, targetType) {
           var completed = (result.results || []).filter(function(r) { return r.success; }).length;
           showToast('Done! ' + completed + ' steps completed.', 'success');
           loadProjects();
-          if (currentDetailProject === projectId) openProjectDetail(projectId);
+          if (state.currentDetailProject === projectId) openProjectDetail(projectId);
         }).catch(function(err) {
           showToast('Execution error: ' + err.message, 'error');
           loadProjects();
         });
         var pollId = setInterval(function() {
           loadProjects();
-          if (currentDetailProject === projectId) openProjectDetail(projectId);
+          if (state.currentDetailProject === projectId) openProjectDetail(projectId);
         }, 8000);
         setTimeout(function() { clearInterval(pollId); }, 600000);
       }, 500);
@@ -742,10 +647,10 @@ function continueProjectToPhase(sourceProject, targetType) {
 }
 
 function openProjectDetail(id) {
-  var project = allProjects.find(function(p) { return p.id === id; });
+  var project = state.allProjects.find(function(p) { return p.id === id; });
   if (!project) { showToast('Project not found', 'error'); return; }
 
-  currentDetailProject = id;
+  state.currentDetailProject = id;
   document.getElementById('projectTemplatesCard').style.display = 'none';
   document.getElementById('projectListCard').style.display = 'none';
   var detail = document.getElementById('projectDetailView');
@@ -929,7 +834,7 @@ function openProjectDetail(id) {
       api('POST', '/api/projects/' + id + '/steps/' + stepId + '/retry',
           { deleteOutputFile: deleteFile }).then(function() {
         showToast('Step reset to pending. Click Auto-Execute to run it.', 'success');
-        if (currentDetailProject === id) openProjectDetail(id);
+        if (state.currentDetailProject === id) openProjectDetail(id);
       }).catch(function(e2) { showToast('Retry failed: ' + e2.message, 'error'); });
     });
   });
@@ -976,7 +881,7 @@ function openProjectDetail(id) {
       api('POST', '/api/projects/' + id + '/restart',
           { keepCompleted: true, deleteOutputFiles: false }).then(function(data) {
         showToast('Reset ' + (data.reset?.length || 0) + ' step(s). Click Auto-Execute to continue.', 'success');
-        if (currentDetailProject === id) openProjectDetail(id);
+        if (state.currentDetailProject === id) openProjectDetail(id);
       }).catch(function(e) { showToast('Restart failed: ' + e.message, 'error'); });
     });
   }
@@ -989,7 +894,7 @@ function openProjectDetail(id) {
       api('POST', '/api/projects/' + id + '/restart',
           { keepCompleted: false, deleteOutputFiles: true }).then(function(data) {
         showToast('Project fully reset. ' + (data.reset?.length || 0) + ' step(s) cleared.', 'info');
-        if (currentDetailProject === id) openProjectDetail(id);
+        if (state.currentDetailProject === id) openProjectDetail(id);
       }).catch(function(e) { showToast('Restart failed: ' + e.message, 'error'); });
     });
   }
@@ -1308,193 +1213,6 @@ function renderContinuityReport(report) {
 }
 
 // ================================================================
-// PERSONAS PANEL
-// ================================================================
-function loadPersonas() {
-  api('GET', '/api/personas').then(function(data) {
-    allPersonas = data.personas || data || [];
-    if (Array.isArray(data) && !data.personas) allPersonas = data;
-    renderPersonas();
-    document.getElementById('statPersonas').textContent = allPersonas.length;
-  }).catch(function() {
-    allPersonas = [];
-    renderPersonas();
-  });
-}
-
-function renderPersonas() {
-  var grid = document.getElementById('personaGrid');
-  grid.innerHTML = '';
-
-  allPersonas.forEach(function(p) {
-    var card = document.createElement('div');
-    card.className = 'persona-card';
-    var name = p.penName || p.name || 'Unnamed';
-    var color = avatarColor(name);
-    var tags = '';
-    if (p.styleMarkers && p.styleMarkers.length > 0) {
-      var markers = typeof p.styleMarkers === 'string' ? p.styleMarkers.split(',') : p.styleMarkers;
-      markers.slice(0, 5).forEach(function(t) {
-        tags += '<span class="pa-tag">' + esc(t.trim()) + '</span>';
-      });
-    }
-
-    card.innerHTML =
-      '<div class="pa-top">' +
-        '<div class="persona-avatar" style="background:' + color + ';">' + esc(initials(name)) + '</div>' +
-        '<div>' +
-          '<div class="pa-name">' + esc(name) + '</div>' +
-          '<div class="pa-genre">' + esc((p.genre || '') + (p.subgenre ? ' / ' + p.subgenre : '')) + '</div>' +
-        '</div>' +
-      '</div>' +
-      (tags ? '<div class="pa-tags">' + tags + '</div>' : '') +
-      (p.ttsVoice ? '<div class="pa-voice">Voice: ' + esc(p.ttsVoice) + '</div>' : '') +
-      '<div class="pa-actions">' +
-        '<button class="small secondary btn-edit-persona" data-id="' + esc(p.id) + '">Edit</button>' +
-        '<button class="small danger btn-del-persona" data-id="' + esc(p.id) + '">Delete</button>' +
-      '</div>';
-    grid.appendChild(card);
-  });
-
-  // "Create New" card
-  var newCard = document.createElement('div');
-  newCard.className = 'persona-card persona-new';
-  newCard.innerHTML = '<div class="plus">+</div><div class="plus-label">Create New Persona</div>';
-  newCard.addEventListener('click', function() { openPersonaModal(null); });
-  grid.appendChild(newCard);
-
-  // Wire edit/delete
-  grid.querySelectorAll('.btn-edit-persona').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var p = allPersonas.find(function(x) { return x.id === btn.getAttribute('data-id'); });
-      if (p) openPersonaModal(p);
-    });
-  });
-  grid.querySelectorAll('.btn-del-persona').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      deletePersona(btn.getAttribute('data-id'));
-    });
-  });
-}
-
-function openPersonaModal(persona) {
-  var isEdit = !!persona;
-  var overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'personaModal';
-
-  var markers = '';
-  if (persona && persona.styleMarkers) {
-    markers = Array.isArray(persona.styleMarkers) ? persona.styleMarkers.join(', ') : persona.styleMarkers;
-  }
-
-  overlay.innerHTML =
-    '<div class="modal">' +
-      '<div class="modal-title">' + (isEdit ? 'Edit Persona' : 'Create New Persona') + '</div>' +
-      '<div class="form-group">' +
-        '<label>Pen Name</label>' +
-        '<input type="text" id="pmName" value="' + esc(persona ? (persona.penName || persona.name || '') : '') + '" placeholder="Author pen name...">' +
-      '</div>' +
-      '<div class="form-group-inline">' +
-        '<div class="form-group"><label>Genre</label><input type="text" id="pmGenre" value="' + esc(persona ? persona.genre || '' : '') + '" placeholder="e.g. Fantasy"></div>' +
-        '<div class="form-group"><label>Subgenre</label><input type="text" id="pmSubgenre" value="' + esc(persona ? persona.subgenre || '' : '') + '" placeholder="e.g. Epic Fantasy"></div>' +
-      '</div>' +
-      '<div class="form-group">' +
-        '<label>Voice Description</label>' +
-        '<textarea id="pmVoice" rows="3" placeholder="Describe the writing voice...">' + esc(persona ? persona.voiceDescription || '' : '') + '</textarea>' +
-      '</div>' +
-      '<div class="form-group">' +
-        '<label>Style Markers (comma-separated)</label>' +
-        '<input type="text" id="pmMarkers" value="' + esc(markers) + '" placeholder="e.g. lyrical, dark, atmospheric">' +
-      '</div>' +
-      '<div class="form-group">' +
-        '<label>TTS Voice</label>' +
-        '<select id="pmTTS">' +
-          '<option value="">None</option>' +
-          '<option value="narrator_female"' + (persona && persona.ttsVoice === 'narrator_female' ? ' selected' : '') + '>Narrator Female — Versatile, expressive</option>' +
-          '<option value="narrator_male"' + (persona && persona.ttsVoice === 'narrator_male' ? ' selected' : '') + '>Narrator Male — Literary fiction, thrillers</option>' +
-          '<option value="narrator_deep"' + (persona && persona.ttsVoice === 'narrator_deep' ? ' selected' : '') + '>Narrator Deep — Epic fantasy, sci-fi</option>' +
-          '<option value="narrator_warm"' + (persona && persona.ttsVoice === 'narrator_warm' ? ' selected' : '') + '>Narrator Warm — Romance, memoir</option>' +
-          '<option value="british_male"' + (persona && persona.ttsVoice === 'british_male' ? ' selected' : '') + '>British Male — Period pieces, cozy mysteries</option>' +
-          '<option value="british_female"' + (persona && persona.ttsVoice === 'british_female' ? ' selected' : '') + '>British Female — Elegant literary fiction</option>' +
-          '<option value="storyteller"' + (persona && persona.ttsVoice === 'storyteller' ? ' selected' : '') + '>Storyteller — Adventure, YA</option>' +
-          '<option value="snarky_nerd"' + (persona && persona.ttsVoice === 'snarky_nerd' ? ' selected' : '') + '>Snarky Nerd — Witty banter, smart humor, sci-fi</option>' +
-          '<option value="curious_kid"' + (persona && persona.ttsVoice === 'curious_kid' ? ' selected' : '') + '>Curious Kid — Full of wonder, MG, whimsical</option>' +
-        '</select>' +
-      '</div>' +
-      '<div class="form-group">' +
-        '<label>Bio</label>' +
-        '<textarea id="pmBio" rows="3" placeholder="Author biography...">' + esc(persona ? persona.bio || '' : '') + '</textarea>' +
-      '</div>' +
-      '<div class="form-group">' +
-        '<label>Also By (comma-separated book titles)</label>' +
-        '<input type="text" id="pmAlsoBy" value="' + esc(persona && persona.alsoBy ? (Array.isArray(persona.alsoBy) ? persona.alsoBy.join(', ') : persona.alsoBy) : '') + '" placeholder="Book Title 1, Book Title 2">' +
-      '</div>' +
-      '<div class="modal-actions">' +
-        '<button class="secondary" id="pmGenerate">Generate with AI</button>' +
-        '<button class="secondary" id="pmCancel">Cancel</button>' +
-        '<button class="success" id="pmSave">' + (isEdit ? 'Update' : 'Create') + '</button>' +
-      '</div>' +
-    '</div>';
-
-  document.body.appendChild(overlay);
-  overlay.querySelector('#pmCancel').addEventListener('click', function() { overlay.remove(); });
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-
-  // Generate with AI
-  overlay.querySelector('#pmGenerate').addEventListener('click', function() {
-    var genre = document.getElementById('pmGenre').value.trim();
-    var desc = document.getElementById('pmVoice').value.trim();
-    if (!genre && !desc) { showToast('Enter a genre or voice description first', 'error'); return; }
-    showToast('Generating persona with AI...', 'info');
-    api('POST', '/api/personas/generate', { genre: genre, description: desc }).then(function(data) {
-      var gen = data.persona || data;
-      if (gen.penName || gen.name) document.getElementById('pmName').value = gen.penName || gen.name;
-      if (gen.genre) document.getElementById('pmGenre').value = gen.genre;
-      if (gen.subgenre) document.getElementById('pmSubgenre').value = gen.subgenre;
-      if (gen.voiceDescription) document.getElementById('pmVoice').value = gen.voiceDescription;
-      if (gen.styleMarkers) document.getElementById('pmMarkers').value = Array.isArray(gen.styleMarkers) ? gen.styleMarkers.join(', ') : gen.styleMarkers;
-      if (gen.bio) document.getElementById('pmBio').value = gen.bio;
-      showToast('Persona generated! Review and save.', 'success');
-    }).catch(function(e) { showToast('Generation failed: ' + e.message, 'error'); });
-  });
-
-  // Save
-  overlay.querySelector('#pmSave').addEventListener('click', function() {
-    var body = {
-      penName: document.getElementById('pmName').value.trim(),
-      genre: document.getElementById('pmGenre').value.trim(),
-      subgenre: document.getElementById('pmSubgenre').value.trim(),
-      voiceDescription: document.getElementById('pmVoice').value.trim(),
-      styleMarkers: document.getElementById('pmMarkers').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
-      ttsVoice: document.getElementById('pmTTS').value,
-      bio: document.getElementById('pmBio').value.trim(),
-      alsoBy: document.getElementById('pmAlsoBy').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
-    };
-    if (!body.penName) { showToast('Pen name is required', 'error'); return; }
-
-    var method = isEdit ? 'PUT' : 'POST';
-    var path = isEdit ? '/api/personas/' + persona.id : '/api/personas';
-
-    api(method, path, body).then(function() {
-      overlay.remove();
-      showToast(isEdit ? 'Persona updated!' : 'Persona created!', 'success');
-      loadPersonas();
-    }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
-  });
-}
-
-function deletePersona(id) {
-  if (!confirm('Delete this persona?')) return;
-  api('DELETE', '/api/personas/' + id).then(function() {
-    showToast('Persona deleted', 'info');
-    loadPersonas();
-  }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
-}
-
-// ================================================================
 // LIBRARY PANEL
 // ================================================================
 function loadDocuments() {
@@ -1529,7 +1247,7 @@ function renderDocuments(docs) {
 
 function loadCompiledOutputs() {
   // Try to find manuscripts from completed projects
-  var completed = allProjects.filter(function(p) { return p.status === 'completed'; });
+  var completed = state.allProjects.filter(function(p) { return p.status === 'completed'; });
   var el = document.getElementById('compiledOutputs');
   if (completed.length === 0) {
     el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">No compiled outputs yet. Complete a project to generate one.</div>';
@@ -2047,11 +1765,10 @@ document.getElementById('btnSaveAutonomous').addEventListener('click', function(
 // ================================================================
 // IDLE TASKS (CRUD)
 // ================================================================
-var idleTasksCache = [];
 
 function loadIdleTasks() {
   api('GET', '/api/autonomous/idle-tasks').then(function(data) {
-    idleTasksCache = data.queue || [];
+    state.idleTasksCache = data.queue || [];
     renderIdleTaskQueue();
     renderIdleTaskHistory(data.history || []);
   }).catch(function() {
@@ -2064,11 +1781,11 @@ function renderIdleTaskQueue() {
   var queueEl = document.getElementById('idleTaskQueue');
   if (!queueEl) return;
   queueEl.innerHTML = '';
-  if (idleTasksCache.length === 0) {
+  if (state.idleTasksCache.length === 0) {
     queueEl.innerHTML = '<div style="color:var(--muted);padding:8px 0;">No idle tasks configured. Click "+ Add Task" to create one.</div>';
     return;
   }
-  idleTasksCache.forEach(function(task, idx) {
+  state.idleTasksCache.forEach(function(task, idx) {
     var row = document.createElement('div');
     row.style.cssText = 'padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);';
     var enabledStyle = task.enabled === false ? 'opacity:0.5;' : '';
@@ -2087,21 +1804,21 @@ function renderIdleTaskQueue() {
   queueEl.querySelectorAll('.idle-toggle').forEach(function(toggle) {
     toggle.addEventListener('change', function() {
       var idx = parseInt(toggle.getAttribute('data-idx'));
-      idleTasksCache[idx].enabled = toggle.checked;
+      state.idleTasksCache[idx].enabled = toggle.checked;
       saveIdleTasks();
     });
   });
   queueEl.querySelectorAll('.btn-edit-idle').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var idx = parseInt(btn.getAttribute('data-idx'));
-      openIdleTaskEditor(idleTasksCache[idx], idx);
+      openIdleTaskEditor(state.idleTasksCache[idx], idx);
     });
   });
   queueEl.querySelectorAll('.btn-del-idle').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var idx = parseInt(btn.getAttribute('data-idx'));
-      if (!confirm('Delete idle task "' + idleTasksCache[idx].label + '"?')) return;
-      idleTasksCache.splice(idx, 1);
+      if (!confirm('Delete idle task "' + state.idleTasksCache[idx].label + '"?')) return;
+      state.idleTasksCache.splice(idx, 1);
       saveIdleTasks();
       renderIdleTaskQueue();
     });
@@ -2109,7 +1826,7 @@ function renderIdleTaskQueue() {
 }
 
 function saveIdleTasks() {
-  api('PUT', '/api/autonomous/idle-tasks', { tasks: idleTasksCache }).then(function() {
+  api('PUT', '/api/autonomous/idle-tasks', { tasks: state.idleTasksCache }).then(function() {
     showToast('Idle tasks saved!', 'success');
   }).catch(function(e) { showToast('Failed to save: ' + e.message, 'error'); });
 }
@@ -2143,10 +1860,10 @@ function openIdleTaskEditor(task, idx) {
     if (!label) { showToast('Task name is required', 'error'); return; }
     if (!prompt) { showToast('AI instructions are required', 'error'); return; }
     if (isNew) {
-      idleTasksCache.push({ label: label, prompt: prompt, enabled: true });
+      state.idleTasksCache.push({ label: label, prompt: prompt, enabled: true });
     } else {
-      idleTasksCache[idx].label = label;
-      idleTasksCache[idx].prompt = prompt;
+      state.idleTasksCache[idx].label = label;
+      state.idleTasksCache[idx].prompt = prompt;
     }
     saveIdleTasks();
     renderIdleTaskQueue();

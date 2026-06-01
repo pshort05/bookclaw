@@ -1,26 +1,22 @@
-Add dashboard build pipeline (esbuild) + dashboard/src tree
+Dashboard split (1/2): shared state object + lib layer + personas panel
 
-First stage of the "real build + split into modules" item: introduce the
-build, defer the per-feature module split (next push).
+First increment of the per-feature module split (esbuild build pipeline
+landed previously). Behavior-preserving — same code, reorganized.
 
-- dashboard/src/: index.html template (with /*__CSS__*/ + /*__JS__*/
-  placeholders), styles.css, main.js (the JS, IIFE wrapper dropped — esbuild
-  provides scope).
-- dashboard/build.mjs: esbuild bundles main.js -> single IIFE, inlined with
-  styles.css into one self-contained dist/index.html. Guards that the
-  __BOOKCLAW_AUTH_TOKEN__ placeholder survives into the output. --watch mode.
-- package.json: build:dashboard / build:dashboard:watch; esbuild added as an
-  explicit devDependency (was transitive via tsx); lockfile synced.
-- docker/Dockerfile: builder copies dashboard/ and runs the build before the
-  dev-dep prune; runtime copies the freshly-built dashboard from the builder
-  (never ships a stale committed dist).
-- dist/index.html stays committed (source of truth is src/) so local start +
-  smoke/API tests need no build step. CLAUDE.md: edit src/, not dist/.
+- lib/state.js: shared mutable state object (currentPanel, allProjects,
+  currentDetailProject, projectPollTimer, chatWaiting, idleTasksCache, …).
+  ES modules can't reassign imported bindings, so cross-module mutable state
+  moves to state.X; all references in main.js rewritten.
+- lib/api.js: api/apiRaw/authHeaders/authUrl + the injected auth-token
+  placeholder. lib/ui.js: showToast. lib/format.js: esc/formatBytes/
+  formatDate/avatarColor/initials.
+- panels/personas.js: first panel extracted (self-contained, lib-only deps).
+- main.js imports the above; 2677 -> ~2390 lines.
 
-Behavior-preserving: served HTML is equivalent to the old monolith (esbuild
-strips comments, so it's smaller). Per-feature split of main.js into
-lib/+panels/ tracked as a follow-up TODO (shared-state object refactor, done
-incrementally with Mercury visual checks — no behavioral test net).
+Remaining panels (chat, library, idle-tasks, settings, insights,
+projects, home, hq, nav, status, theme) tracked in docs/TODO.md — done
+incrementally with a Mercury visual check as the acceptance gate, since a
+missed cross-panel import is a runtime break esbuild can't catch.
 
-Verified: build clean (placeholder + key fns present); npm test green
-(29 unit + API + smoke, incl. dashboard-serves-with-token).
+Verified: build clean (token placeholder preserved, no dup symbols);
+npm test green (29 unit + API + smoke incl. dashboard-serves-with-token).

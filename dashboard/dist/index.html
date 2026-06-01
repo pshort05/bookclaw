@@ -1118,7 +1118,21 @@ textarea { resize: vertical; min-height: 60px; }
 <script>
 "use strict";
 (() => {
-  // dashboard/src/main.js
+  // dashboard/src/lib/state.js
+  var state = {
+    currentPanel: "home",
+    projectFilter: "all",
+    allProjects: [],
+    allPersonas: [],
+    allTemplates: [],
+    chatWaiting: false,
+    statusPollTimer: null,
+    projectPollTimer: null,
+    currentDetailProject: null,
+    idleTasksCache: []
+  };
+
+  // dashboard/src/lib/api.js
   var API = "";
   var AUTH_TOKEN = "__BOOKCLAW_AUTH_TOKEN__";
   function authHeaders(base) {
@@ -1129,34 +1143,6 @@ textarea { resize: vertical; min-height: 60px; }
   function authUrl(path) {
     if (!AUTH_TOKEN) return path;
     return path + (path.indexOf("?") === -1 ? "?" : "&") + "token=" + encodeURIComponent(AUTH_TOKEN);
-  }
-  var currentPanel = "home";
-  var projectFilter = "all";
-  var allProjects = [];
-  var allPersonas = [];
-  var allTemplates = [];
-  var chatWaiting = false;
-  var statusPollTimer = null;
-  var projectPollTimer = null;
-  var currentDetailProject = null;
-  function esc(str) {
-    if (!str) return "";
-    var d = document.createElement("div");
-    d.appendChild(document.createTextNode(String(str)));
-    return d.innerHTML;
-  }
-  function showToast(message, type) {
-    type = type || "info";
-    document.querySelectorAll(".toast").forEach(function(t) {
-      t.remove();
-    });
-    var toast = document.createElement("div");
-    toast.className = "toast " + type;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(function() {
-      if (toast.parentNode) toast.remove();
-    }, 4500);
   }
   function api(method, path, body) {
     var opts = { method, headers: authHeaders({ "Content-Type": "application/json" }) };
@@ -1187,6 +1173,29 @@ textarea { resize: vertical; min-height: 60px; }
       return res.json();
     });
   }
+
+  // dashboard/src/lib/ui.js
+  function showToast(message, type) {
+    type = type || "info";
+    document.querySelectorAll(".toast").forEach(function(t) {
+      t.remove();
+    });
+    var toast = document.createElement("div");
+    toast.className = "toast " + type;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) toast.remove();
+    }, 4500);
+  }
+
+  // dashboard/src/lib/format.js
+  function esc(str) {
+    if (!str) return "";
+    var d = document.createElement("div");
+    d.appendChild(document.createTextNode(String(str)));
+    return d.innerHTML;
+  }
   function formatBytes(bytes) {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
@@ -1209,10 +1218,143 @@ textarea { resize: vertical; min-height: 60px; }
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     return name.slice(0, 2).toUpperCase();
   }
+
+  // dashboard/src/panels/personas.js
+  function loadPersonas() {
+    api("GET", "/api/personas").then(function(data) {
+      state.allPersonas = data.personas || data || [];
+      if (Array.isArray(data) && !data.personas) state.allPersonas = data;
+      renderPersonas();
+      document.getElementById("statPersonas").textContent = state.allPersonas.length;
+    }).catch(function() {
+      state.allPersonas = [];
+      renderPersonas();
+    });
+  }
+  function renderPersonas() {
+    var grid = document.getElementById("personaGrid");
+    grid.innerHTML = "";
+    state.allPersonas.forEach(function(p) {
+      var card = document.createElement("div");
+      card.className = "persona-card";
+      var name = p.penName || p.name || "Unnamed";
+      var color = avatarColor(name);
+      var tags = "";
+      if (p.styleMarkers && p.styleMarkers.length > 0) {
+        var markers = typeof p.styleMarkers === "string" ? p.styleMarkers.split(",") : p.styleMarkers;
+        markers.slice(0, 5).forEach(function(t) {
+          tags += '<span class="pa-tag">' + esc(t.trim()) + "</span>";
+        });
+      }
+      card.innerHTML = '<div class="pa-top"><div class="persona-avatar" style="background:' + color + ';">' + esc(initials(name)) + '</div><div><div class="pa-name">' + esc(name) + '</div><div class="pa-genre">' + esc((p.genre || "") + (p.subgenre ? " / " + p.subgenre : "")) + "</div></div></div>" + (tags ? '<div class="pa-tags">' + tags + "</div>" : "") + (p.ttsVoice ? '<div class="pa-voice">Voice: ' + esc(p.ttsVoice) + "</div>" : "") + '<div class="pa-actions"><button class="small secondary btn-edit-persona" data-id="' + esc(p.id) + '">Edit</button><button class="small danger btn-del-persona" data-id="' + esc(p.id) + '">Delete</button></div>';
+      grid.appendChild(card);
+    });
+    var newCard = document.createElement("div");
+    newCard.className = "persona-card persona-new";
+    newCard.innerHTML = '<div class="plus">+</div><div class="plus-label">Create New Persona</div>';
+    newCard.addEventListener("click", function() {
+      openPersonaModal(null);
+    });
+    grid.appendChild(newCard);
+    grid.querySelectorAll(".btn-edit-persona").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        var p = state.allPersonas.find(function(x) {
+          return x.id === btn.getAttribute("data-id");
+        });
+        if (p) openPersonaModal(p);
+      });
+    });
+    grid.querySelectorAll(".btn-del-persona").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        deletePersona(btn.getAttribute("data-id"));
+      });
+    });
+  }
+  function openPersonaModal(persona) {
+    var isEdit = !!persona;
+    var overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.id = "personaModal";
+    var markers = "";
+    if (persona && persona.styleMarkers) {
+      markers = Array.isArray(persona.styleMarkers) ? persona.styleMarkers.join(", ") : persona.styleMarkers;
+    }
+    overlay.innerHTML = '<div class="modal"><div class="modal-title">' + (isEdit ? "Edit Persona" : "Create New Persona") + '</div><div class="form-group"><label>Pen Name</label><input type="text" id="pmName" value="' + esc(persona ? persona.penName || persona.name || "" : "") + '" placeholder="Author pen name..."></div><div class="form-group-inline"><div class="form-group"><label>Genre</label><input type="text" id="pmGenre" value="' + esc(persona ? persona.genre || "" : "") + '" placeholder="e.g. Fantasy"></div><div class="form-group"><label>Subgenre</label><input type="text" id="pmSubgenre" value="' + esc(persona ? persona.subgenre || "" : "") + '" placeholder="e.g. Epic Fantasy"></div></div><div class="form-group"><label>Voice Description</label><textarea id="pmVoice" rows="3" placeholder="Describe the writing voice...">' + esc(persona ? persona.voiceDescription || "" : "") + '</textarea></div><div class="form-group"><label>Style Markers (comma-separated)</label><input type="text" id="pmMarkers" value="' + esc(markers) + '" placeholder="e.g. lyrical, dark, atmospheric"></div><div class="form-group"><label>TTS Voice</label><select id="pmTTS"><option value="">None</option><option value="narrator_female"' + (persona && persona.ttsVoice === "narrator_female" ? " selected" : "") + '>Narrator Female \u2014 Versatile, expressive</option><option value="narrator_male"' + (persona && persona.ttsVoice === "narrator_male" ? " selected" : "") + '>Narrator Male \u2014 Literary fiction, thrillers</option><option value="narrator_deep"' + (persona && persona.ttsVoice === "narrator_deep" ? " selected" : "") + '>Narrator Deep \u2014 Epic fantasy, sci-fi</option><option value="narrator_warm"' + (persona && persona.ttsVoice === "narrator_warm" ? " selected" : "") + '>Narrator Warm \u2014 Romance, memoir</option><option value="british_male"' + (persona && persona.ttsVoice === "british_male" ? " selected" : "") + '>British Male \u2014 Period pieces, cozy mysteries</option><option value="british_female"' + (persona && persona.ttsVoice === "british_female" ? " selected" : "") + '>British Female \u2014 Elegant literary fiction</option><option value="storyteller"' + (persona && persona.ttsVoice === "storyteller" ? " selected" : "") + '>Storyteller \u2014 Adventure, YA</option><option value="snarky_nerd"' + (persona && persona.ttsVoice === "snarky_nerd" ? " selected" : "") + '>Snarky Nerd \u2014 Witty banter, smart humor, sci-fi</option><option value="curious_kid"' + (persona && persona.ttsVoice === "curious_kid" ? " selected" : "") + '>Curious Kid \u2014 Full of wonder, MG, whimsical</option></select></div><div class="form-group"><label>Bio</label><textarea id="pmBio" rows="3" placeholder="Author biography...">' + esc(persona ? persona.bio || "" : "") + '</textarea></div><div class="form-group"><label>Also By (comma-separated book titles)</label><input type="text" id="pmAlsoBy" value="' + esc(persona && persona.alsoBy ? Array.isArray(persona.alsoBy) ? persona.alsoBy.join(", ") : persona.alsoBy : "") + '" placeholder="Book Title 1, Book Title 2"></div><div class="modal-actions"><button class="secondary" id="pmGenerate">Generate with AI</button><button class="secondary" id="pmCancel">Cancel</button><button class="success" id="pmSave">' + (isEdit ? "Update" : "Create") + "</button></div></div>";
+    document.body.appendChild(overlay);
+    overlay.querySelector("#pmCancel").addEventListener("click", function() {
+      overlay.remove();
+    });
+    overlay.addEventListener("click", function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector("#pmGenerate").addEventListener("click", function() {
+      var genre = document.getElementById("pmGenre").value.trim();
+      var desc = document.getElementById("pmVoice").value.trim();
+      if (!genre && !desc) {
+        showToast("Enter a genre or voice description first", "error");
+        return;
+      }
+      showToast("Generating persona with AI...", "info");
+      api("POST", "/api/personas/generate", { genre, description: desc }).then(function(data) {
+        var gen = data.persona || data;
+        if (gen.penName || gen.name) document.getElementById("pmName").value = gen.penName || gen.name;
+        if (gen.genre) document.getElementById("pmGenre").value = gen.genre;
+        if (gen.subgenre) document.getElementById("pmSubgenre").value = gen.subgenre;
+        if (gen.voiceDescription) document.getElementById("pmVoice").value = gen.voiceDescription;
+        if (gen.styleMarkers) document.getElementById("pmMarkers").value = Array.isArray(gen.styleMarkers) ? gen.styleMarkers.join(", ") : gen.styleMarkers;
+        if (gen.bio) document.getElementById("pmBio").value = gen.bio;
+        showToast("Persona generated! Review and save.", "success");
+      }).catch(function(e) {
+        showToast("Generation failed: " + e.message, "error");
+      });
+    });
+    overlay.querySelector("#pmSave").addEventListener("click", function() {
+      var body = {
+        penName: document.getElementById("pmName").value.trim(),
+        genre: document.getElementById("pmGenre").value.trim(),
+        subgenre: document.getElementById("pmSubgenre").value.trim(),
+        voiceDescription: document.getElementById("pmVoice").value.trim(),
+        styleMarkers: document.getElementById("pmMarkers").value.split(",").map(function(s) {
+          return s.trim();
+        }).filter(Boolean),
+        ttsVoice: document.getElementById("pmTTS").value,
+        bio: document.getElementById("pmBio").value.trim(),
+        alsoBy: document.getElementById("pmAlsoBy").value.split(",").map(function(s) {
+          return s.trim();
+        }).filter(Boolean)
+      };
+      if (!body.penName) {
+        showToast("Pen name is required", "error");
+        return;
+      }
+      var method = isEdit ? "PUT" : "POST";
+      var path = isEdit ? "/api/personas/" + persona.id : "/api/personas";
+      api(method, path, body).then(function() {
+        overlay.remove();
+        showToast(isEdit ? "Persona updated!" : "Persona created!", "success");
+        loadPersonas();
+      }).catch(function(e) {
+        showToast("Failed: " + e.message, "error");
+      });
+    });
+  }
+  function deletePersona(id) {
+    if (!confirm("Delete this persona?")) return;
+    api("DELETE", "/api/personas/" + id).then(function() {
+      showToast("Persona deleted", "info");
+      loadPersonas();
+    }).catch(function(e) {
+      showToast("Failed: " + e.message, "error");
+    });
+  }
+
+  // dashboard/src/main.js
   var panelTitles = { home: "Home", hq: "Author HQ", projects: "Projects", personas: "Personas", library: "Library", settings: "Settings" };
   var navItems = document.querySelectorAll(".nav-item");
   function switchPanel(name) {
-    currentPanel = name;
+    state.currentPanel = name;
     navItems.forEach(function(n) {
       n.classList.toggle("active", n.getAttribute("data-panel") === name);
     });
@@ -1277,8 +1419,8 @@ textarea { resize: vertical; min-height: 60px; }
         activeCount = data.projects.active || 0;
         totalWords = data.projects.totalWords || 0;
       }
-      if (allProjects.length > 0) {
-        activeCount = allProjects.filter(function(p) {
+      if (state.allProjects.length > 0) {
+        activeCount = state.allProjects.filter(function(p) {
           return p.status === "active";
         }).length;
       }
@@ -1291,7 +1433,7 @@ textarea { resize: vertical; min-height: 60px; }
       } else {
         hbStat.textContent = "OK";
       }
-      document.getElementById("statPersonas").textContent = allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
+      document.getElementById("statPersonas").textContent = state.allPersonas.length || (data.personas ? data.personas.count || 0 : 0);
     }).catch(function() {
       document.getElementById("heartbeatDot").className = "heartbeat-dot err";
       document.getElementById("heartbeatLabel").textContent = "Offline";
@@ -1304,12 +1446,12 @@ textarea { resize: vertical; min-height: 60px; }
     loadPersonas();
     loadActivity();
     loadHomeStats();
-    statusPollTimer = setInterval(loadStatus, 1e4);
-    projectPollTimer = setInterval(function() {
-      if (currentPanel === "home" || currentPanel === "projects") {
+    state.statusPollTimer = setInterval(loadStatus, 1e4);
+    state.projectPollTimer = setInterval(function() {
+      if (state.currentPanel === "home" || state.currentPanel === "projects") {
         loadProjects();
       }
-      if (currentPanel === "home") {
+      if (state.currentPanel === "home") {
         loadActivity();
         loadHomeStats();
       }
@@ -1317,7 +1459,7 @@ textarea { resize: vertical; min-height: 60px; }
   }
   function renderHomeProjects() {
     var container = document.getElementById("homeProjectScroll");
-    var active = allProjects.filter(function(p) {
+    var active = state.allProjects.filter(function(p) {
       return p.status === "active" || p.status === "paused";
     });
     if (active.length === 0) {
@@ -1371,21 +1513,21 @@ textarea { resize: vertical; min-height: 60px; }
   function sendChat() {
     var input = document.getElementById("chatInput");
     var text = input.value.trim();
-    if (!text || chatWaiting) return;
+    if (!text || state.chatWaiting) return;
     addChatMsg(text, "user");
     input.value = "";
-    chatWaiting = true;
+    state.chatWaiting = true;
     showTyping();
     api("POST", "/api/chat", { message: text }).then(function(data) {
       removeTyping();
-      chatWaiting = false;
+      state.chatWaiting = false;
       addChatMsg(data.response || "No response received.", "bot");
       if (text.startsWith("/")) {
         loadProjects();
       }
     }).catch(function(e) {
       removeTyping();
-      chatWaiting = false;
+      state.chatWaiting = false;
       addChatMsg("Error: " + e.message, "system");
     });
   }
@@ -1399,7 +1541,7 @@ textarea { resize: vertical; min-height: 60px; }
   document.getElementById("btnChatClear").addEventListener("click", function() {
     var el = document.getElementById("chatMessages");
     el.innerHTML = `<div class="chat-msg bot">Hello! I'm BookClaw, your AI writing partner. How can I help you today?</div>`;
-    chatWaiting = false;
+    state.chatWaiting = false;
   });
   var defaultTemplates = [
     { id: "book-planning", icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>', name: "Book Planning", desc: "Outline and plan your book structure", steps: "5-8 steps", type: "book-planning" },
@@ -1413,10 +1555,10 @@ textarea { resize: vertical; min-height: 60px; }
   ];
   function loadTemplates() {
     api("GET", "/api/projects/templates").then(function(data) {
-      allTemplates = data.templates || [];
+      state.allTemplates = data.templates || [];
       renderTemplates();
     }).catch(function() {
-      allTemplates = [];
+      state.allTemplates = [];
       renderTemplates();
     });
   }
@@ -1424,7 +1566,7 @@ textarea { resize: vertical; min-height: 60px; }
     var grid = document.getElementById("templateGrid");
     grid.innerHTML = "";
     defaultTemplates.forEach(function(dt) {
-      var serverT = allTemplates.find(function(st) {
+      var serverT = state.allTemplates.find(function(st) {
         return st.type === dt.type || st.id === dt.id;
       });
       var tile = document.createElement("div");
@@ -1445,7 +1587,7 @@ textarea { resize: vertical; min-height: 60px; }
     var isProduction = template.type === "book-production";
     var isCustom = template.type === "custom";
     var personaOpts = '<option value="">None</option>';
-    allPersonas.forEach(function(p) {
+    state.allPersonas.forEach(function(p) {
       personaOpts += '<option value="' + esc(p.id) + '">' + esc(p.penName || p.name) + "</option>";
     });
     var extraFields = "";
@@ -1505,15 +1647,15 @@ textarea { resize: vertical; min-height: 60px; }
               }).length;
               showToast("Project finished! " + completed + " steps completed.", "success");
               loadProjects();
-              if (currentDetailProject === projectId) openProjectDetail(projectId);
+              if (state.currentDetailProject === projectId) openProjectDetail(projectId);
             }).catch(function(err) {
               showToast("Execution error: " + err.message, "error");
               loadProjects();
-              if (currentDetailProject === projectId) openProjectDetail(projectId);
+              if (state.currentDetailProject === projectId) openProjectDetail(projectId);
             });
             var pollId = setInterval(function() {
               loadProjects();
-              if (currentDetailProject === projectId) openProjectDetail(projectId);
+              if (state.currentDetailProject === projectId) openProjectDetail(projectId);
             }, 8e3);
             setTimeout(function() {
               clearInterval(pollId);
@@ -1532,12 +1674,12 @@ textarea { resize: vertical; min-height: 60px; }
   }
   function loadProjects() {
     api("GET", "/api/projects/list").then(function(data) {
-      allProjects = data.projects || [];
-      if (currentPanel === "projects" && !currentDetailProject) {
+      state.allProjects = data.projects || [];
+      if (state.currentPanel === "projects" && !state.currentDetailProject) {
         renderProjectList();
       }
       renderHomeProjects();
-      var ac = allProjects.filter(function(p) {
+      var ac = state.allProjects.filter(function(p) {
         return p.status === "active";
       }).length;
       document.getElementById("statProjects").textContent = ac;
@@ -1550,20 +1692,20 @@ textarea { resize: vertical; min-height: 60px; }
         t.classList.remove("active");
       });
       tab.classList.add("active");
-      projectFilter = tab.getAttribute("data-filter");
+      state.projectFilter = tab.getAttribute("data-filter");
       renderProjectList();
     });
   });
   function renderProjectList() {
     var el = document.getElementById("projectList");
-    var filtered = allProjects;
-    if (projectFilter !== "all") {
-      filtered = allProjects.filter(function(p) {
-        return p.status === projectFilter;
+    var filtered = state.allProjects;
+    if (state.projectFilter !== "all") {
+      filtered = state.allProjects.filter(function(p) {
+        return p.status === state.projectFilter;
       });
     }
     if (filtered.length === 0) {
-      el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No ' + (projectFilter === "all" ? "" : projectFilter + " ") + "projects found.</div>";
+      el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No ' + (state.projectFilter === "all" ? "" : state.projectFilter + " ") + "projects found.</div>";
       return;
     }
     el.innerHTML = "";
@@ -1641,7 +1783,7 @@ textarea { resize: vertical; min-height: 60px; }
         showToast("Project " + action + "d!", "success");
       }
       loadProjects();
-      if (currentDetailProject === id) openProjectDetail(id);
+      if (state.currentDetailProject === id) openProjectDetail(id);
     }).catch(function(e) {
       showToast("Failed: " + e.message, "error");
       loadProjects();
@@ -1659,14 +1801,14 @@ textarea { resize: vertical; min-height: 60px; }
     if (!confirm("Delete this project?")) return;
     api("DELETE", "/api/projects/" + id).then(function() {
       showToast("Project deleted", "info");
-      if (currentDetailProject === id) showProjectList();
+      if (state.currentDetailProject === id) showProjectList();
       loadProjects();
     }).catch(function(e) {
       showToast("Failed: " + e.message, "error");
     });
   }
   function showProjectList() {
-    currentDetailProject = null;
+    state.currentDetailProject = null;
     document.getElementById("projectTemplatesCard").style.display = "";
     document.getElementById("projectListCard").style.display = "";
     document.getElementById("projectDetailView").style.display = "none";
@@ -1730,14 +1872,14 @@ textarea { resize: vertical; min-height: 60px; }
             }).length;
             showToast("Done! " + completed + " steps completed.", "success");
             loadProjects();
-            if (currentDetailProject === projectId) openProjectDetail(projectId);
+            if (state.currentDetailProject === projectId) openProjectDetail(projectId);
           }).catch(function(err) {
             showToast("Execution error: " + err.message, "error");
             loadProjects();
           });
           var pollId = setInterval(function() {
             loadProjects();
-            if (currentDetailProject === projectId) openProjectDetail(projectId);
+            if (state.currentDetailProject === projectId) openProjectDetail(projectId);
           }, 8e3);
           setTimeout(function() {
             clearInterval(pollId);
@@ -1752,14 +1894,14 @@ textarea { resize: vertical; min-height: 60px; }
     });
   }
   function openProjectDetail(id) {
-    var project = allProjects.find(function(p) {
+    var project = state.allProjects.find(function(p) {
       return p.id === id;
     });
     if (!project) {
       showToast("Project not found", "error");
       return;
     }
-    currentDetailProject = id;
+    state.currentDetailProject = id;
     document.getElementById("projectTemplatesCard").style.display = "none";
     document.getElementById("projectListCard").style.display = "none";
     var detail = document.getElementById("projectDetailView");
@@ -1864,7 +2006,7 @@ textarea { resize: vertical; min-height: 60px; }
           { deleteOutputFile: deleteFile }
         ).then(function() {
           showToast("Step reset to pending. Click Auto-Execute to run it.", "success");
-          if (currentDetailProject === id) openProjectDetail(id);
+          if (state.currentDetailProject === id) openProjectDetail(id);
         }).catch(function(e2) {
           showToast("Retry failed: " + e2.message, "error");
         });
@@ -1914,7 +2056,7 @@ textarea { resize: vertical; min-height: 60px; }
         ).then(function(data) {
           var _a;
           showToast("Reset " + (((_a = data.reset) == null ? void 0 : _a.length) || 0) + " step(s). Click Auto-Execute to continue.", "success");
-          if (currentDetailProject === id) openProjectDetail(id);
+          if (state.currentDetailProject === id) openProjectDetail(id);
         }).catch(function(e) {
           showToast("Restart failed: " + e.message, "error");
         });
@@ -1931,7 +2073,7 @@ textarea { resize: vertical; min-height: 60px; }
         ).then(function(data) {
           var _a;
           showToast("Project fully reset. " + (((_a = data.reset) == null ? void 0 : _a.length) || 0) + " step(s) cleared.", "info");
-          if (currentDetailProject === id) openProjectDetail(id);
+          if (state.currentDetailProject === id) openProjectDetail(id);
         }).catch(function(e) {
           showToast("Restart failed: " + e.message, "error");
         });
@@ -2185,135 +2327,6 @@ textarea { resize: vertical; min-height: 60px; }
     html += '<div style="font-size:11px;color:var(--muted);margin-top:12px;">Generated: ' + esc(report.generatedAt || "") + "</div>";
     el.innerHTML = html;
   }
-  function loadPersonas() {
-    api("GET", "/api/personas").then(function(data) {
-      allPersonas = data.personas || data || [];
-      if (Array.isArray(data) && !data.personas) allPersonas = data;
-      renderPersonas();
-      document.getElementById("statPersonas").textContent = allPersonas.length;
-    }).catch(function() {
-      allPersonas = [];
-      renderPersonas();
-    });
-  }
-  function renderPersonas() {
-    var grid = document.getElementById("personaGrid");
-    grid.innerHTML = "";
-    allPersonas.forEach(function(p) {
-      var card = document.createElement("div");
-      card.className = "persona-card";
-      var name = p.penName || p.name || "Unnamed";
-      var color = avatarColor(name);
-      var tags = "";
-      if (p.styleMarkers && p.styleMarkers.length > 0) {
-        var markers = typeof p.styleMarkers === "string" ? p.styleMarkers.split(",") : p.styleMarkers;
-        markers.slice(0, 5).forEach(function(t) {
-          tags += '<span class="pa-tag">' + esc(t.trim()) + "</span>";
-        });
-      }
-      card.innerHTML = '<div class="pa-top"><div class="persona-avatar" style="background:' + color + ';">' + esc(initials(name)) + '</div><div><div class="pa-name">' + esc(name) + '</div><div class="pa-genre">' + esc((p.genre || "") + (p.subgenre ? " / " + p.subgenre : "")) + "</div></div></div>" + (tags ? '<div class="pa-tags">' + tags + "</div>" : "") + (p.ttsVoice ? '<div class="pa-voice">Voice: ' + esc(p.ttsVoice) + "</div>" : "") + '<div class="pa-actions"><button class="small secondary btn-edit-persona" data-id="' + esc(p.id) + '">Edit</button><button class="small danger btn-del-persona" data-id="' + esc(p.id) + '">Delete</button></div>';
-      grid.appendChild(card);
-    });
-    var newCard = document.createElement("div");
-    newCard.className = "persona-card persona-new";
-    newCard.innerHTML = '<div class="plus">+</div><div class="plus-label">Create New Persona</div>';
-    newCard.addEventListener("click", function() {
-      openPersonaModal(null);
-    });
-    grid.appendChild(newCard);
-    grid.querySelectorAll(".btn-edit-persona").forEach(function(btn) {
-      btn.addEventListener("click", function(e) {
-        e.stopPropagation();
-        var p = allPersonas.find(function(x) {
-          return x.id === btn.getAttribute("data-id");
-        });
-        if (p) openPersonaModal(p);
-      });
-    });
-    grid.querySelectorAll(".btn-del-persona").forEach(function(btn) {
-      btn.addEventListener("click", function(e) {
-        e.stopPropagation();
-        deletePersona(btn.getAttribute("data-id"));
-      });
-    });
-  }
-  function openPersonaModal(persona) {
-    var isEdit = !!persona;
-    var overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.id = "personaModal";
-    var markers = "";
-    if (persona && persona.styleMarkers) {
-      markers = Array.isArray(persona.styleMarkers) ? persona.styleMarkers.join(", ") : persona.styleMarkers;
-    }
-    overlay.innerHTML = '<div class="modal"><div class="modal-title">' + (isEdit ? "Edit Persona" : "Create New Persona") + '</div><div class="form-group"><label>Pen Name</label><input type="text" id="pmName" value="' + esc(persona ? persona.penName || persona.name || "" : "") + '" placeholder="Author pen name..."></div><div class="form-group-inline"><div class="form-group"><label>Genre</label><input type="text" id="pmGenre" value="' + esc(persona ? persona.genre || "" : "") + '" placeholder="e.g. Fantasy"></div><div class="form-group"><label>Subgenre</label><input type="text" id="pmSubgenre" value="' + esc(persona ? persona.subgenre || "" : "") + '" placeholder="e.g. Epic Fantasy"></div></div><div class="form-group"><label>Voice Description</label><textarea id="pmVoice" rows="3" placeholder="Describe the writing voice...">' + esc(persona ? persona.voiceDescription || "" : "") + '</textarea></div><div class="form-group"><label>Style Markers (comma-separated)</label><input type="text" id="pmMarkers" value="' + esc(markers) + '" placeholder="e.g. lyrical, dark, atmospheric"></div><div class="form-group"><label>TTS Voice</label><select id="pmTTS"><option value="">None</option><option value="narrator_female"' + (persona && persona.ttsVoice === "narrator_female" ? " selected" : "") + '>Narrator Female \u2014 Versatile, expressive</option><option value="narrator_male"' + (persona && persona.ttsVoice === "narrator_male" ? " selected" : "") + '>Narrator Male \u2014 Literary fiction, thrillers</option><option value="narrator_deep"' + (persona && persona.ttsVoice === "narrator_deep" ? " selected" : "") + '>Narrator Deep \u2014 Epic fantasy, sci-fi</option><option value="narrator_warm"' + (persona && persona.ttsVoice === "narrator_warm" ? " selected" : "") + '>Narrator Warm \u2014 Romance, memoir</option><option value="british_male"' + (persona && persona.ttsVoice === "british_male" ? " selected" : "") + '>British Male \u2014 Period pieces, cozy mysteries</option><option value="british_female"' + (persona && persona.ttsVoice === "british_female" ? " selected" : "") + '>British Female \u2014 Elegant literary fiction</option><option value="storyteller"' + (persona && persona.ttsVoice === "storyteller" ? " selected" : "") + '>Storyteller \u2014 Adventure, YA</option><option value="snarky_nerd"' + (persona && persona.ttsVoice === "snarky_nerd" ? " selected" : "") + '>Snarky Nerd \u2014 Witty banter, smart humor, sci-fi</option><option value="curious_kid"' + (persona && persona.ttsVoice === "curious_kid" ? " selected" : "") + '>Curious Kid \u2014 Full of wonder, MG, whimsical</option></select></div><div class="form-group"><label>Bio</label><textarea id="pmBio" rows="3" placeholder="Author biography...">' + esc(persona ? persona.bio || "" : "") + '</textarea></div><div class="form-group"><label>Also By (comma-separated book titles)</label><input type="text" id="pmAlsoBy" value="' + esc(persona && persona.alsoBy ? Array.isArray(persona.alsoBy) ? persona.alsoBy.join(", ") : persona.alsoBy : "") + '" placeholder="Book Title 1, Book Title 2"></div><div class="modal-actions"><button class="secondary" id="pmGenerate">Generate with AI</button><button class="secondary" id="pmCancel">Cancel</button><button class="success" id="pmSave">' + (isEdit ? "Update" : "Create") + "</button></div></div>";
-    document.body.appendChild(overlay);
-    overlay.querySelector("#pmCancel").addEventListener("click", function() {
-      overlay.remove();
-    });
-    overlay.addEventListener("click", function(e) {
-      if (e.target === overlay) overlay.remove();
-    });
-    overlay.querySelector("#pmGenerate").addEventListener("click", function() {
-      var genre = document.getElementById("pmGenre").value.trim();
-      var desc = document.getElementById("pmVoice").value.trim();
-      if (!genre && !desc) {
-        showToast("Enter a genre or voice description first", "error");
-        return;
-      }
-      showToast("Generating persona with AI...", "info");
-      api("POST", "/api/personas/generate", { genre, description: desc }).then(function(data) {
-        var gen = data.persona || data;
-        if (gen.penName || gen.name) document.getElementById("pmName").value = gen.penName || gen.name;
-        if (gen.genre) document.getElementById("pmGenre").value = gen.genre;
-        if (gen.subgenre) document.getElementById("pmSubgenre").value = gen.subgenre;
-        if (gen.voiceDescription) document.getElementById("pmVoice").value = gen.voiceDescription;
-        if (gen.styleMarkers) document.getElementById("pmMarkers").value = Array.isArray(gen.styleMarkers) ? gen.styleMarkers.join(", ") : gen.styleMarkers;
-        if (gen.bio) document.getElementById("pmBio").value = gen.bio;
-        showToast("Persona generated! Review and save.", "success");
-      }).catch(function(e) {
-        showToast("Generation failed: " + e.message, "error");
-      });
-    });
-    overlay.querySelector("#pmSave").addEventListener("click", function() {
-      var body = {
-        penName: document.getElementById("pmName").value.trim(),
-        genre: document.getElementById("pmGenre").value.trim(),
-        subgenre: document.getElementById("pmSubgenre").value.trim(),
-        voiceDescription: document.getElementById("pmVoice").value.trim(),
-        styleMarkers: document.getElementById("pmMarkers").value.split(",").map(function(s) {
-          return s.trim();
-        }).filter(Boolean),
-        ttsVoice: document.getElementById("pmTTS").value,
-        bio: document.getElementById("pmBio").value.trim(),
-        alsoBy: document.getElementById("pmAlsoBy").value.split(",").map(function(s) {
-          return s.trim();
-        }).filter(Boolean)
-      };
-      if (!body.penName) {
-        showToast("Pen name is required", "error");
-        return;
-      }
-      var method = isEdit ? "PUT" : "POST";
-      var path = isEdit ? "/api/personas/" + persona.id : "/api/personas";
-      api(method, path, body).then(function() {
-        overlay.remove();
-        showToast(isEdit ? "Persona updated!" : "Persona created!", "success");
-        loadPersonas();
-      }).catch(function(e) {
-        showToast("Failed: " + e.message, "error");
-      });
-    });
-  }
-  function deletePersona(id) {
-    if (!confirm("Delete this persona?")) return;
-    api("DELETE", "/api/personas/" + id).then(function() {
-      showToast("Persona deleted", "info");
-      loadPersonas();
-    }).catch(function(e) {
-      showToast("Failed: " + e.message, "error");
-    });
-  }
   function loadDocuments() {
     api("GET", "/api/documents").then(function(data) {
       var docs = data.documents || data || [];
@@ -2338,7 +2351,7 @@ textarea { resize: vertical; min-height: 60px; }
     });
   }
   function loadCompiledOutputs() {
-    var completed = allProjects.filter(function(p) {
+    var completed = state.allProjects.filter(function(p) {
       return p.status === "completed";
     });
     var el = document.getElementById("compiledOutputs");
@@ -2854,10 +2867,9 @@ textarea { resize: vertical; min-height: 60px; }
       showToast("Failed: " + e.message, "error");
     });
   });
-  var idleTasksCache = [];
   function loadIdleTasks() {
     api("GET", "/api/autonomous/idle-tasks").then(function(data) {
-      idleTasksCache = data.queue || [];
+      state.idleTasksCache = data.queue || [];
       renderIdleTaskQueue();
       renderIdleTaskHistory(data.history || []);
     }).catch(function() {
@@ -2869,11 +2881,11 @@ textarea { resize: vertical; min-height: 60px; }
     var queueEl = document.getElementById("idleTaskQueue");
     if (!queueEl) return;
     queueEl.innerHTML = "";
-    if (idleTasksCache.length === 0) {
+    if (state.idleTasksCache.length === 0) {
       queueEl.innerHTML = '<div style="color:var(--muted);padding:8px 0;">No idle tasks configured. Click "+ Add Task" to create one.</div>';
       return;
     }
-    idleTasksCache.forEach(function(task, idx) {
+    state.idleTasksCache.forEach(function(task, idx) {
       var row = document.createElement("div");
       row.style.cssText = "padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);";
       var enabledStyle = task.enabled === false ? "opacity:0.5;" : "";
@@ -2883,28 +2895,28 @@ textarea { resize: vertical; min-height: 60px; }
     queueEl.querySelectorAll(".idle-toggle").forEach(function(toggle) {
       toggle.addEventListener("change", function() {
         var idx = parseInt(toggle.getAttribute("data-idx"));
-        idleTasksCache[idx].enabled = toggle.checked;
+        state.idleTasksCache[idx].enabled = toggle.checked;
         saveIdleTasks();
       });
     });
     queueEl.querySelectorAll(".btn-edit-idle").forEach(function(btn) {
       btn.addEventListener("click", function() {
         var idx = parseInt(btn.getAttribute("data-idx"));
-        openIdleTaskEditor(idleTasksCache[idx], idx);
+        openIdleTaskEditor(state.idleTasksCache[idx], idx);
       });
     });
     queueEl.querySelectorAll(".btn-del-idle").forEach(function(btn) {
       btn.addEventListener("click", function() {
         var idx = parseInt(btn.getAttribute("data-idx"));
-        if (!confirm('Delete idle task "' + idleTasksCache[idx].label + '"?')) return;
-        idleTasksCache.splice(idx, 1);
+        if (!confirm('Delete idle task "' + state.idleTasksCache[idx].label + '"?')) return;
+        state.idleTasksCache.splice(idx, 1);
         saveIdleTasks();
         renderIdleTaskQueue();
       });
     });
   }
   function saveIdleTasks() {
-    api("PUT", "/api/autonomous/idle-tasks", { tasks: idleTasksCache }).then(function() {
+    api("PUT", "/api/autonomous/idle-tasks", { tasks: state.idleTasksCache }).then(function() {
       showToast("Idle tasks saved!", "success");
     }).catch(function(e) {
       showToast("Failed to save: " + e.message, "error");
@@ -2934,10 +2946,10 @@ textarea { resize: vertical; min-height: 60px; }
         return;
       }
       if (isNew) {
-        idleTasksCache.push({ label, prompt, enabled: true });
+        state.idleTasksCache.push({ label, prompt, enabled: true });
       } else {
-        idleTasksCache[idx].label = label;
-        idleTasksCache[idx].prompt = prompt;
+        state.idleTasksCache[idx].label = label;
+        state.idleTasksCache[idx].prompt = prompt;
       }
       saveIdleTasks();
       renderIdleTaskQueue();
