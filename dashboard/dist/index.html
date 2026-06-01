@@ -1890,12 +1890,26 @@ function openProjectDetail(id) {
           'style="font-size:10px;padding:3px 8px;margin-left:4px;" ' +
           'title="Reset this step to pending so it can be re-run">' + (s.status === 'failed' ? 'Retry' : 'Re-run') + '</button>';
       }
+      // Per-step model picker: provider dropdown ("Inherit" = project/tier
+      // default) + optional exact model id (needed for OpenRouter ids).
+      var ov = s.modelOverride || {};
+      var provOpts = ['', 'gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'].map(function(p) {
+        var label = p === '' ? 'Inherit (default)' : p;
+        return '<option value="' + p + '"' + (ov.provider === p ? ' selected' : '') + '>' + label + '</option>';
+      }).join('');
+      var ctlStyle = 'font-size:10px;padding:2px 4px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;';
+      var modelCtl =
+        '<div class="step-model-ctl" style="margin-top:5px;display:flex;gap:6px;align-items:center;">' +
+          '<select class="pd-step-provider" data-step-id="' + esc(s.id) + '" style="' + ctlStyle + '">' + provOpts + '</select>' +
+          '<input class="pd-step-model" data-step-id="' + esc(s.id) + '" value="' + esc(ov.model || '') + '" placeholder="model id (optional)" style="' + ctlStyle + 'flex:1;max-width:220px;">' +
+        '</div>';
       stepsHtml +=
         '<div class="step-item" data-step-idx="' + i + '">' +
           '<span class="step-dot ' + esc(s.status) + '"></span>' +
           '<div style="flex:1;">' +
             '<div>' + esc(s.label || s.name || 'Step ' + (i+1)) + '</div>' +
             '<div style="font-size:11px;color:var(--muted);">' + esc(s.status) + (s.error ? ' - ' + esc(s.error.slice(0, 120)) : '') + '</div>' +
+            modelCtl +
           '</div>' +
           '<span class="badge badge-' + esc(s.status) + '" style="font-size:10px;">' + esc(s.status) + '</span>' +
           retryBtn +
@@ -2038,6 +2052,40 @@ function openProjectDetail(id) {
         showToast('Step reset to pending. Click Auto-Execute to run it.', 'success');
         if (currentDetailProject === id) openProjectDetail(id);
       }).catch(function(e2) { showToast('Retry failed: ' + e2.message, 'error'); });
+    });
+  });
+
+  // Wire per-step model pickers (provider dropdown + optional model id).
+  // POSTs on change (not per keystroke) and does NOT re-render, so focus and
+  // the step's open/closed output are preserved.
+  function saveStepModel(stepId) {
+    var prov = detail.querySelector('.pd-step-provider[data-step-id="' + stepId + '"]');
+    var modelEl = detail.querySelector('.pd-step-model[data-step-id="' + stepId + '"]');
+    var provider = prov ? prov.value : '';
+    var model = modelEl ? modelEl.value.trim() : '';
+    api('POST', '/api/projects/' + id + '/steps/' + stepId + '/model', { provider: provider, model: model })
+      .then(function() {
+        showToast(provider ? ('Step model: ' + provider + (model ? ' / ' + model : ' (default model)')) : 'Step model cleared — inherits default', 'success');
+      })
+      .catch(function(e2) { showToast('Set model failed: ' + e2.message, 'error'); });
+  }
+  detail.querySelectorAll('.pd-step-provider').forEach(function(sel) {
+    sel.addEventListener('click', function(e) { e.stopPropagation(); });
+    sel.addEventListener('change', function(e) {
+      e.stopPropagation();
+      // Clearing the provider (Inherit) also clears any stale model text.
+      if (!sel.value) {
+        var m = detail.querySelector('.pd-step-model[data-step-id="' + sel.getAttribute('data-step-id') + '"]');
+        if (m) m.value = '';
+      }
+      saveStepModel(sel.getAttribute('data-step-id'));
+    });
+  });
+  detail.querySelectorAll('.pd-step-model').forEach(function(inp) {
+    inp.addEventListener('click', function(e) { e.stopPropagation(); });
+    inp.addEventListener('change', function(e) {  // fires on blur / Enter
+      e.stopPropagation();
+      saveStepModel(inp.getAttribute('data-step-id'));
     });
   });
 

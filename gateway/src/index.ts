@@ -406,7 +406,8 @@ class BookClawGateway {
     respond: (text: string) => void,
     extraContext?: string,
     overrideTaskType?: string,
-    preferredProvider?: string
+    preferredProvider?: string,
+    overrideModel?: string
   ): Promise<void> {
     // ── Security Check 1: Injection Detection ──
     const injectionResult = this.injectionDetector.scan(content);
@@ -530,6 +531,7 @@ class BookClawGateway {
         messages,
         maxTokens: taskMaxTokens,
         ...(thinking ? { thinking } : {}),
+        ...(overrideModel ? { model: overrideModel } : {}),
       });
 
       if (!skipHistory) {
@@ -1630,7 +1632,11 @@ class BookClawGateway {
         }
 
         let aiResponse = '';
-        const projectProvider = (project as any).preferredProvider || undefined;
+        // Per-step model override wins over the project-level provider; the
+        // pinned model id (if any) is passed as the 7th handleMessage arg.
+        const stepOverride = (activeStep as any).modelOverride;
+        const projectProvider = stepOverride?.provider || (project as any).preferredProvider || undefined;
+        const stepModel = stepOverride?.model || undefined;
         try {
           await new Promise<void>((resolve, reject) => {
             gateway.handleMessage(
@@ -1642,7 +1648,8 @@ class BookClawGateway {
               },
               projectContext,
               (activeStep as any).taskType || undefined,
-              projectProvider
+              projectProvider,
+              stepModel
             ).catch(reject);
           });
 

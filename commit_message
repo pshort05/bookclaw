@@ -1,13 +1,29 @@
-Prune unused imports left in index.ts after the Level 1 refactor
+Add per-step model selection (provider + exact model id)
 
-- Remove 4 utility imports orphaned when their logic moved out of index.ts:
-  fileURLToPath (url) + dirname (path) -> moved to paths.ts; randomBytes
-  (crypto) -> moved to the security init phase; createAPIRoutes -> now used
-  only by init/phase-11-http.ts.
-- Surgical: drop the url and createAPIRoutes lines, keep join + timingSafeEqual
-  on their shared lines. The service-class imports are all still used as
-  public field type annotations, so none were removable.
-- docs: move the item from TODO.md to COMPLETED.md.
+Each pipeline/project step can now pin its own AI provider and exact model id
+(cheap-draft / premium-edit in one pipeline), not just route by task tier.
 
-Verified: 0 unused imports remain (re-scan), tsc --noEmit clean, npm test green
-(26 unit + 17 API + 19 smoke).
+- ProjectStep.modelOverride { provider, model? } (blank model = provider only).
+- AIRouter: CompletionRequest.model; complete() dispatches with a provider
+  clone whose model is the override (every completeX method picks it up).
+  Unset = provider default (unchanged behavior).
+- handleMessage: new 7th overrideModel param, passed to complete().
+- routes/_shared.ts stepRouting(): precedence step override -> project
+  preferredProvider -> tier routing; applied at the primary/continuation/
+  quality-retry executors (projects.routes.ts) and the goal-engine path
+  (index.ts). 'general' short-retries stay unpinned so they can fall back.
+- New endpoint POST /api/projects/:id/steps/:stepId/model -> ProjectEngine
+  .setStepModelOverride(); provider validated (incl. openrouter), model id
+  free-text but length-capped + control-char rejected.
+- Dashboard: per-step provider dropdown ("Inherit" + 6 providers) + optional
+  model-id input in the project-detail view; POSTs on change, no re-render.
+
+Incidental fix: the dashboard execution paths passed no provider to
+handleMessage, so the project-level "AI Model" override (create modal) was
+ignored on dashboard runs; stepRouting's project fallback now makes it work.
+
+Follow-up: estimatedCost still uses the base provider's placeholder rates for
+an overridden model (real per-model pricing is a separate item).
+
+Verified: tsc --noEmit clean; npm test green (29 unit + API + smoke); live
+e2e (create -> set -> persist -> clear -> delete) passed.

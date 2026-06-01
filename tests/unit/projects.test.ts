@@ -82,3 +82,34 @@ test('inferProjectType maps revision, format, and launch signals', () => {
 test('inferProjectType falls back to custom for an unrecognized request', () => {
   assert.equal(makeEngine().inferProjectType('do something vaguely creative'), 'custom');
 });
+
+// ── setStepModelOverride() ──────────────────────────────────────────────────
+
+test('setStepModelOverride sets, normalizes, and clears a per-step override', () => {
+  const e = makeEngine();
+  // Inject a minimal project directly to avoid createProject's auto-persist path.
+  (e as any).projects.set('p1', {
+    id: 'p1', updatedAt: '',
+    steps: [{ id: 's1', label: 'x', taskType: 'general', prompt: '', status: 'pending' }],
+  });
+
+  // Provider + model pins both.
+  assert.deepEqual(
+    e.setStepModelOverride('p1', 's1', { provider: 'openrouter', model: 'meta/llama-3.3' })?.modelOverride,
+    { provider: 'openrouter', model: 'meta/llama-3.3' },
+  );
+  // Blank/whitespace model → provider-only pin.
+  assert.deepEqual(
+    e.setStepModelOverride('p1', 's1', { provider: 'claude', model: '   ' })?.modelOverride,
+    { provider: 'claude' },
+  );
+  // null clears the override.
+  assert.equal(e.setStepModelOverride('p1', 's1', null)?.modelOverride, undefined);
+  // Unknown project or step returns null.
+  assert.equal(e.setStepModelOverride('nope', 's1', { provider: 'claude' }), null);
+  assert.equal(e.setStepModelOverride('p1', 'nostep', { provider: 'claude' }), null);
+
+  // Cancel the debounced state write armed by the successful mutations so the
+  // test process exits promptly and writes no fixture.
+  clearTimeout((e as any).saveDebounceTimer);
+});

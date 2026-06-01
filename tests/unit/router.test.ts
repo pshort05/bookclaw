@@ -162,3 +162,47 @@ test('getFallbackProvider returns a paid provider when under budget and no free 
   assert.ok(fb);
   assert.equal(fb!.id, 'openai');
 });
+
+// ── complete(): per-call model override ─────────────────────────────────────
+// complete() makes a real fetch, so stub it to capture the model on the wire.
+
+/** Run `fn` with global fetch stubbed to capture the outgoing request body. */
+async function withFetchCapture(fn: (getBody: () => any) => Promise<void>): Promise<void> {
+  let sentBody: any = null;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init: any) => ({
+    ok: true,
+    json: async () => { sentBody = JSON.parse(init.body); return { choices: [{ message: { content: 'ok' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }; },
+    text: async () => '',
+  })) as never;
+  try {
+    await fn(() => sentBody);
+  } finally {
+    globalThis.fetch = orig;
+  }
+}
+
+test('complete sends the per-call model override on the wire', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  await withFetchCapture(async (getBody) => {
+    await router.complete({
+      provider: 'openrouter',
+      system: 's',
+      messages: [{ role: 'user', content: 'hi' }],
+      model: 'meta-llama/llama-3.3-70b-instruct',
+    });
+    assert.equal(getBody().model, 'meta-llama/llama-3.3-70b-instruct');
+  });
+});
+
+test('complete uses the provider default model when no override is given', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'], config: { openrouter: { model: 'default/model-x' } } });
+  await withFetchCapture(async (getBody) => {
+    await router.complete({
+      provider: 'openrouter',
+      system: 's',
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+    assert.equal(getBody().model, 'default/model-x');
+  });
+});

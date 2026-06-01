@@ -32,6 +32,24 @@ export const upload = multer({
   storage: multer.memoryStorage(),
 });
 
+/**
+ * Resolve the effective AI provider + model for executing a project step,
+ * for passing to handleMessage(..., preferredProvider, overrideModel).
+ * Precedence: the step's own modelOverride wins; otherwise the project-level
+ * preferredProvider applies; model is pinned only when the step sets one.
+ * Returns undefined fields when nothing is pinned (→ tier routing, today's
+ * default behavior).
+ */
+export function stepRouting(
+  project: any,
+  step: any
+): { provider: string | undefined; model: string | undefined } {
+  return {
+    provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
+    model: step?.modelOverride?.model || undefined,
+  };
+}
+
 /** Sets the Wave-3 advisory header on a response. */
 export function addWaveDisclaimer(res: Response): void {
   res.setHeader('X-BookClaw-Disclaimer', 'Wave 3 actions create confirmation requests but do not execute irreversible actions autonomously. You are responsible for every approved action. See SECURITY.md.');

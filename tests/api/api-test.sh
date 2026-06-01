@@ -157,6 +157,16 @@ post_code="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{}' -X PO
   || fail "POST /api/vault with empty body should be 400 (got $post_code)"
 # Unknown API route -> 404.
 has_status "/api/this-route-does-not-exist" "404" "unknown /api route -> 404"
+
+# Per-step model override endpoint contract (no project needed for these paths):
+mc() { code "${AUTH[@]}" -H 'Content-Type: application/json' -d "$1" -X POST "$BASE/api/projects/$2/steps/$3/model"; }
+[ "$(mc '{"provider":"openrouter","model":"x/y"}' nope nostep)" = "404" ] \
+  && pass "step model: unknown project -> 404" || fail "step model: unknown project should be 404"
+[ "$(mc '{"provider":"bogus"}' any any)" = "400" ] \
+  && pass "step model: invalid provider -> 400" || fail "step model: invalid provider should be 400"
+LONGMODEL="$(printf 'a%.0s' $(seq 1 201))"
+[ "$(mc "{\"provider\":\"openrouter\",\"model\":\"$LONGMODEL\"}" any any)" = "400" ] \
+  && pass "step model: over-long model id -> 400" || fail "step model: over-long model id should be 400"
 # Auth is enforced on the API (perimeter detail; smoke-test covers it in depth).
 [ "$(code "$BASE/api/status")" = "401" ] \
   && pass "no token -> 401" || fail "no token should be 401"

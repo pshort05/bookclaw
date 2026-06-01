@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
+import { stepRouting } from './_shared.js';
 
 /**
  * Project Engine endpoints: templates, project + pipeline creation, start/
@@ -329,6 +330,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     try {
       const projectContext = await engine.buildProjectContext(project, activeStep);
       const userMessage = await buildStepUserMessage(project, activeStep);
+      const { provider: stepProvider, model: stepModel } = stepRouting(project, activeStep);
       let response = '';
 
       await gateway.handleMessage(
@@ -336,7 +338,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         'projects',
         (text: string) => { response = text; },
         projectContext,
-        activeStep.taskType || undefined  // Use step's own taskType for routing
+        activeStep.taskType || undefined,  // Use step's own taskType for routing
+        stepProvider,                       // per-step override → project default → tier
+        stepModel                           // exact model id when the step pins one
       );
 
       // Retry once with 'general' routing if the response is too short
@@ -495,6 +499,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       try {
         const projectContext = await engine.buildProjectContext(currentProject, activeStep);
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
+        const { provider: stepProvider, model: stepModel } = stepRouting(currentProject, activeStep);
         let response = '';
 
         await gateway.handleMessage(
@@ -502,7 +507,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           'project-engine',
           (text: string) => { response = text; },
           projectContext,
-          activeStep.taskType || undefined  // Use step's own taskType for routing
+          activeStep.taskType || undefined,  // Use step's own taskType for routing
+          stepProvider,                       // per-step override → project default → tier
+          stepModel                           // exact model id when the step pins one
         );
 
         // Retry once with 'general' routing if the response is too short
@@ -560,6 +567,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   (text: string) => { contResponse = text; },
                   projectContext,
                   activeStep.taskType || undefined,
+                  stepProvider,  // keep the same pinned model across continuations
+                  stepModel
                 );
                 if (contResponse.length > 100) {
                   response = response + '\n\n' + contResponse;
@@ -627,6 +636,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   (text: string) => { retryResponse = text; },
                   projectContext,
                   activeStep.taskType || undefined,
+                  stepProvider,  // same pinned model on quality re-draft
+                  stepModel
                 );
                 if (retryResponse && retryResponse.length > 500 &&
                     !retryResponse.startsWith('[AI provider failure]')) {
@@ -894,6 +905,35 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     (project as any).preferredProvider = provider || undefined;
     project.updatedAt = new Date().toISOString();
     res.json({ success: true, preferredProvider: (project as any).preferredProvider || null });
+  });
+
+  // ── Set/clear a single step's model override (per-step model selection) ──
+  // Empty/absent provider clears the override (step reverts to project default /
+  // tier routing). A blank model pins the provider only (its default model).
+  app.post('/api/projects/:id/steps/:stepId/model', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    const { provider, model } = req.body || {};
+    const validProviders = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'];
+    // Clear when provider is empty/null.
+    if (!provider) {
+      const cleared = engine.setStepModelOverride(req.params.id, req.params.stepId, null);
+      if (!cleared) return res.status(404).json({ error: 'Project or step not found' });
+      return res.json({ success: true, modelOverride: null });
+    }
+    if (!validProviders.includes(provider)) {
+      return res.status(400).json({ error: `Invalid provider. Use one of: ${validProviders.join(', ')}` });
+    }
+    // Model id is free-text (OpenRouter ids are arbitrary). Validate defensively:
+    // it is sent verbatim to the provider API, so cap length and reject control chars.
+    if (model !== undefined && model !== null && model !== '') {
+      if (typeof model !== 'string' || model.length > 200 || /[\x00-\x1f]/.test(model)) {
+        return res.status(400).json({ error: 'Invalid model id' });
+      }
+    }
+    const step = engine.setStepModelOverride(req.params.id, req.params.stepId, { provider, model });
+    if (!step) return res.status(404).json({ error: 'Project or step not found' });
+    res.json({ success: true, modelOverride: step.modelOverride || null });
   });
 
   app.delete('/api/projects/:id', async (req: Request, res: Response) => {

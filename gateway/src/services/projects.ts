@@ -34,6 +34,7 @@ export type AICompleteFunc = (request: {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   maxTokens?: number;
   temperature?: number;
+  model?: string;
 }) => Promise<{ text: string; tokensUsed: number; estimatedCost: number; provider: string }>;
 
 /**
@@ -84,6 +85,10 @@ export interface ProjectStep {
   phase?: string;           // 'premise' | 'bible' | 'outline' | 'writing' | 'revision' | 'revision_apply' | 'assembly'
   wordCountTarget?: number; // Target words for this step (triggers multi-pass continuation)
   chapterNumber?: number;   // Chapter number for writing/revision steps
+  // Per-step model override (cheap-draft / premium-edit). When set, this step
+  // pins the given provider (and, if `model` is set, the exact model id) instead
+  // of tier routing. Unset = inherit the project/tier default (today's behavior).
+  modelOverride?: { provider: string; model?: string };
 }
 
 export interface NovelPipelineConfig {
@@ -1733,6 +1738,31 @@ Description: ${description}`;
     step.error = step.error || undefined;
     step.result = undefined;
     project.status = 'active';
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+    return step;
+  }
+
+  /**
+   * Set or clear a step's per-step model override. Pass null to clear (revert
+   * the step to tier routing / the project default). A blank model means "pin
+   * the provider only" — the provider's configured default model is used.
+   */
+  setStepModelOverride(
+    projectId: string,
+    stepId: string,
+    override: { provider: string; model?: string } | null
+  ): ProjectStep | null {
+    const project = this.projects.get(projectId);
+    if (!project) return null;
+    const step = project.steps.find(s => s.id === stepId);
+    if (!step) return null;
+    if (!override || !override.provider) {
+      delete step.modelOverride;
+    } else {
+      const model = override.model?.trim();
+      step.modelOverride = model ? { provider: override.provider, model } : { provider: override.provider };
+    }
     project.updatedAt = new Date().toISOString();
     this.persistState();
     return step;

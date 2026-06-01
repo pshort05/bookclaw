@@ -47,6 +47,14 @@ interface CompletionRequest {
    *   Ollama              → silently ignored
    */
   thinking?: 'low' | 'medium' | 'high';
+  /**
+   * Pin an exact model for this single call, overriding the provider's
+   * configured default model. Lets a pipeline step draft on a cheap model and
+   * edit on a premium one without juggling per-provider config. When unset, the
+   * provider's default model is used (today's behavior). Pair with the
+   * `provider` field (or selectProvider's preferredId) to pin both at once.
+   */
+  model?: string;
 }
 
 interface CompletionResponse {
@@ -379,10 +387,18 @@ export class AIRouter {
    * Tracks system prompt cache hits to estimate token savings.
    */
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
-    const provider = this.providers.get(request.provider);
-    if (!provider) {
+    const baseProvider = this.providers.get(request.provider);
+    if (!baseProvider) {
       throw new Error(`Provider ${request.provider} not found`);
     }
+    // Per-call model override: pin an exact model regardless of the provider's
+    // configured default. A shallow clone keeps the override local to this call
+    // (every completeX method reads provider.model) without mutating the
+    // registered provider. Cost rates stay the provider's defaults — already
+    // placeholders, see the per-model-pricing note in TASK_OUTPUT_BUDGET above.
+    const provider = request.model && request.model !== baseProvider.model
+      ? { ...baseProvider, model: request.model }
+      : baseProvider;
 
     // ── Prompt cache tracking ──
     const promptHash = this.hashPrompt(request.system);
