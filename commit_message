@@ -1,17 +1,20 @@
-Auto-register OpenRouter provider when its key is saved
+Seed the test suite: AIRouter unit tests + curl API tests
 
-- settings.routes.ts: add 'openrouter_api_key' to the POST /api/vault
-  apiKeyNames list so saving the key triggers an AI-router reinitialize,
-  registering OpenRouter immediately instead of only after a manual
-  /api/providers/refresh or restart.
-- tests/openrouter-autoregister.sh: hermetic, non-destructive regression
-  test — stores a dummy key (registration is key-presence only) and asserts
-  OpenRouter appears in /api/status without a manual refresh; refuses to
-  clobber a real key and cleans up the vault on exit.
-- docs: move the item from TODO.md to COMPLETED.md.
+- tests/unit/router.test.ts: 26-assertion AIRouter suite (node --test via
+  tsx) — tier routing, preferred-provider override, over-budget gate,
+  getFallbackProvider, and the output-budget/thinking helpers. Network-free
+  via a fake vault + disabled Ollama + fake cost tracker.
+- tests/unit/projects.test.ts: ProjectEngine pure surface — getTemplates and
+  the inferProjectType natural-language heuristic (inert temp state path).
+- tests/api/api-test.sh: hermetic curl API-contract tests (status, projects,
+  config incl. a regression guard for the removed branding block, vault keys,
+  and 400/404/401 error contracts).
+- package.json: add test:unit, test:api, and an aggregate test (unit+api+smoke).
+- docs: record the seed in COMPLETED.md; narrow the TODO item to the deferred
+  ProjectEngine orchestration coverage (needs an AI injection seam, tied to the
+  god-class Level 2-3 refactor).
+- docs: move the verified Mercury deploy-automation item to COMPLETED.
 
-Scope note: /api/vault/load-from-files omits OpenRouter too, but its keyFiles
-map has no openrouter_api_key.txt entry, so that path can't load the key at
-all — left as-is (out of scope for this cleanup).
+tests/ is outside tsconfig include, so the production build is unaffected.
 
-Verified: tsc --noEmit clean; tests/openrouter-autoregister.sh 4/4 pass.
+Verified: npm test green — 26 unit + 17 API + 19 smoke, no stray processes.

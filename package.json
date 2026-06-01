@@ -16,6 +16,9 @@
     "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
     "security-audit": "node scripts/security-check.js",
     "export-book": "bash scripts/export-book.sh",
+    "test": "npm run test:unit && npm run test:api && npm run test:smoke",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
+    "test:api": "bash tests/api/api-test.sh",
     "test:smoke": "bash tests/smoke-test.sh"
   },
   "keywords": [
