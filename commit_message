@@ -1,29 +1,26 @@
-Add per-step model selection (provider + exact model id)
+Add dashboard build pipeline (esbuild) + dashboard/src tree
 
-Each pipeline/project step can now pin its own AI provider and exact model id
-(cheap-draft / premium-edit in one pipeline), not just route by task tier.
+First stage of the "real build + split into modules" item: introduce the
+build, defer the per-feature module split (next push).
 
-- ProjectStep.modelOverride { provider, model? } (blank model = provider only).
-- AIRouter: CompletionRequest.model; complete() dispatches with a provider
-  clone whose model is the override (every completeX method picks it up).
-  Unset = provider default (unchanged behavior).
-- handleMessage: new 7th overrideModel param, passed to complete().
-- routes/_shared.ts stepRouting(): precedence step override -> project
-  preferredProvider -> tier routing; applied at the primary/continuation/
-  quality-retry executors (projects.routes.ts) and the goal-engine path
-  (index.ts). 'general' short-retries stay unpinned so they can fall back.
-- New endpoint POST /api/projects/:id/steps/:stepId/model -> ProjectEngine
-  .setStepModelOverride(); provider validated (incl. openrouter), model id
-  free-text but length-capped + control-char rejected.
-- Dashboard: per-step provider dropdown ("Inherit" + 6 providers) + optional
-  model-id input in the project-detail view; POSTs on change, no re-render.
+- dashboard/src/: index.html template (with /*__CSS__*/ + /*__JS__*/
+  placeholders), styles.css, main.js (the JS, IIFE wrapper dropped — esbuild
+  provides scope).
+- dashboard/build.mjs: esbuild bundles main.js -> single IIFE, inlined with
+  styles.css into one self-contained dist/index.html. Guards that the
+  __BOOKCLAW_AUTH_TOKEN__ placeholder survives into the output. --watch mode.
+- package.json: build:dashboard / build:dashboard:watch; esbuild added as an
+  explicit devDependency (was transitive via tsx); lockfile synced.
+- docker/Dockerfile: builder copies dashboard/ and runs the build before the
+  dev-dep prune; runtime copies the freshly-built dashboard from the builder
+  (never ships a stale committed dist).
+- dist/index.html stays committed (source of truth is src/) so local start +
+  smoke/API tests need no build step. CLAUDE.md: edit src/, not dist/.
 
-Incidental fix: the dashboard execution paths passed no provider to
-handleMessage, so the project-level "AI Model" override (create modal) was
-ignored on dashboard runs; stepRouting's project fallback now makes it work.
+Behavior-preserving: served HTML is equivalent to the old monolith (esbuild
+strips comments, so it's smaller). Per-feature split of main.js into
+lib/+panels/ tracked as a follow-up TODO (shared-state object refactor, done
+incrementally with Mercury visual checks — no behavioral test net).
 
-Follow-up: estimatedCost still uses the base provider's placeholder rates for
-an overridden model (real per-model pricing is a separate item).
-
-Verified: tsc --noEmit clean; npm test green (29 unit + API + smoke); live
-e2e (create -> set -> persist -> clear -> delete) passed.
+Verified: build clean (placeholder + key fns present); npm test green
+(29 unit + API + smoke, incl. dashboard-serves-with-token).

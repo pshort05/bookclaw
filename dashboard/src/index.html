@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Cache-busting: prevents stale dashboard after a git pull / version bump.
+     If you see missing UI features, hard-refresh (Ctrl+Shift+R / Cmd+Shift+R). -->
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="0">
+<meta name="dashboard-version" content="5.0.0">
+<title>BookClaw Dashboard</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════════ -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span>
+    <div>
+      <span class="brand-text">BookClaw</span>
+      <span class="brand-ver">v4.0.0</span>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-panel="home">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" data-panel="hq">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+      <span class="nav-label">Author HQ</span>
+    </div>
+    <div class="nav-item" data-panel="projects">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      <span class="nav-label">Projects</span>
+    </div>
+    <div class="nav-item" data-panel="personas">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-label">Personas</span>
+    </div>
+    <div class="nav-item" data-panel="library">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+      <span class="nav-label">Library</span>
+    </div>
+    <div class="nav-item" data-panel="settings">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="nav-label">Settings</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:8px;width:100%;">
+      <div class="heartbeat-dot" id="heartbeatDot"></div>
+      <span class="footer-label" id="heartbeatLabel">Connecting...</span>
+      <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">
+        <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════════ -->
+<div class="main">
+  <div class="main-header">
+    <h2 id="panelTitle">Home</h2>
+    <div class="header-right">
+      <span id="headerStatus"></span>
+    </div>
+  </div>
+  <div class="main-body">
+
+    <!-- ═══════════════════════════════
+         PANEL: HOME
+         ═══════════════════════════════ -->
+    <div class="panel active" id="panel-home">
+
+      <!-- Quick Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value" id="statProjects">0</div>
+          <div class="stat-label">Active Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statWords">0</div>
+          <div class="stat-label">Total Words</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statHeartbeat">--</div>
+          <div class="stat-label">Heartbeat</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statPersonas">0</div>
+          <div class="stat-label">Personas</div>
+        </div>
+      </div>
+
+      <!-- Active Project Cards -->
+      <div class="card">
+        <div class="card-title">Active Projects</div>
+        <div class="project-scroll" id="homeProjectScroll">
+          <div style="color:var(--muted);padding:20px;text-align:center;width:100%;">No active projects. Go to Projects to create one.</div>
+        </div>
+      </div>
+
+      <!-- Word Count + Idle Tasks Row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:0;">
+        <div class="card">
+          <div class="card-title">Today's Writing</div>
+          <div id="homeWordProgress" style="text-align:center;padding:8px 0;">
+            <div style="font-size:28px;font-weight:700;color:var(--accent);" id="homeWordCount">0</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">of <span id="homeWordGoal">1,000</span> words</div>
+            <div style="background:var(--border);border-radius:6px;height:8px;overflow:hidden;">
+              <div id="homeWordBar" style="background:var(--accent);height:100%;width:0%;border-radius:6px;transition:width 0.5s ease;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Idle Tasks</div>
+          <div id="homeIdleSummary" style="padding:8px 0;">
+            <div style="font-size:28px;font-weight:700;color:var(--accent);" id="homeIdleCount">0</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">tasks in queue</div>
+            <div style="font-size:12px;color:var(--text-secondary);" id="homeIdleCompleted">0 completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Recent Activity</div>
+        <div class="activity-feed" id="activityFeed" style="max-height:220px;overflow-y:auto;">
+          <div style="color:var(--muted);text-align:center;padding:16px;">Loading activity...</div>
+        </div>
+      </div>
+
+      <!-- Chat Interface -->
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Chat with BookClaw</span>
+          <button id="btnChatClear" class="small secondary" title="Clear chat history" style="font-size:11px;padding:4px 10px;">Clear</button>
+        </div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg bot">Hello! I'm BookClaw, your AI writing partner. How can I help you today?</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Type a message or /command... (Enter to send)">
+            <button id="btnChatSend">Send</button>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          Commands: /novel, /project, /write, /files, /read, /export, /speak, /voice, /status, /stop, /clean, /help
+        </div>
+      </div>
+
+      <!-- Manuscript Hub card — aggregate view of all projects -->
+      <div class="card" style="margin-top:18px;">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Manuscript Hub</span>
+          <button class="small" id="btnRefreshHub" style="font-size:11px;padding:4px 10px;">Refresh</button>
+        </div>
+        <div id="hubContent" style="font-size:13px;">
+          <div style="color:var(--muted);">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         PANEL: AUTHOR HQ — single-page aggregate of everything in flight
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-hq">
+      <div class="card">
+        <div class="card-title">Today at a glance</div>
+        <div id="hqGlance" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+          <div style="color:var(--muted);">Loading…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Active projects</span>
+          <span id="hqActiveCount" style="font-size:12px;color:var(--muted);font-weight:normal;"></span>
+        </div>
+        <div id="hqActiveProjects">
+          <div style="color:var(--muted);">Loading…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Per-persona breakdown</div>
+        <div id="hqPersonas">
+          <div style="color:var(--muted);">Loading…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Recent activity</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:normal;">last 12 events</span>
+        </div>
+        <div id="hqRecentActivity">
+          <div style="color:var(--muted);">Loading…</div>
+        </div>
+      </div>
+
+      <div class="card" id="hqUserModelCard" style="display:none;">
+        <div class="card-title">What BookClaw knows about you</div>
+        <p class="hint" style="margin-bottom:8px;font-size:12px;">From the user-model service. Builds up over time.</p>
+        <div id="hqUserModel" style="font-size:13px;line-height:1.6;"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         PANEL: PROJECTS
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-projects">
+
+      <!-- Template Tiles -->
+      <div class="card" id="projectTemplatesCard">
+        <div class="card-title">Project Templates</div>
+        <div class="template-grid" id="templateGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Project List -->
+      <div class="card" id="projectListCard">
+        <div class="card-title">Your Projects</div>
+        <div class="filter-tabs" id="projectFilterTabs">
+          <div class="filter-tab active" data-filter="all">All</div>
+          <div class="filter-tab" data-filter="active">Active</div>
+          <div class="filter-tab" data-filter="paused">Paused</div>
+          <div class="filter-tab" data-filter="completed">Completed</div>
+        </div>
+        <div id="projectList">
+          <div style="color:var(--muted);padding:20px;text-align:center;">Loading projects...</div>
+        </div>
+      </div>
+
+      <!-- Project Detail View (hidden by default, replaces list when active) -->
+      <div id="projectDetailView" style="display:none;"></div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         PANEL: PERSONAS
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-personas">
+      <div class="card">
+        <div class="card-title">Author Personas</div>
+        <div class="persona-grid" id="personaGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         PANEL: LIBRARY
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-library">
+      <div class="card">
+        <div class="card-title">Uploaded Documents</div>
+        <div style="margin-bottom:14px;">
+          <button id="btnUploadDoc" class="success">Upload Document</button>
+          <input type="file" id="fileUploadInput" style="display:none;" accept=".txt,.md,.docx,.pdf">
+        </div>
+        <div class="doc-list" id="docList">
+          <div style="color:var(--muted);text-align:center;padding:20px;">Loading documents...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Compiled Outputs</div>
+        <div id="compiledOutputs">
+          <div style="color:var(--muted);text-align:center;padding:20px;">No compiled outputs yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════
+         PANEL: SETTINGS
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-settings">
+
+      <!-- Quick-start banner — only shown when no providers are active -->
+      <div class="card" id="quickStartBanner" style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-left:4px solid var(--accent);display:none;">
+        <div class="card-title" style="color:#78350f;">Welcome — connect at least one AI provider to get started</div>
+        <p style="color:#78350f;margin-bottom:8px;font-size:14px;">BookClaw needs an API key (paid) or a local Ollama install (free) to write. Pick one:</p>
+        <ul style="color:#78350f;margin-left:24px;margin-bottom:8px;font-size:14px;">
+          <li><strong>Free + cloud:</strong> Get a Gemini API key from Google AI Studio (link below)</li>
+          <li><strong>Free + local:</strong> Install Ollama and run <code>ollama serve</code> — auto-detected</li>
+          <li><strong>Paid + best quality:</strong> Get a Claude or OpenAI key</li>
+        </ul>
+      </div>
+
+      <!-- API Keys (cloud providers — paid + free-tier) -->
+      <div class="card" id="apiKeysCard">
+        <div class="card-title">API Keys (Cloud Providers)</div>
+        <p class="hint" style="margin-bottom:12px;">Keys are encrypted with AES-256-GCM in the local vault. Values are never sent anywhere except the provider's own API. Click <em>Get key</em> next to a provider to open its sign-up page.</p>
+        <div id="apiKeyProviders"></div>
+        <div class="key-list" id="keyList" style="margin-top:8px;"></div>
+        <p class="hint" style="margin-top:12px;font-size:12px;">Need to load keys from a shared folder (VM / Docker)? <button class="small" id="btnLoadKeysFromFiles" style="font-size:11px;padding:3px 8px;">Load from files</button></p>
+      </div>
+
+      <!-- OpenRouter (model selector) — only useful when an OpenRouter key is configured -->
+      <div class="card" id="openrouterCard">
+        <div class="card-title">OpenRouter Model</div>
+        <p class="hint" style="margin-bottom:12px;">If you've added an OpenRouter API key above, pick which model BookClaw should use through it. Examples: <code>anthropic/claude-sonnet-4-5</code>, <code>openai/gpt-4o</code>, <code>meta-llama/llama-3.3-70b-instruct</code>, <code>google/gemini-2.5-flash</code>. Full list at <a href="https://openrouter.ai/models" target="_blank" rel="noopener">openrouter.ai/models</a>.</p>
+        <div class="form-group">
+          <label>Model slug</label>
+          <input type="text" id="openrouterModel" placeholder="anthropic/claude-sonnet-4-5">
+        </div>
+        <button class="success" id="btnSaveOpenrouter">Save Model</button>
+      </div>
+
+      <!-- Local AI (Ollama) — no key needed -->
+      <div class="card" id="ollamaCard">
+        <div class="card-title">Local AI (Ollama) — free, no key</div>
+        <p class="hint" style="margin-bottom:12px;">Ollama runs models on your own machine. No API key. Auto-detected when running. Default endpoint: <code>http://localhost:11434</code></p>
+        <div id="ollamaStatus" style="padding:8px 12px;background:var(--bg-secondary);border-radius:6px;font-size:13px;margin-bottom:12px;">Checking...</div>
+        <div class="form-group-inline">
+          <div class="form-group">
+            <label>Endpoint</label>
+            <input type="text" id="ollamaEndpoint" placeholder="http://localhost:11434">
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" id="ollamaModel" placeholder="llama3.2">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="success" id="btnSaveOllama">Save & Reconnect</button>
+          <a href="https://ollama.com/download" target="_blank" rel="noopener" class="small" style="font-size:12px;color:var(--accent);text-decoration:none;align-self:center;">Download Ollama →</a>
+        </div>
+      </div>
+
+      <!-- Global AI Provider -->
+      <div class="card">
+        <div class="card-title">Default AI Provider</div>
+        <p class="hint" style="margin-bottom:12px;">Force all tasks to use one provider instead of smart tier routing. Per-project settings override this.</p>
+        <div class="form-group">
+          <select id="globalProviderSelect">
+            <option value="">Auto — smart tiered routing (recommended)</option>
+            <option value="ollama">Ollama (local, free)</option>
+            <option value="gemini">Gemini (free tier)</option>
+            <option value="deepseek">DeepSeek (cheap)</option>
+            <option value="openrouter">OpenRouter (one key, any model)</option>
+            <option value="claude">Claude (premium)</option>
+            <option value="openai">OpenAI GPT (premium)</option>
+          </select>
+        </div>
+        <button class="success" id="btnSaveGlobalProvider">Save Provider</button>
+      </div>
+
+      <!-- Default Image Provider -->
+      <div class="card">
+        <div class="card-title">Default Image Provider</div>
+        <p class="hint" style="margin-bottom:12px;">Which image AI to use when generating book covers. Per-call <code>provider:</code> still overrides this.</p>
+        <div class="form-group">
+          <select id="globalImageProviderSelect">
+            <option value="">Auto — OpenAI → Gemini → Flux (recommended)</option>
+            <option value="openai">OpenAI gpt-image-1 (best text rendering, paid)</option>
+            <option value="gemini">Gemini Nano Banana (good text, free tier)</option>
+            <option value="together">Together AI Flux (free, weaker text)</option>
+          </select>
+        </div>
+        <button class="success" id="btnSaveGlobalImageProvider">Save Image Provider</button>
+      </div>
+
+      <!-- Telegram -->
+      <div class="card">
+        <div class="card-title">Telegram Integration</div>
+        <div id="telegramStatus" style="margin-bottom:12px;font-size:14px;color:var(--muted);">Loading...</div>
+        <div class="form-group-inline">
+          <div class="form-group">
+            <label>Bot Token</label>
+            <input type="password" id="telegramToken" placeholder="Paste your bot token...">
+          </div>
+          <div class="form-group">
+            <label>User ID</label>
+            <input type="text" id="telegramUserId" placeholder="Your Telegram user ID">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="success" id="btnConnectTelegram">Connect</button>
+          <button class="danger" id="btnDisconnectTelegram">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Voice -->
+      <div class="card">
+        <div class="card-title">Voice / TTS</div>
+        <div class="form-group">
+          <label>TTS Voice Preset</label>
+          <select id="ttsVoiceSelect">
+            <option value="">Loading voices...</option>
+          </select>
+        </div>
+        <button id="btnTestVoice" class="secondary">Test Voice</button>
+      </div>
+
+      <!-- Website Allowlist -->
+      <div class="card">
+        <div class="card-title">Website Allowlist</div>
+        <p class="hint" style="margin-bottom:8px;">Approved websites for AI research and tasks. One domain per line.</p>
+        <div class="form-group">
+          <textarea id="researchDomains" rows="5" placeholder="wikipedia.org&#10;arxiv.org"></textarea>
+        </div>
+        <button id="btnSaveDomains">Save Domains</button>
+      </div>
+
+      <!-- Backups -->
+      <div class="card">
+        <div class="card-title">Backups</div>
+        <p class="hint" style="margin-bottom:8px;">Create and restore workspace backups. Includes projects, personas, memory, and settings.</p>
+        <button id="btnCreateBackup" class="success" style="margin-bottom:12px;">Create Backup</button>
+        <div id="backupList" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Lessons Learned -->
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Lessons Learned</span>
+          <button class="small danger" id="btnResetLessons" style="font-size:11px;padding:4px 10px;">Reset All</button>
+        </div>
+        <p class="hint" style="margin-bottom:8px;">BookClaw learns from experience. High-confidence lessons are injected into every prompt.</p>
+        <div id="lessonsList" style="max-height:300px;overflow-y:auto;">
+          <div style="color:var(--muted);">Loading...</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <input type="text" id="newLessonText" placeholder="Add a lesson manually..." style="flex:1;">
+          <select id="newLessonCategory" style="max-width:160px;">
+            <option value="writing_quality">Writing Quality</option>
+            <option value="style_voice">Style & Voice</option>
+            <option value="project_planning">Project Planning</option>
+            <option value="user_communication">Communication</option>
+            <option value="general">General</option>
+          </select>
+          <button class="success" id="btnAddLesson">Add</button>
+        </div>
+      </div>
+
+      <!-- User Preferences -->
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>User Preferences</span>
+          <button class="small danger" id="btnResetPreferences" style="font-size:11px;padding:4px 10px;">Reset All</button>
+        </div>
+        <p class="hint" style="margin-bottom:8px;">Auto-detected from your messages (e.g. "I prefer first person POV"). You can also add or remove them here.</p>
+        <div id="preferencesList" style="max-height:300px;overflow-y:auto;">
+          <div style="color:var(--muted);">Loading...</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <input type="text" id="newPrefKey" placeholder="Key (e.g. writing.pov)" style="width:180px;">
+          <input type="text" id="newPrefValue" placeholder="Value (e.g. first person)" style="flex:1;">
+          <button class="success" id="btnAddPreference">Add</button>
+        </div>
+      </div>
+
+      <!-- Orchestrator (Script Manager) -->
+      <div class="card">
+        <div class="card-title">Script Manager</div>
+        <p class="hint" style="margin-bottom:8px;">Manage background scripts and processes. Auto-restart on crash, health monitoring, and log viewing.</p>
+        <div id="orchestratorScripts" style="margin-bottom:12px;">
+          <div style="color:var(--muted);">Loading...</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="newScriptName" placeholder="Script name" style="width:140px;">
+          <input type="text" id="newScriptCommand" placeholder="Command (e.g. node server.js)" style="flex:1;">
+          <button class="success" id="btnAddScript">Add Script</button>
+        </div>
+      </div>
+
+      <!-- Autonomous Mode -->
+      <div class="card">
+        <div class="card-title">Autonomous Mode</div>
+        <div class="toggle-wrap" style="margin-bottom:14px;">
+          <label class="toggle">
+            <input type="checkbox" id="autonomousToggle">
+            <span class="slider"></span>
+          </label>
+          <span id="autonomousLabel" style="font-size:14px;font-weight:600;">Agent OFF</span>
+        </div>
+        <div class="form-group-inline">
+          <div class="form-group">
+            <label>Wake Interval (minutes)</label>
+            <input type="number" id="autonomousInterval" min="1" max="1440" placeholder="30">
+          </div>
+          <div class="form-group">
+            <label>Quiet Hours (24h format, e.g. 22-7)</label>
+            <input type="text" id="autonomousQuiet" placeholder="22-7">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label>Daily Word Goal</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="number" id="dailyWordGoal" min="100" max="50000" step="100" placeholder="1000" style="max-width:140px;">
+            <span style="font-size:12px;color:var(--muted);">words/day</span>
+            <span id="wordGoalProgress" style="font-size:12px;color:var(--text-secondary);margin-left:auto;"></span>
+          </div>
+        </div>
+        <button id="btnSaveAutonomous">Save Settings</button>
+      </div>
+
+      <!-- Idle Task Queue (Editable) -->
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Idle Task Queue</span>
+          <button class="small success" id="btnAddIdleTask" style="font-size:11px;padding:4px 10px;">+ Add Task</button>
+        </div>
+        <div class="hint" style="margin-bottom:12px;">When autonomous mode is enabled and there are no active projects, the agent picks a random enabled task. Edit the description to customize what the AI does.</div>
+        <div id="idleTaskQueue" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <!-- Idle Task History -->
+      <div class="card">
+        <div class="card-title">Completed Idle Tasks</div>
+        <div id="idleTaskHistory" style="max-height:400px;overflow-y:auto;">
+          <div style="color:var(--muted);">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-body -->
+</div><!-- /main -->
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════ -->
+<script>
+/*__JS__*/
+</script>
+</body>
+</html>

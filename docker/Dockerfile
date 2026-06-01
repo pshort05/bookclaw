@@ -12,12 +12,17 @@ FROM node:22-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json* tsconfig.json ./
 COPY gateway ./gateway
+COPY dashboard ./dashboard
 
-# Install ALL deps (including devDependencies for tsc)
+# Install ALL deps (including devDependencies for tsc + the dashboard build)
 RUN npm ci || npm install
 
 # Compile TypeScript to JavaScript
 RUN npx tsc --outDir dist
+
+# Build the dashboard (esbuild bundle → dashboard/dist/index.html). Must run
+# while devDependencies are still present, i.e. before the prune below.
+RUN node dashboard/build.mjs
 
 # Prune to production deps only
 RUN npm prune --omit=dev
@@ -41,7 +46,9 @@ COPY --from=builder /app/dist ./dist
 COPY skills ./skills
 COPY config ./config
 COPY workspace ./workspace
-COPY dashboard ./dashboard
+# Dashboard comes from the builder so the freshly-built dist/ is shipped
+# (not a possibly-stale committed copy from the build context).
+COPY --from=builder /app/dashboard ./dashboard
 COPY package.json ./
 
 # Optional: Install Python for Author OS tool execution (Format Factory Pro)

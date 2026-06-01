@@ -128,7 +128,7 @@ Current scripted tests:
 
 `gateway/src/index.ts` is **the** entry point — a single ~2,650-line `BookClawGateway` class that owns every service instance and wires them together in a numbered init sequence (Phase 1: config → Phase 2: security → Phase 3: soul/memory → Phase 4: AI providers → Phase 5: research gate → Phase 6: skills → Phase 6b-k: ~30 feature services → finally start HTTP + Socket.IO). When adding a new service, follow the existing pattern: instantiate it in a Phase block, wire its dependencies via setter methods (not constructor injection), and pass it through to `createAPIRoutes()` if it needs HTTP endpoints.
 
-REST routes live in `gateway/src/api/routes.ts` (~5,500 lines) — a single factory function that mounts everything onto an Express router. Dashboard is `dashboard/dist/index.html` (single ~3,800-line HTML file with inline JS, served statically).
+REST routes live in `gateway/src/api/routes.ts` (~5,500 lines) — a single factory function that mounts everything onto an Express router. Dashboard **source** lives in `dashboard/src/` (`index.html` template + `styles.css` + `main.js`); `npm run build:dashboard` (esbuild, `dashboard/build.mjs`) bundles it into the single self-contained `dashboard/dist/index.html` that is served statically with the `__BOOKCLAW_AUTH_TOKEN__` placeholder injected at request time. **Edit `dashboard/src/`, not `dist/`** — `dist/index.html` is a build artifact (committed for friction-free local dev/tests, and rebuilt in the Docker builder stage). Per-feature module split of `main.js` into `lib/`+`panels/` is in progress — see `docs/TODO.md`.
 
 ### Three concentric layers
 
