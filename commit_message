@@ -1,22 +1,7 @@
-Dashboard split (5/5): extract chat, library, hq, home — split complete
+docs: add TODO for handling provider 429 (rate-limit) errors
 
-Finishes the per-feature module split. Behavior-preserving.
-
-- panels/chat.js: message render + send (wires its own button/Enter on load;
-  side-effect import, no exports).
-- panels/library.js: documents list + compiled outputs + upload wiring.
-- panels/hq.js: Author HQ aggregate + relative-time helper.
-- panels/home.js: active-project cards + home stats / activity feed.
-- main.js is now a 175-line app shell: imports + nav (switchPanel) + status
-  (loadStatus/startPolling) + theme + init. switchPanel is exported (home +
-  library navigate); projects.js's renderHomeProjects import repointed from
-  the main shell to ./home.js (home now owns it).
-
-Final structure: lib/{state,api,ui,format}.js + panels/{personas,idle-tasks,
-insights,settings,projects,chat,library,hq,home}.js + main.js. main.js went
-2677 -> 175 lines across the whole split.
-
-Verified: build clean (token placeholder + the 3 window.* globals present,
-every cross-module function defined exactly once); a cross-panel import audit
-(no module calls an un-imported function); npm test green (29 unit + API +
-smoke); tsc clean. Acceptance gate: Mercury visual click-through.
+- Surfaced by tests/openrouter-pipeline.sh: OpenRouter returned HTTP 429 on the
+  free google/gemma-3-4b-it model during rapid sequential calls, failing steps.
+- TODO: retry with backoff honoring Retry-After in the router's HTTP completion
+  paths, then fall through to getFallbackProvider before throwing. Outbound
+  provider throttling (distinct from the inbound per-channel limiter).
