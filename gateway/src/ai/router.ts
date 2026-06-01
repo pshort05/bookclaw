@@ -450,6 +450,33 @@ export class AIRouter {
     return createHash('sha256').update(prompt).digest('hex');
   }
 
+  /**
+   * fetch() wrapper that retries transient rate-limit / overload responses
+   * (HTTP 429 and 503) with exponential backoff, honoring a `Retry-After`
+   * header (in seconds) when present. Up to 2 retries (3 attempts total);
+   * network errors and all other status codes pass through unchanged. Used for
+   * the cloud providers (Gemini / Claude / OpenAI-compatible) that rate-limit;
+   * Ollama (local) doesn't need it. The caller still handles a final non-OK
+   * response, so this only smooths over transient throttling.
+   */
+  private async fetchWithRetry(url: string, init: any): Promise<Response> {
+    const maxRetries = 2;
+    for (let attempt = 0; ; attempt++) {
+      const response = await fetch(url, init);
+      if ((response.status === 429 || response.status === 503) && attempt < maxRetries) {
+        const retryAfter = Number(response.headers.get('retry-after'));
+        const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(retryAfter * 1000, 30000)
+          : 1000 * Math.pow(2, attempt); // 1s, then 2s
+        // Drain the body so the underlying connection can be reused.
+        await response.text().catch(() => {});
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+        continue;
+      }
+      return response;
+    }
+  }
+
   // ── Ollama (OpenAI-compatible local) ──
   private async completeOllama(
     provider: AIProvider,
@@ -543,7 +570,7 @@ export class AIRouter {
       };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${provider.endpoint}/models/${provider.model}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
@@ -619,7 +646,7 @@ export class AIRouter {
       body.temperature = request.temperature;
     }
 
-    const response = await fetch(`${provider.endpoint}/messages`, {
+    const response = await this.fetchWithRetry(`${provider.endpoint}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -714,7 +741,7 @@ export class AIRouter {
       headers['X-Title'] = 'BookClaw';
     }
 
-    const response = await fetch(endpoint, {
+    const response = await this.fetchWithRetry(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -736,13 +763,18 @@ export class AIRouter {
     const usage = data.usage;
     const inputTokens = usage?.prompt_tokens || 0;
     const outputTokens = usage?.completion_tokens || 0;
-    // OpenRouter may not always return usage; fall back to provider's pricing
-    // map (which is approximate for OpenRouter — actual cost varies by model).
+    // Prefer the provider's reported ACTUAL cost: OpenRouter returns
+    // `usage.cost` (USD) on every response, which is accurate per-model. Fall
+    // back to the per-1k placeholder estimate (approximate, Sonnet-priced — see
+    // the cost note above) only when no real cost is reported (e.g. DeepSeek).
+    const reportedCost = typeof usage?.cost === 'number' ? usage.cost : null;
     return {
       text,
       tokensUsed: inputTokens + outputTokens,
-      estimatedCost: (inputTokens / 1000) * provider.costPer1kInput +
-                     (outputTokens / 1000) * provider.costPer1kOutput,
+      estimatedCost: reportedCost != null
+        ? reportedCost
+        : (inputTokens / 1000) * provider.costPer1kInput +
+          (outputTokens / 1000) * provider.costPer1kOutput,
       provider: provider.id,
     };
   }

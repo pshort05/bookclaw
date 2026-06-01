@@ -1,7 +1,28 @@
-docs: add TODO for handling provider 429 (rate-limit) errors
+Router: accurate per-call cost + 429 retry; refresh README/docs to current state
 
-- Surfaced by tests/openrouter-pipeline.sh: OpenRouter returned HTTP 429 on the
-  free google/gemma-3-4b-it model during rapid sequential calls, failing steps.
-- TODO: retry with backoff honoring Retry-After in the router's HTTP completion
-  paths, then fall through to getFallbackProvider before throwing. Outbound
-  provider throttling (distinct from the inbound per-channel limiter).
+Router fixes (gateway/src/ai/router.ts), motivated by the pipeline test (real
+~$0.09 spend shown as ~$2.43; intermittent free-tier 429s):
+- Real cost: completeOpenAICompatible uses the provider-reported
+  data.usage.cost (USD; OpenRouter returns it every response) as estimatedCost
+  when present, else the per-1k placeholder. Dashboard/CostTracker now reflect
+  actual OpenRouter spend.
+- 429 handling: new fetchWithRetry() retries HTTP 429/503 with exponential
+  backoff (1s, 2s; ≤2 retries) honoring Retry-After, applied to the cloud
+  providers (Gemini, Claude, OpenAI-compatible). Ollama + the tags probe
+  unchanged; caller still handles a final non-OK; fail-soft preserved.
+- tests/unit/router.test.ts: +3 (usage.cost preferred; placeholder fallback;
+  one retry on 429-then-200).
+
+Docs refresh to current state:
+- README "Project Structure": reflects the refactor (gateway/src/init/ phase
+  modules; api/routes/ per-feature mounters), the dashboard build
+  (dashboard/src/ {lib,panels,main.js} → esbuild → dist/index.html), and the
+  tests/ tree; plus an "editing the dashboard" note.
+- README: Author HQ panel added (6 panels), skill counts corrected
+  (core 6 / author 15 / marketing 4 / ops 4 = 29) in the architecture diagram
+  + Skills section, dashboard-is-single-file and god-class-refactor pointers
+  updated (Level 1 done).
+- docs: dashboard split → COMPLETED (Mercury visual acceptance); cost item
+  narrowed to optional follow-ons; 429 item → COMPLETED.
+
+Verified: tsc --noEmit clean; npm test green (32 unit + API + smoke).

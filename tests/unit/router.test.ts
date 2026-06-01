@@ -206,3 +206,59 @@ test('complete uses the provider default model when no override is given', async
     assert.equal(getBody().model, 'default/model-x');
   });
 });
+
+// ── complete(): real cost (usage.cost) + 429 retry ──────────────────────────
+
+/** A minimal OpenAI-compatible JSON response with the given usage object. */
+function okResponse(usage: Record<string, unknown>) {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => null },
+    text: async () => '',
+    json: async () => ({ choices: [{ message: { content: 'ok' } }], usage }),
+  };
+}
+
+/** Run `fn` with global fetch replaced by `stub`, restoring it afterward. */
+async function withFetch(stub: (...args: unknown[]) => unknown, fn: () => Promise<void>): Promise<void> {
+  const orig = globalThis.fetch;
+  globalThis.fetch = stub as never;
+  try { await fn(); } finally { globalThis.fetch = orig; }
+}
+
+test('complete reports the provider-supplied usage.cost when present', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  // 1000+1000 tokens would estimate to 0.018 via the placeholder; the real
+  // reported cost (0.0123) must win.
+  await withFetch(async () => okResponse({ prompt_tokens: 1000, completion_tokens: 1000, cost: 0.0123 }), async () => {
+    const r = await router.complete({ provider: 'openrouter', system: 's', messages: [{ role: 'user', content: 'hi' }] });
+    assert.equal(r.estimatedCost, 0.0123);
+  });
+});
+
+test('complete falls back to the placeholder estimate when no usage.cost is given', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  // openrouter placeholder: 0.003/1k in + 0.015/1k out → 1*0.003 + 1*0.015.
+  await withFetch(async () => okResponse({ prompt_tokens: 1000, completion_tokens: 1000 }), async () => {
+    const r = await router.complete({ provider: 'openrouter', system: 's', messages: [{ role: 'user', content: 'hi' }] });
+    assert.ok(Math.abs(r.estimatedCost - 0.018) < 1e-9, `expected ~0.018, got ${r.estimatedCost}`);
+  });
+});
+
+test('complete retries once on HTTP 429 and then succeeds', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  let calls = 0;
+  const stub = async () => {
+    calls++;
+    if (calls === 1) {
+      return { ok: false, status: 429, headers: { get: () => null }, text: async () => 'rate limited' };
+    }
+    return okResponse({ prompt_tokens: 1, completion_tokens: 1 });
+  };
+  await withFetch(stub, async () => {
+    const r = await router.complete({ provider: 'openrouter', system: 's', messages: [{ role: 'user', content: 'hi' }] });
+    assert.equal(r.text, 'ok');
+    assert.equal(calls, 2, 'expected exactly one retry after the 429');
+  });
+});

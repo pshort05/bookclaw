@@ -110,11 +110,11 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/
 │  └───────────┘   └─────────────────┘   │ OpenAI ($$)    │  │
 │                                         └────────────────┘  │
 │  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
-│  │ Soul      │   │ Project Engine  │   │ Skills (19)    │  │
-│  │           │   │                  │   │                │  │
-│  │ SOUL.md   │   │ 6 Templates     │   │ Core (4)       │  │
-│  │ STYLE.md  │   │ Pipeline Mode   │   │ Author (13)    │  │
-│  │ VOICE.md  │   │ Author Personas │   │ Marketing (2)  │  │
+│  │ Soul      │   │ Project Engine  │   │ Skills (29)    │  │
+│  │           │   │                  │   │ Core (6)       │  │
+│  │ SOUL.md   │   │ 6 Templates     │   │ Author (15)    │  │
+│  │ STYLE.md  │   │ Pipeline Mode   │   │ Marketing (4)  │  │
+│  │ VOICE.md  │   │ Author Personas │   │ Ops (4)        │  │
 │  │           │   │ DOCX + EPUB     │   │                │  │
 │  └───────────┘   └─────────────────┘   └────────────────┘  │
 │                                                             │
@@ -196,9 +196,10 @@ BookClaw: 📊 Workspace Usage: 2.1 MB (67 files)
 
 ## Dashboard
 
-Open `http://localhost:3847` to access the web dashboard — a sidebar-driven interface with 5 panels:
+Open `http://localhost:3847` to access the web dashboard — a sidebar-driven interface with 6 panels:
 
 - **Home** — Quick stats (words today, active projects, heartbeat status, personas), active project cards, full chat interface with slash command parity (all Telegram commands work in chat), today's writing progress bar, idle task count
+- **Author HQ** — Single-page aggregate of everything in flight: today-at-a-glance stats, active projects, per-persona breakdown, and recent activity
 - **Projects** — 7 template tiles (Book Planning, Book Bible, Book Production, Deep Revision, Format & Export, Book Launch, Full Novel Pipeline) + Custom AI-planned. Projects auto-execute on creation — no manual start needed. Project list with status filters, inline detail views with step progress, file downloads (MD + DOCX), and compile controls
 - **Personas** — Author persona card grid with pen names, genres, style tags, and TTS voice. Create manually or generate with AI. Assign personas to projects for voice-consistent writing. Personas persist across updates with auto-backup
 - **Library** — Document uploads and compiled manuscripts. Download DOCX and EPUB exports
@@ -280,13 +281,17 @@ If AI planning fails, the system falls back to template-based planning (6 projec
 
 ## Skills
 
-Skills are markdown files that teach the AI how to handle specific writing tasks. BookClaw ships with 19 focused, author-centric skills:
+Skills are markdown files that teach the AI how to handle specific writing tasks. BookClaw ships with 29 focused, author-centric skills:
 
-**Core Skills (4):** self-improve, after-action-review, prompt-optimizer, error-recovery
+**Core Skills (6):** self-improve, after-action-review, prompt-optimizer, error-recovery, preference-learner, skill-acquisition
 
-**Author Skills (13):** premise, outline, book-bible, write, revise, dialogue, style-clone, beta-reader, format, research, nonfiction-research, manuscript-hub, ingest-tool
+**Author Skills (15):** premise, outline, book-bible, write, revise, dialogue, style-clone, beta-reader, continuity-check, cover-designer, format, research, nonfiction-research, manuscript-hub, ingest-tool
 
-**Marketing Skills (2):** blurb-writer, ad-copy
+**Marketing Skills (4):** blurb-writer, ad-copy, marketing-research, website-publisher
+
+**Ops Skills (4):** task-planner, decision-maker, orchestrator-mgmt, browser-automation
+
+Plus purchasable **premium** skills (gitignored; the folder ships with a README only).
 
 **Tool Ingestion:** BookClaw can read source code of any tool and generate a new skill from it. Just say "create a skill from this code" or use `POST /api/tools/ingest`.
 
@@ -298,42 +303,69 @@ Skills are automatically matched by keyword triggers and injected into the AI's 
 
 ```
 bookclaw/
-├── gateway/src/          # Core application
-│   ├── index.ts          # Main entry point (gateway, handlers, bridges)
-│   ├── ai/router.ts      # Multi-provider AI routing
-│   ├── api/routes.ts     # REST API endpoints (projects, personas, pipeline, export)
+├── gateway/src/          # Core application (TypeScript, run via tsx)
+│   ├── index.ts          # Entry point + BookClawGateway class (wiring, handlers)
+│   ├── paths.ts          # Shared filesystem paths (ROOT_DIR)
+│   ├── init/             # Numbered init-phase modules (config → security → soul/
+│   │                     #   memory → ai → research/skills → … → http); index.ts's
+│   │                     #   initialize() is a thin composition root over these
+│   ├── ai/router.ts      # Multi-provider AI routing (tiers, per-step model, cost)
+│   ├── api/
+│   │   ├── routes.ts      # Composition root — mounts the per-feature routers below
+│   │   └── routes/        # Per-feature route mounters (core, projects, personas,
+│   │                      #   documents, export, settings, media, ops, wave,
+│   │                      #   knowledge, heartbeat, website) + _shared.ts helpers
 │   ├── bridges/          # Telegram, Discord bridges
 │   ├── security/         # Vault, audit, sandbox, injection detection
-│   ├── services/         # Memory, soul, projects, personas, research, heartbeat
-│   │   ├── projects.ts   # Project engine (6 templates, pipeline mode)
+│   ├── services/         # Memory, soul, projects, personas, research, heartbeat, …
+│   │   ├── projects.ts   # Project engine (6 templates, pipeline mode, per-step model)
 │   │   ├── personas.ts   # Author persona management
 │   │   ├── docx-export.ts # KDP-ready DOCX generation
 │   │   └── epub-export.ts # EPUB3 generation
 │   └── skills/loader.ts  # Skill loading and matching
+├── dashboard/            # Web dashboard (single-page, sidebar layout)
+│   ├── src/              # Source — esbuild bundles this into dist/index.html
+│   │   ├── index.html    # HTML template (CSS/JS inlined at build; token placeholder)
+│   │   ├── styles.css    # Styles
+│   │   ├── main.js       # App shell: nav (switchPanel), status polling, init
+│   │   ├── lib/          # Leaf modules: state, api, ui, format
+│   │   └── panels/       # Feature panels: home, chat, projects, personas,
+│   │                     #   library, settings, idle-tasks, insights, hq
+│   ├── build.mjs         # esbuild build (`npm run build:dashboard`)
+│   └── dist/index.html   # Built, self-contained dashboard (served statically)
 ├── skills/               # Skill definitions (SKILL.md files)
-│   ├── core/             # System skills (4)
-│   ├── author/           # Writing skills (13)
-│   ├── marketing/        # Marketing skills (2)
-│   └── _archived/        # Deprecated V3 skills (reference only)
-├── dashboard/dist/       # Web dashboard (single HTML file, sidebar layout)
-├── workspace/            # Working directory
+│   ├── core/             # System skills (6)
+│   ├── author/           # Writing skills (15)
+│   ├── marketing/        # Marketing skills (4)
+│   ├── ops/              # Operations skills (4)
+│   └── premium/          # Purchased skills (gitignored; ships with README only)
+├── tests/                # Scripted tests (no framework deps)
+│   ├── unit/             # node --test (via tsx): router, projects
+│   ├── api/api-test.sh   # curl-based REST API contract test
+│   ├── smoke-test.sh     # boot + security-perimeter smoke test
+│   └── openrouter-pipeline.sh  # end-to-end pipeline test (live container)
+├── workspace/            # Working directory (gitignored)
 │   ├── soul/             # SOUL.md, STYLE-GUIDE.md, VOICE-PROFILE.md
 │   ├── memory/           # Conversations, book bible, summaries
 │   ├── projects/         # Project output files organized by project
 │   ├── documents/        # Document library (large manuscripts, novels)
 │   ├── research/         # Research output files
-│   ├── .config/          # Persona data, pipeline state
+│   ├── .config/          # Persona data, project state
 │   ├── .agent/           # Agent journal, self-improve logs
 │   ├── audio/            # Generated TTS voice files (auto-cleaned after 24hr)
-│   ├── SKILLS.txt        # Full skill reference (auto-generated on startup)
 │   ├── .activity/        # Universal activity log (JSONL)
 │   └── .audit/           # Security audit log (JSONL)
 ├── config/               # Configuration files
-│   ├── default.json      # Main config
+│   ├── default.json      # Main config (versioned)
 │   ├── .vault/           # Encrypted API key storage
 │   └── research-allowlist.json  # Approved research domains
-└── scripts/              # Utility scripts
+├── docker/               # Dockerfile + docker-compose.yml
+└── scripts/              # Utility scripts (setup, deploy, build-watch, reset-test-data)
 ```
+
+> **Editing the dashboard:** change files under `dashboard/src/`, then run
+> `npm run build:dashboard` (or `npm run build:dashboard:watch`) to regenerate
+> `dashboard/dist/index.html`. The Docker build does this automatically.
 
 ---
 
@@ -480,7 +512,7 @@ All supporting guides live in [`docs/`](docs/). Start with whichever matches wha
 ### 🗺 Roadmap & planning
 - **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** ✨ *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit BookClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
 - **[docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md)** ✨ *new* — Audit of StoryHackerAI (n8n-based author pipeline) for patterns to port. Top item: **make OpenRouter the canonical AI gateway** instead of one provider among five. Also covers the Selector → Brief → Draft → Check multi-pass chapter pattern, genre templates as reusable artifacts, and explicit Chronology / Style / Wordcount checks.
-- **[docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md)** ✨ *new* — Analysis of the `index.ts` (2,649 lines, 61 services, 35 init phases) and `routes.ts` (5,516 lines, 234 endpoints in one function) god classes. Compares against OpenClaw's plugin architecture and lays out a three-level incremental refactor plan (phase extraction → service registry → plugin contracts).
+- **[docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md)** — Analysis of the former `index.ts` (2,649 lines) and `routes.ts` (5,516 lines, 234 endpoints in one function) god classes, and a three-level incremental refactor plan (phase extraction → service registry → plugin contracts). **Level 1 is complete** — init phases extracted into `gateway/src/init/` and the routes split into per-feature mounters under `gateway/src/api/routes/`; Levels 2–3 remain.
 - **[docs/TODO.md](docs/TODO.md)** — Tracked work items: security review, quick cleanups, larger refactors, and standing constraints not to "fix."
 - **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Historical record of the AuthorClaw → BookClaw rename (completed 2026-05-31): decisions, runbook, and verification.
 
@@ -496,7 +528,7 @@ BookClaw is open source and contributions are welcome! Whether you're an author 
 - **Bug Fixes** — Find and fix issues in the gateway, dashboard, or bridges
 - **New AI Providers** — Add support for additional AI services
 - **New Bridges** — Build integrations for Slack, WhatsApp, Matrix, etc.
-- **Dashboard Improvements** — The dashboard is a single HTML file — lots of room to grow
+- **Dashboard Improvements** — Modular ES modules under `dashboard/src/` (`lib/` + `panels/`), bundled by esbuild — lots of room to grow
 - **Documentation** — Better guides, tutorials, and examples
 
 ### How to Contribute
