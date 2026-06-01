@@ -1,18 +1,21 @@
-Dashboard split (2/?): extract idle-tasks + insights panels
+Dashboard split (3/?): extract settings panel + cost TODO
 
-Continues the per-feature module split. Behavior-preserving (same code,
-relocated into modules; esbuild bundles back to one IIFE).
+Continues the per-feature module split. Behavior-preserving.
 
-- panels/idle-tasks.js: idle-task queue CRUD + history (self-contained;
-  lib + state.idleTasksCache only).
-- panels/insights.js: lessons, preferences, orchestrator, manuscript-hub
-  cards. Preserves the window.deletePreference / orchAction / orchRemove
-  globals used by inline onclick handlers in this panel's HTML.
-- main.js imports the two; 2390 -> 2021 lines.
+- panels/settings.js: API keys, provider/model config, Telegram, voices,
+  research domains, backups, autonomous status (12 functions). Imports
+  loadStatus from the main shell (settings refreshes status after a change);
+  main.js now exports loadStatus and imports settings' 12 panel functions —
+  esbuild resolves the cycle via hoisted function declarations.
+- main.js: 2021 -> 1559 lines.
+- docs/TODO.md: added the "report real AI costs" follow-up — use OpenRouter's
+  inline usage.cost instead of the Sonnet-placeholder estimate (the source of
+  the inflated $2.43-vs-$0.09 figures); router.ts already reads usage tokens
+  but discards usage.cost.
 
-Remaining (tracked in docs/TODO.md): settings, then the interconnected core
-(projects + context-continuity, home, hq, chat, library); nav (switchPanel),
-status (polling) and theme stay in main.js as the app shell.
+Remaining (TODO): the interconnected core — projects (+ context-continuity),
+home, hq, chat, library; nav (switchPanel), status (polling), theme + init
+stay in main.js as the app shell.
 
-Verified: build clean (token placeholder + the 3 window.* globals present in
-the bundle, no dup symbols); npm test green (29 unit + API + smoke).
+Verified: build clean (token placeholder + the 3 window.* globals present,
+no dup symbols); npm test green (29 unit + API + smoke).
