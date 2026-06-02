@@ -3091,14 +3091,14 @@ textarea { resize: vertical; min-height: 60px; }
   // dashboard/src/panels/hq.js
   function loadHQ() {
     Promise.all([
-      api("GET", "/api/projects").catch(function() {
+      api("GET", "/api/projects/list").catch(function() {
         return { projects: [] };
       }),
       api("GET", "/api/personas").catch(function() {
         return { personas: [] };
       }),
-      api("GET", "/api/activity?limit=12").catch(function() {
-        return { events: [] };
+      api("GET", "/api/activity?count=12").catch(function() {
+        return { entries: [] };
       }),
       api("GET", "/api/status").catch(function() {
         return {};
@@ -3118,7 +3118,7 @@ textarea { resize: vertical; min-height: 60px; }
       var memStats = results[5];
       var projects = projData.projects || [];
       var personas = personaData.personas || [];
-      var events = activityData.events || activityData || [];
+      var events = Array.isArray(activityData) ? activityData : activityData.entries || activityData.events || [];
       var active = projects.filter(function(p) {
         return p.status === "active";
       });
@@ -3156,7 +3156,7 @@ textarea { resize: vertical; min-height: 60px; }
       if (countEl) countEl.textContent = active.length === 1 ? "1 in flight" : active.length + " in flight";
       if (activeEl) {
         if (active.length === 0) {
-          activeEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">No active projects. Start one from the <a href="#" onclick="navItems[2].click();return false;">Projects</a> panel.</div>';
+          activeEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">No active projects. Start one from the <a href="#" class="hq-goto-projects">Projects</a> panel.</div>';
         } else {
           activeEl.innerHTML = active.slice(0, 8).map(function(p) {
             var pct = p.progress || 0;
@@ -3167,9 +3167,23 @@ textarea { resize: vertical; min-height: 60px; }
             var activeStep = (p.steps || []).find(function(s) {
               return s.status === "active";
             });
-            return `<div style="padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="document.querySelector('[data-panel=projects]').click(); setTimeout(function(){openProjectDetail('` + esc(p.id) + `');}, 100);"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:600;">` + esc(p.title) + '</div><div style="font-size:11px;color:var(--muted);">' + esc(p.type || "general") + '</div></div><div style="margin-top:6px;background:var(--card-hover);height:6px;border-radius:3px;overflow:hidden;"><div style="background:var(--success);height:100%;width:' + pct + '%;"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px;">' + stepsDone + "/" + stepsTotal + " steps \xB7 " + pct + "%" + (activeStep ? " \xB7 running: " + esc(activeStep.label || "") : "") + "</div></div>";
+            return '<div class="hq-proj" data-id="' + esc(p.id) + '" style="padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px;cursor:pointer;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:600;">' + esc(p.title) + '</div><div style="font-size:11px;color:var(--muted);">' + esc(p.type || "general") + '</div></div><div style="margin-top:6px;background:var(--card-hover);height:6px;border-radius:3px;overflow:hidden;"><div style="background:var(--success);height:100%;width:' + pct + '%;"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px;">' + stepsDone + "/" + stepsTotal + " steps \xB7 " + pct + "%" + (activeStep ? " \xB7 running: " + esc(activeStep.label || "") : "") + "</div></div>";
           }).join("");
         }
+        activeEl.querySelectorAll(".hq-proj").forEach(function(card) {
+          card.addEventListener("click", function() {
+            var id = card.getAttribute("data-id");
+            switchPanel("projects");
+            setTimeout(function() {
+              openProjectDetail(id);
+            }, 100);
+          });
+        });
+        var goto = activeEl.querySelector(".hq-goto-projects");
+        if (goto) goto.addEventListener("click", function(e) {
+          e.preventDefault();
+          switchPanel("projects");
+        });
       }
       var personaEl = document.getElementById("hqPersonas");
       if (personaEl) {

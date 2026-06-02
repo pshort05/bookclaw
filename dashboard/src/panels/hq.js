@@ -3,15 +3,16 @@
 import { api } from '../lib/api.js';
 import { esc } from '../lib/format.js';
 import { openProjectDetail } from './projects.js';
+import { switchPanel } from '../main.js';
 
 // Pulls existing endpoints (no backend changes) and renders 4 cards:
 // today-at-a-glance, active projects, per-persona breakdown, recent activity.
 // Plus optional "what BookClaw knows about you" from the user-model service.
 export function loadHQ() {
   Promise.all([
-    api('GET', '/api/projects').catch(function() { return { projects: [] }; }),
+    api('GET', '/api/projects/list').catch(function() { return { projects: [] }; }),
     api('GET', '/api/personas').catch(function() { return { personas: [] }; }),
-    api('GET', '/api/activity?limit=12').catch(function() { return { events: [] }; }),
+    api('GET', '/api/activity?count=12').catch(function() { return { entries: [] }; }),
     api('GET', '/api/status').catch(function() { return {}; }),
     api('GET', '/api/user-model').catch(function() { return { snapshot: null }; }),
     api('GET', '/api/memory/stats').catch(function() { return {}; }),
@@ -25,7 +26,8 @@ export function loadHQ() {
 
     var projects = projData.projects || [];
     var personas = personaData.personas || [];
-    var events = activityData.events || activityData || [];
+    // /api/activity returns { entries: [...] }; tolerate a bare array or legacy { events } too.
+    var events = Array.isArray(activityData) ? activityData : (activityData.entries || activityData.events || []);
 
     // ── At a glance (5 stats) ──
     var active = projects.filter(function(p) { return p.status === 'active'; });
@@ -64,15 +66,14 @@ export function loadHQ() {
     if (countEl) countEl.textContent = active.length === 1 ? '1 in flight' : active.length + ' in flight';
     if (activeEl) {
       if (active.length === 0) {
-        activeEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">No active projects. Start one from the <a href="#" onclick="navItems[2].click();return false;">Projects</a> panel.</div>';
+        activeEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">No active projects. Start one from the <a href="#" class="hq-goto-projects">Projects</a> panel.</div>';
       } else {
         activeEl.innerHTML = active.slice(0, 8).map(function(p) {
           var pct = p.progress || 0;
           var stepsTotal = (p.steps || []).length;
           var stepsDone = (p.steps || []).filter(function(s){return s.status==='completed';}).length;
           var activeStep = (p.steps || []).find(function(s){return s.status==='active';});
-          return '<div style="padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px;cursor:pointer;" ' +
-            'onclick="document.querySelector(\'[data-panel=projects]\').click(); setTimeout(function(){openProjectDetail(\'' + esc(p.id) + '\');}, 100);">' +
+          return '<div class="hq-proj" data-id="' + esc(p.id) + '" style="padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:8px;cursor:pointer;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
               '<div style="font-weight:600;">' + esc(p.title) + '</div>' +
               '<div style="font-size:11px;color:var(--muted);">' + esc(p.type || 'general') + '</div>' +
@@ -87,6 +88,16 @@ export function loadHQ() {
             '</div>';
         }).join('');
       }
+      // Wire clicks (inline handlers can't reach module-scoped functions).
+      activeEl.querySelectorAll('.hq-proj').forEach(function(card) {
+        card.addEventListener('click', function() {
+          var id = card.getAttribute('data-id');
+          switchPanel('projects');
+          setTimeout(function() { openProjectDetail(id); }, 100);
+        });
+      });
+      var goto = activeEl.querySelector('.hq-goto-projects');
+      if (goto) goto.addEventListener('click', function(e) { e.preventDefault(); switchPanel('projects'); });
     }
 
     // ── Per-persona breakdown ──

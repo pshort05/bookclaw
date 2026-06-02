@@ -251,6 +251,14 @@ class BookClawGateway {
           upgradeInsecureRequests: null,
         },
       },
+      // Both off by deliberate choice — the server runs plain HTTP on the LAN
+      // (no TLS by design). The browser IGNORES Cross-Origin-Opener-Policy on a
+      // non-secure origin and just logs a console warning; and Origin-Agent-
+      // Cluster only logs a "could not be origin-keyed" warning for this
+      // single-origin app. Neither adds value here, so disable them to keep the
+      // dev console clean. Reconsider behind an HTTPS / reverse-proxy deploy.
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
     }));
     this.app.use(cors(corsOptions));
 

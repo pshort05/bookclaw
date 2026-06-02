@@ -1,15 +1,21 @@
-Dashboard: AI-spend widget in the Manuscript Hub (Home)
+Fix Author HQ load/clicks; quiet two Helmet console warnings
 
-Surfaces the (now-accurate) AI cost in the UI — previously only via /api/costs.
+Author HQ (pre-existing bugs, surfaced post-split):
+- /api/activity returns { entries }, not { events } — loadHQ read .events, so
+  `events` became the wrapper object and events.slice() threw → the
+  "Could not load HQ data" error. Now reads entries (tolerates array/legacy).
+- HQ queried /api/projects (404s) instead of /api/projects/list, and ?limit
+  instead of ?count — so HQ stats were always empty. Fixed.
+- Active-project cards + the empty-state "Projects" link used inline onclick
+  referencing module-scoped functions (no-ops) — replaced with addEventListener
+  (switchPanel + openProjectDetail).
 
-- panels/insights.js (loadHub): fetch /api/costs alongside /api/hub and render
-  an "AI spend" row in the Manuscript Hub — daily and monthly spend vs. the
-  configured caps + a daily budget bar; turns red / shows "(over budget)" when
-  the daily/monthly cap is exceeded. Cost comes from CostTracker, which now
-  reflects the real provider charge (OpenRouter usage.cost).
-- docs/TODO.md: the cost-follow-on item's "spent so far" panel marked done;
-  optional /api/v1/credits (account total) + /api/v1/models (pre-call
-  estimates) follow-ons remain.
+Console noise (Helmet headers, gateway/src/index.ts):
+- Disable crossOriginOpenerPolicy + originAgentCluster. The server runs plain
+  HTTP on the LAN (no TLS by design), so the browser ignores COOP and just logs
+  a warning, and Origin-Agent-Cluster only logs a "could not be origin-keyed"
+  warning for this single-origin app. Neither adds value here; disabling clears
+  the dev console. (The bulk of the console errors are the user's LastPass
+  extension — not BookClaw.)
 
-Verified: dashboard build clean (/api/costs fetch + widget bundled, token +
-window globals intact); npm test green (34 unit + API + smoke).
+Verified: tsc --noEmit clean; npm test green (34 unit + API + smoke).
