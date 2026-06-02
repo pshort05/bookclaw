@@ -170,7 +170,13 @@ document.getElementById('btnAddScript').addEventListener('click', function() {
 export function loadHub() {
   var el = document.getElementById('hubContent');
   if (!el) return;
-  api('GET', '/api/hub').then(function(data) {
+  // Fetch the hub aggregate + the (real) AI spend together.
+  Promise.all([
+    api('GET', '/api/hub'),
+    api('GET', '/api/costs').catch(function() { return null; }),
+  ]).then(function(results) {
+    var data = results[0];
+    var costs = results[1];
     if (!data || !data.totals) {
       el.innerHTML = '<div style="color:var(--muted);">No data yet. Create a project to get started.</div>';
       return;
@@ -178,6 +184,25 @@ export function loadHub() {
     var goalPct = data.goal.pctOfDaily || 0;
     var goalBar = '<div style="background:var(--bg-secondary);border-radius:4px;height:8px;overflow:hidden;margin-top:4px;">' +
       '<div style="background:var(--success);height:100%;width:' + Math.min(100, goalPct) + '%;"></div></div>';
+
+    // AI spend (actual cost reported by the provider; e.g. OpenRouter usage.cost).
+    var costHtml = '';
+    if (costs && typeof costs.daily === 'number') {
+      var over = !!costs.overBudget;
+      var dayPct = costs.dailyLimit ? Math.min(100, (costs.daily / costs.dailyLimit) * 100) : 0;
+      costHtml =
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;">' +
+            '<span>AI spend' + (over ? ' <span style="color:var(--danger);">(over budget)</span>' : '') + '</span>' +
+            '<span style="color:' + (over ? 'var(--danger)' : 'var(--text)') + ';">' +
+              '<strong>$' + costs.daily.toFixed(2) + '</strong> / $' + costs.dailyLimit + ' today · ' +
+              '<strong>$' + costs.monthly.toFixed(2) + '</strong> / $' + costs.monthlyLimit + ' this month' +
+            '</span>' +
+          '</div>' +
+          '<div style="background:var(--bg-secondary);border-radius:4px;height:8px;overflow:hidden;margin-top:4px;">' +
+            '<div style="background:' + (over ? 'var(--danger)' : 'var(--accent)') + ';height:100%;width:' + dayPct + '%;"></div></div>' +
+        '</div>';
+    }
 
     var projectRows = (data.projects || []).slice(0, 8).map(function(p) {
       var statusColor = p.status === 'active' ? 'var(--success)' :
@@ -202,6 +227,7 @@ export function loadHub() {
         '<div><div style="color:var(--muted);font-size:11px;">Chapters Written</div><div style="font-size:20px;font-weight:700;">' + data.totals.totalChaptersWritten + '</div></div>' +
         '<div><div style="color:var(--muted);font-size:11px;">Streak</div><div style="font-size:20px;font-weight:700;">' + (data.goal.streakDays || 0) + ' days</div></div>' +
       '</div>' +
+      costHtml +
       '<div style="margin-bottom:16px;">' +
         '<div style="display:flex;justify-content:space-between;font-size:12px;"><span>Today\'s word goal</span>' +
         '<span>' + data.goal.todayWords.toLocaleString() + ' / ' + data.goal.daily.toLocaleString() + ' (' + goalPct + '%)</span></div>' +

@@ -1,15 +1,15 @@
-Fix Authoring editor: populate textarea from stored content, not the textarea
+Dashboard: AI-spend widget in the Manuscript Hub (Home)
 
-Bug: the New Skill template never prefilled, and switching an existing
-prompt/skill to Edit blanked it. Cause: entering Edit set the textarea's value
-from liveContent(), which read the *just-created empty* #auText element and
-returned "" instead of the intended content.
+Surfaces the (now-accurate) AI cost in the UI — previously only via /api/costs.
 
-Fix: wireTabs() now manages a single source of truth (state.content). Entering
-Edit fills the textarea FROM state.content; switching to Preview / saving calls
-sync() to copy the textarea value BACK into state.content first. Callers
-(openPrompt/openSkill/openSkillCreate) pass a state object and sync() before
-PUT. So "+ New Skill" prefills the SKILL.md scaffold (valid frontmatter) and
-edits are preserved across the Preview/Edit toggle.
+- panels/insights.js (loadHub): fetch /api/costs alongside /api/hub and render
+  an "AI spend" row in the Manuscript Hub — daily and monthly spend vs. the
+  configured caps + a daily budget bar; turns red / shows "(over budget)" when
+  the daily/monthly cap is exceeded. Cost comes from CostTracker, which now
+  reflects the real provider charge (OpenRouter usage.cost).
+- docs/TODO.md: the cost-follow-on item's "spent so far" panel marked done;
+  optional /api/v1/credits (account total) + /api/v1/models (pre-call
+  estimates) follow-ons remain.
 
-Verified: dashboard build clean; npm test green (34 unit + API + smoke).
+Verified: dashboard build clean (/api/costs fetch + widget bundled, token +
+window globals intact); npm test green (34 unit + API + smoke).
