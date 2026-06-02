@@ -1,5 +1,7 @@
 # BookClaw
 
+> **Notice — active development; wait for v5.** BookClaw is undergoing rapid, frequent changes right now. **Do not start a new novel on the current setup** — wait for the official **v5 release**, which will be the first stable baseline for new projects. Until then, expect breaking changes between commits (dashboard, pipelines, prompts/skills storage, config, and deploy scripts), and treat any in-progress work as disposable.
+
 **The Autonomous AI Writing Agent — Built for Authors**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

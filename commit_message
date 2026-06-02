@@ -1,25 +1,5 @@
-Fix HQ load/clicks; quiet Helmet console warnings; stable auth token across deploys
+docs: README notice — active development, wait for v5 before starting a novel
 
-Author HQ (pre-existing, surfaced post-split):
-- /api/activity returns { entries }, not { events }; loadHQ read .events so
-  `events` was the wrapper object and events.slice() threw → "Could not load
-  HQ data". Now reads entries (tolerates array/legacy).
-- Queried /api/projects (404s) not /api/projects/list, and ?limit not ?count —
-  HQ stats were always empty. Fixed.
-- Inline onclick referenced module-scoped fns (no-ops) → addEventListener.
-
-Console noise (Helmet, gateway/src/index.ts): disable crossOriginOpenerPolicy
-+ originAgentCluster — plain HTTP on the LAN, so the browser ignores COOP and
-Origin-Agent-Cluster only logs a warning; neither adds value here.
-
-Stable auth token across deploys (the actual cause of the /api/status 401
-storm): each fresh container auto-generated a new BOOKCLAW_AUTH_TOKEN, so every
-redeploy invalidated open dashboard tabs. Now mirror the vault key —
-- docker-compose.yml passes BOOKCLAW_AUTH_TOKEN;
-- deploy.sh resolves it (env → repo .env → generate + persist to repo .env) and
-  writes it to docker/.env;
-- openrouter-pipeline.sh reads the token via `docker exec printenv` first
-  (env-provided), then the /app/.env fallback.
-
-Verified: tsc clean; npm test green (34 unit + API + smoke). Helmet + HQ already
-confirmed live on Mercury (COOP/OAC headers gone, HQ loads).
+Add a prominent notice under the title: the project is changing rapidly; don't
+start a new novel on the current setup — wait for the v5 release as the first
+stable baseline. Expect breaking changes between commits until then.
