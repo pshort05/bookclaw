@@ -1,24 +1,22 @@
-Editable prompts/skills — Stage B: authoring API (read/write/reload)
+Editable prompts/skills — Stage C: dashboard Authoring panel (viewer + editor)
 
-REST API to edit author prompts + skills from the dashboard with hot-reload,
-no redeploy. Writes go to the persisted workspace overlay (Stage A).
+Completes the in-dashboard prompts/skills editor (item: "markdown viewer →
+editor"). Built on the modular dashboard/src/.
 
-- gateway/src/api/routes/authoring.routes.ts (new mounter, wired in routes.ts):
-  - GET /api/prompts, PUT /api/prompts/:file  (SOUL/STYLE-GUIDE/VOICE-PROFILE/
-    PERSONALITY; writes workspace/soul/, then soul.reload()).
-  - GET /api/skills (catalog incl. source), GET /api/skills/:name (full content,
-    usable as an edit template).
-  - PUT /api/skills/:name  (writes workspace/skills/<category>/<name>/SKILL.md,
-    overriding a built-in by name; validates name/category/frontmatter; then
-    skills.reload()).
-  - DELETE /api/skills/:name  (workspace skills only — built-ins read-only;
-    deleting one that shadowed a built-in reverts to the built-in).
-  - POST /api/authoring/reload  (re-read prompts + skills from disk).
-  All writes path-whitelisted via safePath; internal prompt files, no
-  confirmation gate.
-- tests/api/api-test.sh: +11 checks (list/read + write/delete validation;
-  read-only built-ins; reload). Plus a live e2e verified create / override /
-  delete-to-revert / delete, with workspace cleanup.
-- docs/TODO.md: Stage B marked done; Stage C (dashboard viewer→editor) remains.
+- dashboard/src/panels/authoring.js + an "Authoring" sidebar panel:
+  - browse prompts (soul/*.md) and skills (grouped by category, source-badged
+    builtin/workspace);
+  - markdown Preview (via `marked`) + raw Edit toggle;
+  - Save (PUT -> live reload), Reload-from-disk (POST /api/authoring/reload),
+    Delete (workspace skills only), and "Save as new" / "+ New Skill" (clone a
+    built-in as a template, prefilled with a SKILL.md scaffold).
+- index.html: nav item + empty panel-authoring container (JS-rendered).
+- main.js: import + panelTitles + switchPanel dispatch.
+- marked added as a devDependency (bundled into dist by esbuild; ~68 KB).
 
-Verified: tsc --noEmit clean; npm test green (34 unit + API + smoke).
+Verified: dashboard build clean (loadAuthoring + marked bundled, token
+placeholder + the 3 window.* globals intact); npm test green (34 unit + API +
+smoke). Acceptance gate: Mercury visual click-through.
+
+docs/TODO.md: Stage C marked code-complete; item moves to COMPLETED after the
+Mercury check.
