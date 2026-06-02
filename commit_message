@@ -1,21 +1,25 @@
-Fix Author HQ load/clicks; quiet two Helmet console warnings
+Fix HQ load/clicks; quiet Helmet console warnings; stable auth token across deploys
 
-Author HQ (pre-existing bugs, surfaced post-split):
-- /api/activity returns { entries }, not { events } — loadHQ read .events, so
-  `events` became the wrapper object and events.slice() threw → the
-  "Could not load HQ data" error. Now reads entries (tolerates array/legacy).
-- HQ queried /api/projects (404s) instead of /api/projects/list, and ?limit
-  instead of ?count — so HQ stats were always empty. Fixed.
-- Active-project cards + the empty-state "Projects" link used inline onclick
-  referencing module-scoped functions (no-ops) — replaced with addEventListener
-  (switchPanel + openProjectDetail).
+Author HQ (pre-existing, surfaced post-split):
+- /api/activity returns { entries }, not { events }; loadHQ read .events so
+  `events` was the wrapper object and events.slice() threw → "Could not load
+  HQ data". Now reads entries (tolerates array/legacy).
+- Queried /api/projects (404s) not /api/projects/list, and ?limit not ?count —
+  HQ stats were always empty. Fixed.
+- Inline onclick referenced module-scoped fns (no-ops) → addEventListener.
 
-Console noise (Helmet headers, gateway/src/index.ts):
-- Disable crossOriginOpenerPolicy + originAgentCluster. The server runs plain
-  HTTP on the LAN (no TLS by design), so the browser ignores COOP and just logs
-  a warning, and Origin-Agent-Cluster only logs a "could not be origin-keyed"
-  warning for this single-origin app. Neither adds value here; disabling clears
-  the dev console. (The bulk of the console errors are the user's LastPass
-  extension — not BookClaw.)
+Console noise (Helmet, gateway/src/index.ts): disable crossOriginOpenerPolicy
++ originAgentCluster — plain HTTP on the LAN, so the browser ignores COOP and
+Origin-Agent-Cluster only logs a warning; neither adds value here.
 
-Verified: tsc --noEmit clean; npm test green (34 unit + API + smoke).
+Stable auth token across deploys (the actual cause of the /api/status 401
+storm): each fresh container auto-generated a new BOOKCLAW_AUTH_TOKEN, so every
+redeploy invalidated open dashboard tabs. Now mirror the vault key —
+- docker-compose.yml passes BOOKCLAW_AUTH_TOKEN;
+- deploy.sh resolves it (env → repo .env → generate + persist to repo .env) and
+  writes it to docker/.env;
+- openrouter-pipeline.sh reads the token via `docker exec printenv` first
+  (env-provided), then the /app/.env fallback.
+
+Verified: tsc clean; npm test green (34 unit + API + smoke). Helmet + HQ already
+confirmed live on Mercury (COOP/OAC headers gone, HQ loads).

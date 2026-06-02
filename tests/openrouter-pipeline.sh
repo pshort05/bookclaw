@@ -48,6 +48,12 @@ WORDS="${WORDS:-400}"
 
 # ── Resolve the bearer token: prefer env, else read it from the container ──
 TOKEN="${BOOKCLAW_AUTH_TOKEN:-}"
+# When the token is provided via env (compose), it lives in the container's
+# environment, not /app/.env — so try printenv first, then fall back to the
+# generated-into-.env case.
+if [ -z "$TOKEN" ]; then
+  TOKEN=$(docker exec "$CONTAINER" printenv BOOKCLAW_AUTH_TOKEN 2>/dev/null | tr -d '\r')
+fi
 if [ -z "$TOKEN" ]; then
   TOKEN=$(docker exec "$CONTAINER" sh -c 'grep "^BOOKCLAW_AUTH_TOKEN=" /app/.env | cut -d= -f2- | tr -d "\r\""' 2>/dev/null || true)
 fi

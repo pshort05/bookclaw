@@ -20,6 +20,10 @@ services:
     environment:
       - NODE_ENV=production
       - BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY:-}
+      # Stable auth token across deploys (else each fresh container generates a
+      # new one and open dashboard tabs 401 until reloaded). Written to
+      # docker/.env by deploy.sh, sourced from the repo .env.
+      - BOOKCLAW_AUTH_TOKEN=${BOOKCLAW_AUTH_TOKEN:-}
       # Bind to all interfaces inside the container so the published port is
       # reachable from the LAN. Set to 127.0.0.1 to restore localhost-only.
       - BOOKCLAW_BIND=${BOOKCLAW_BIND:-0.0.0.0}

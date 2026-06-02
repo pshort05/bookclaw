@@ -39,10 +39,26 @@ if [ -z "$BOOKCLAW_VAULT_KEY" ]; then
     BOOKCLAW_VAULT_KEY=$(openssl rand -hex 32)
 fi
 
+# ── Resolve a STABLE auth token (mirrors the vault key) ──
+# Without this each fresh container auto-generates a new BOOKCLAW_AUTH_TOKEN,
+# so every redeploy invalidates open dashboard tabs (401 until hard-reload).
+# Prefer the env (build-watch sources the repo .env), then the repo .env file,
+# else generate one and persist it to the repo .env so it is stable thereafter.
+if [ -z "$BOOKCLAW_AUTH_TOKEN" ]; then
+    if grep -q '^BOOKCLAW_AUTH_TOKEN=' .env 2>/dev/null; then
+        BOOKCLAW_AUTH_TOKEN=$(grep '^BOOKCLAW_AUTH_TOKEN=' .env | head -1 | cut -d= -f2- | tr -d '"')
+    else
+        BOOKCLAW_AUTH_TOKEN=$(openssl rand -hex 32)
+        printf '\n# BookClaw HTTP/WebSocket auth token (stable across deploys)\nBOOKCLAW_AUTH_TOKEN=%s\n' "$BOOKCLAW_AUTH_TOKEN" >> .env
+        echo "  🔑 Generated BOOKCLAW_AUTH_TOKEN and saved it to .env (stable across deploys)."
+    fi
+fi
+
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
 cat > docker/.env << EOF
 BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY}
+BOOKCLAW_AUTH_TOKEN=${BOOKCLAW_AUTH_TOKEN}
 AUTHOR_OS_PATH=${AUTHOR_OS_PATH:-$HOME/author-os}
 EOF
 echo "  ✓ Environment file created"
