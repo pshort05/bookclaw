@@ -1,22 +1,15 @@
-Editable prompts/skills — Stage C: dashboard Authoring panel (viewer + editor)
+Fix Authoring editor: populate textarea from stored content, not the textarea
 
-Completes the in-dashboard prompts/skills editor (item: "markdown viewer →
-editor"). Built on the modular dashboard/src/.
+Bug: the New Skill template never prefilled, and switching an existing
+prompt/skill to Edit blanked it. Cause: entering Edit set the textarea's value
+from liveContent(), which read the *just-created empty* #auText element and
+returned "" instead of the intended content.
 
-- dashboard/src/panels/authoring.js + an "Authoring" sidebar panel:
-  - browse prompts (soul/*.md) and skills (grouped by category, source-badged
-    builtin/workspace);
-  - markdown Preview (via `marked`) + raw Edit toggle;
-  - Save (PUT -> live reload), Reload-from-disk (POST /api/authoring/reload),
-    Delete (workspace skills only), and "Save as new" / "+ New Skill" (clone a
-    built-in as a template, prefilled with a SKILL.md scaffold).
-- index.html: nav item + empty panel-authoring container (JS-rendered).
-- main.js: import + panelTitles + switchPanel dispatch.
-- marked added as a devDependency (bundled into dist by esbuild; ~68 KB).
+Fix: wireTabs() now manages a single source of truth (state.content). Entering
+Edit fills the textarea FROM state.content; switching to Preview / saving calls
+sync() to copy the textarea value BACK into state.content first. Callers
+(openPrompt/openSkill/openSkillCreate) pass a state object and sync() before
+PUT. So "+ New Skill" prefills the SKILL.md scaffold (valid frontmatter) and
+edits are preserved across the Preview/Edit toggle.
 
-Verified: dashboard build clean (loadAuthoring + marked bundled, token
-placeholder + the 3 window.* globals intact); npm test green (34 unit + API +
-smoke). Acceptance gate: Mercury visual click-through.
-
-docs/TODO.md: Stage C marked code-complete; item moves to COMPLETED after the
-Mercury check.
+Verified: dashboard build clean; npm test green (34 unit + API + smoke).

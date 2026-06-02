@@ -4531,24 +4531,23 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     ed.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><h4 style="margin:0;flex:1;word-break:break-all;">' + title + "</h4>" + (sourceHtml || "") + '</div><div style="display:flex;gap:6px;margin-bottom:8px;"><button class="small" id="auTabPreview">Preview</button><button class="small secondary" id="auTabEdit">Edit</button></div><div id="auBody">' + bodyHtml + '</div><div style="display:flex;gap:8px;margin-top:10px;">' + actionsHtml + "</div>";
     return ed;
   }
-  function wireTabs(getContent) {
+  function wireTabs(state2) {
     const body = document.getElementById("auBody");
-    const preview = document.getElementById("auTabPreview");
-    const edit = document.getElementById("auTabEdit");
+    const sync = () => {
+      const t = document.getElementById("auText");
+      if (t) state2.content = t.value;
+    };
     const showPreview = () => {
-      body.innerHTML = '<div class="md-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:60vh;overflow:auto;">' + md(getContent()) + "</div>";
+      sync();
+      body.innerHTML = '<div class="md-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:60vh;overflow:auto;">' + md(state2.content) + "</div>";
     };
     const showEdit = () => {
       body.innerHTML = '<textarea id="auText" spellcheck="false" style="width:100%;height:55vh;font-family:monospace;font-size:13px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;"></textarea>';
-      document.getElementById("auText").value = getContent();
+      document.getElementById("auText").value = state2.content;
     };
-    preview.addEventListener("click", showPreview);
-    edit.addEventListener("click", showEdit);
-    return { showPreview, showEdit };
-  }
-  function liveContent(fallback) {
-    const t = document.getElementById("auText");
-    return t ? t.value : fallback;
+    document.getElementById("auTabPreview").addEventListener("click", showPreview);
+    document.getElementById("auTabEdit").addEventListener("click", showEdit);
+    return { showPreview, showEdit, sync };
   }
   async function openPrompt(file) {
     let data;
@@ -4558,14 +4557,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return showToast("Load failed: " + e.message, "error");
     }
     const f = (data.files || []).find((x2) => x2.file === file) || { file, content: "" };
-    let content = f.content;
+    const state2 = { content: f.content };
     editorShell(esc(file), "", "", '<button class="success" id="auSave">Save</button>');
-    const tabs = wireTabs(() => liveContent(content));
+    const tabs = wireTabs(state2);
     tabs.showEdit();
     document.getElementById("auSave").addEventListener("click", async () => {
-      content = liveContent(content);
+      tabs.sync();
       try {
-        await api("PUT", "/api/prompts/" + encodeURIComponent(file), { content });
+        await api("PUT", "/api/prompts/" + encodeURIComponent(file), { content: state2.content });
         showToast("Saved " + file, "success");
       } catch (e) {
         showToast("Save failed: " + e.message, "error");
@@ -4580,16 +4579,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       return showToast("Load failed: " + e.message, "error");
     }
     const s = data.skill;
-    let content = s.content;
+    const state2 = { content: s.content };
     const editable = s.source === "workspace";
     const actions = '<button class="success" id="auSave">' + (editable ? "Save" : "Save to workspace") + '</button><button class="small" id="auSaveAs">Save as new\u2026</button>' + (editable ? '<button class="small danger" id="auDelete" style="margin-left:auto;">Delete</button>' : "");
     editorShell(esc(s.name), badge(s.source), "", actions);
-    const tabs = wireTabs(() => liveContent(content));
+    const tabs = wireTabs(state2);
     tabs.showPreview();
     document.getElementById("auSave").addEventListener("click", async () => {
-      content = liveContent(content);
+      tabs.sync();
       try {
-        await api("PUT", "/api/skills/" + encodeURIComponent(s.name), { category: s.category, content });
+        await api("PUT", "/api/skills/" + encodeURIComponent(s.name), { category: s.category, content: state2.content });
         showToast("Saved " + s.name + " to workspace", "success");
         await renderList();
         openSkill(s.name);
@@ -4597,7 +4596,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         showToast("Save failed: " + e.message, "error");
       }
     });
-    document.getElementById("auSaveAs").addEventListener("click", () => openSkillCreate({ category: s.category, content: liveContent(content) }));
+    document.getElementById("auSaveAs").addEventListener("click", () => {
+      tabs.sync();
+      openSkillCreate({ category: s.category, content: state2.content });
+    });
     const delBtn = document.getElementById("auDelete");
     if (delBtn) delBtn.addEventListener("click", async () => {
       if (!confirm('Delete workspace skill "' + s.name + '"? If it overrode a built-in, the built-in is restored.')) return;
@@ -4617,15 +4619,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     const head = '<div style="display:flex;gap:8px;margin-bottom:8px;"><input id="auNewName" placeholder="skill-name (lowercase, hyphens)" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;"><select id="auNewCat" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;">' + catOpts + "</select></div>";
     editorShell("New skill", "", "", '<button class="success" id="auCreate">Create</button>');
     document.getElementById("auBody").insertAdjacentHTML("beforebegin", head);
-    let content = seed.content || SKILL_TEMPLATE;
-    const tabs = wireTabs(() => liveContent(content));
+    const state2 = { content: seed.content || SKILL_TEMPLATE };
+    const tabs = wireTabs(state2);
     tabs.showEdit();
     document.getElementById("auCreate").addEventListener("click", async () => {
+      tabs.sync();
       const name = document.getElementById("auNewName").value.trim();
       const category = document.getElementById("auNewCat").value;
       if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return showToast("Invalid name (lowercase letters, digits, hyphens)", "error");
       try {
-        await api("PUT", "/api/skills/" + encodeURIComponent(name), { category, content: liveContent(content) });
+        await api("PUT", "/api/skills/" + encodeURIComponent(name), { category, content: state2.content });
         showToast("Created " + name, "success");
         await renderList();
         openSkill(name);

@@ -101,36 +101,37 @@ function editorShell(title, sourceHtml, bodyHtml, actionsHtml) {
   return ed;
 }
 
-function wireTabs(getContent) {
+// Manages a single source of truth (state.content) across Preview/Edit toggles:
+// entering Edit fills the textarea FROM state.content; leaving Edit (switching to
+// preview, or before save) syncs the textarea value BACK into state.content. Call
+// sync() before reading state.content for a save.
+function wireTabs(state) {
   const body = document.getElementById('auBody');
-  const preview = document.getElementById('auTabPreview');
-  const edit = document.getElementById('auTabEdit');
-  const showPreview = () => { body.innerHTML = '<div class="md-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:60vh;overflow:auto;">' + md(getContent()) + '</div>'; };
+  const sync = () => { const t = document.getElementById('auText'); if (t) state.content = t.value; };
+  const showPreview = () => {
+    sync();
+    body.innerHTML = '<div class="md-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;max-height:60vh;overflow:auto;">' + md(state.content) + '</div>';
+  };
   const showEdit = () => {
     body.innerHTML = '<textarea id="auText" spellcheck="false" style="width:100%;height:55vh;font-family:monospace;font-size:13px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;"></textarea>';
-    document.getElementById('auText').value = getContent();
+    document.getElementById('auText').value = state.content;
   };
-  preview.addEventListener('click', showPreview);
-  edit.addEventListener('click', showEdit);
-  return { showPreview, showEdit };
-}
-// Read the live textarea if editing, else fall back to the loaded content.
-function liveContent(fallback) {
-  const t = document.getElementById('auText');
-  return t ? t.value : fallback;
+  document.getElementById('auTabPreview').addEventListener('click', showPreview);
+  document.getElementById('auTabEdit').addEventListener('click', showEdit);
+  return { showPreview, showEdit, sync };
 }
 
 async function openPrompt(file) {
   let data;
   try { data = await api('GET', '/api/prompts'); } catch (e) { return showToast('Load failed: ' + e.message, 'error'); }
   const f = (data.files || []).find((x) => x.file === file) || { file, content: '' };
-  let content = f.content;
+  const state = { content: f.content };
   editorShell(esc(file), '', '', '<button class="success" id="auSave">Save</button>');
-  const tabs = wireTabs(() => liveContent(content));
+  const tabs = wireTabs(state);
   tabs.showEdit();
   document.getElementById('auSave').addEventListener('click', async () => {
-    content = liveContent(content);
-    try { await api('PUT', '/api/prompts/' + encodeURIComponent(file), { content }); showToast('Saved ' + file, 'success'); }
+    tabs.sync();
+    try { await api('PUT', '/api/prompts/' + encodeURIComponent(file), { content: state.content }); showToast('Saved ' + file, 'success'); }
     catch (e) { showToast('Save failed: ' + e.message, 'error'); }
   });
 }
@@ -139,26 +140,26 @@ async function openSkill(name) {
   let data;
   try { data = await api('GET', '/api/skills/' + encodeURIComponent(name)); } catch (e) { return showToast('Load failed: ' + e.message, 'error'); }
   const s = data.skill;
-  let content = s.content;
+  const state = { content: s.content };
   const editable = s.source === 'workspace';
   const actions =
     '<button class="success" id="auSave">' + (editable ? 'Save' : 'Save to workspace') + '</button>' +
     '<button class="small" id="auSaveAs">Save as new…</button>' +
     (editable ? '<button class="small danger" id="auDelete" style="margin-left:auto;">Delete</button>' : '');
   editorShell(esc(s.name), badge(s.source), '', actions);
-  const tabs = wireTabs(() => liveContent(content));
+  const tabs = wireTabs(state);
   tabs.showPreview();
 
   document.getElementById('auSave').addEventListener('click', async () => {
-    content = liveContent(content);
+    tabs.sync();
     try {
-      await api('PUT', '/api/skills/' + encodeURIComponent(s.name), { category: s.category, content });
+      await api('PUT', '/api/skills/' + encodeURIComponent(s.name), { category: s.category, content: state.content });
       showToast('Saved ' + s.name + ' to workspace', 'success');
       await renderList();
       openSkill(s.name);
     } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
   });
-  document.getElementById('auSaveAs').addEventListener('click', () => openSkillCreate({ category: s.category, content: liveContent(content) }));
+  document.getElementById('auSaveAs').addEventListener('click', () => { tabs.sync(); openSkillCreate({ category: s.category, content: state.content }); });
   const delBtn = document.getElementById('auDelete');
   if (delBtn) delBtn.addEventListener('click', async () => {
     if (!confirm('Delete workspace skill "' + s.name + '"? If it overrode a built-in, the built-in is restored.')) return;
@@ -179,15 +180,16 @@ function openSkillCreate(seed) {
   editorShell('New skill', '', '', '<button class="success" id="auCreate">Create</button>');
   // Insert the name/category row above the editor body.
   document.getElementById('auBody').insertAdjacentHTML('beforebegin', head);
-  let content = seed.content || SKILL_TEMPLATE;
-  const tabs = wireTabs(() => liveContent(content));
+  const state = { content: seed.content || SKILL_TEMPLATE };
+  const tabs = wireTabs(state);
   tabs.showEdit();
   document.getElementById('auCreate').addEventListener('click', async () => {
+    tabs.sync();
     const name = document.getElementById('auNewName').value.trim();
     const category = document.getElementById('auNewCat').value;
     if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return showToast('Invalid name (lowercase letters, digits, hyphens)', 'error');
     try {
-      await api('PUT', '/api/skills/' + encodeURIComponent(name), { category, content: liveContent(content) });
+      await api('PUT', '/api/skills/' + encodeURIComponent(name), { category, content: state.content });
       showToast('Created ' + name, 'success');
       await renderList();
       openSkill(name);
