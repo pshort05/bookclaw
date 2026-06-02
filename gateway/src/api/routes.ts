@@ -22,6 +22,7 @@ import { mountExport } from './routes/export.routes.js';
 import { mountWave } from './routes/wave.routes.js';
 import { mountKnowledge } from './routes/knowledge.routes.js';
 import { mountWebsite } from './routes/website.routes.js';
+import { mountAuthoring } from './routes/authoring.routes.js';
 
 /**
  * Mounts all REST API routes. This is a thin composition root: each feature
@@ -56,4 +57,6 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountKnowledge(app, gateway, baseDir);
   // Website site registry — see ./routes/website.routes.ts
   mountWebsite(app, gateway, baseDir);
+  // Edit prompts (soul) + skills with hot-reload — see ./routes/authoring.routes.ts
+  mountAuthoring(app, gateway, baseDir);
 }

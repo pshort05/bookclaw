@@ -171,6 +171,32 @@ LONGMODEL="$(printf 'a%.0s' $(seq 1 201))"
 [ "$(code "$BASE/api/status")" = "401" ] \
   && pass "no token -> 401" || fail "no token should be 401"
 
+# ── Authoring: prompts + skills editor (read + validation only; no writes,
+#    so the dev workspace isn't modified) ──
+log ""
+log "authoring (prompts + skills)"
+has_status "/api/prompts" "200" "prompts list -> 200"
+body_has   "/api/prompts" '"files"' "prompts list returns files"
+has_status "/api/skills" "200" "skills catalog -> 200"
+body_has   "/api/skills" '"source"' "skills catalog tags each skill with a source"
+has_status "/api/skills/__no-such-skill__" "404" "unknown skill -> 404"
+# write/delete validation (these reject before touching disk):
+pc() { code "${AUTH[@]}" -H 'Content-Type: application/json' "$@"; }
+[ "$(pc -d '{"content":"x"}' -X PUT "$BASE/api/prompts/NOPE.md")" = "400" ] \
+  && pass "prompt: unknown file -> 400" || fail "prompt unknown file should be 400"
+[ "$(pc -d '{"category":"author","content":"---\ndescription: x\ntriggers:\n - t\n---\nb"}' -X PUT "$BASE/api/skills/BadName")" = "400" ] \
+  && pass "skill: invalid name -> 400" || fail "skill invalid name should be 400"
+[ "$(pc -d '{"category":"bogus","content":"---\ndescription: x\ntriggers:\n - t\n---\nb"}' -X PUT "$BASE/api/skills/tmptest")" = "400" ] \
+  && pass "skill: invalid category -> 400" || fail "skill invalid category should be 400"
+[ "$(pc -d '{"category":"author","content":"no frontmatter here"}' -X PUT "$BASE/api/skills/tmptest")" = "400" ] \
+  && pass "skill: missing frontmatter -> 400" || fail "skill missing frontmatter should be 400"
+[ "$(pc -X DELETE "$BASE/api/skills/write")" = "400" ] \
+  && pass "skill: delete built-in -> 400 (read-only)" || fail "deleting a built-in skill should be 400"
+[ "$(pc -X DELETE "$BASE/api/skills/__no-such-skill__")" = "404" ] \
+  && pass "skill: delete unknown -> 404" || fail "deleting an unknown skill should be 404"
+[ "$(pc -X POST "$BASE/api/authoring/reload")" = "200" ] \
+  && pass "authoring reload -> 200" || fail "authoring reload should be 200"
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

@@ -1,24 +1,24 @@
-Editable prompts/skills — Stage A: SkillLoader workspace overlay + reload
+Editable prompts/skills — Stage B: authoring API (read/write/reload)
 
-Backend foundation for editing prompts (workspace/soul/*.md) and skills
-(SKILL.md) without a code change / redeploy. Design (decided via brainstorm,
-captured in docs/TODO.md): built-in skills stay baked & read-only; user
-skills live under the persisted workspace/ volume and override built-ins by
-name (survive Docker rebuilds; "mine" vs "shipped" stay separate).
+REST API to edit author prompts + skills from the dashboard with hot-reload,
+no redeploy. Writes go to the persisted workspace overlay (Stage A).
 
-- skills/loader.ts: load a workspace/skills/** overlay after the built-in
-  skills/ (overrides by name); tag each skill with `source`
-  (builtin/workspace/synthetic), exposed in the catalog; add reload() that
-  re-reads disk and re-applies runtime synthetic skills (now remembered).
-- init/phase-05: wire the workspace overlay dir (graceful if absent).
-- services/soul.ts: reload() (re-read soul/prompt files after an edit).
-- tests/unit/skill-loader.test.ts: overlay merge + source tagging; reload
-  picks up a disk edit and preserves synthetics.
-- docs/TODO.md: reframed the "markdown file viewer" item into the
-  prompts/skills editor (workspace overlay, hot-reload, templates); pipelines-
-  as-data noted as the multi-author item's job.
-
-Next (Stage B): read/write/reload/create-from-template API for soul + skills;
-then (Stage C) the dashboard markdown viewer→editor.
+- gateway/src/api/routes/authoring.routes.ts (new mounter, wired in routes.ts):
+  - GET /api/prompts, PUT /api/prompts/:file  (SOUL/STYLE-GUIDE/VOICE-PROFILE/
+    PERSONALITY; writes workspace/soul/, then soul.reload()).
+  - GET /api/skills (catalog incl. source), GET /api/skills/:name (full content,
+    usable as an edit template).
+  - PUT /api/skills/:name  (writes workspace/skills/<category>/<name>/SKILL.md,
+    overriding a built-in by name; validates name/category/frontmatter; then
+    skills.reload()).
+  - DELETE /api/skills/:name  (workspace skills only — built-ins read-only;
+    deleting one that shadowed a built-in reverts to the built-in).
+  - POST /api/authoring/reload  (re-read prompts + skills from disk).
+  All writes path-whitelisted via safePath; internal prompt files, no
+  confirmation gate.
+- tests/api/api-test.sh: +11 checks (list/read + write/delete validation;
+  read-only built-ins; reload). Plus a live e2e verified create / override /
+  delete-to-revert / delete, with workspace cleanup.
+- docs/TODO.md: Stage B marked done; Stage C (dashboard viewer→editor) remains.
 
 Verified: tsc --noEmit clean; npm test green (34 unit + API + smoke).
