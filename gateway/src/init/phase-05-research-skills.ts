@@ -20,7 +20,9 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   console.log(`  ✓ Research gate: ${gw.research.getAllowedDomainCount()} approved domains`);
 
   // ── Phase 6: Skills ──
-  gw.skills = new SkillLoader(join(ROOT_DIR, 'skills'), gw.permissions);
+  // Built-in skills (baked, read-only) + a user overlay under the persisted
+  // workspace volume that overrides built-ins by name (survives Docker rebuilds).
+  gw.skills = new SkillLoader(join(ROOT_DIR, 'skills'), gw.permissions, join(ROOT_DIR, 'workspace', 'skills'));
   await gw.skills.loadAll();
   const premiumCount = gw.skills.getPremiumSkillCount();
   const premiumLabel = premiumCount > 0 ? `, ${premiumCount} premium ★` : '';

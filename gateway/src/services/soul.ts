@@ -49,6 +49,11 @@ export class SoulService {
     }
   }
 
+  /** Re-read the soul/prompt files from disk (after an in-dashboard edit). */
+  async reload(): Promise<void> {
+    await this.load();
+  }
+
   getName(): string {
     return this.name;
   }

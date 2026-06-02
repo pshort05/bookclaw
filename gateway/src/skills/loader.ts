@@ -8,6 +8,9 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { PermissionManager } from '../security/permissions.js';
 
+/** Where a loaded skill came from: shipped (read-only), user workspace overlay, or runtime-generated. */
+export type SkillSource = 'builtin' | 'workspace' | 'synthetic';
+
 export interface Skill {
   name: string;
   description: string;
@@ -15,6 +18,7 @@ export interface Skill {
   triggers: string[];
   permissions: string[];
   content: string;
+  source: SkillSource;
 }
 
 export interface SkillCatalogEntry {
@@ -23,22 +27,45 @@ export interface SkillCatalogEntry {
   category: string;
   triggers: string[];
   premium: boolean;
+  source: SkillSource;
 }
+
+const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops'] as const;
 
 export class SkillLoader {
   private skillsDir: string;
+  private workspaceSkillsDir: string | null;
   private permissions: PermissionManager;
   private skills: Map<string, Skill> = new Map();
+  // Runtime synthetic skills (e.g. from Author OS tools), kept so a reload()
+  // re-applies them after re-reading the on-disk skills.
+  private syntheticInputs: Array<{ name: string; description: string; triggers: string[]; permissions?: string[] }> = [];
 
-  constructor(skillsDir: string, permissions: PermissionManager) {
+  constructor(skillsDir: string, permissions: PermissionManager, workspaceSkillsDir?: string) {
     this.skillsDir = skillsDir;
     this.permissions = permissions;
+    this.workspaceSkillsDir = workspaceSkillsDir || null;
   }
 
   async loadAll(): Promise<void> {
     this.skills.clear();
-    for (const category of ['core', 'author', 'marketing', 'premium', 'ops'] as const) {
-      const categoryDir = join(this.skillsDir, category);
+    // Built-in skills (shipped, read-only — baked into the Docker image).
+    await this.loadFromDir(this.skillsDir, 'builtin');
+    // User overlay from the persisted workspace volume — overrides built-ins by
+    // name, so edits survive Docker rebuilds and stay separate from shipped skills.
+    if (this.workspaceSkillsDir) await this.loadFromDir(this.workspaceSkillsDir, 'workspace');
+    // Re-apply runtime synthetic skills (without overriding authored files).
+    this.applySynthetics();
+  }
+
+  /** Re-read all skills from disk (after an in-dashboard edit). Preserves synthetics. */
+  async reload(): Promise<void> {
+    await this.loadAll();
+  }
+
+  private async loadFromDir(baseDir: string, source: 'builtin' | 'workspace'): Promise<void> {
+    for (const category of SKILL_CATEGORIES) {
+      const categoryDir = join(baseDir, category);
       if (!existsSync(categoryDir)) continue;
 
       const entries = await readdir(categoryDir, { withFileTypes: true });
@@ -50,7 +77,7 @@ export class SkillLoader {
           if (existsSync(skillPath)) {
             try {
               const content = await readFile(skillPath, 'utf-8');
-              const skill = this.parseSkill(content, entry.name, category);
+              const skill = this.parseSkill(content, entry.name, category, source);
               if (skill) {
                 this.skills.set(skill.name, skill);
                 if (category === 'premium') {
@@ -80,22 +107,36 @@ export class SkillLoader {
     let added = 0;
     for (const s of skills) {
       if (!s.name || !s.description || !Array.isArray(s.triggers) || s.triggers.length === 0) continue;
-      // Don't override an explicitly-authored SKILL.md of the same name.
-      if (this.skills.has(s.name)) continue;
-      this.skills.set(s.name, {
-        name: s.name,
-        description: s.description,
-        category: 'author',
-        triggers: s.triggers,
-        permissions: s.permissions || ['memory_read'],
-        content: `# ${s.name}\n\n${s.description}\n\n_(Auto-generated from Author OS tools.)_`,
-      });
-      added++;
+      // Remember the input so reload() can re-apply it after re-reading disk.
+      if (!this.syntheticInputs.some(x => x.name === s.name)) {
+        this.syntheticInputs.push({ name: s.name, description: s.description, triggers: s.triggers, permissions: s.permissions });
+      }
+      if (this.applySynthetic(s)) added++;
     }
     return added;
   }
 
-  private parseSkill(content: string, name: string, category: 'core' | 'author' | 'marketing' | 'premium' | 'ops'): Skill | null {
+  /** Re-apply remembered synthetic skills (used after a disk reload). */
+  private applySynthetics(): void {
+    for (const s of this.syntheticInputs) this.applySynthetic(s);
+  }
+
+  /** Add one synthetic skill unless an authored (file-based) skill already owns the name. */
+  private applySynthetic(s: { name: string; description: string; triggers: string[]; permissions?: string[] }): boolean {
+    if (this.skills.has(s.name)) return false;
+    this.skills.set(s.name, {
+      name: s.name,
+      description: s.description,
+      category: 'author',
+      triggers: s.triggers,
+      permissions: s.permissions || ['memory_read'],
+      content: `# ${s.name}\n\n${s.description}\n\n_(Auto-generated from Author OS tools.)_`,
+      source: 'synthetic',
+    });
+    return true;
+  }
+
+  private parseSkill(content: string, name: string, category: 'core' | 'author' | 'marketing' | 'premium' | 'ops', source: 'builtin' | 'workspace'): Skill | null {
     // Parse YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!frontmatterMatch) return null;
@@ -135,7 +176,7 @@ export class SkillLoader {
       }
     }
 
-    return { name, description, category, triggers, permissions, content };
+    return { name, description, category, triggers, permissions, content, source };
   }
 
   matchSkills(input: string): string[] {
@@ -183,6 +224,7 @@ export class SkillLoader {
       category: s.category,
       triggers: s.triggers,
       premium: s.category === 'premium',
+      source: s.source,
     }));
   }
 

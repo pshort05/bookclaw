@@ -1,28 +1,24 @@
-Router: accurate per-call cost + 429 retry; refresh README/docs to current state
+Editable prompts/skills — Stage A: SkillLoader workspace overlay + reload
 
-Router fixes (gateway/src/ai/router.ts), motivated by the pipeline test (real
-~$0.09 spend shown as ~$2.43; intermittent free-tier 429s):
-- Real cost: completeOpenAICompatible uses the provider-reported
-  data.usage.cost (USD; OpenRouter returns it every response) as estimatedCost
-  when present, else the per-1k placeholder. Dashboard/CostTracker now reflect
-  actual OpenRouter spend.
-- 429 handling: new fetchWithRetry() retries HTTP 429/503 with exponential
-  backoff (1s, 2s; ≤2 retries) honoring Retry-After, applied to the cloud
-  providers (Gemini, Claude, OpenAI-compatible). Ollama + the tags probe
-  unchanged; caller still handles a final non-OK; fail-soft preserved.
-- tests/unit/router.test.ts: +3 (usage.cost preferred; placeholder fallback;
-  one retry on 429-then-200).
+Backend foundation for editing prompts (workspace/soul/*.md) and skills
+(SKILL.md) without a code change / redeploy. Design (decided via brainstorm,
+captured in docs/TODO.md): built-in skills stay baked & read-only; user
+skills live under the persisted workspace/ volume and override built-ins by
+name (survive Docker rebuilds; "mine" vs "shipped" stay separate).
 
-Docs refresh to current state:
-- README "Project Structure": reflects the refactor (gateway/src/init/ phase
-  modules; api/routes/ per-feature mounters), the dashboard build
-  (dashboard/src/ {lib,panels,main.js} → esbuild → dist/index.html), and the
-  tests/ tree; plus an "editing the dashboard" note.
-- README: Author HQ panel added (6 panels), skill counts corrected
-  (core 6 / author 15 / marketing 4 / ops 4 = 29) in the architecture diagram
-  + Skills section, dashboard-is-single-file and god-class-refactor pointers
-  updated (Level 1 done).
-- docs: dashboard split → COMPLETED (Mercury visual acceptance); cost item
-  narrowed to optional follow-ons; 429 item → COMPLETED.
+- skills/loader.ts: load a workspace/skills/** overlay after the built-in
+  skills/ (overrides by name); tag each skill with `source`
+  (builtin/workspace/synthetic), exposed in the catalog; add reload() that
+  re-reads disk and re-applies runtime synthetic skills (now remembered).
+- init/phase-05: wire the workspace overlay dir (graceful if absent).
+- services/soul.ts: reload() (re-read soul/prompt files after an edit).
+- tests/unit/skill-loader.test.ts: overlay merge + source tagging; reload
+  picks up a disk edit and preserves synthetics.
+- docs/TODO.md: reframed the "markdown file viewer" item into the
+  prompts/skills editor (workspace overlay, hot-reload, templates); pipelines-
+  as-data noted as the multi-author item's job.
 
-Verified: tsc --noEmit clean; npm test green (32 unit + API + smoke).
+Next (Stage B): read/write/reload/create-from-template API for soul + skills;
+then (Stage C) the dashboard markdown viewer→editor.
+
+Verified: tsc --noEmit clean; npm test green (34 unit + API + smoke).
