@@ -1,5 +1,23 @@
-docs: README notice — active development, wait for v5 before starting a novel
+feat(security): API-level rate limiting on /api/*
 
-Add a prominent notice under the title: the project is changing rapidly; don't
-start a new novel on the current setup — wait for the v5 release as the first
-stable baseline. Expect breaking changes between commits until then.
+- Hand-rolled per-IP fixed-window limiter (no new dep; mirrors the
+  PermissionManager.checkRateLimit idiom), registered after the source-IP
+  allowlist gate and in front of express.json + the bearer gate, so
+  unauthenticated token-guessing is also capped.
+- Exempts loopback + BOOKCLAW_ALLOWED_IPS members (reuses isIpAllowed), so
+  localhost self-calls and trusted IPs are never throttled.
+- Auth-aware buckets keyed req.ip + |auth/|anon (independent counters); a new
+  shared extractToken(req) helper drives both the rate-limit and bearer gates so
+  "is authenticated" can't drift. Auth-disabled => open gate => generous bucket.
+- On exceed: 429 + Retry-After + audit rate_limited event.
+- Env-configurable, posture logged at startup: BOOKCLAW_RATELIMIT_UNAUTH (30),
+  BOOKCLAW_RATELIMIT_AUTH (360 = 6/sec), BOOKCLAW_RATELIMIT_WINDOW_MS (60000);
+  a limit of 0 disables that bucket.
+- Tests: smoke-test Phase 5 (7 checks, TDD) drives non-loopback IPs via XFF
+  under trust-proxy — anon 429 past strict limit w/ Retry-After, authed sails
+  past strict and 429s past generous (independent buckets), loopback exempt.
+- tsc clean; npm test green (34 unit + API + smoke). Moved the item from
+  docs/TODO.md to docs/COMPLETED.md.
+
+Note: docs/NERDY-NOVELIST-WORKFLOW.md + its TODO entry are a separate, still-
+uncommitted design change — consider committing them on their own.

@@ -200,6 +200,52 @@ grep -q "IP allowlist: 2 rule(s) enforced" "$SERVER_LOG" \
 
 stop_server
 
+# ── Phase 5: API rate limiting (BOOKCLAW_RATELIMIT_* + trust-proxy) ──
+# Trust-proxy lets us drive the client IP via X-Forwarded-For, so each test IP is a
+# distinct, non-loopback bucket (loopback is exempt). Low limits make it fast:
+# 3 unauthenticated / 5 authenticated requests per window.
+log ""
+log "Phase 5: API rate limiting"
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" \
+             BOOKCLAW_TRUST_PROXY=1 \
+             BOOKCLAW_RATELIMIT_UNAUTH=3 \
+             BOOKCLAW_RATELIMIT_AUTH=5 \
+             BOOKCLAW_RATELIMIT_WINDOW_MS=60000 || exit 1
+
+grep -q "API rate limiting: 3 unauth / 5 auth per 60s window" "$SERVER_LOG" \
+  && pass "startup logs the rate-limit posture" || fail "missing rate-limit posture log"
+
+# Unauthenticated bucket (no token, distinct non-loopback IP): the first 3 are under
+# the strict limit and get the usual 401; the 4th trips the limiter with a 429.
+RLIP_A="198.51.100.10"
+c=""
+for i in 1 2 3; do c="$(code -H "X-Forwarded-For: $RLIP_A" "$BASE/api/status")"; done
+[ "$c" = "401" ] \
+  && pass "anon under strict limit -> 401 (not yet limited)" || fail "anon under limit should be 401 (got $c)"
+[ "$(code -H "X-Forwarded-For: $RLIP_A" "$BASE/api/status")" = "429" ] \
+  && pass "anon over strict limit -> 429" || fail "anon over strict limit should be 429"
+RA="$(rheader retry-after -H "X-Forwarded-For: $RLIP_A" "$BASE/api/status")"
+[ -n "$RA" ] \
+  && pass "429 carries Retry-After (${RA}s)" || fail "429 should carry a Retry-After header"
+
+# Authenticated bucket (valid token, different IP): generous limit is separate from
+# the anon bucket — sails past the strict (3) limit, only 429s past the generous (5).
+RLIP_B="198.51.100.20"
+c=""
+for i in 1 2 3 4 5; do c="$(code -H "Authorization: Bearer $TEST_TOKEN" -H "X-Forwarded-For: $RLIP_B" "$BASE/api/status")"; done
+[ "$c" = "200" ] \
+  && pass "authed past the unauth limit still 200 (separate, generous bucket)" || fail "authed within limit should be 200 (got $c)"
+[ "$(code -H "Authorization: Bearer $TEST_TOKEN" -H "X-Forwarded-For: $RLIP_B" "$BASE/api/status")" = "429" ] \
+  && pass "authed over generous limit -> 429" || fail "authed over generous limit should be 429"
+
+# Loopback is exempt: hammering past the strict limit never yields a 429.
+c=""
+for i in 1 2 3 4 5; do c="$(code "$BASE/api/status")"; done
+[ "$c" = "401" ] \
+  && pass "loopback exempt (never 429, stays 401 with no token)" || fail "loopback should be exempt from rate limiting (got $c)"
+
+stop_server
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

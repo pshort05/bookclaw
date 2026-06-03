@@ -100,6 +100,16 @@ function bearerEquals(provided: string, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+// The bearer token a request presents: Authorization header first, then the ?token=
+// query fallback (native-element GETs that can't set headers). '' if none. Shared by
+// the auth gate and the rate-limit gate so "is this request authenticated" matches.
+function extractToken(req: express.Request): string {
+  const header = String(req.headers['authorization'] || '');
+  const headerToken = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  const queryToken = typeof req.query.token === 'string' ? req.query.token.trim() : '';
+  return headerToken || queryToken;
+}
+
 // ═══════════════════════════════════════════════════════════
 // BookClaw Gateway
 // ═══════════════════════════════════════════════════════════
@@ -136,6 +146,15 @@ class BookClawGateway {
   public allowedIps: Array<[ipaddr.IPv4 | ipaddr.IPv6, number]> = [];
   public ipAllowlistSummary = '';
   public trustProxy = false;
+  // API rate limiting (BOOKCLAW_RATELIMIT_*). Per-IP fixed-window on /api/*, in front
+  // of auth. Auth-aware: a strict cap on unauthenticated requests, a generous cap on
+  // authenticated ones. Loopback + BOOKCLAW_ALLOWED_IPS members are exempt. A limit
+  // of 0 disables that bucket. Computed in the constructor; posture logged at startup.
+  public rateLimitUnauth = 30;
+  public rateLimitAuth = 360;
+  public rateLimitWindowMs = 60000;
+  public rateLimitSummary = '';
+  private apiRateLimits: Map<string, { count: number; resetAt: number }> = new Map();
 
   // Skills, goals & bridges
   public skills!: SkillLoader;
@@ -289,11 +308,53 @@ class BookClawGateway {
       ? 'ℹ IP allowlist: not set (all source IPs allowed — rely on BOOKCLAW_BIND, the host firewall, and bearer auth)'
       : `✓ IP allowlist: ${this.allowedIps.length} rule(s) enforced${this.trustProxy ? ', trusting X-Forwarded-For' : ''} (loopback always allowed)`;
 
+    // ── API rate limiting (BOOKCLAW_RATELIMIT_*) ── parsed here, applied below. ──
+    const parseLimit = (v: string | undefined, dflt: number): number => {
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.floor(n) : dflt;
+    };
+    this.rateLimitUnauth = parseLimit(process.env.BOOKCLAW_RATELIMIT_UNAUTH, 30);
+    this.rateLimitAuth = parseLimit(process.env.BOOKCLAW_RATELIMIT_AUTH, 360);
+    this.rateLimitWindowMs = parseLimit(process.env.BOOKCLAW_RATELIMIT_WINDOW_MS, 60000) || 60000;
+    this.rateLimitSummary = (this.rateLimitUnauth === 0 && this.rateLimitAuth === 0)
+      ? 'ℹ API rate limiting: disabled (BOOKCLAW_RATELIMIT_UNAUTH/AUTH=0)'
+      : `✓ API rate limiting: ${this.rateLimitUnauth} unauth / ${this.rateLimitAuth} auth per ${Math.round(this.rateLimitWindowMs / 1000)}s window (loopback + allowlisted IPs exempt)`;
+
     this.app.use((req, res, next) => {
       if (this.allowedIps.length === 0) return next(); // enforcement off
       if (this.isIpAllowed(req.ip || req.socket.remoteAddress || '')) return next();
       this.audit?.log('security', 'ip_blocked', { ip: req.ip, path: req.path, method: req.method });
       return res.status(403).json({ error: 'Forbidden: source IP not allowed' });
+    });
+
+    // ── API rate-limit gate ── /api/* only, in front of auth so unauthenticated
+    // token-guessing is also capped. Loopback + allowlisted IPs are exempt. Buckets
+    // are keyed per-IP and split auth/anon, so a strict cap on anonymous traffic
+    // never throttles a busy authenticated client (and vice-versa). When auth is
+    // disabled the gate is open, so requests count as authenticated (generous bucket).
+    this.app.use((req, res, next) => {
+      if (!req.path.startsWith('/api/')) return next();
+      const ip = req.ip || req.socket.remoteAddress || '';
+      if (this.isIpAllowed(ip)) return next(); // loopback + allowlisted IPs exempt
+      let authed = true;
+      if (this.authToken !== null) {
+        const t = extractToken(req);
+        authed = !!t && bearerEquals(t, this.authToken);
+      }
+      const limit = authed ? this.rateLimitAuth : this.rateLimitUnauth;
+      if (limit === 0) return next(); // this bucket disabled
+      const key = `${ip}|${authed ? 'auth' : 'anon'}`;
+      const now = Date.now();
+      const entry = this.apiRateLimits.get(key);
+      if (!entry || entry.resetAt <= now) {
+        this.apiRateLimits.set(key, { count: 1, resetAt: now + this.rateLimitWindowMs });
+        return next();
+      }
+      entry.count++;
+      if (entry.count <= limit) return next();
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil((entry.resetAt - now) / 1000))));
+      this.audit?.log('security', 'rate_limited', { ip, path: req.path, method: req.method, authed, limit });
+      return res.status(429).json({ error: 'Too many requests' });
     });
 
     this.app.use(express.json({ limit: '5mb' }));
@@ -305,11 +366,7 @@ class BookClawGateway {
     this.app.use((req, res, next) => {
       if (this.authToken === null) return next();          // auth disabled
       if (!req.path.startsWith('/api/')) return next();     // public, non-API path
-      const header = String(req.headers['authorization'] || '');
-      const headerToken = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-      // Query fallback for native-element GETs (img/href/Audio) that can't set headers.
-      const queryToken = typeof req.query.token === 'string' ? req.query.token.trim() : '';
-      const provided = headerToken || queryToken;
+      const provided = extractToken(req);
       if (provided && bearerEquals(provided, this.authToken)) return next();
       return res.status(401).json({ error: 'Unauthorized: missing or invalid bearer token' });
     });

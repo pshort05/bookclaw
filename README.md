@@ -105,7 +105,7 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/
 │  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
 │  │ Channels  │   │    Gateway       │   │  AI Router     │  │
 │  │           │   │                  │   │                │  │
-│  │ Telegram  │──▶│ Auth + Sandbox   │──▶│ Ollama (free)  │  │
+│  │ Telegram  │──>│ Auth + Sandbox   │──>│ Ollama (free)  │  │
 │  │ Dashboard │   │ Rate Limiting    │   │ Gemini (free)  │  │
 │  │ API       │   │ Injection Detect │   │ DeepSeek ($)   │  │
 │  │ WebSocket │   │ Audit Logging    │   │ Claude ($$)    │  │
@@ -174,24 +174,24 @@ Connect a Telegram bot to control BookClaw from your phone:
 
 ```
 You:        /write a short snarky YouTube intro for my channel
-BookClaw: 📝 On it. Planning "a short snarky YouTube intro"...
-BookClaw: ✅ Planned 2 steps. Running autonomously...
-BookClaw: ✅ 1/2: Draft the intro (~400 words)
-BookClaw: 🎉 All 2 steps complete!
+BookClaw: On it. Planning "a short snarky YouTube intro"...
+BookClaw: Planned 2 steps. Running autonomously...
+BookClaw: 1/2: Draft the intro (~400 words)
+BookClaw: All 2 steps complete!
 
 You:        /novel a sci-fi thriller about rogue AI in aviation
-BookClaw: 📖 Novel pipeline created: 32 steps
+BookClaw: Novel pipeline created: 32 steps
             (premise → bible → outline → chapters → revision → assembly)
-BookClaw: ✅ 1/32: Develop premise (~800 words)
-            ⏭ Next: Refine premise...
+BookClaw: 1/32: Develop premise (~800 words)
+            Next: Refine premise...
 You:        /stop
-BookClaw: ⏸ Paused at step 4/32. Say "continue" to resume.
+BookClaw: Paused at step 4/32. Say "continue" to resume.
 
 You:        /clean
-BookClaw: 📊 Workspace Usage: 2.1 MB (67 files)
-            📁 projects: 43 files (1.8 MB)
-            📁 exports: 2 files (21 KB)
-            🧹 /clean projects — delete all project files
+BookClaw: Workspace Usage: 2.1 MB (67 files)
+            projects: 43 files (1.8 MB)
+            exports: 2 files (21 KB)
+            /clean projects — delete all project files
 ```
 
 ---
@@ -237,7 +237,7 @@ BookClaw includes a built-in neural voice engine powered by Microsoft Edge TTS �
 
 **API:** `POST /api/audio/generate` with `{ text, voice, rate, pitch, volume }`
 
-> **⚠️ Audio files are automatically deleted after 24 hours.** If you generate a voice file you want to keep (e.g., a narration of your chapter), save or download it before the auto-cleanup runs. Use `/clean audio` to clear them manually, or find them in `workspace/audio/`.
+> **Audio files are automatically deleted after 24 hours.** If you generate a voice file you want to keep (e.g., a narration of your chapter), save or download it before the auto-cleanup runs. Use `/clean audio` to clear them manually, or find them in `workspace/audio/`.
 
 ---
 
@@ -469,18 +469,18 @@ By default this fork binds BookClaw to `0.0.0.0:3847` so the Docker image is rea
 
 | Layer | Local | VM | LAN Docker | VPS + Docker + VPN |
 |-------|-------|-----|------------|--------------------|
-| App-level vault (AES-256) | ✅ | ✅ | ✅ | ✅ |
-| Sandbox file access | ✅ | ✅ | ✅ | ✅ |
-| Audit logging | ✅ | ✅ | ✅ | ✅ |
-| Bearer-token HTTP/WS auth | ✅ | ✅ | ✅ | ✅ |
-| CORS deny-by-default | ✅ | ✅ | ✅ | ✅ |
-| Source-IP allowlist (optional) | ✅ | ✅ | ✅ | ✅ |
-| OS isolation | ❌ | ✅ | ✅ | ✅ |
-| Container isolation | ❌ | Optional | ✅ | ✅ |
-| Loopback-only network | Default | Default | ❌ (LAN-exposed) | ✅ (VPN-only) |
-| TLS termination | ❌ — add reverse proxy | ❌ — add reverse proxy | ❌ — add reverse proxy | ❌ — add reverse proxy |
-| Always-on (Telegram 24/7) | ❌ | ❌ | ✅ | ✅ |
-| Disposable environment | ❌ | ✅ | ✅ | ✅ |
+| App-level vault (AES-256) | Yes | Yes | Yes | Yes |
+| Sandbox file access | Yes | Yes | Yes | Yes |
+| Audit logging | Yes | Yes | Yes | Yes |
+| Bearer-token HTTP/WS auth | Yes | Yes | Yes | Yes |
+| CORS deny-by-default | Yes | Yes | Yes | Yes |
+| Source-IP allowlist (optional) | Yes | Yes | Yes | Yes |
+| OS isolation | No | Yes | Yes | Yes |
+| Container isolation | No | Optional | Yes | Yes |
+| Loopback-only network | Default | Default | No (LAN-exposed) | Yes (VPN-only) |
+| TLS termination | No — add reverse proxy | No — add reverse proxy | No — add reverse proxy | No — add reverse proxy |
+| Always-on (Telegram 24/7) | No | No | Yes | Yes |
+| Disposable environment | No | Yes | Yes | Yes |
 
 The "LAN Docker" column is this fork's default. The bearer token gates HTTP and WebSocket in every column; what's missing on the LAN is **TLS** — if you're exposing beyond a trusted LAN, front BookClaw with a reverse proxy that terminates HTTPS.
 
@@ -502,18 +502,18 @@ It walks you through everything: OS detection, Node.js installation, Ollama setu
 
 All supporting guides live in [`docs/`](docs/). Start with whichever matches what you need to do:
 
-### 📘 Getting started
+### Getting started
 - **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — Install BookClaw and run your first task in under 5 minutes.
-- **[docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md)** ✨ *new* — Step-by-step walkthrough from "I have an idea" to chapter files on disk. The how-to-use guide for the full novel pipeline (persona → planning → bible → production → revision → format → launch).
+- **[docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md)** *new* — Step-by-step walkthrough from "I have an idea" to chapter files on disk. The how-to-use guide for the full novel pipeline (persona → planning → bible → production → revision → format → launch).
 
-### 🛠 Operations
+### Operations
 - **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage BookClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
-- **[docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md)** ✨ *new* — End-to-end Telegram bot setup on Linux or macOS, with LAN access from other devices, firewall configuration, multi-user allowlists, and persistent service setup (systemd / launchd).
+- **[docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md)** *new* — End-to-end Telegram bot setup on Linux or macOS, with LAN access from other devices, firewall configuration, multi-user allowlists, and persistent service setup (systemd / launchd).
 - **[docs/SECURITY.md](docs/SECURITY.md)** — Vault, sandbox, audit log, network posture, deployment guidance for trusted LAN vs untrusted exposure.
 
-### 🗺 Roadmap & planning
-- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** ✨ *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit BookClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
-- **[docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md)** ✨ *new* — Audit of StoryHackerAI (n8n-based author pipeline) for patterns to port. Top item: **make OpenRouter the canonical AI gateway** instead of one provider among five. Also covers the Selector → Brief → Draft → Check multi-pass chapter pattern, genre templates as reusable artifacts, and explicit Chronology / Style / Wordcount checks.
+### Roadmap & planning
+- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit BookClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
+- **[docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md)** *new* — Audit of StoryHackerAI (n8n-based author pipeline) for patterns to port. Top item: **make OpenRouter the canonical AI gateway** instead of one provider among five. Also covers the Selector → Brief → Draft → Check multi-pass chapter pattern, genre templates as reusable artifacts, and explicit Chronology / Style / Wordcount checks.
 - **[docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md)** — Analysis of the former `index.ts` (2,649 lines) and `routes.ts` (5,516 lines, 234 endpoints in one function) god classes, and a three-level incremental refactor plan (phase extraction → service registry → plugin contracts). **Level 1 is complete** — init phases extracted into `gateway/src/init/` and the routes split into per-feature mounters under `gateway/src/api/routes/`; Levels 2–3 remain.
 - **[docs/TODO.md](docs/TODO.md)** — Tracked work items: security review, quick cleanups, larger refactors, and standing constraints not to "fix."
 - **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Historical record of the AuthorClaw → BookClaw rename (completed 2026-05-31): decisions, runbook, and verification.

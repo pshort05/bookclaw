@@ -73,6 +73,9 @@ export async function initSecurity(gw: BookClawGateway): Promise<void> {
   // Source-IP allowlist posture (computed in the constructor).
   console.log(`  ${gw.ipAllowlistSummary}`);
 
+  // API rate-limit posture (computed in the constructor).
+  console.log(`  ${gw.rateLimitSummary}`);
+
   // ── Phase 2b: Activity Log ──
   gw.activityLog = new ActivityLog(join(ROOT_DIR, 'workspace'));
   await gw.activityLog.initialize();
