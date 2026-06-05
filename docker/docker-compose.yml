@@ -11,8 +11,9 @@ services:
     ports:
       - "3847:3847"  # All interfaces (needed for VirtualBox NAT port forwarding)
     volumes:
-      # Persist workspace data
-      - bookclaw-workspace:/app/workspace
+      # Persist workspace data on a host bind-mount (backup/share friendly;
+      # default lives outside the repo). Override with BOOKCLAW_WORKSPACE_PATH.
+      - ${BOOKCLAW_WORKSPACE_PATH:-/home/paul/bookclaw-workspace}:/app/workspace
       # Persist vault (encrypted credentials)
       - bookclaw-vault:/app/config/.vault
       # Author OS tools (read-only mount for templates/references)
@@ -66,6 +67,5 @@ networks:
     driver: bridge
 
 volumes:
-  bookclaw-workspace:
   bookclaw-vault:
   # ollama-models:

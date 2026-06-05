@@ -56,17 +56,37 @@ fi
 
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
+WORKSPACE_PATH="${BOOKCLAW_WORKSPACE_PATH:-$HOME/bookclaw-workspace}"
 cat > docker/.env << EOF
 BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY}
 BOOKCLAW_AUTH_TOKEN=${BOOKCLAW_AUTH_TOKEN}
 AUTHOR_OS_PATH=${AUTHOR_OS_PATH:-$HOME/author-os}
+BOOKCLAW_WORKSPACE_PATH=${WORKSPACE_PATH}
 EOF
 echo "  ✓ Environment file created"
+
+# ── Ensure the host workspace dir exists (bind-mount target) ──
+# Create it as this user (uid 1000) so the container (also uid 1000) can write.
+# Otherwise Docker auto-creates it as root and the app cannot write to it.
+mkdir -p "$WORKSPACE_PATH"
+echo "  ✓ Workspace dir ready: $WORKSPACE_PATH"
 
 # ── Build the image ──
 echo "  [2/4] Building BookClaw Docker image..."
 docker compose -f docker/docker-compose.yml build
 echo "  ✓ Image built"
+
+# ── Align bind-mount ownership with the container's app user ──
+# The image runs as a baked non-root user (bookclaw, uid 999). Docker does NOT
+# chown a host bind-mount the way it auto-owns a named volume, so a freshly
+# created host workspace dir stays owned by the deploying user and the app (a
+# different uid) can't write to it — the gateway would crash on its first mkdir
+# under /app/workspace. Chown the mounted workspace to the app user via a one-off
+# root container that reuses the service's mounts. Idempotent; cheap on re-runs.
+echo "  Aligning workspace ownership with the container user..."
+docker compose -f docker/docker-compose.yml run --rm --user 0 --no-deps \
+    --entrypoint chown bookclaw -R bookclaw:bookclaw /app/workspace
+echo "  ✓ Workspace ownership aligned"
 
 # ── Start services ──
 echo "  [3/4] Starting BookClaw..."

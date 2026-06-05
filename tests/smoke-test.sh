@@ -125,6 +125,12 @@ case "$HTML" in
   *)                             fail "dashboard / missing injected token" ;;
 esac
 
+# Workspace schema marker: phase-01-config stamps .bookclaw/workspace.json on boot.
+MARKER="$ROOT_DIR/workspace/.bookclaw/workspace.json"
+{ [ -f "$MARKER" ] && grep -q '"schemaVersion"' "$MARKER"; } \
+  && pass "workspace schema marker stamped (.bookclaw/workspace.json)" \
+  || fail "workspace schema marker missing or malformed"
+
 # CORS unset -> deny: a cross-origin request gets no Access-Control-Allow-Origin.
 [ -z "$(acao "http://evil.example" -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/status")" ] \
   && pass "CORS: cross-origin denied by default (no Access-Control-Allow-Origin)" \
