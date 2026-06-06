@@ -27,7 +27,9 @@ All implementation tasks (1–7) complete and reviewed (spec + code-quality) per
 
 **Code review 2nd pass (2026-06-06):** re-ran `/code-review` over the full branch incl. the fix commit — confirmed the fixes sound, no Critical/Important. Applied finding #1 in `7a5c8fa`: per-dir fail-soft in `LibraryService.loadKind` (wraps `readdir` so one unreadable overlay dir can't abort other kinds/their built-ins; `loadKind` is now the fail-soft boundary, the phase-05 try/catch a documented backstop) + a deterministic regression test (authors-path-as-file → ENOTDIR → other kinds still load). 40/40 unit. Remaining flagged items all deferred/tracked (dynamic-proxy → Phase 3; heartbeat skill writer → TODO/Phase 4) or declined (house-style dup).
 
-**Branch decision (2026-06-06): KEEP AS-IS.** Owner chose not to merge yet. Branch `feat/book-container-phase-1-library` (11 commits) is preserved; main is unchanged. Nothing deployed. Owner will merge/push/deploy when ready.
+**Branch decision (2026-06-06): MERGED TO MAIN (local).** Fast-forwarded `main` to `bbd42e4` (14 commits); the `feat/book-container-phase-1-library` branch was fully merged and deleted. `main` is **14 ahead of `origin/main`, 0 behind** — a clean FF push. **Not yet pushed, not yet deployed** (owner pushes; deploy is the separate `touch build_now` step). Tests on merged main: 40/40 unit, `tsc` clean.
+
+**Remaining (owner):** `git push` → then deploy (`touch build_now`, ~1 min build on Mercury) → confirm `/api/library` serves templates with a bearer token → human acceptance → add a `COMPLETED.md` entry for Phase 1 and trim the "Phase 1 DONE" note from `TODO.md`. Optional hygiene (offered, not done): add `workspace/.vault/` + `workspace/.bookclaw/` to `.gitignore`.
 
 ## How to resume
 
