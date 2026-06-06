@@ -58,6 +58,28 @@ test('LibraryService overlays workspace over built-in and tags source', async ()
   }
 });
 
+test('LibraryService loadKind is per-dir fail-soft: one unreadable dir does not abort others', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-library-'));
+  try {
+    const builtin = join(root, 'library');
+    mkdirSync(builtin, { recursive: true });
+    // Make the `authors` path a FILE, not a directory, so readdir() throws
+    // ENOTDIR for that kind — a deterministic stand-in for an unreadable dir.
+    writeFileSync(join(builtin, 'authors'), 'not a directory', 'utf-8');
+    // A valid section in the same library, loaded by a later kind.
+    write(builtin, 'sections/front-matter.md', 'FRONT');
+
+    const lib = new LibraryService(builtin, join(root, 'workspace', 'library'), fakeSkills);
+    await lib.loadAll(); // must NOT throw despite the broken author dir
+
+    assert.equal(lib.list('author').length, 0, 'broken author dir yields no entries, not a crash');
+    assert.ok(lib.get('section', 'front-matter')?.content?.includes('FRONT'),
+      'a later kind still loads after an earlier kind failed');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('LibraryService reload() re-reads disk', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-library-'));
   try {

@@ -85,7 +85,16 @@ export class LibraryService {
     out: Map<string, LibraryEntryFull>,
   ): Promise<void> {
     if (!existsSync(dir)) return;
-    const items = await readdir(dir, { withFileTypes: true });
+    let items;
+    try {
+      items = await readdir(dir, { withFileTypes: true });
+    } catch (err) {
+      // Per-dir fail-soft: an unreadable dir (e.g. an overlay subdir with the
+      // wrong ownership) must not abort loading of other kinds or their
+      // built-ins — skip just this dir and continue.
+      console.warn(`  ⚠ Library: could not read ${kind} dir (${source}) — skipping`, err);
+      return;
+    }
     for (const item of items) {
       try {
         if (kind === 'pipeline') {

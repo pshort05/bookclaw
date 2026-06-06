@@ -60,10 +60,12 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
     join(ROOT_DIR, 'workspace', 'library'),
     gw.skills,
   );
-  // Fail-soft (project convention): a library load failure — e.g. an unreadable
-  // overlay dir under a freshly created host bind-mount before deploy.sh's chown
-  // runs — must not abort startup. Degrade to whatever loaded (built-ins, or an
-  // empty library) and continue.
+  // Fail-soft (project convention): a library load failure must not abort
+  // startup. loadKind() is the primary boundary — it isolates per-dir and
+  // per-item failures so one unreadable overlay dir (e.g. wrong ownership under
+  // a fresh host bind-mount before deploy.sh's chown) can't drop other kinds or
+  // their built-ins. This try/catch is a backstop for anything unforeseen;
+  // either way we degrade to whatever loaded and continue.
   try {
     await gw.library.loadAll();
     console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/genres/pipelines/sections + skills)`);
