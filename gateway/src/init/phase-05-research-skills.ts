@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, renameSync } from 'fs';
 import { ResearchGate } from '../services/research.js';
 import { SkillLoader } from '../skills/loader.js';
 import { AuthorOSService } from '../services/author-os.js';
+import { LibraryService } from '../services/library.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -47,6 +48,14 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   const premiumCount = gw.skills.getPremiumSkillCount();
   const premiumLabel = premiumCount > 0 ? `, ${premiumCount} premium ★` : '';
   console.log(`  ✓ Skills: ${gw.skills.getLoadedCount()} loaded (${gw.skills.getAuthorSkillCount()} author-specific${premiumLabel})`);
+
+  gw.library = new LibraryService(
+    join(ROOT_DIR, 'library'),
+    join(ROOT_DIR, 'workspace', 'library'),
+    gw.skills,
+  );
+  await gw.library.loadAll();
+  console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/genres/pipelines/sections + skills)`);
 
   // ── Phase 6a: Auto-generate SKILLS.txt reference file ──
   await gw.writeSkillsReference(ROOT_DIR);
