@@ -146,8 +146,12 @@ let them opt in.
    book's `templates/pipeline.json` at run time.
 3. **The skills overlay landed as global.** #1 built `workspace/skills/`
    overriding built-ins globally. Books want a per-book skills snapshot — same
-   override mechanism, narrower (per-book) scope. The global overlay can remain
-   as a third tier or be folded into the library; decide during Phase 1.
+   override mechanism, narrower (per-book) scope. **Decided in Phase 1
+   (2026-06-06): folded into the library.** The user overlay moved
+   `workspace/skills/` → `workspace/library/skills/` (one-time fail-soft boot
+   migration in `init/phase-05`); built-in skills stay baked at repo `skills/`
+   (moving the tree would churn premium gitignore / Dockerfile / SKILLS.txt for
+   no gain). Per-book scoping comes when book snapshots land (Phase 2).
 4. **Two edit scopes, not one.** Editing a *library* template affects future
    books; editing a *book's copy* affects only that book. The #1 editor must
    surface both (and the re-pull action). This is the built-in/overlay pattern
@@ -410,19 +414,38 @@ Each phase is independently shippable and verifiable.
   present on the host bind-mount, `docker inspect` shows the bind. (Local smoke +
   API tests still need a free `:3847`; unit 34/34 + marker stamp/idempotency were
   verified locally.)
-- **Phase 1 — Library (read side).** Built-in library dir + `LibraryService`
-  with built-in + user overlay and `reload()` (clone the `SkillLoader` pattern);
-  define template kinds (author, genre, pipeline, section). API to list/read
-  library templates. *Verify:* unit test override-by-name; API lists templates.
+- **Phase 1 — Library (read side).** *(Implemented 2026-06-06 on branch
+  `feat/book-container-phase-1-library`; pending Mercury deploy + acceptance.)*
+  Built-in `library/` dir (authors/genres/pipelines/sections, baked at
+  `/app/library`) + `LibraryService` with built-in + `workspace/library/` user
+  overlay and `reload()` (clones the `SkillLoader` pattern); five template kinds
+  (author, genre, pipeline, section, skill — skills delegated to `SkillLoader`).
+  Read API `GET /api/library[/:kind[/:name]]`. The 6 static project templates
+  were lifted to data via `exportBuiltinPipelines()` (committed
+  `library/pipelines/*.json`, drift-guarded by a unit test) so they are
+  selectable; `novel-pipeline` ships as a `dynamic:true` descriptor (full
+  data-expansion deferred to Phase 3). The skills overlay was folded in (see
+  "collides with" #3). Plan + status:
+  `docs/superpowers/plans/2026-06-06-book-container-phase-1-library.md`,
+  `docs/BOOK-CONTAINER-PHASE-1-STATUS.md`. *Verified:* unit tests
+  override-by-name + reload + pipeline drift guard + migration; API lists
+  templates; `tsc` clean. *Deferred to Phase 3:* the engine still reads the
+  hardcoded `PROJECT_TEMPLATES` (the JSON is a parallel copy kept in sync by the
+  drift guard until Phase 3 deletes the constants), and `novel-pipeline.json` is
+  a placeholder unguarded by the drift test.
 - **Phase 2 — Book entity + snapshot-on-create + version gate.** `book.json`
   manifest with `schemaVersion` + app provenance; `BookService.create()`
   snapshots resolved templates into `books/<slug>/templates/`; the compatibility
   gate in `BookService.open()` (range check → normal / read-only / quarantine);
   migration of existing soul + projects. The migration framework (ordered
   `vN→vN+1` chains + pre-migration directory backup) lands here or as a thin
-  Phase 2b. *Verify:* create a book → templates copied + manifest correct;
-  unit tests for the gate (too-old → quarantine, too-new → read-only, in-range →
-  open) and for snapshot + manifest; migration leaves old outputs readable.
+  Phase 2b. **Includes the "New Book" page** — a creation UI that lists library
+  components per kind and lets the author select which to pull into the new book
+  (default = pull all); this is the surface that consumes the Phase 1 read API.
+  (Owner ask, 2026-06-06.) *Verify:* create a book → templates copied + manifest
+  correct; unit tests for the gate (too-old → quarantine, too-new → read-only,
+  in-range → open) and for snapshot + manifest; migration leaves old outputs
+  readable.
 - **Phase 3 — Per-book wiring.** `SoulService` reads the active book's
   `templates/author/`; `ProjectEngine` reads the book's
   `templates/pipeline.json` (pipelines-as-data) instead of the hardcoded

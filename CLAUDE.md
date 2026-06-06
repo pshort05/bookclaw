@@ -158,6 +158,7 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 - `workspace/memory/` — conversation history, book bible, summaries, lessons, preferences
 - `workspace/projects/<id>/` — project outputs (markdown per step + compiled DOCX/EPUB)
 - `workspace/documents/` — uploaded large manuscripts (>15K words); excerpts get sent to AI, full text stays on disk
+- `workspace/library/` — user template overlay (authors/genres/pipelines/sections/skills) read by `LibraryService`; overrides the built-in `library/` (baked at `/app/library`) by name, mirroring the skills overlay. The user **skills** overlay moved here from `workspace/skills/` (book-container Phase 1; one-time fail-soft boot migration in `init/phase-05`). See [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md)
 - `workspace/.config/` — `personas.json`, `projects-state.json` (persistent state)
 - `workspace/.activity/` — universal activity log (JSONL), surfaced to dashboard
 - `workspace/.audit/` — security audit log (JSONL)
