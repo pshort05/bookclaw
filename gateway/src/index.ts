@@ -35,6 +35,7 @@ import { SandboxGuard } from './security/sandbox.js';
 import { InjectionDetector } from './security/injection.js';
 import { SkillLoader } from './skills/loader.js';
 import { LibraryService } from './services/library.js';
+import { BookService } from './services/book.js';
 import { AuthorOSService } from './services/author-os.js';
 import { TTSService } from './services/tts.js';
 import { ImageGenService } from './services/image-gen.js';
@@ -160,6 +161,7 @@ class BookClawGateway {
   // Skills, goals & bridges
   public skills!: SkillLoader;
   public library!: LibraryService;
+  public books!: BookService;
   public authorOS!: AuthorOSService;
   public tts!: TTSService;
   public imageGen!: ImageGenService;
@@ -961,6 +963,7 @@ class BookClawGateway {
       sandbox: this.sandbox,
       skills: this.skills,
       library: this.library,
+      books: this.books,
       authorOS: this.authorOS,
       tts: this.tts,
       personas: this.personas,

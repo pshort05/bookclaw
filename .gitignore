@@ -32,6 +32,7 @@ workspace/.vault/
 workspace/.bookclaw/
 workspace/skills/
 workspace/library/
+workspace/books/
 *.log
 .DS_Store
 nul

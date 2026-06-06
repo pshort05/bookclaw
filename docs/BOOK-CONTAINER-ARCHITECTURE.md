@@ -433,19 +433,27 @@ Each phase is independently shippable and verifiable.
   hardcoded `PROJECT_TEMPLATES` (the JSON is a parallel copy kept in sync by the
   drift guard until Phase 3 deletes the constants), and `novel-pipeline.json` is
   a placeholder unguarded by the drift test.
-- **Phase 2 — Book entity + snapshot-on-create + version gate.** `book.json`
-  manifest with `schemaVersion` + app provenance; `BookService.create()`
-  snapshots resolved templates into `books/<slug>/templates/`; the compatibility
-  gate in `BookService.open()` (range check → normal / read-only / quarantine);
-  migration of existing soul + projects. The migration framework (ordered
-  `vN→vN+1` chains + pre-migration directory backup) lands here or as a thin
-  Phase 2b. **Includes the "New Book" page** — a creation UI that lists library
-  components per kind and lets the author select which to pull into the new book
-  (default = pull all); this is the surface that consumes the Phase 1 read API.
-  (Owner ask, 2026-06-06.) *Verify:* create a book → templates copied + manifest
-  correct; unit tests for the gate (too-old → quarantine, too-new → read-only,
-  in-range → open) and for snapshot + manifest; migration leaves old outputs
-  readable.
+- **Phase 2 — Book entity + snapshot-on-create + version gate.** *(Implemented
+  **lean** 2026-06-06; pending Mercury deploy + click-through acceptance.)*
+  `book-types.ts` (`BOOK_SCHEMA_VERSION=1`, `slugify`, `classifyVersion`);
+  `BookService.create()` snapshots resolved library templates into
+  `workspace/books/<slug>/templates/` (author/genre/pipeline/sections) + a
+  `book.json` manifest; `list()`/`open()` apply the compatibility gate (in-range
+  → ok, too-old → quarantine, too-new → read-only). API `GET /api/books`,
+  `GET /api/books/:slug`, `POST /api/books`. **New Book page** (dashboard "Books"
+  panel) lists books with gate-status badges and creates one by selecting library
+  components. Plan + status:
+  `docs/superpowers/plans/2026-06-06-book-container-phase-2-book-entity.md`,
+  `docs/BOOK-CONTAINER-PHASE-2-STATUS.md`. *Verified:* unit tests for slug, the
+  gate (too-old/too-new/in-range via `classifyVersion`, `list`, `open`), and
+  create→snapshot+manifest (incl. genre-less path + dedup); API contract tests.
+  **Deferred (lean):** the migration *runners* (ordered `vN→vN+1` chains +
+  pre-migration backup + "upgrade book" command/UI) and existing-soul/project
+  migration — no v2 schema exists and the workspace is fresh (nothing to
+  migrate); the version *gate* still ships. **Also deferred:** snapshotting
+  **skills** into the book (skills only matter once injected into a book's
+  pipeline — Phase 3/4). Books are stored but do **not** drive generation yet
+  (Phase 3).
 - **Phase 3 — Per-book wiring.** `SoulService` reads the active book's
   `templates/author/`; `ProjectEngine` reads the book's
   `templates/pipeline.json` (pipelines-as-data) instead of the hardcoded

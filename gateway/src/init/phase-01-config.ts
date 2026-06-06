@@ -55,7 +55,7 @@ async function stampWorkspaceMarker(): Promise<void> {
   }
 }
 
-async function appVersion(): Promise<string> {
+export async function appVersion(): Promise<string> {
   try {
     const pkg = JSON.parse(await fs.readFile(join(ROOT_DIR, 'package.json'), 'utf-8'));
     return pkg.version ?? 'unknown';

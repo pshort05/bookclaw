@@ -15,12 +15,13 @@ import { loadDocuments } from './panels/library.js';
 import { loadHQ } from './panels/hq.js';
 import { loadHomeStats, loadActivity } from './panels/home.js';
 import { loadAuthoring } from './panels/authoring.js';
+import { loadBooks } from './panels/books.js';
 import './panels/chat.js';
 
 // ================================================================
 // NAVIGATION
 // ================================================================
-var panelTitles = { home: 'Home', hq: 'Author HQ', projects: 'Projects', personas: 'Personas', library: 'Library', settings: 'Settings', authoring: 'Authoring' };
+var panelTitles = { home: 'Home', hq: 'Author HQ', projects: 'Projects', personas: 'Personas', library: 'Library', books: 'Books', settings: 'Settings', authoring: 'Authoring' };
 var navItems = document.querySelectorAll('.nav-item');
 
 // Exported: home + library panels call switchPanel to navigate.
@@ -65,6 +66,8 @@ export function switchPanel(name) {
     loadHQ();
   } else if (name === 'authoring') {
     loadAuthoring();
+  } else if (name === 'books') {
+    loadBooks();
   }
 }
 

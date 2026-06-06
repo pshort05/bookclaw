@@ -4,6 +4,8 @@ import { ResearchGate } from '../services/research.js';
 import { SkillLoader } from '../skills/loader.js';
 import { AuthorOSService } from '../services/author-os.js';
 import { LibraryService } from '../services/library.js';
+import { BookService } from '../services/book.js';
+import { appVersion } from './phase-01-config.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -72,6 +74,14 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   } catch (err) {
     console.warn(`  ⚠ Library: load failed, continuing with degraded library — ${(err as Error)?.message || err}`);
   }
+
+  gw.books = new BookService(
+    join(ROOT_DIR, 'workspace', 'books'),
+    gw.library,
+    await appVersion(),
+  );
+  await gw.books.initialize();
+  console.log(`  ✓ Books: ${gw.books.list().length} book(s)`);
 
   // ── Phase 6a: Auto-generate SKILLS.txt reference file ──
   await gw.writeSkillsReference(ROOT_DIR);

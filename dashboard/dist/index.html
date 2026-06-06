@@ -631,6 +631,10 @@ textarea { resize: vertical; min-height: 60px; }
       <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
       <span class="nav-label">Library</span>
     </div>
+    <div class="nav-item" data-panel="books">
+      <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+      <span class="nav-label">Books</span>
+    </div>
     <div class="nav-item" data-panel="settings">
       <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       <span class="nav-label">Settings</span>
@@ -873,6 +877,11 @@ textarea { resize: vertical; min-height: 60px; }
          PANEL: AUTHORING (prompts + skills editor) — rendered by panels/authoring.js
          ═══════════════════════════════ -->
     <div class="panel" id="panel-authoring"></div>
+
+    <!-- ═══════════════════════════════
+         PANEL: BOOKS (book-container Phase 2) — rendered by panels/books.js
+         ═══════════════════════════════ -->
+    <div class="panel" id="panel-books"></div>
 
     <!-- ═══════════════════════════════
          PANEL: SETTINGS
@@ -4665,6 +4674,99 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     });
   }
 
+  // dashboard/src/panels/books.js
+  function statusBadge(status) {
+    const map = { ok: "var(--success)", readonly: "var(--info)", quarantined: "var(--danger)" };
+    const color = map[status] || "var(--muted)";
+    return '<span class="badge" style="font-size:9px;background:transparent;border:1px solid ' + color + ";color:" + color + ';">' + esc(status) + "</span>";
+  }
+  async function loadBooks() {
+    const root = document.getElementById("panel-books");
+    if (!root) return;
+    root.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><h3 style="margin:0;flex:1;">Books</h3><button class="small" id="bkNew">+ New Book</button></div><div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A book is a self-contained container. Creating one snapshots the chosen library templates into the book; editing the library later does not change existing books (re-pull comes in a later phase). Books do not drive generation yet.</div><div id="bkList"></div><div id="bkCreate" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div>';
+    root.querySelector("#bkNew").addEventListener("click", () => openCreate());
+    await renderList2();
+  }
+  async function renderList2() {
+    const el = document.getElementById("bkList");
+    if (!el) return;
+    let data = { books: [] };
+    try {
+      data = await api("GET", "/api/books");
+    } catch (e) {
+      el.innerHTML = '<div style="color:var(--danger);">Failed to load books: ' + esc(e.message) + "</div>";
+      return;
+    }
+    if (!data.books.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No books yet. Click \u201CNew Book\u201D to create one.</div>';
+      return;
+    }
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Created</th></tr>';
+    for (const b2 of data.books) {
+      html += '<tr style="border-top:1px solid var(--border);"><td style="padding:6px 8px;">' + esc(b2.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b2.slug) + "</span></td><td>" + esc(b2.phase) + "</td><td>" + statusBadge(b2.status) + '</td><td style="color:var(--muted);">' + esc((b2.createdAt || "").slice(0, 10)) + "</td></tr>";
+    }
+    html += "</table>";
+    el.innerHTML = html;
+  }
+  async function openCreate() {
+    const box = document.getElementById("bkCreate");
+    if (!box) return;
+    box.style.display = "block";
+    box.innerHTML = '<div style="color:var(--muted);font-size:13px;">Loading library components\u2026</div>';
+    let lib;
+    try {
+      lib = await api("GET", "/api/library");
+    } catch (e) {
+      box.innerHTML = '<div style="color:var(--danger);">Failed to load library: ' + esc(e.message) + "</div>";
+      return;
+    }
+    const byKind = { author: [], genre: [], pipeline: [], section: [] };
+    (lib.entries || []).forEach((e) => {
+      if (byKind[e.kind]) byKind[e.kind].push(e);
+    });
+    const opts = (arr) => arr.map((e) => '<option value="' + esc(e.name) + '">' + esc(e.name) + " (" + esc(e.source) + ")</option>").join("");
+    const sectionChecks = byKind.section.map(
+      (e) => '<label style="display:block;font-size:13px;"><input type="checkbox" class="bkSection" value="' + esc(e.name) + '" checked> ' + esc(e.name) + "</label>"
+    ).join("") || '<span style="color:var(--muted);font-size:12px;">none</span>';
+    box.innerHTML = '<h4 style="margin:0 0 12px;">New Book</h4><div style="display:grid;grid-template-columns:120px 1fr;gap:10px 12px;max-width:560px;align-items:center;"><label>Title</label><input id="bkTitle" type="text" placeholder="My Novel" style="width:100%;"><label>Author</label><select id="bkAuthor">' + opts(byKind.author) + '</select><label>Genre</label><select id="bkGenre"><option value="">(none)</option>' + opts(byKind.genre) + '</select><label>Pipeline</label><select id="bkPipeline">' + opts(byKind.pipeline) + '</select><label style="align-self:start;">Sections</label><div>' + sectionChecks + '</div></div><div style="margin-top:14px;display:flex;gap:8px;"><button class="small" id="bkCreateBtn">Create book</button><button class="small secondary" id="bkCancel">Cancel</button></div><div id="bkErr" style="color:var(--danger);font-size:12px;margin-top:8px;"></div>';
+    box.querySelector("#bkCancel").addEventListener("click", () => {
+      box.style.display = "none";
+      box.innerHTML = "";
+    });
+    box.querySelector("#bkCreateBtn").addEventListener("click", () => submitCreate(box));
+  }
+  async function submitCreate(box) {
+    const title = box.querySelector("#bkTitle").value.trim();
+    const author = box.querySelector("#bkAuthor").value;
+    const genre = box.querySelector("#bkGenre").value || null;
+    const pipeline = box.querySelector("#bkPipeline").value;
+    const sections = Array.prototype.slice.call(box.querySelectorAll(".bkSection:checked")).map((c) => c.value);
+    const err = box.querySelector("#bkErr");
+    err.textContent = "";
+    if (!title) {
+      err.textContent = "Title is required.";
+      return;
+    }
+    if (!author) {
+      err.textContent = "Pick an author (the library has none \u2014 create one first).";
+      return;
+    }
+    if (!pipeline) {
+      err.textContent = "Pick a pipeline.";
+      return;
+    }
+    try {
+      const res = await api("POST", "/api/books", { title, author, genre, pipeline, sections });
+      showToast("Created book: " + res.book.title, "success");
+      box.style.display = "none";
+      box.innerHTML = "";
+      await renderList2();
+    } catch (e) {
+      err.textContent = "Create failed: " + e.message;
+    }
+  }
+
   // dashboard/src/panels/chat.js
   function addChatMsg(text, role) {
     var el = document.getElementById("chatMessages");
@@ -4723,7 +4825,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   });
 
   // dashboard/src/main.js
-  var panelTitles = { home: "Home", hq: "Author HQ", projects: "Projects", personas: "Personas", library: "Library", settings: "Settings", authoring: "Authoring" };
+  var panelTitles = { home: "Home", hq: "Author HQ", projects: "Projects", personas: "Personas", library: "Library", books: "Books", settings: "Settings", authoring: "Authoring" };
   var navItems = document.querySelectorAll(".nav-item");
   function switchPanel(name) {
     state.currentPanel = name;
@@ -4768,6 +4870,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       loadHQ();
     } else if (name === "authoring") {
       loadAuthoring();
+    } else if (name === "books") {
+      loadBooks();
     }
   }
   navItems.forEach(function(n) {

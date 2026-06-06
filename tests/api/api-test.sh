@@ -207,6 +207,19 @@ body_has   "/api/library/pipeline/book-planning" '"steps"' "library entry return
 has_status "/api/library/nope" "400" "library unknown kind -> 400"
 has_status "/api/library/pipeline/no-such" "404" "library unknown name -> 404"
 
+# ── Books: read + create API (book-container Phase 2) ──
+# Hermetic: only the missing-title 400 path is exercised, so no book is written
+# to disk. The valid-create path is covered by the unit tests.
+log ""
+log "books (read + create)"
+has_status "/api/books" "200" "books list -> 200"
+body_has   "/api/books" '"books"' "books list shape"
+has_status "/api/books/no-such-book" "404" "unknown book -> 404"
+bc_code="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{}' -X POST "$BASE/api/books")"
+[ "$bc_code" = "400" ] \
+  && pass "create without title -> 400" \
+  || fail "create without title should be 400 (got $bc_code)"
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

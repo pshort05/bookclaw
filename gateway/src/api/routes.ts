@@ -24,6 +24,7 @@ import { mountKnowledge } from './routes/knowledge.routes.js';
 import { mountWebsite } from './routes/website.routes.js';
 import { mountAuthoring } from './routes/authoring.routes.js';
 import { mountLibrary } from './routes/library.routes.js';
+import { mountBooks } from './routes/books.routes.js';
 
 /**
  * Mounts all REST API routes. This is a thin composition root: each feature
@@ -62,4 +63,5 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountAuthoring(app, gateway, baseDir);
   // Read-only template library (book-container Phase 1) — see ./routes/library.routes.ts
   mountLibrary(app, gateway, baseDir);
+  mountBooks(app, gateway, baseDir);
 }
