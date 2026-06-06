@@ -9,7 +9,7 @@ import { safePath } from './_shared.js';
  * **skills** (SKILL.md) from the dashboard, with hot-reload — no redeploy.
  *
  * Persistence model: built-in skills (shipped in skills/) are read-only; user
- * edits/new skills are written to the persisted workspace/skills/** overlay,
+ * edits/new skills are written to the persisted workspace/library/skills/** overlay,
  * which SkillLoader merges over the built-ins by name. Prompt files already
  * live in workspace/soul/. All writes are path-whitelisted via safePath; these
  * are internal prompt files (no external side effect, so no confirmation gate).
