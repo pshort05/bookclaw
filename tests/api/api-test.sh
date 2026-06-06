@@ -197,6 +197,16 @@ pc() { code "${AUTH[@]}" -H 'Content-Type: application/json' "$@"; }
 [ "$(pc -X POST "$BASE/api/authoring/reload")" = "200" ] \
   && pass "authoring reload -> 200" || fail "authoring reload should be 200"
 
+# ── Library: read-only template API (book-container Phase 1) ──
+log ""
+log "library (read-only templates)"
+has_status "/api/library" "200" "library list -> 200"
+body_has   "/api/library" '"pipeline"' "library list reports the pipeline kind"
+body_has   "/api/library/pipeline" 'book-planning' "library/pipeline lists book-planning"
+body_has   "/api/library/pipeline/book-planning" '"steps"' "library entry returns its steps"
+has_status "/api/library/nope" "400" "library unknown kind -> 400"
+has_status "/api/library/pipeline/no-such" "404" "library unknown name -> 404"
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

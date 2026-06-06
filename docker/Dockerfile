@@ -44,6 +44,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copy non-TypeScript assets
 COPY skills ./skills
+COPY library ./library
 COPY config ./config
 COPY workspace ./workspace
 # Dashboard comes from the builder so the freshly-built dist/ is shipped
