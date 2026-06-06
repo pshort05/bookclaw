@@ -17,7 +17,7 @@ import { safePath } from './_shared.js';
 export function mountAuthoring(app: Application, gateway: any, baseDir: string): void {
   const services = gateway.getServices();
   const soulDir = join(baseDir, 'workspace', 'soul');
-  const wsSkillsDir = join(baseDir, 'workspace', 'skills');
+  const wsSkillsDir = join(baseDir, 'workspace', 'library', 'skills');
 
   const PROMPT_FILES = ['SOUL.md', 'STYLE-GUIDE.md', 'VOICE-PROFILE.md', 'PERSONALITY.md'];
   const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'ops'];

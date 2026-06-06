@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync, renameSync } from 'fs';
 import { ResearchGate } from '../services/research.js';
 import { SkillLoader } from '../skills/loader.js';
 import { AuthorOSService } from '../services/author-os.js';
@@ -10,6 +10,25 @@ import type { BookClawGateway } from '../index.js';
  * Phases 5, 6, 6a, 6b: research gate, skills, SKILLS.txt reference, and
  * Author OS auto-discovery (synthetic skills registered when present).
  */
+/**
+ * One-time migration: the user skill overlay moved from workspace/skills/ to
+ * workspace/library/skills/ when skills were folded into the template library
+ * (book-container Phase 1). Move the legacy dir once; never clobber the new one.
+ * Fail-soft: a migration error must not block startup.
+ */
+export function migrateSkillOverlay(workspaceDir: string): void {
+  const oldDir = join(workspaceDir, 'skills');
+  const newDir = join(workspaceDir, 'library', 'skills');
+  if (!existsSync(oldDir) || existsSync(newDir)) return;
+  try {
+    mkdirSync(join(workspaceDir, 'library'), { recursive: true });
+    renameSync(oldDir, newDir);
+    console.log('  ✓ Migrated skill overlay workspace/skills → workspace/library/skills');
+  } catch (err) {
+    console.warn(`  ⚠ Skill-overlay migration skipped: ${(err as Error)?.message || err}`);
+  }
+}
+
 export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> {
   // ── Phase 5: Research Gate ──
   gw.research = new ResearchGate(
@@ -22,7 +41,8 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   // ── Phase 6: Skills ──
   // Built-in skills (baked, read-only) + a user overlay under the persisted
   // workspace volume that overrides built-ins by name (survives Docker rebuilds).
-  gw.skills = new SkillLoader(join(ROOT_DIR, 'skills'), gw.permissions, join(ROOT_DIR, 'workspace', 'skills'));
+  migrateSkillOverlay(join(ROOT_DIR, 'workspace'));
+  gw.skills = new SkillLoader(join(ROOT_DIR, 'skills'), gw.permissions, join(ROOT_DIR, 'workspace', 'library', 'skills'));
   await gw.skills.loadAll();
   const premiumCount = gw.skills.getPremiumSkillCount();
   const premiumLabel = premiumCount > 0 ? `, ${premiumCount} premium ★` : '';
