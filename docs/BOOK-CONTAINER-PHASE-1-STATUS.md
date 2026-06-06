@@ -25,6 +25,8 @@ All implementation tasks (1–7) complete and reviewed (spec + code-quality) per
 
 **Code review (2026-06-06):** ran `/code-review` high-effort over the whole branch — no Critical/Important bugs. Applied 3 findings in `6ad271c`: (1) fail-soft `gw.library.loadAll()` (unreadable overlay dir degrades instead of crashing init); (2) `migrateSkillOverlay` warns instead of silently orphaning when both old+new overlay dirs exist; (3) collapsed the repeated kind-union literal in `library.ts` to `FILE_KINDS`/`FileKind`. Refuted (non-issues): premium-skill exposure (parity with existing `/api/skills`), `renameSync` EXDEV (whole-`workspace/` is one bind-mount), exporter 0-value drop (no template uses 0). One pre-existing finding tracked in TODO: `heartbeat.routes.ts:393` writes generated skills to the baked `skills/` dir, not the overlay (Phase 4).
 
+**Code review 2nd pass (2026-06-06):** re-ran `/code-review` over the full branch incl. the fix commit — confirmed the fixes sound, no Critical/Important. Applied finding #1 in `7a5c8fa`: per-dir fail-soft in `LibraryService.loadKind` (wraps `readdir` so one unreadable overlay dir can't abort other kinds/their built-ins; `loadKind` is now the fail-soft boundary, the phase-05 try/catch a documented backstop) + a deterministic regression test (authors-path-as-file → ENOTDIR → other kinds still load). 40/40 unit. Remaining flagged items all deferred/tracked (dynamic-proxy → Phase 3; heartbeat skill writer → TODO/Phase 4) or declined (house-style dup).
+
 **Branch decision (2026-06-06): KEEP AS-IS.** Owner chose not to merge yet. Branch `feat/book-container-phase-1-library` (11 commits) is preserved; main is unchanged. Nothing deployed. Owner will merge/push/deploy when ready.
 
 ## How to resume
