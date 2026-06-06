@@ -11,6 +11,9 @@ config/user.json
 build_now
 .build-logs/
 
+# Transient commit message consumed + removed by ./push.sh (not tracked)
+commit_message
+
 # Workspace runtime data (user-generated, not code)
 workspace/projects/
 workspace/research/
@@ -25,6 +28,10 @@ workspace/memory/
 workspace/.config/
 workspace/.activity/
 workspace/test-upload.txt
+workspace/.vault/
+workspace/.bookclaw/
+workspace/skills/
+workspace/library/
 *.log
 .DS_Store
 nul
