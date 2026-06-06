@@ -37,8 +37,12 @@ interface SkillCatalogLike {
   getSkillByName(name: string): { content: string; description: string; source: LibrarySource } | undefined;
 }
 
-/** Directory-backed kinds (the file kinds); skill is handled via delegation. */
-const DIR_LAYOUT: Record<'author' | 'genre' | 'pipeline' | 'section', string> = {
+/** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
+const FILE_KINDS = ['author', 'genre', 'pipeline', 'section'] as const;
+type FileKind = (typeof FILE_KINDS)[number];
+
+/** Subdirectory under the library root for each file-backed kind. */
+const DIR_LAYOUT: Record<FileKind, string> = {
   author: 'authors',
   genre: 'genres',
   pipeline: 'pipelines',
@@ -50,7 +54,7 @@ export class LibraryService {
   private workspaceDir: string;
   private skills: SkillCatalogLike;
   // kind -> (name -> full entry). Skills are not cached here (always live from SkillLoader).
-  private entries: Map<'author' | 'genre' | 'pipeline' | 'section', Map<string, LibraryEntryFull>> = new Map();
+  private entries: Map<FileKind, Map<string, LibraryEntryFull>> = new Map();
 
   constructor(builtinDir: string, workspaceDir: string, skills: SkillCatalogLike) {
     this.builtinDir = builtinDir;
@@ -60,7 +64,7 @@ export class LibraryService {
 
   async loadAll(): Promise<void> {
     this.entries.clear();
-    for (const kind of ['author', 'genre', 'pipeline', 'section'] as const) {
+    for (const kind of FILE_KINDS) {
       const byName = new Map<string, LibraryEntryFull>();
       // built-in first, then workspace overlay overrides by name.
       await this.loadKind(kind, join(this.builtinDir, DIR_LAYOUT[kind]), 'builtin', byName);
@@ -75,7 +79,7 @@ export class LibraryService {
   }
 
   private async loadKind(
-    kind: 'author' | 'genre' | 'pipeline' | 'section',
+    kind: FileKind,
     dir: string,
     source: LibrarySource,
     out: Map<string, LibraryEntryFull>,
@@ -116,14 +120,13 @@ export class LibraryService {
   /** Catalog rows for one kind, or all kinds when kind is omitted. */
   list(kind?: LibraryKind): LibraryEntry[] {
     if (kind === 'skill') return this.listSkills();
+    // After the skill branch, a specified kind is a FileKind; the Map lookup
+    // returns undefined for anything not loaded, so no extra guard is needed.
     if (kind) {
-      if (kind === 'author' || kind === 'genre' || kind === 'pipeline' || kind === 'section') {
-        return Array.from(this.entries.get(kind)?.values() ?? []).map((e) => this.toRow(e));
-      }
-      return [];
+      return Array.from(this.entries.get(kind)?.values() ?? []).map((e) => this.toRow(e));
     }
     const all: LibraryEntry[] = [];
-    for (const k of ['author', 'genre', 'pipeline', 'section'] as const) {
+    for (const k of FILE_KINDS) {
       all.push(...Array.from(this.entries.get(k)?.values() ?? []).map((e) => this.toRow(e)));
     }
     all.push(...this.listSkills());
@@ -136,10 +139,7 @@ export class LibraryService {
       const s = this.skills.getSkillByName(name);
       return s ? { kind: 'skill', name, source: s.source, description: s.description, content: s.content } : undefined;
     }
-    if (kind === 'author' || kind === 'genre' || kind === 'pipeline' || kind === 'section') {
-      return this.entries.get(kind)?.get(name);
-    }
-    return undefined;
+    return this.entries.get(kind)?.get(name);
   }
 
   getLoadedCount(): number {

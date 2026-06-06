@@ -20,7 +20,13 @@ import type { BookClawGateway } from '../index.js';
 export function migrateSkillOverlay(workspaceDir: string): void {
   const oldDir = join(workspaceDir, 'skills');
   const newDir = join(workspaceDir, 'library', 'skills');
-  if (!existsSync(oldDir) || existsSync(newDir)) return;
+  if (!existsSync(oldDir)) return;
+  if (existsSync(newDir)) {
+    // Never clobber the new overlay. Warn so the orphaned legacy dir is visible
+    // rather than silently dropped (its skills are no longer loaded).
+    console.warn('  ⚠ Skill overlay: legacy workspace/skills/ left in place because workspace/library/skills/ already exists — those legacy skills are NOT loaded; merge them manually if needed.');
+    return;
+  }
   try {
     mkdirSync(join(workspaceDir, 'library'), { recursive: true });
     renameSync(oldDir, newDir);
@@ -54,8 +60,16 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
     join(ROOT_DIR, 'workspace', 'library'),
     gw.skills,
   );
-  await gw.library.loadAll();
-  console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/genres/pipelines/sections + skills)`);
+  // Fail-soft (project convention): a library load failure — e.g. an unreadable
+  // overlay dir under a freshly created host bind-mount before deploy.sh's chown
+  // runs — must not abort startup. Degrade to whatever loaded (built-ins, or an
+  // empty library) and continue.
+  try {
+    await gw.library.loadAll();
+    console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/genres/pipelines/sections + skills)`);
+  } catch (err) {
+    console.warn(`  ⚠ Library: load failed, continuing with degraded library — ${(err as Error)?.message || err}`);
+  }
 
   // ── Phase 6a: Auto-generate SKILLS.txt reference file ──
   await gw.writeSkillsReference(ROOT_DIR);
