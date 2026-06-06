@@ -45,6 +45,8 @@ cover at minimum:
 - [ ] **Outbound egress posture.** The AI router and `ResearchGate` make outbound calls to Anthropic / Gemini / OpenAI / DeepSeek / OpenRouter / allowlisted research domains. Confirm `helmet`-level CSP doesn't accidentally weaken egress controls. (Note: `connectSrc` was tightened to `'self'` on 2026-05-30 — but CSP governs the *browser* dashboard, not the server's own outbound AI/research calls, so this item is about the server-side egress path, not CSP.)
 ## Quick cleanups (minutes)
 
+- [ ] **Re-point the AI-generated-skill writer to the workspace overlay.** `gateway/src/api/routes/heartbeat.routes.ts:393` saves generated `SKILL.md` into the **baked built-in** `skills/` dir (`join(baseDir,'skills')`), so those skills don't survive a Docker rebuild and bypass the overlay model. Since book-container Phase 1 made `workspace/library/skills/` the canonical user-skill writer path, re-point this to the overlay (do it alongside the Phase 4 editor write-path work). Pre-existing; surfaced by the Phase 1 final review (2026-06-06).
+
 
 ## Investigations (under an hour each)
 
