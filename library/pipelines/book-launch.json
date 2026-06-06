@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "name": "book-launch",
+  "label": "Book Launch",
+  "description": "Back cover blurb, Amazon description, keywords, categories, ad copy, and social media posts",
+  "steps": [
+    {
+      "label": "Back cover blurb",
+      "skill": "blurb-writer",
+      "taskType": "marketing",
+      "promptTemplate": "Write compelling book blurbs for: {{description}}\n\nCreate 3 versions:\n1. **Short tagline** (1 sentence): The elevator pitch\n2. **Back cover blurb** (150-200 words): The hook, the setup, the stakes, the question\n3. **Long blurb** (250-300 words): Expanded version with more character and world detail\n\nEach should:\n- Hook from the first line\n- Convey genre and tone immediately\n- End with a compelling question or stakes statement\n- NEVER reveal the ending\n- Match the expectations of the target genre audience"
+    },
+    {
+      "label": "Amazon book description",
+      "skill": "blurb-writer",
+      "taskType": "marketing",
+      "promptTemplate": "Create an Amazon-optimized book description for: {{description}}\n\nFormat with HTML tags Amazon supports:\n- <b>bold</b> for emphasis\n- <br> for line breaks\n- <i>italic</i> for titles and emphasis\n\nStructure:\n1. **Opening hook** (bold, attention-grabbing)\n2. **Character introduction** (who are they, what do they want)\n3. **Conflict & stakes** (what stands in the way, what happens if they fail)\n4. **Genre signals** (tropes, tone, comp titles: \"Perfect for fans of...\")\n5. **Call to action** (bold: \"Buy now\" or \"Start reading today\")\n\nAlso include a review quote template: \"___ ★★★★★\" format."
+    },
+    {
+      "label": "Amazon categories & keywords",
+      "skill": "research",
+      "taskType": "research",
+      "promptTemplate": "Research Amazon categories and keywords for: {{description}}\n\nProvide:\n1. **7 Keywords/phrases** (max 50 chars each): Research-backed keywords that readers search for. Mix specific tropes + genre terms + emotional hooks\n2. **2 BISAC categories**: The best-fit primary and secondary categories\n3. **Amazon browse categories**: 2-3 specific Amazon category paths (e.g., Kindle Store > Romance > Contemporary > New Adult)\n4. **BISAC codes**: The alphanumeric codes for the chosen categories\n\nExplain WHY each keyword/category was chosen — what search behavior does it target?"
+    },
+    {
+      "label": "Ad copy generation",
+      "skill": "ad-copy",
+      "taskType": "marketing",
+      "promptTemplate": "Create advertising copy for: {{description}}\n\n**Amazon Ads (AMS)**:\n- 3 headline variants (150 chars max each)\n- Focus on genre keywords and emotional hooks\n\n**Facebook/Meta Ads**:\n- 2 primary text variants (short, punchy)\n- 2 headline variants\n- Suggested audience targeting (interests, lookalike authors)\n\n**BookBub Featured Deal**:\n- 1 description (optimal for BookBub's format and audience)\n- Suggested deal price strategy\n\nEach variant should use a different angle: emotion, trope, comp title, question, urgency."
+    },
+    {
+      "label": "Social media launch posts",
+      "skill": "blurb-writer",
+      "taskType": "marketing",
+      "promptTemplate": "Create social media launch content for: {{description}}\n\n**Instagram/BookStagram** (3 posts):\n- Cover reveal post (caption + hashtags)\n- Launch day post\n- \"Why I wrote this book\" personal post\n\n**Twitter/X** (5 tweets):\n- Launch announcement\n- Logline tweet\n- Character introduction thread starter\n- Reader comp (\"If you loved X, you'll love...\")\n- Quote from the book (with formatting)\n\n**TikTok/BookTok** (2 video concepts):\n- Concept + script outline for each\n\n**Email newsletter**:\n- Launch announcement email (subject line + body)\n\nInclude relevant hashtags for each platform."
+    },
+    {
+      "label": "Launch checklist & timeline",
+      "skill": "format",
+      "taskType": "general",
+      "promptTemplate": "Create a book launch checklist and timeline for: {{description}}\n\n**Pre-Launch (4-6 weeks before)**:\n- ARC distribution, cover reveal timing, pre-order setup\n\n**Launch Week**:\n- Day-by-day social media schedule\n- Email sequence\n- Ad activation timeline\n\n**Post-Launch (2-4 weeks after)**:\n- Review solicitation, ad optimization, newsletter follow-up\n\nInclude specific actionable items with dates relative to launch day (L-30, L-14, L-7, L-Day, L+7, etc.)"
+    },
+    {
+      "label": "Book cover concepts",
+      "skill": "book-launch",
+      "taskType": "marketing",
+      "promptTemplate": "Generate 2 book cover concept ideas for: {{description}}\n\nFor each concept provide:\n1. **Visual description** — Detailed scene, composition, imagery, key visual elements\n2. **Typography recommendation** — Font style suggestions, title placement (top/center/bottom), author name placement\n3. **Color palette** — 3-5 hex color codes with mood/emotion reasoning\n4. **Comparable covers** — 2-3 bestselling covers in this genre with a similar style\n5. **AI image generation prompt** — A detailed, ready-to-use prompt for generating the cover art with AI (describe the image only, no text)\n\nMark the recommended concept clearly. Focus on genre-appropriate design that would stand out in Amazon thumbnail size."
+    }
+  ]
+}

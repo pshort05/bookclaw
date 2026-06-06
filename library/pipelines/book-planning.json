@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "name": "book-planning",
+  "label": "Book Planning",
+  "description": "Market analysis, premise development, characters, chapter outline, and synopsis",
+  "steps": [
+    {
+      "label": "Market & genre analysis",
+      "skill": "research",
+      "taskType": "research",
+      "promptTemplate": "Analyze the current market for this type of book: {{description}}\n\nResearch and report on:\n1. **Genre landscape**: Top-selling comparable titles in this genre/subgenre\n2. **Reader expectations**: What tropes, conventions, and beats does this genre demand?\n3. **Market gaps**: What's underserved? Where's the opportunity?\n4. **Comp titles**: Identify 3-5 comparable titles with why they're relevant\n5. **Target audience**: Demographics, reading habits, where they discover books\n6. **Commercial viability**: Honest assessment of market potential\n\nBe specific and actionable. This informs every decision that follows."
+    },
+    {
+      "label": "Develop premise",
+      "skill": "premise",
+      "taskType": "general",
+      "promptTemplate": "Develop a commercially viable premise for: {{description}}\n\nUsing the market analysis, create:\n1. **Logline**: 1-2 sentences that sell the book\n2. **What-If question**: The central hook\n3. **Core conflict**: Internal and external\n4. **Stakes**: What happens if the protagonist fails? (personal, professional, global)\n5. **Theme statement**: The book's deeper argument about life\n6. **Unique hook**: What makes THIS book stand out from the comp titles?\n7. **Genre promise**: What emotional experience are we delivering?\n\nMake this premise commercially compelling AND creatively exciting."
+    },
+    {
+      "label": "Character profiles",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "promptTemplate": "Create detailed character profiles for: {{description}}\n\nBuild out:\n**Protagonist**: Full name, age, backstory, motivation (want vs need), fatal flaw, emotional wound, strengths, appearance, speech patterns, character arc\n**Antagonist**: Motivation, backstory, why they believe they're right, how they challenge the protagonist\n**3-4 Supporting characters**: Name, role, relationship to protagonist, how they advance/challenge the arc\n\nEach character should feel real — contradictions, desires, fears. Write 800+ words total."
+    },
+    {
+      "label": "Chapter-by-chapter outline",
+      "skill": "outline",
+      "taskType": "outline",
+      "promptTemplate": "Create a detailed chapter-by-chapter outline for: {{description}}\n\nFor each chapter include:\n- **Chapter number & title**\n- **POV character**\n- **Key beats** (3-5 per chapter)\n- **Turning points** and revelations\n- **Tension level** (1-10)\n- **Chapter ending hook**\n\nStructure using three-act beats:\n- Act 1 (25%): Setup, inciting incident, debate/refusal\n- Act 2A (25%): Rising action, fun & games, midpoint shift\n- Act 2B (25%): Complications, all-is-lost moment\n- Act 3 (25%): Climax sequence, resolution\n\nTarget 20-30 chapters. Number EVERY chapter."
+    },
+    {
+      "label": "Synopsis generation",
+      "skill": "outline",
+      "taskType": "general",
+      "promptTemplate": "Generate professional synopses for: {{description}}\n\nCreate two versions:\n1. **One-page synopsis** (~500 words): Complete story arc including the ending. Professional query format.\n2. **Three-page synopsis** (~1500 words): Expanded with character arcs, key scenes, and emotional beats.\n\nBoth should:\n- Reveal the entire plot (including ending — this is for industry professionals)\n- Show the character's emotional journey\n- Demonstrate clear story structure\n- Be written in present tense, third person\n- Feel compelling to read, not just dutiful"
+    },
+    {
+      "label": "Review & refine plan",
+      "skill": "revise",
+      "taskType": "revision",
+      "promptTemplate": "Review the complete book plan we've built. Check for:\n\n1. **Plot holes**: Any logical gaps in the outline?\n2. **Character consistency**: Do motivations and arcs make sense?\n3. **Pacing issues**: Any dead zones or rushed sections in the outline?\n4. **Theme coherence**: Does every subplot reinforce the theme?\n5. **Commercial viability**: Does this match the market analysis findings?\n6. **Genre compliance**: Are all genre promises being fulfilled?\n\nProvide specific improvements, not vague suggestions. Reference chapter numbers and character names."
+    }
+  ]
+}

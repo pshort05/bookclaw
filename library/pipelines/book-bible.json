@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "book-bible",
+  "label": "Book Bible",
+  "description": "World-building, character bible, continuity tracker, themes, and style reference",
+  "steps": [
+    {
+      "label": "World-building document",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "promptTemplate": "Create a comprehensive world-building document for: {{description}}\n\nInclude:\n1. **Setting**: Physical environment, geography, climate, key locations with sensory details\n2. **Time period**: When does this take place? Historical/futuristic context\n3. **Social structures**: Power dynamics, social classes, political systems\n4. **Rules**: Laws of physics/magic, technology, what's possible and what isn't\n5. **Culture**: Customs, beliefs, languages, food, entertainment\n6. **History**: Key events that shaped this world before the story begins\n7. **Economy**: How do people earn a living? What's valuable?\n8. **Daily life**: What does an ordinary day look like for ordinary people?\n\nWrite 1000+ words. Be specific enough that a writer could maintain consistency across 80,000 words."
+    },
+    {
+      "label": "Character bible",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "promptTemplate": "Create deep character profiles for: {{description}}\n\nFor EACH major character (protagonist, antagonist, 3-4 supporting):\n- **Full name** and any nicknames\n- **Age, appearance** (specific: eye color, hair, height, distinguishing marks)\n- **Personality**: Myers-Briggs type, enneagram, core fear, core desire\n- **Backstory**: 200+ words of formative experiences\n- **Voice**: Speech patterns, vocabulary level, verbal tics, sentence style\n- **Arc**: Where they start → what changes → where they end\n- **Relationships**: Map to other characters with dynamic description\n- **Secrets**: What are they hiding? From whom?\n\nAlso create a **relationship web** showing how all characters connect."
+    },
+    {
+      "label": "Series continuity tracker",
+      "skill": "book-bible",
+      "taskType": "consistency",
+      "promptTemplate": "Create a continuity tracking document for: {{description}}\n\nThis is the master reference for maintaining consistency. Include:\n1. **Character tracking sheet**: Physical details, introduced in chapter X, status (alive/dead/missing)\n2. **Timeline**: Day-by-day chronology of events in the story\n3. **Location details**: Room layouts, distances between places, what's where\n4. **Object tracking**: Important items — who has them, where they are\n5. **Plot thread tracker**: Every promise/setup and where it's resolved\n6. **Name registry**: All proper nouns with consistent spelling\n7. **Rules reference**: Quick-lookup for world rules (magic costs, tech limits, etc.)\n\nFormat as a reference guide a writer can quickly scan while writing."
+    },
+    {
+      "label": "Theme & motif guide",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "promptTemplate": "Create a theme and motif guide for: {{description}}\n\nAnalyze and document:\n1. **Central theme**: What argument is this book making about human nature/life?\n2. **Supporting themes**: 2-3 secondary themes that reinforce the central one\n3. **Recurring motifs**: Images, objects, or situations that appear repeatedly\n4. **Symbolic elements**: What represents what? (settings, weather, objects, colors)\n5. **Theme per subplot**: How each subplot explores a facet of the theme\n6. **Thematic arc**: How the theme develops across the story's structure\n7. **Motif placement guide**: Where each motif should appear for maximum impact\n\nThis guide ensures every scene serves the deeper meaning of the book."
+    },
+    {
+      "label": "Style & tone reference",
+      "skill": "style-clone",
+      "taskType": "style_analysis",
+      "promptTemplate": "Create a style and tone reference guide for: {{description}}\n\nDocument the writing voice this book requires:\n1. **Tone**: Dark? Humorous? Lyrical? Sharp? Warm? Describe with examples\n2. **Prose style**: Sentence length tendencies, vocabulary level, rhythm\n3. **POV approach**: Deep POV? Omniscient? How close to the character's thoughts?\n4. **Tense**: Past or present? Why?\n5. **Dialogue style**: Naturalistic? Stylized? Snappy? Formal?\n6. **Description approach**: Lush and detailed? Sparse and punchy?\n7. **Sample paragraph**: Write a 200-word example paragraph in the target voice\n8. **Voice DON'Ts**: What should the writing NOT sound like?\n\nIf an author persona is assigned, integrate their voice profile into this guide."
+    }
+  ]
+}

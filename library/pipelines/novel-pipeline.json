@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "novel-pipeline",
+  "label": "Full Novel Pipeline",
+  "description": "End-to-end novel: premise, bible, outline, one step per chapter, revision, assembly. Chapters are generated from config at create-time.",
+  "dynamic": true,
+  "steps": []
+}
