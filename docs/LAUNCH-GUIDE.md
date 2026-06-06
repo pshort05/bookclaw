@@ -99,6 +99,7 @@ ssh -L 3847:localhost:3847 user@your-vps-ip
 | Soul system | `workspace/soul/` |
 | Memory/Bible | `workspace/memory/` |
 | Self-improvement | `workspace/.agent/` |
+| Workspace (Docker host mount) | `/home/paul/bookclaw-workspace` — the whole `workspace/` tree, bind-mounted on the host (override with `BOOKCLAW_WORKSPACE_PATH`). Back this directory up. Owned by the container user (uid 999), so host writes/deletes need `sudo`. |
 
 ## API Keys (Dashboard > Settings)
 

@@ -163,9 +163,10 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 - `workspace/.audit/` — security audit log (JSONL)
 - `workspace/.agent/` — agent journal, self-improvement notes
 - `workspace/.vault/` — see above
+- `workspace/.bookclaw/workspace.json` — workspace schema marker (`schemaVersion`, `createdByApp`), stamped on first boot by `init/phase-01-config.ts` (`WORKSPACE_SCHEMA_VERSION`); a forthcoming per-book compatibility gate reads it — see [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md)
 - `workspace/audio/` — generated TTS files, auto-cleaned after 24h
 
-`config/default.json` is the only versioned config; `config/user.json` overrides it and is gitignored.
+In Docker, `workspace/` is a **host bind-mount** (`BOOKCLAW_WORKSPACE_PATH`, default `/home/paul/bookclaw-workspace`), not a named volume — so the working data is directly backup-able/shareable on the host (changed 2026-06-05; the encrypted vault is a separate volume, unaffected). `config/default.json` is the only versioned config; `config/user.json` overrides it and is gitignored.
 
 ### Bridges
 
@@ -183,6 +184,7 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 - **Errors during init are logged with `console.log('  ✓ …')` / `'  ⚠ …'` / `'  ℹ …'`** and the gateway continues with degraded capability when a service can't initialize (e.g. memory-search if `better-sqlite3` won't build, video-research if `yt-dlp` is missing). Preserve this fail-soft pattern — don't make startup require optional dependencies.
 - **Premium skills are gitignored** (`skills/premium/*/`) — never commit them. The folder ships only with a `README.md`.
 - **Workspace runtime data is gitignored** but the directory must exist; the gateway creates subdirs on init.
+- **Workspace storage is a host bind-mount in Docker** (`BOOKCLAW_WORKSPACE_PATH`, default `/home/paul/bookclaw-workspace`; changed from a named volume 2026-06-05 — Phase 0 of [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md)). The container runs as the baked `bookclaw` user (uid 999) and Docker does **not** chown a host bind-mount, so `deploy.sh` aligns ownership after the build (`docker compose run --user 0 --entrypoint chown bookclaw -R bookclaw:bookclaw /app/workspace`) — a freshly created host dir would otherwise crash the app on its first write under `/app/workspace`. The `bookclaw-vault` volume stays a separate named volume.
 - The parent `/home/paul/data/dev/CLAUDE.md` applies: surgical changes only, no speculative abstractions, ask before system-level changes, write commit messages to a `commit_message` file rather than committing directly.
 
 ## Things that look broken but aren't

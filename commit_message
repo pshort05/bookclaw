@@ -1,54 +1,14 @@
-feat(storage): book-container design + Phase 0 host bind-mount workspace
+docs: reflect Phase 0 storage change (host bind-mount + schema marker)
 
-Design (docs):
-- Add docs/BOOK-CONTAINER-ARCHITECTURE.md — the concrete North Star data model:
-  book = self-contained portable container (templates/ snapshot + data/ outputs),
-  pulled from a library (built-in read-only + user-editable overlay, mirroring
-  the skills overlay). Decisions: copy-on-create with opt-in re-pull (no
-  auto-propagation); whole-workspace host bind-mount; per-artifact schemaVersion
-  with a fail-closed compatibility gate (too-old -> quarantine read-only,
-  too-new -> read-only; refuse rather than silently coerce; ordered vN->vN+1
-  migrations with pre-migration directory backup); and a backup/recovery
-  subsystem (default-ON local mirror snapshots, keep-last-N=10 with auto-prune,
-  per-book + whole-workspace restore; opt-in cloud zips via layered
-  directory-drop -> optional rclone -> optional hook, confirmation-gated at
-  setup, never auto-pruned; default content books+library+config, vault and
-  runtime state excluded). Documents the collisions, security, migration, and a
-  6-phase plan.
-- TODO/COMPLETED: re-scope the multi-author umbrella item to the new doc; close
-  the in-dashboard prompt/skill editor (accepted via Mercury click-through
-  2026-06-05) and move it TODO -> COMPLETED.
-- Correction (verified against the running container): the vault is a separate
-  Docker volume at /app/config/.vault, outside workspace/, so the whole-workspace
-  bind-mount does not expose secrets.
+Follow-up to 096c81d — update the prose docs to match the now-deployed storage
+model.
 
-Phase 0 (storage/Docker) — implemented + verified:
-- docker/docker-compose.yml: /app/workspace is now a host bind-mount
-  (${BOOKCLAW_WORKSPACE_PATH:-/home/paul/bookclaw-workspace}); dropped the
-  bookclaw-workspace named volume. The bookclaw-vault volume stays a separate
-  named volume.
-- scripts/deploy.sh: writes BOOKCLAW_WORKSPACE_PATH to docker/.env, `mkdir -p`s
-  the host dir, and after the build aligns the bind-mount ownership to the
-  container's app user (bookclaw/999) via a one-off root container
-  (`docker compose run --user 0 --entrypoint chown ...`). Docker doesn't chown a
-  host bind-mount the way it auto-owns a named volume, so without this a fresh
-  host dir (owned by the deployer) makes the app crash on its first mkdir under
-  /app/workspace. Covers the timer path too (build-watch.sh -> deploy.sh;
-  bookclaw-build.service runs as User=paul).
-- .env.example: document BOOKCLAW_WORKSPACE_PATH.
-- gateway/src/init/phase-01-config.ts: stamp workspace/.bookclaw/workspace.json
-  (WORKSPACE_SCHEMA_VERSION=1, createdByApp from package.json) on first boot, log
-  the version on later boots; fail-soft. No compatibility gate yet (Phase 2).
-- tests/smoke-test.sh: Phase 1 asserts the marker is stamped.
-- No data migration — the existing workspace was disposable (owner decision
-  2026-06-05); the cutover starts on a fresh host dir.
-
-Verified: npx tsc --noEmit clean; unit tests 34/34; marker stamp + idempotent
-read-path confirmed via alt-port boots. (Full api/smoke run pending a free
-:3847 — the live container holds the port on this host.)
-
-Deployed to Mercury 2026-06-05: container recreated on the host bind-mount, old
-container shut down, Up (healthy), healthz=200, /api/status 401 (auth enforced,
-vault decrypted = API keys preserved), schema marker stamped on the host. The
-old docker_bookclaw-workspace named volume is now orphaned (disposable; can be
-removed with `docker volume rm`).
+- CLAUDE.md: list workspace/.bookclaw/workspace.json (schema marker) under
+  Stateful directories; note that workspace/ is a host bind-mount
+  (BOOKCLAW_WORKSPACE_PATH, default /home/paul/bookclaw-workspace) rather than a
+  named volume; add a Conventions bullet on the bind-mount + the uid-999
+  ownership-alignment that deploy.sh performs.
+- docs/LAUNCH-GUIDE.md: add the host workspace mount path to the data-locations
+  table (what to back up; owned by uid 999 so host writes need sudo).
+- docs/COMPLETED.md: add the Phase 0 entry (workspace bind-mount + marker,
+  deployed to Mercury 2026-06-05, commit 096c81d).
