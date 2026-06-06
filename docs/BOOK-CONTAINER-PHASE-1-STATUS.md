@@ -17,11 +17,15 @@ _Source of truth for **where we are**. Updated 2026-06-06._
 | 4 | Fold skills overlay → `workspace/library/skills/` + boot migration `migrateSkillOverlay()` | ✅ done | `8e1ffa5` + `08e5e06` (comment) |
 | 5 | Wire `LibraryService` into `init/phase-05` + `getServices()` | ✅ done | `b6af886` |
 | 6 | Read API `GET /api/library[/:kind[/:name]]` + Dockerfile `COPY library` + API tests | ✅ done | `e251460` |
-| 7 | Docs (CLAUDE.md, arch doc, TODO, plan/status) | ✅ done | this commit |
-| 8 | Final whole-branch code review | ⬜ in progress |  |
-| 9 | Merge to `main` + Mercury deploy (`touch build_now`) + acceptance + move TODO→COMPLETED | ⬜ **NEXT** |  |
+| 7 | Docs (CLAUDE.md, arch doc, TODO, plan/status) | ✅ done | `054867e` |
+| 8 | Final whole-branch code review + apply findings | ✅ done | `6ad271c` (fixes) |
+| 9 | Merge to `main` + Mercury deploy (`touch build_now`) + acceptance + move TODO→COMPLETED | ⬜ **NEXT — owner's call** |  |
 
 All implementation tasks (1–7) complete and reviewed (spec + code-quality) per subagent-driven-development. Each task verified: `tsc` clean, `npm run test:unit` 39/39, API checks pass on an isolated port (the live container on 3847 was never disturbed).
+
+**Code review (2026-06-06):** ran `/code-review` high-effort over the whole branch — no Critical/Important bugs. Applied 3 findings in `6ad271c`: (1) fail-soft `gw.library.loadAll()` (unreadable overlay dir degrades instead of crashing init); (2) `migrateSkillOverlay` warns instead of silently orphaning when both old+new overlay dirs exist; (3) collapsed the repeated kind-union literal in `library.ts` to `FILE_KINDS`/`FileKind`. Refuted (non-issues): premium-skill exposure (parity with existing `/api/skills`), `renameSync` EXDEV (whole-`workspace/` is one bind-mount), exporter 0-value drop (no template uses 0). One pre-existing finding tracked in TODO: `heartbeat.routes.ts:393` writes generated skills to the baked `skills/` dir, not the overlay (Phase 4).
+
+**Branch decision (2026-06-06): KEEP AS-IS.** Owner chose not to merge yet. Branch `feat/book-container-phase-1-library` (11 commits) is preserved; main is unchanged. Nothing deployed. Owner will merge/push/deploy when ready.
 
 ## How to resume
 
