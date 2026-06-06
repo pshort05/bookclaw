@@ -3,5 +3,6 @@
   "name": "book-production",
   "label": "Book Production",
   "description": "Write chapters sequentially with full context injection — write, self-review, and compile",
+  "dynamic": true,
   "steps": []
 }

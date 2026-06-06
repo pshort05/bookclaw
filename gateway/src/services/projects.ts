@@ -1091,6 +1091,7 @@ export function exportBuiltinPipelines(): LibraryPipeline[] {
     name: t.type,
     label: t.label,
     description: t.description,
+    ...(t.steps.length === 0 ? { dynamic: true } : {}),
     steps: t.steps.map((s) => ({
       label: s.label,
       ...(s.skill ? { skill: s.skill } : {}),
