@@ -88,3 +88,14 @@ test('readTemplate returns null for a missing section', async () => {
     assert.equal(out, null);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('writeTemplate/readTemplate round-trip for a skill', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-tmpl-'));
+  try {
+    const svc = await makeSvc(root);
+    const book = await svc.create({ title: 'B', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.writeTemplate(book.slug, 'skill', 'my-skill', { files: { 'SKILL.md': '# My Skill\n' } });
+    const out = svc.readTemplate(book.slug, 'skill', 'my-skill');
+    assert.ok(out && out.files && out.files['SKILL.md'].includes('# My Skill'));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

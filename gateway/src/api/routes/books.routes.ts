@@ -99,6 +99,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const name = req.params.name ? String(req.params.name) : undefined;
     if (!TEMPLATE_KINDS.includes(kind)) return res.status(400).json({ error: `invalid kind: ${kind}` });
     if (name !== undefined && NO_NAME_KINDS.has(kind)) return res.status(400).json({ error: `${kind} takes no name` });
+    if (kind === 'skill' && name === undefined) return res.status(400).json({ error: 'skill requires a name' });
     if (name !== undefined && !/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'invalid name' });
     try {
       const out = services.books.readTemplate(slug, kind as any, name);
