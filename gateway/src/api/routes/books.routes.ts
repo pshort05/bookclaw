@@ -127,6 +127,9 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       // author / voice / genre / skills: directory of files
       const sub = TEMPLATE_SUBDIR[kind];
       if (!sub) return res.status(400).json({ error: `Unknown kind: ${kind}` });
+      if (kind === 'skills' && req.params.name && !/^[a-z0-9][a-z0-9-]*$/.test(String(req.params.name))) {
+        return res.status(400).json({ error: 'invalid skill name' });
+      }
       const dir = safePath(base, kind === 'skills' && req.params.name ? join('skills', String(req.params.name)) : sub);
       if (!dir || !existsSync(dir)) return res.status(404).json({ error: `${kind} snapshot not found` });
       const files: Record<string, string> = {};
@@ -169,10 +172,10 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       if (kind !== 'skills' && !TEMPLATE_SUBDIR[kind]) return res.status(400).json({ error: `Unknown kind: ${kind}` });
       const files = req.body?.files;
       if (!files || typeof files !== 'object') return res.status(400).json({ error: 'files (object) required' });
-      const rel = kind === 'skills' ? join('skills', String(req.params.name || '')) : TEMPLATE_SUBDIR[kind];
       if (kind === 'skills' && !/^[a-z0-9][a-z0-9-]*$/.test(String(req.params.name || ''))) {
         return res.status(400).json({ error: 'skill name required' });
       }
+      const rel = kind === 'skills' ? join('skills', String(req.params.name)) : TEMPLATE_SUBDIR[kind];
       for (const fname of Object.keys(files)) {
         if (!/^[A-Za-z0-9._-]+\.md$/.test(fname)) return res.status(400).json({ error: `Invalid file name: ${fname}` });
         const dest = safePath(base, join(rel, fname));
