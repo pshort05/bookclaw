@@ -101,5 +101,18 @@ done < /tmp/or-phases.$$.txt
 rm -f /tmp/or-phases.$$.txt
 
 C1=$(daily)
+
+# ── Phase 4 smoke touch: re-pull endpoint reachable ──
+echo ""
+echo "### Phase 4 touch — repull endpoint"
+P4RP_OUT=$(curl -s -w '\n%{http_code}' --max-time 15 "${H[@]}" "$BASE_URL/api/books/active/repull")
+P4RP_CODE=$(printf '%s' "$P4RP_OUT" | tail -n1)
+P4RP_BODY=$(printf '%s' "$P4RP_OUT" | sed '$d')
+if [ "$P4RP_CODE" = "200" ] && printf '%s' "$P4RP_BODY" | grep -q '"assets"'; then
+  echo "[phase4] repull endpoint: OK (200 + assets)"
+else
+  echo "[phase4] repull endpoint: NOT AVAILABLE (code=$P4RP_CODE) — Phase 4 may not be deployed"
+fi
+
 echo ""; echo "### COMPLETE. cost \$$C0 -> \$$C1 ; phases_with_failures=$FAILS"
 exit "$FAILS"

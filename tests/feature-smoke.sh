@@ -257,6 +257,166 @@ else
     [ "$BSTATUS" = "ok" ] && pass "books get :slug" "status=ok" || fail "books get :slug" "status=$BSTATUS"
     LISTED=$(req GET /api/books | grep -c "$BSLUG")
     [ "$LISTED" -ge 1 ] && pass "books list includes slug" || fail "books list includes slug"
+
+    # ── Phase 4: library-write, book-snapshot, re-pull ──
+    echo ""
+    echo "### Tier A (Phase 4) — library overlay + book snapshot + re-pull"
+
+    # Guard: check if the library-write endpoint exists (PUT /api/library/genre/...)
+    P4SLUG="smoke-rp-$RAND"
+    P4WRITE_CODE=$(code PUT "/api/library/genre/$P4SLUG" '{"files":{"tropes.md":"smoke v1"}}')
+    if [ "$P4WRITE_CODE" = "404" ] || [ "$P4WRITE_CODE" = "405" ]; then
+      skip "library write"              "(Phase 4 not deployed)"
+      skip "library overlay write"      "(Phase 4 not deployed)"
+      skip "library overlay delete reverts" "(Phase 4 not deployed)"
+      skip "books set active"           "(Phase 4 not deployed)"
+      skip "book templates read"        "(Phase 4 not deployed)"
+      skip "book templates write"       "(Phase 4 not deployed)"
+      skip "repull status"              "(Phase 4 not deployed)"
+      skip "repull detects library change" "(Phase 4 not deployed)"
+      skip "repull clean merge"         "(Phase 4 not deployed)"
+    else
+      # ── 1. Library overlay write round-trip (throwaway genre) ──
+      P4GET=$(req GET "/api/library/genre/$P4SLUG")
+      P4SOURCE=$(printf '%s' "$P4GET" | jget entry.source)
+      if [ "$P4SOURCE" = "workspace" ]; then
+        pass "library overlay write" "source=workspace"
+      else
+        fail "library overlay write" "source=$P4SOURCE resp=$(printf '%s' "$P4GET" | head -c 200)"
+      fi
+
+      # DELETE then re-GET → expect 404
+      P4DEL_CODE=$(code DELETE "/api/library/genre/$P4SLUG")
+      P4AFTER_CODE=$(code GET "/api/library/genre/$P4SLUG")
+      if [ "$P4AFTER_CODE" = "404" ]; then
+        pass "library overlay delete reverts" "404 after delete"
+      else
+        fail "library overlay delete reverts" "expected 404 got $P4AFTER_CODE (del=$P4DEL_CODE)"
+      fi
+
+      # ── 2. Set the smoke book active ──
+      P4ACT_CODE=$(code POST /api/books/active "{\"slug\":\"$BSLUG\"}")
+      if [ "$P4ACT_CODE" = "200" ] || [ "$P4ACT_CODE" = "204" ]; then
+        pass "books set active" "slug=$BSLUG"
+      else
+        fail "books set active" "code=$P4ACT_CODE"
+      fi
+
+      # ── 3. Book-snapshot read + write ──
+      P4TMPL=$(req GET /api/books/active/templates/author)
+      P4TMPL_CODE=$(code GET /api/books/active/templates/author)
+      P4FILES=$(printf '%s' "$P4TMPL" | jget files)
+      if [ "$P4TMPL_CODE" = "200" ] && [ -n "$P4FILES" ]; then
+        pass "book templates read" "files present"
+      else
+        fail "book templates read" "code=$P4TMPL_CODE files=$P4FILES"
+      fi
+
+      # Read SOUL.md from the GET response; fall back to a minimal stub if absent.
+      P4SOUL=$(printf '%s' "$P4TMPL" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{
+            const j=JSON.parse(s);
+            const f=j.files||{};
+            const key=Object.keys(f).find(k=>k.toLowerCase()==="soul.md");
+            console.log(key?f[key]:"# Author\n");
+          }catch(e){console.log("# Author\n")}
+        })')
+      # Escape for JSON string embedding
+      P4SOUL_ESC=$(printf '%s' "$P4SOUL" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{console.log(JSON.stringify(s))})')
+      P4WRITE_BODY="{\"files\":{\"SOUL.md\":$P4SOUL_ESC}}"
+      P4WRITE2_CODE=$(code PUT /api/books/active/templates/author "$P4WRITE_BODY")
+      if [ "$P4WRITE2_CODE" = "200" ] || [ "$P4WRITE2_CODE" = "204" ]; then
+        pass "book templates write" "code=$P4WRITE2_CODE"
+      else
+        fail "book templates write" "code=$P4WRITE2_CODE"
+      fi
+
+      # ── 4. Re-pull status ──
+      P4RP=$(req GET /api/books/active/repull)
+      P4RP_CODE=$(code GET /api/books/active/repull)
+      P4RP_HAS=$(printf '%s' "$P4RP" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{
+            const j=JSON.parse(s);
+            const found=(j.assets||[]).some(a=>a.kind==="author");
+            console.log(found?"yes":"no");
+          }catch(e){console.log("no")}
+        })')
+      if [ "$P4RP_CODE" = "200" ] && [ "$P4RP_HAS" = "yes" ]; then
+        pass "repull status" "assets contains author"
+      else
+        fail "repull status" "code=$P4RP_CODE has_author=$P4RP_HAS"
+      fi
+
+      # ── 5. Re-pull clean merge (only if author is built-in) ──
+      P4AUTH_ENTRY=$(req GET "/api/library/author/$AUTHOR_NAME")
+      P4AUTH_SOURCE=$(printf '%s' "$P4AUTH_ENTRY" | jget entry.source)
+      if [ "$P4AUTH_SOURCE" != "builtin" ]; then
+        skip "repull detects library change" "(author source=$P4AUTH_SOURCE; skip destructive edit)"
+        skip "repull clean merge"            "(author source=$P4AUTH_SOURCE; skip destructive edit)"
+      else
+        # Read the first .md file name + content from the builtin author entry
+        P4AUTH_FILE=$(printf '%s' "$P4AUTH_ENTRY" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const f=(JSON.parse(s).entry||{}).files||{};
+              const k=Object.keys(f).find(k=>k.endsWith(".md"))||"";
+              console.log(k);
+            }catch(e){console.log("")}
+          })')
+        P4AUTH_CONTENT=$(printf '%s' "$P4AUTH_ENTRY" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const f=(JSON.parse(s).entry||{}).files||{};
+              const k=Object.keys(f).find(k=>k.endsWith(".md"))||"";
+              console.log(k?f[k]:"");
+            }catch(e){console.log("")}
+          })')
+
+        if [ -z "$P4AUTH_FILE" ]; then
+          skip "repull detects library change" "(no .md file in author entry)"
+          skip "repull clean merge"            "(no .md file in author entry)"
+        else
+          # Append a non-conflicting line to the author's overlay
+          P4APPENDED_ESC=$(printf '%s\n\nsmoke-rp-appended-line\n' "$P4AUTH_CONTENT" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{console.log(JSON.stringify(s))})')
+          P4FILE_ESC=$(printf '%s' "$P4AUTH_FILE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{console.log(JSON.stringify(s))})')
+          P4AUTH_WRITE_BODY="{\"files\":{$P4FILE_ESC:$P4APPENDED_ESC}}"
+          code PUT "/api/library/author/$AUTHOR_NAME" "$P4AUTH_WRITE_BODY" >/dev/null
+
+          # Re-pull status should show this asset as library-updated
+          P4RP2=$(req GET /api/books/active/repull)
+          P4AUTH_STATUS=$(printf '%s' "$P4RP2" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              try{
+                const a=(JSON.parse(s).assets||[]).find(x=>x.kind==="author");
+                console.log(a?a.status:"");
+              }catch(e){console.log("")}
+            })')
+          if [ "$P4AUTH_STATUS" = "library-updated" ]; then
+            pass "repull detects library change" "status=library-updated"
+          else
+            fail "repull detects library change" "status=$P4AUTH_STATUS"
+          fi
+
+          # Merge the updated author into the book
+          P4MERGE=$(req POST "/api/books/active/repull/author/$AUTHOR_NAME" '{}')
+          P4CONFLICTS=$(printf '%s' "$P4MERGE" | jget hadConflicts)
+          if [ "$P4CONFLICTS" = "false" ]; then
+            pass "repull clean merge" "hadConflicts=false"
+          else
+            fail "repull clean merge" "hadConflicts=$P4CONFLICTS resp=$(printf '%s' "$P4MERGE" | head -c 200)"
+          fi
+
+          # Cleanup: remove the workspace overlay so the built-in is restored
+          curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/author/$AUTHOR_NAME" >/dev/null 2>&1 || true
+          echo "  [cleanup] removed smoke overlay for author/$AUTHOR_NAME"
+        fi
+      fi
+    fi
+    # ── End Phase 4 block ──
+
   else
     fail "books create" "resp=$(echo "$BRESP" | head -c 200)"
   fi
