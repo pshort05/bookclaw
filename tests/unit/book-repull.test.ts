@@ -104,3 +104,67 @@ test('pipeline take-library rewrites templates + advances baseline', async () =>
     assert.equal((await svc.repullStatus(book.slug)).find(a => a.kind === 'pipeline')!.status, 'in-sync');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('repull updates pulledFrom (pipeline take-library bumps recorded version/provenance)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-rp-'));
+  try {
+    const { svc, builtin, lib } = await makeSvc(root);
+    const book = await svc.create({ title: 'B', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    // bump the library pipeline's schemaVersion to 2
+    write(builtin, 'pipelines/novel-pipeline.json', JSON.stringify({ schemaVersion: 2, name: 'novel-pipeline', label: 'N', description: 'd', dynamic: true, steps: [] }));
+    await lib.reload();
+    await svc.repull(book.slug, 'pipeline', 'novel-pipeline', { resolution: 'take-library' });
+    const m = JSON.parse(readFileSync(join(root, 'workspace', 'books', book.slug, 'book.json'), 'utf-8'));
+    assert.equal(m.pulledFrom.pipeline.version, 2);
+    assert.ok(m.history.some((h: { event: string }) => h.event === 'repull'));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('repull author updates pulledFrom.author.source', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-rp-'));
+  try {
+    const { svc, lib } = await makeSvc(root);
+    const book = await svc.create({ title: 'B', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    // write a workspace overlay author so source flips to 'workspace'
+    const overlayDir = join(root, 'workspace', 'library', 'authors', 'default');
+    mkdirSync(overlayDir, { recursive: true });
+    writeFileSync(join(overlayDir, 'SOUL.md'), 'soul v1\nline2\nline3\n', 'utf-8');
+    await lib.reload();
+    // author path: has baseline → 3-way merge branch; resolution not required
+    await svc.repull(book.slug, 'author', 'default', {});
+    const m = JSON.parse(readFileSync(join(root, 'workspace', 'books', book.slug, 'book.json'), 'utf-8'));
+    assert.equal(m.pulledFrom.author.source, 'workspace');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('pipeline/no-baseline repull without a resolution is rejected', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-rp-'));
+  try {
+    const { svc } = await makeSvc(root);
+    const book = await svc.create({ title: 'B', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await assert.rejects(
+      () => svc.repull(book.slug, 'pipeline', 'novel-pipeline', {}),
+      /resolution/i,
+    );
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('repullStatus does not throw on a manifest missing pulledFrom.author', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-rp-'));
+  try {
+    const { svc } = await makeSvc(root);
+    const slug = 'malformed-book';
+    const bookDir = join(root, 'workspace', 'books', slug);
+    mkdirSync(join(bookDir, 'templates'), { recursive: true });
+    mkdirSync(join(bookDir, '.baseline'), { recursive: true });
+    writeFileSync(join(bookDir, 'book.json'), JSON.stringify({
+      id: slug, slug, title: 'Malformed', schemaVersion: 1,
+      createdByApp: '0.0.0', lastWrittenByApp: '0.0.0', phase: 'planning',
+      createdAt: new Date().toISOString(),
+      pulledFrom: {}, // missing author, pipeline, voice etc.
+      history: [],
+    }, null, 2) + '\n', 'utf-8');
+    const result = await svc.repullStatus(slug);
+    assert.ok(Array.isArray(result)); // must not throw
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

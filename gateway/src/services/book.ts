@@ -430,12 +430,11 @@ export class BookService {
     const opened = await this.open(slug);
     if (!opened) return [];
     const pf = opened.manifest.pulledFrom;
-    const out: Array<{ kind: RepullAsset['kind']; name: string }> = [
-      { kind: 'author', name: pf.author.name },
-      { kind: 'pipeline', name: pf.pipeline.name },
-    ];
-    if (pf.voice) out.push({ kind: 'voice', name: pf.voice.name });
-    if (pf.genre) out.push({ kind: 'genre', name: pf.genre.name });
+    const out: Array<{ kind: RepullAsset['kind']; name: string }> = [];
+    if (pf.author?.name) out.push({ kind: 'author', name: pf.author.name });
+    if (pf.pipeline?.name) out.push({ kind: 'pipeline', name: pf.pipeline.name });
+    if (pf.voice?.name) out.push({ kind: 'voice', name: pf.voice.name });
+    if (pf.genre?.name) out.push({ kind: 'genre', name: pf.genre.name });
     for (const s of pf.sections || []) out.push({ kind: 'section', name: s });
     for (const s of pf.skills || []) out.push({ kind: 'skill', name: s });
     return out;
@@ -492,13 +491,18 @@ export class BookService {
 
     // Pipeline (JSON) or no baseline → whole-asset keep/take.
     if (kind === 'pipeline' || !baseline) {
-      const res = opts.resolution ?? 'take-library';
-      if (res === 'take-library') {
+      if (opts.resolution !== 'take-library' && opts.resolution !== 'keep-book') {
+        throw new Error(`invalid: resolution (take-library|keep-book) required for ${kind}/${name}`);
+      }
+      const res = opts.resolution;
+      if (res === 'take-library' || !book) {
+        // take library (also the only sensible action when the book has no files to keep)
         await writeMap('templates', lib);
         await writeMap('.baseline', lib);
-      } else { // keep-book: leave templates, just establish/advance baseline
-        await writeMap('.baseline', book ?? lib);
+      } else { // keep-book with existing book files: advance baseline to the book copy
+        await writeMap('.baseline', book);
       }
+      await this.updatePulledFrom(slug, kind, name);
       return { hadConflicts: false };
     }
 
@@ -516,6 +520,29 @@ export class BookService {
     }
     await writeMap('templates', mergedFiles);
     await writeMap('.baseline', lib); // baseline advances to the just-pulled library version
+    await this.updatePulledFrom(slug, kind, name);
     return { hadConflicts };
+  }
+
+  /** After a successful re-pull, refresh the manifest's provenance for the asset. */
+  private async updatePulledFrom(slug: string, kind: RepullAsset['kind'], name: string): Promise<void> {
+    // sections/skills are tracked as name arrays (no per-entry ref); nothing to update.
+    if (kind === 'section' || kind === 'skill') return;
+    const opened = await this.open(slug);
+    if (!opened) return;
+    const m = opened.manifest;
+    const entry = this.library.get(kind, name);
+    const prev = (m.pulledFrom as unknown as Record<string, PulledRef | null | undefined>)[kind];
+    const source: PulledRef['source'] = entry?.source ?? prev?.source ?? 'workspace';
+    const version = kind === 'pipeline' ? entry?.pipeline?.schemaVersion : undefined;
+    const ref: PulledRef = { name, source, ...(version != null ? { version } : {}) };
+    if (kind === 'author') m.pulledFrom.author = ref;
+    else if (kind === 'voice') m.pulledFrom.voice = ref;
+    else if (kind === 'genre') m.pulledFrom.genre = ref;
+    else if (kind === 'pipeline') m.pulledFrom.pipeline = ref;
+    m.lastWrittenByApp = this.appVersion;
+    m.history.push({ at: new Date().toISOString(), event: 'repull', detail: `${kind}/${name}` });
+    const dir = this.bookDir(slug);
+    if (dir) await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
   }
 }
