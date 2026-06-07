@@ -42,7 +42,7 @@ export interface RepullAsset {
   wired: boolean;
 }
 
-export interface RepullResult { merged: boolean; hadConflicts: boolean; }
+export interface RepullResult { hadConflicts: boolean; }
 
 /** The library names used to seed the first-run Default Book. */
 const DEFAULT_BOOK_SELECTION: BookSelection = {
@@ -499,7 +499,7 @@ export class BookService {
       } else { // keep-book: leave templates, just establish/advance baseline
         await writeMap('.baseline', book ?? lib);
       }
-      return { merged: true, hadConflicts: false };
+      return { hadConflicts: false };
     }
 
     // Text 3-way merge per file (union of file names across baseline/book/library).
@@ -516,6 +516,6 @@ export class BookService {
     }
     await writeMap('templates', mergedFiles);
     await writeMap('.baseline', lib); // baseline advances to the just-pulled library version
-    return { merged: true, hadConflicts };
+    return { hadConflicts };
   }
 }

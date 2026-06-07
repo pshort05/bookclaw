@@ -86,3 +86,21 @@ test('no-baseline book falls back to take-library and creates a baseline', async
     assert.ok(existsSync(join(root, 'workspace', 'books', book.slug, '.baseline', 'author', 'SOUL.md')));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('pipeline take-library rewrites templates + advances baseline', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-rp-'));
+  try {
+    const { svc, builtin, lib } = await makeSvc(root);
+    const book = await svc.create({ title: 'B', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    // library pipeline gains a step
+    write(builtin, 'pipelines/novel-pipeline.json', JSON.stringify({ schemaVersion: 1, name: 'novel-pipeline', label: 'N', description: 'd2', dynamic: true, steps: [{ label: 'Draft', taskType: 'creative_writing', promptTemplate: 'go' }] }));
+    await lib.reload();
+    assert.equal((await svc.repullStatus(book.slug)).find(a => a.kind === 'pipeline')!.status, 'library-updated');
+    const r = await svc.repull(book.slug, 'pipeline', 'novel-pipeline', { resolution: 'take-library' });
+    assert.equal(r.hadConflicts, false);
+    const tpl = JSON.parse(readFileSync(join(root, 'workspace', 'books', book.slug, 'templates', 'pipeline.json'), 'utf-8'));
+    assert.equal(tpl.steps.length, 1);
+    // baseline advanced → now in-sync
+    assert.equal((await svc.repullStatus(book.slug)).find(a => a.kind === 'pipeline')!.status, 'in-sync');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
