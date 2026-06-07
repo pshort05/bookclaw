@@ -454,11 +454,21 @@ Each phase is independently shippable and verifiable.
   **skills** into the book (skills only matter once injected into a book's
   pipeline — Phase 3/4). Books are stored but do **not** drive generation yet
   (Phase 3).
-- **Phase 3 — Per-book wiring.** `SoulService` reads the active book's
-  `templates/author/`; `ProjectEngine` reads the book's
-  `templates/pipeline.json` (pipelines-as-data) instead of the hardcoded
-  constants. *Verify:* run a pipeline phase reading the book snapshot; editing
-  one book's author leaves another book unchanged.
+- **Phase 3 — Per-book wiring.** *(Implemented 2026-06-06; pending push + Mercury
+  deploy + safety-net validation. Spec/plan under `docs/superpowers/`.)* A global
+  active-book pointer (`workspace/.config/active-book.json`) + Default Book
+  auto-seed; `SoulService.useBook()` loads the active book's `templates/author/`;
+  `ProjectEngine.createProjectFromPipeline()` reads the book's
+  `templates/pipeline.json` (the 6-phase macro chain resolves each static phase
+  from the library; dynamic `novel-pipeline`/`book-production` stay
+  code-generated); all outputs → `workspace/books/<slug>/data/` (readers
+  re-pointed too); `GET`/`POST /api/books/active` + dashboard selector; deleted
+  `PROJECT_TEMPLATES`/exporter/gen-script/drift-guard (library JSON is canonical).
+  Per **decision 6** (data expendable until v6) there is **no version-gate
+  enforcement** — status is informational only. **Deferred:** per-book skills
+  snapshot, the Author/Voice asset split, concurrency. *Verify (post-deploy):*
+  `tests/openrouter-pipeline.sh` + `tests/feature-smoke.sh` are the end-to-end
+  safety net for the rewired engine.
 - **Phase 4 — Re-point the editor (#1) + re-pull.** Editor targets library and
   the active book's snapshot, two edit scopes; per-book "re-pull from library"
   with a provenance/version diff. *Verify:* library edit affects only future

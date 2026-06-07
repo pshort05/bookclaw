@@ -29,8 +29,26 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
     (request) => gw.aiRouter.complete(request),
     (taskType) => gw.aiRouter.selectProvider(taskType)
   );
+  // Phase 3c: the engine no longer owns PROJECT_TEMPLATES — source the dashboard
+  // template catalog from the library's full pipeline entries (real labels +
+  // step counts come from the parsed LibraryPipeline, not the lightweight row).
+  const pipelineRows = gw.library?.list?.('pipeline') ?? [];
+  gw.projectEngine.setTemplateCatalog(pipelineRows.map((r: any) => {
+    const pl = gw.library?.get?.('pipeline', r.name)?.pipeline;
+    const isDynamic = !!pl?.dynamic || r.name === 'novel-pipeline';
+    return {
+      type: r.name,
+      label: pl?.label || r.name,
+      description: pl?.description || r.description || '',
+      stepCount: isDynamic ? 30 : (pl?.steps?.length ?? 0),
+      stepCountLabel: isDynamic ? '30+ auto-generated steps' : undefined,
+    };
+  }));
+  // Resolver lets createPipeline build static phases from their library
+  // pipelines without the engine importing LibraryService directly.
+  gw.projectEngine.setPipelineResolver((name: string) => gw.library?.get?.('pipeline', name)?.pipeline ?? null);
   const templates = gw.projectEngine.getTemplates();
-  console.log(`  ✓ Project engine: ${templates.length} templates + dynamic AI planning`);
+  console.log(`  ✓ Project engine: ${templates.length} pipeline templates + dynamic AI planning`);
 
   // ── Phase 6f: Context Engine ──
   gw.contextEngine = new ContextEngine(join(ROOT_DIR, 'workspace'));

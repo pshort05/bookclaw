@@ -429,7 +429,10 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
       await mkd(backupDir, { recursive: true });
 
       // Sources to back up: [sourceRelative, destSubfolder]
+      // Phase 3: book outputs now live under workspace/books/<slug>/data/, so
+      // back up the books tree too (legacy workspace/projects/ kept for old data).
       const sources: Array<[string, string]> = [
+        [j('workspace', 'books'), 'books'],
         [j('workspace', 'projects'), 'projects'],
         [j('workspace', 'personas'), 'personas'],
         [j('workspace', 'memory'), 'memory'],
@@ -559,6 +562,7 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
 
       // Back up current state before restoring
       const currentSources: Array<[string, string]> = [
+        [j('workspace', 'books'), 'books'],
         [j('workspace', 'projects'), 'projects'],
         [j('workspace', 'personas'), 'personas'],
         [j('workspace', 'memory'), 'memory'],
@@ -589,6 +593,7 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
 
       // Restore from the selected backup
       const restoreMap: Array<[string, string]> = [
+        ['books', j('workspace', 'books')],
         ['projects', j('workspace', 'projects')],
         ['personas', j('workspace', 'personas')],
         ['memory', j('workspace', 'memory')],

@@ -83,6 +83,24 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   await gw.books.initialize();
   console.log(`  ✓ Books: ${gw.books.list().length} book(s)`);
 
+  // ── Phase 3a: resolve the active book (seed a Default Book on first run) ──
+  const activeBook = await gw.books.seedDefaultBook();
+  console.log(`  ✓ Books: active book = ${activeBook ?? '(none)'}`);
+
+  // Phase 3 read-path: let memory-search index the active book's data/ dir
+  // (generation outputs now land there, not the legacy flat projects/ tree).
+  gw.memorySearch?.setActiveDataDirResolver?.(() => gw.books?.activeDataDir?.() ?? null);
+
+  // ── Phase 3b: re-point the Author identity to the active book's snapshot ──
+  // SoulService was constructed against workspace/soul/ in phase-03; once a book
+  // is active it must read that book's templates/author/. Fail-soft inside
+  // useBook() keeps the default Author if the snapshot is missing.
+  const activeAuthorDir = gw.books.activeAuthorDir();
+  if (activeAuthorDir) {
+    await gw.soul.useBook(activeAuthorDir);
+    console.log(`  ✓ Soul: using active book's Author ("${gw.soul.getName()}")`);
+  }
+
   // ── Phase 6a: Auto-generate SKILLS.txt reference file ──
   await gw.writeSkillsReference(ROOT_DIR);
 

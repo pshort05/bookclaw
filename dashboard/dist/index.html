@@ -663,6 +663,7 @@ textarea { resize: vertical; min-height: 60px; }
   <div class="main-header">
     <h2 id="panelTitle">Home</h2>
     <div class="header-right">
+      <span id="activeBookIndicator" class="badge" style="margin-right:10px;"></span>
       <span id="headerStatus"></span>
     </div>
   </div>
@@ -4689,6 +4690,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     await renderList2();
   }
   async function renderList2() {
+    var _a2;
     const el = document.getElementById("bkList");
     if (!el) return;
     let data = { books: [] };
@@ -4698,17 +4700,36 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       el.innerHTML = '<div style="color:var(--danger);">Failed to load books: ' + esc(e.message) + "</div>";
       return;
     }
+    let active = null;
+    try {
+      const a = await api("GET", "/api/books/active");
+      active = ((_a2 = a.active) == null ? void 0 : _a2.slug) || null;
+    } catch (e) {
+    }
     if (!data.books.length) {
       el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No books yet. Click \u201CNew Book\u201D to create one.</div>';
       return;
     }
     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Created</th></tr>';
+    html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Active</th><th>Created</th></tr>';
     for (const b2 of data.books) {
-      html += '<tr style="border-top:1px solid var(--border);"><td style="padding:6px 8px;">' + esc(b2.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b2.slug) + "</span></td><td>" + esc(b2.phase) + "</td><td>" + statusBadge(b2.status) + '</td><td style="color:var(--muted);">' + esc((b2.createdAt || "").slice(0, 10)) + "</td></tr>";
+      const isActive = b2.slug === active;
+      html += '<tr style="border-top:1px solid var(--border);"><td style="padding:6px 8px;">' + esc(b2.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b2.slug) + "</span></td><td>" + esc(b2.phase) + "</td><td>" + statusBadge(b2.status) + '</td><td style="text-align:center;">' + (isActive ? '<span class="badge" style="background:var(--success);color:#fff;">active</span>' : '<button class="small secondary bkSetActive" data-slug="' + esc(b2.slug) + '">Set active</button>') + '</td><td style="color:var(--muted);">' + esc((b2.createdAt || "").slice(0, 10)) + "</td></tr>";
     }
     html += "</table>";
     el.innerHTML = html;
+    el.querySelectorAll(".bkSetActive").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await api("POST", "/api/books/active", { slug: btn.dataset.slug });
+          showToast("Active book set: " + btn.dataset.slug);
+          await renderList2();
+          refreshActiveBook();
+        } catch (e) {
+          showToast("Failed: " + e.message, "error");
+        }
+      });
+    });
   }
   async function openCreate() {
     const box = document.getElementById("bkCreate");
@@ -4921,12 +4942,22 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       document.getElementById("headerStatus").textContent = "Disconnected";
     });
   }
+  async function refreshActiveBook() {
+    var _a2;
+    try {
+      const a = await api("GET", "/api/books/active");
+      const el = document.getElementById("activeBookIndicator");
+      if (el) el.textContent = a.active ? "\u{1F4D6} " + (((_a2 = a.active.book) == null ? void 0 : _a2.title) || a.active.slug) : "\u{1F4D6} (no active book)";
+    } catch (e) {
+    }
+  }
   function startPolling() {
     loadStatus();
     loadProjects();
     loadPersonas();
     loadActivity();
     loadHomeStats();
+    refreshActiveBook();
     state.statusPollTimer = setInterval(loadStatus, 1e4);
     state.projectPollTimer = setInterval(function() {
       if (state.currentPanel === "home" || state.currentPanel === "projects") {

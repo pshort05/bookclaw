@@ -55,15 +55,26 @@ export function addWaveDisclaimer(res: Response): void {
   res.setHeader('X-BookClaw-Disclaimer', 'Wave 3 actions create confirmation requests but do not execute irreversible actions autonomously. You are responsible for every approved action. See SECURITY.md.');
 }
 
-/** Build a gatherChapters(project) closed over baseDir (call sites stay unchanged). */
-export function makeGatherChapters(baseDir: string) {
+/**
+ * Build a gatherChapters(project) closed over baseDir (call sites stay unchanged).
+ *
+ * Phase 3: chapter step files now live in the ACTIVE BOOK's shared data/ dir
+ * (named `${project.id}-step-N-...md`). Pass `activeDataDirResolver` so the
+ * reader prefers that dir; it falls back to the legacy per-project
+ * `workspace/projects/<slug>/` only when no book is active. The `${ws.id}-`
+ * file-name prefix already scopes the on-disk read to this project's steps, so
+ * sibling projects sharing the book dir never leak in.
+ */
+export function makeGatherChapters(baseDir: string, activeDataDirResolver?: () => string | null) {
   return async function gatherChapters(project: any): Promise<Array<{ id: string; number: number; title: string; text: string }>> {
     const { join: j } = await import('path');
     const { readFile: rf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+    let activeDataDir: string | null = null;
+    try { activeDataDir = activeDataDirResolver?.() ?? null; } catch { activeDataDir = null; }
+    const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
 
     const writingSteps = project.steps
       .filter((s: any) => (s.phase === 'writing' || s.label?.toLowerCase().includes('chapter')) && s.status === 'completed')

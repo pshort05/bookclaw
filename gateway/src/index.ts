@@ -1609,15 +1609,13 @@ class BookClawGateway {
         if (inferredType === 'novel-pipeline') {
           project = gateway.projectEngine.createNovelPipeline(title, description, config);
         } else {
-          const skillCatalog = gateway.skills.getSkillCatalog();
-          const authorOSTools = gateway.authorOS?.getAvailableTools() || [];
-          project = await gateway.projectEngine.planProject(
-            title,
-            description,
-            skillCatalog,
-            authorOSTools,
-            config
-          );
+          // Phase 3c: route non-novel creation through the ACTIVE BOOK's pipeline
+          // when one is resolvable; otherwise fall back to the resolved library
+          // pipeline for the inferred type (single-step only if unresolved).
+          const activePipeline = gateway.books?.activePipeline?.();
+          project = activePipeline
+            ? gateway.projectEngine.createProjectFromPipeline(activePipeline, title, description, config)
+            : gateway.projectEngine.createProjectResolved(gateway.projectEngine.inferProjectType(description), title, description, config);
         }
 
         // Log project creation to activity
@@ -1790,7 +1788,10 @@ class BookClawGateway {
         const wordCount = aiResponse.split(/\s+/).length;
 
         // Save full output to workspace file
-        const projectDir = join(workspaceDir, 'projects', project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+        // Phase 3c: route output to the active book's data/ (fall back to legacy
+        // flat projects/ dir only when no book is active).
+        const projectDir = gateway.books?.activeDataDir?.() ??
+          join(workspaceDir, 'projects', project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
         let savedFileName = '';
         try {
           await fs.mkdir(projectDir, { recursive: true });
@@ -1885,7 +1886,12 @@ class BookClawGateway {
 
             if (chapterContents.length > 0) {
               const manuscriptMd = `# ${project.title}\n\n` + chapterContents.join('\n\n---\n\n');
-              await fs.writeFile(join(projectDir, 'manuscript.md'), manuscriptMd, 'utf-8');
+              // Phase 3: when projectDir is the shared active-book data/ dir,
+              // prefix manuscript files with the project id so sibling projects
+              // don't overwrite each other (and delete/restart, which filter by
+              // `${project.id}-`, can find them). Legacy per-project dir → plain name.
+              const manuscriptPrefix = gateway.books?.activeDataDir?.() ? `${project.id}-` : '';
+              await fs.writeFile(join(projectDir, `${manuscriptPrefix}manuscript.md`), manuscriptMd, 'utf-8');
 
               // Generate DOCX version
               const docxBuffer = await generateDocxBuffer({
@@ -1893,7 +1899,7 @@ class BookClawGateway {
                 author: 'BookClaw',
                 content: manuscriptMd,
               });
-              await fs.writeFile(join(projectDir, 'manuscript.docx'), docxBuffer);
+              await fs.writeFile(join(projectDir, `${manuscriptPrefix}manuscript.docx`), docxBuffer);
 
               const totalWords = manuscriptMd.split(/\s+/).length;
               console.log(`  [assembly] Manuscript assembled: ${chapterContents.length} chapters, ~${totalWords.toLocaleString()} words`);
@@ -1902,8 +1908,8 @@ class BookClawGateway {
                 type: 'file_saved',
                 source: 'internal',
                 goalId: projectId,
-                message: `Manuscript assembled: manuscript.md + manuscript.docx (${chapterContents.length} chapters, ~${totalWords.toLocaleString()} words)`,
-                metadata: { fileName: 'manuscript.md', wordCount: totalWords, chapters: chapterContents.length },
+                message: `Manuscript assembled: ${manuscriptPrefix}manuscript.md + ${manuscriptPrefix}manuscript.docx (${chapterContents.length} chapters, ~${totalWords.toLocaleString()} words)`,
+                metadata: { fileName: `${manuscriptPrefix}manuscript.md`, wordCount: totalWords, chapters: chapterContents.length },
               });
             }
           } catch (assemblyErr) {
@@ -1977,7 +1983,7 @@ class BookClawGateway {
           } else {
             await statusCallback(
               `🎉 All ${totalSteps} steps complete!\n` +
-              `📁 Files saved to workspace/projects/\n` +
+              `📁 Files saved to the active book's data/ folder\n` +
               `Use /files to see what was created.`
             );
             return;
@@ -2082,9 +2088,12 @@ class BookClawGateway {
       },
 
       async listFiles(subdir?: string): Promise<string[]> {
+        // Phase 3 read-path: default to the active book's data/ dir (where outputs
+        // now land); fall back to the legacy flat projects/ dir when no book is active.
+        const defaultDir = gateway.books?.activeDataDir?.() ?? join(workspaceDir, 'projects');
         const targetDir = subdir
           ? join(workspaceDir, subdir)
-          : join(workspaceDir, 'projects');
+          : defaultDir;
 
         const files: string[] = [];
 
@@ -2119,7 +2128,13 @@ class BookClawGateway {
         const cleanName = filename.replace(/^[📁📄\s]+/, '').trim();
         let filePath = join(workspaceDir, cleanName);
         if (!existsSync(filePath)) {
-          filePath = join(workspaceDir, 'projects', cleanName);
+          // Phase 3 read-path: prefer the active book's data/ dir; fall back to legacy projects/.
+          const activeDataDir = gateway.books?.activeDataDir?.() ?? null;
+          if (activeDataDir && existsSync(join(activeDataDir, cleanName))) {
+            filePath = join(activeDataDir, cleanName);
+          } else {
+            filePath = join(workspaceDir, 'projects', cleanName);
+          }
         }
         if (!existsSync(filePath)) {
           return { content: '', error: `File not found: ${filename}` };

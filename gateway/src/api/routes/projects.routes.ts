@@ -131,9 +131,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.json({ project, planning: 'dynamic' });
     }
 
-    // Template-based fallback
-    const projectType = inferredType;
-    const project = engine.createProject(projectType, title, description, context);
+    // Pipeline-based path: source Steps from the ACTIVE BOOK's pipeline.json
+    // (book-container Phase 3c). Falls back to the legacy single-step custom
+    // create only if no active book / pipeline is resolvable.
+    const activePipeline = services.books?.activePipeline?.();
+    if (activePipeline) {
+      const project = engine.createProjectFromPipeline(activePipeline, title, description, context);
+      applyProjectOptions(project);
+      return res.json({ project, planning: 'book-pipeline', pipeline: activePipeline.name });
+    }
+    const project = engine.createProject(inferredType, title, description, context);
     applyProjectOptions(project);
     res.json({ project, planning: 'template' });
   });
@@ -149,6 +156,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(400).json({ error: 'title and description required' });
     }
     try {
+      // NOTE (Phase 3c): the 6-phase macro-chain composes the built-in phase
+      // sequence; per-book single-pipeline creation goes through /api/projects/create.
       const result = engine.createPipeline(title, description, personaId, config);
       res.json({
         pipelineId: result.pipelineId,
@@ -418,7 +427,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { unlink } = await import('fs/promises');
         const { join: jp } = await import('path');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const projectDir = jp(baseDir, 'workspace', 'projects', projectSlug);
+        const projectDir = services.books?.activeDataDir?.() ?? jp(baseDir, 'workspace', 'projects', projectSlug);
         const filename = `${step.id}-${step.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
         await unlink(jp(projectDir, filename)).catch(() => {});
       } catch { /* non-fatal */ }
@@ -446,13 +455,17 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { readdirSync, existsSync: ex } = await import('fs');
         const { join: jp } = await import('path');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const projectDir = jp(baseDir, 'workspace', 'projects', projectSlug);
+        const activeDataDir = services.books?.activeDataDir?.() ?? null;
+        const projectDir = activeDataDir ?? jp(baseDir, 'workspace', 'projects', projectSlug);
         if (ex(projectDir)) {
           // Only delete .md files, preserve manuscript / compiled-output / revised files
           // unless restart is full (no keepCompleted).
           const files = readdirSync(projectDir);
           for (const f of files) {
             if (!f.endsWith('.md')) continue;
+            // book data/ is shared across this book's projects — scope deletion
+            // to this project's own step files, never siblings'.
+            if (activeDataDir && !f.startsWith(`${project.id}-`)) continue;
             if (keepCompleted && (f === 'manuscript.md' || f === 'compiled-output.md' || f === 'revised-manuscript.md' || f === 'revision-report.md')) continue;
             await rm(jp(projectDir, f)).catch(() => {});
           }
@@ -485,6 +498,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const { join } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
     const workspaceDir = join(baseDir, 'workspace');
+    // Phase 3c: outputs land under the ACTIVE BOOK's data/ dir. Fall back to the
+    // legacy flat workspace/projects/<slug>/ only if no book is active (keeps a
+    // headless run from silently dropping output). Resolved once per execution.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    const outDirFor = (slug: string) =>
+      activeDataDir ? activeDataDir : join(workspaceDir, 'projects', slug);
 
     while (true) {
       const currentProject = engine.getProject(req.params.id);
@@ -670,7 +689,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
         // Save to file
         try {
-          const projectDir = join(workspaceDir, 'projects', currentProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+          const projectDir = outDirFor(currentProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
           await mkdir(projectDir, { recursive: true });
           const stepFileName = `${activeStep.id}-${activeStep.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
           await writeFile(join(projectDir, stepFileName), `# ${activeStep.label}\n\n${response}`, 'utf-8');
@@ -780,7 +799,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             const { existsSync: exLocal } = await import('fs');
             const { readFile: readF } = await import('fs/promises');
             const projectSlug = currentProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const projectDir = join(workspaceDir, 'projects', projectSlug);
+            const projectDir = outDirFor(projectSlug);
 
             const writingSteps = currentProject.steps
               .filter((s: any) => s.phase === 'writing' && s.status === 'completed')
@@ -799,14 +818,20 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
             if (chapterContents.length > 0) {
               const manuscriptMd = `# ${currentProject.title}\n\n` + chapterContents.join('\n\n---\n\n');
-              await writeFile(join(projectDir, 'manuscript.md'), manuscriptMd, 'utf-8');
+              // Phase 3: when writing into the shared book data/ dir, prefix the
+              // manuscript files with the project id so sibling projects in the
+              // same book don't overwrite each other (and delete/restart, which
+              // filter by `${project.id}-`, can find them). On the legacy
+              // per-project dir there's no collision, so keep the plain name.
+              const manuscriptPrefix = activeDataDir ? `${currentProject.id}-` : '';
+              await writeFile(join(projectDir, `${manuscriptPrefix}manuscript.md`), manuscriptMd, 'utf-8');
 
               const docxBuffer = await generateDocxBuffer({
                 title: currentProject.title,
                 author: 'BookClaw',
                 content: manuscriptMd,
               });
-              await writeFile(join(projectDir, 'manuscript.docx'), docxBuffer);
+              await writeFile(join(projectDir, `${manuscriptPrefix}manuscript.docx`), docxBuffer);
               console.log(`  [assembly] Manuscript assembled: ${chapterContents.length} chapters`);
             }
           } catch { /* non-fatal */ }
@@ -956,12 +981,23 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { rm } = await import('fs/promises');
         const { existsSync: ex } = await import('fs');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+        const activeDataDir = services.books?.activeDataDir?.() ?? null;
+        const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
         if (ex(projectDir)) {
           const { readdir } = await import('fs/promises');
           const entries = await readdir(projectDir);
-          filesDeleted = entries.length;
-          await rm(projectDir, { recursive: true });
+          if (activeDataDir) {
+            // book data/ is shared across this book's projects — delete only
+            // this project's step files, never the whole dir.
+            const own = entries.filter((f) => f.startsWith(`${project.id}-`));
+            for (const f of own) {
+              await rm(j(projectDir, f)).catch(() => {});
+            }
+            filesDeleted = own.length;
+          } else {
+            filesDeleted = entries.length;
+            await rm(projectDir, { recursive: true });
+          }
         }
       } catch { /* non-fatal */ }
     }

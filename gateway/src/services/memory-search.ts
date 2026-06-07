@@ -87,11 +87,20 @@ export class MemorySearchService {
   private db: any = null;
   private unavailableReason: string | null = null;
   private lastIndexedAt: string | null = null;
+  // Phase 3 read-path: optional resolver for the active book's data/ dir (where
+  // generation outputs now land). Wired in init after BookService exists. When
+  // it returns a path, that dir is indexed instead of the legacy projects/ tree.
+  private activeDataDir: (() => string | null) | null = null;
 
   constructor(workspaceDir: string) {
     this.workspaceDir = workspaceDir;
     this.memoryDir = join(workspaceDir, 'memory');
     this.dbPath = join(workspaceDir, 'memory', 'memory-search.db');
+  }
+
+  /** Wire the active-book data/ dir resolver (book-container Phase 3). */
+  setActiveDataDirResolver(resolver: () => string | null): void {
+    this.activeDataDir = resolver;
   }
 
   /**
@@ -326,45 +335,64 @@ export class MemorySearchService {
       }
     }
 
-    // ── Project step outputs (each .md file in workspace/projects/<slug>/) ──
-    const projectsDir = join(this.workspaceDir, 'projects');
-    if (existsSync(projectsDir)) {
-      const projects = await readdir(projectsDir);
-      for (const slug of projects) {
-        const dir = join(projectsDir, slug);
+    // ── Project step outputs (.md files) ──
+    // Phase 3 read-path: generation outputs now land in the active book's data/
+    // dir (workspace/books/<slug>/data/, flat, project-id-prefixed files). Index
+    // that dir when a book is active; otherwise fall back to the legacy
+    // workspace/projects/<slug>/ tree. Fail-soft if the resolver throws.
+    let activeData: string | null = null;
+    try { activeData = this.activeDataDir?.() ?? null; } catch { activeData = null; }
+
+    // Index every .md file directly under `dir`, using `refPrefix` for sourceRef.
+    const indexMdDir = async (dir: string, refPrefix: string): Promise<void> => {
+      let files: string[];
+      try { files = await readdir(dir); } catch { return; }
+      for (const file of files) {
+        if (!file.endsWith('.md')) continue;
+        const fullPath = join(dir, file);
         try {
-          const stats = await stat(dir);
-          if (!stats.isDirectory()) continue;
-          const files = await readdir(dir);
-          for (const file of files) {
-            if (!file.endsWith('.md')) continue;
-            const fullPath = join(dir, file);
-            try {
-              const fileStats = await stat(fullPath);
-              const mtime = fileStats.mtime.toISOString();
-              // Skip if last-modified is older than our last index pass.
-              if (lastIndexed && mtime < lastIndexed && !opts.force) {
-                skipped++;
-                continue;
-              }
-              const content = await readFile(fullPath, 'utf-8');
-              const titleMatch = content.match(/^#\s+(.+?)$/m);
-              const title = titleMatch ? titleMatch[1].trim() : file.replace('.md', '');
-              this.upsert({
-                source: file === 'manuscript.md' || file === 'compiled-output.md' || file === 'revised-manuscript.md'
-                  ? 'manuscript' : 'project_step',
-                sourceType: 'manuscript-md',
-                sourceRef: `${slug}/${file}`,
-                personaId: null,           // resolved later via project lookup
-                projectId: null,
-                timestamp: mtime,
-                title,
-                body: content.substring(0, 200000), // 200K char cap per file
-              });
-              indexed++;
-            } catch { /* file gone or unreadable */ }
+          const fileStats = await stat(fullPath);
+          if (!fileStats.isFile()) continue;
+          const mtime = fileStats.mtime.toISOString();
+          // Skip if last-modified is older than our last index pass.
+          if (lastIndexed && mtime < lastIndexed && !opts.force) {
+            skipped++;
+            continue;
           }
-        } catch { /* directory gone */ }
+          const content = await readFile(fullPath, 'utf-8');
+          const titleMatch = content.match(/^#\s+(.+?)$/m);
+          const title = titleMatch ? titleMatch[1].trim() : file.replace('.md', '');
+          this.upsert({
+            source: file === 'manuscript.md' || file === 'compiled-output.md' || file === 'revised-manuscript.md'
+              ? 'manuscript' : 'project_step',
+            sourceType: 'manuscript-md',
+            sourceRef: `${refPrefix}/${file}`,
+            personaId: null,           // resolved later via project lookup
+            projectId: null,
+            timestamp: mtime,
+            title,
+            body: content.substring(0, 200000), // 200K char cap per file
+          });
+          indexed++;
+        } catch { /* file gone or unreadable */ }
+      }
+    };
+
+    if (activeData && existsSync(activeData)) {
+      // Active book: outputs are flat in data/ (project-id-prefixed filenames).
+      await indexMdDir(activeData, 'data');
+    } else {
+      const projectsDir = join(this.workspaceDir, 'projects');
+      if (existsSync(projectsDir)) {
+        const projects = await readdir(projectsDir);
+        for (const slug of projects) {
+          const dir = join(projectsDir, slug);
+          try {
+            const stats = await stat(dir);
+            if (!stats.isDirectory()) continue;
+          } catch { continue; /* directory gone */ }
+          await indexMdDir(dir, slug);
+        }
       }
     }
 

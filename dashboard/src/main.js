@@ -134,12 +134,22 @@ export function loadStatus() {
   });
 }
 
+// Exported: the Books panel calls this after switching the active book.
+export async function refreshActiveBook() {
+  try {
+    const a = await api('GET', '/api/books/active');
+    const el = document.getElementById('activeBookIndicator');
+    if (el) el.textContent = a.active ? '📖 ' + (a.active.book?.title || a.active.slug) : '📖 (no active book)';
+  } catch (e) { /* non-fatal */ }
+}
+
 function startPolling() {
   loadStatus();
   loadProjects();
   loadPersonas();
   loadActivity();
   loadHomeStats();
+  refreshActiveBook();
   state.statusPollTimer = setInterval(loadStatus, 10000);
   state.projectPollTimer = setInterval(function() {
     if (state.currentPanel === 'home' || state.currentPanel === 'projects') {

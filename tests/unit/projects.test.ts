@@ -4,8 +4,9 @@
  *
  * Run via: npm run test:unit  (node --test through tsx)
  *
- * Scope: the template catalog (getTemplates) and the natural-language project
- * type heuristic (inferProjectType). Both are pure — no AI, no network. The
+ * Scope: the template catalog (getTemplates — now an injected catalog, sourced
+ * from the library pipelines at boot) and the natural-language project type
+ * heuristic (inferProjectType). Both are pure — no AI, no network. The
  * constructor only reads an optional state file; pointing it at a non-existent
  * path makes loadState() a no-op, so no fixtures are written and nothing needs
  * cleanup. Step orchestration and completion hooks need an injected AI provider
@@ -23,10 +24,29 @@ function makeEngine(): ProjectEngine {
   return new ProjectEngine(undefined, join(tmpdir(), 'bookclaw-unit-test-no-such-root'));
 }
 
+// The template catalog is injected at boot from the library pipelines
+// (gateway/src/init/phase-06-content.ts). Mirror that wiring here so getTemplates
+// has something to return — the same shape phase-06 builds from LibraryService.list('pipeline').
+const SAMPLE_CATALOG = [
+  'book-planning', 'book-bible', 'book-production', 'deep-revision', 'format-export', 'book-launch', 'novel-pipeline',
+].map(name => ({
+  type: name as any,
+  label: name,
+  description: `${name} pipeline`,
+  stepCount: name === 'novel-pipeline' ? 30 : 0,
+  stepCountLabel: name === 'novel-pipeline' ? '30+ auto-generated steps' : undefined,
+}));
+
+function makeEngineWithCatalog(): ProjectEngine {
+  const e = makeEngine();
+  e.setTemplateCatalog(SAMPLE_CATALOG);
+  return e;
+}
+
 // ── getTemplates() ──────────────────────────────────────────────────────────
 
-test('getTemplates returns well-formed entries for the built-in templates', () => {
-  const templates = makeEngine().getTemplates();
+test('getTemplates returns the injected catalog as well-formed entries', () => {
+  const templates = makeEngineWithCatalog().getTemplates();
   assert.ok(templates.length > 0, 'expected at least one template');
   for (const t of templates) {
     assert.equal(typeof t.type, 'string');
@@ -36,15 +56,19 @@ test('getTemplates returns well-formed entries for the built-in templates', () =
   }
 });
 
+test('getTemplates returns an empty list when no catalog is injected', () => {
+  assert.deepEqual(makeEngine().getTemplates(), []);
+});
+
 test('getTemplates exposes the core production templates and the novel pipeline', () => {
-  const types = makeEngine().getTemplates().map(t => t.type);
+  const types = makeEngineWithCatalog().getTemplates().map(t => t.type);
   for (const expected of ['book-planning', 'book-bible', 'book-production', 'deep-revision', 'format-export', 'book-launch', 'novel-pipeline']) {
     assert.ok(types.includes(expected as never), `expected a "${expected}" template`);
   }
 });
 
 test('the novel-pipeline template advertises its auto-generated step count', () => {
-  const novel = makeEngine().getTemplates().find(t => t.type === 'novel-pipeline');
+  const novel = makeEngineWithCatalog().getTemplates().find(t => t.type === 'novel-pipeline');
   assert.ok(novel, 'expected a novel-pipeline template');
   assert.equal(novel!.stepCount, 30);
   assert.equal(novel!.stepCountLabel, '30+ auto-generated steps');

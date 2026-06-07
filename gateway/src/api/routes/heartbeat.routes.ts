@@ -218,9 +218,13 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
 
     const workspaceDir = j(baseDir, 'workspace');
 
-    // Search for the file in workspace → projects → baseDir
+    // Search for the file in workspace → active book data/ → projects → baseDir
+    // Phase 3 read-path: generation outputs now land in the active book's data/
+    // dir (fail-soft — null when no book is active).
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const searchPaths = [
       r(workspaceDir, inputFile),
+      ...(activeDataDir ? [r(activeDataDir, inputFile)] : []),
       r(workspaceDir, 'projects', inputFile),
       r(baseDir, inputFile),
     ];

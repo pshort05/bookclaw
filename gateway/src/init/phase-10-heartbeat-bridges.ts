@@ -157,7 +157,7 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
       const followUpDesc = `Follow-up tasks after completing the first draft of "${originalTitle}". ` +
         `Prepare for beta readers, write query letter, create synopsis.`;
 
-      const project = gw.projectEngine.createProject('book-launch', followUpTitle, followUpDesc, {
+      const project = gw.projectEngine.createProjectResolved('book-launch', followUpTitle, followUpDesc, {
         parentProjectId: originalProjectId,
         parentTitle: originalTitle,
         autoCreated: true,

@@ -119,6 +119,18 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     const { existsSync } = await import('fs');
     const { join } = await import('path');
 
+    // Phase 3 read-path: when a book is active, outputs are flat .md files in its
+    // data/ dir (project-id-prefixed) — list those. Otherwise fall back to the
+    // legacy workspace/projects/<slug>/ subdirectory listing.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    if (activeDataDir && existsSync(activeDataDir)) {
+      const entries = await readdir(activeDataDir, { withFileTypes: true });
+      const projects = entries
+        .filter(e => e.isFile() && e.name.endsWith('.md'))
+        .map(e => e.name);
+      return res.json({ projects });
+    }
+
     const projectsDir = join(baseDir, 'workspace', 'projects');
     if (!existsSync(projectsDir)) {
       return res.json({ projects: [] });

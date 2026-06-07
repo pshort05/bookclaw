@@ -12,7 +12,7 @@
  */
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import {
   BOOK_SCHEMA_VERSION, slugify, classifyVersion,
@@ -27,19 +27,45 @@ export interface BookSelection {
   sections: string[];
 }
 
+/** The library names used to seed the first-run Default Book. */
+const DEFAULT_BOOK_SELECTION: BookSelection = {
+  title: 'Default Book',
+  author: 'default',
+  genre: null,
+  pipeline: 'novel-pipeline',
+  sections: [],
+};
+
 export class BookService {
   private booksDir: string;
   private library: LibraryService;
   private appVersion: string;
+  private activeBookSlug: string | null = null;
+  private readonly activePtrPath: string;
 
   constructor(booksDir: string, library: LibraryService, appVersion: string) {
     this.booksDir = booksDir;
     this.library = library;
     this.appVersion = appVersion;
+    // The active-book pointer lives next to the books dir under .config so it
+    // sits beside projects-state.json and the other workspace config.
+    this.activePtrPath = join(dirname(this.booksDir), '.config', 'active-book.json');
   }
 
   async initialize(): Promise<void> {
     await mkdir(this.booksDir, { recursive: true });
+    // Restore the active-book pointer (fail-soft: a missing/corrupt file just
+    // means "no active book yet" — the boot seed will resolve one).
+    try {
+      if (existsSync(this.activePtrPath)) {
+        const ptr = JSON.parse(readFileSync(this.activePtrPath, 'utf-8'));
+        if (ptr && typeof ptr.slug === 'string' && existsSync(join(this.booksDir, ptr.slug, 'book.json'))) {
+          this.activeBookSlug = ptr.slug;
+        }
+      }
+    } catch (err) {
+      console.warn('  ⚠ Books: could not read active-book pointer — ignoring', err);
+    }
   }
 
   async create(sel: BookSelection): Promise<BookManifest> {
@@ -154,5 +180,91 @@ export class BookService {
       if (!existsSync(join(this.booksDir, cand))) return cand;
     }
     return `${base}-${Date.now()}`;
+  }
+
+  /** The currently-active book slug, or null if none has been set. */
+  getActiveBook(): string | null {
+    return this.activeBookSlug;
+  }
+
+  /**
+   * Set the active book and persist the pointer. Rejects an unknown slug.
+   * Per decision 6 (data expendable until v6) we do NOT block activation on the
+   * book's version-gate status — status stays an informational badge. A non-`ok`
+   * book still activates but we log a warning.
+   */
+  async setActiveBook(slug: string): Promise<void> {
+    const opened = await this.open(slug);
+    if (!opened) throw new Error(`Unknown book: ${slug}`);
+    if (opened.status !== 'ok') {
+      console.warn(`  ⚠ Books: activating "${slug}" with status="${opened.status}" (informational only — runs are not blocked)`);
+    }
+    this.activeBookSlug = slug;
+    await mkdir(dirname(this.activePtrPath), { recursive: true });
+    await writeFile(this.activePtrPath, JSON.stringify({ slug, at: new Date().toISOString() }, null, 2) + '\n', 'utf-8');
+  }
+
+  /** Absolute dir of the active book, or null. */
+  activeBookDir(): string | null {
+    return this.activeBookSlug ? join(this.booksDir, this.activeBookSlug) : null;
+  }
+
+  /** Absolute templates/author/ dir of the active book, or null. */
+  activeAuthorDir(): string | null {
+    const d = this.activeBookDir();
+    return d ? join(d, 'templates', 'author') : null;
+  }
+
+  /** Absolute data/ dir of the active book (where outputs land), or null. */
+  activeDataDir(): string | null {
+    const d = this.activeBookDir();
+    return d ? join(d, 'data') : null;
+  }
+
+  /**
+   * First-run seed (book-container Phase 3a):
+   *  - no books            → create a Default Book (built-in default Author +
+   *                          default pipeline) and activate it.
+   *  - books but no active → activate the newest by createdAt (list() is sorted
+   *                          newest-first).
+   *  - active already set  → no-op.
+   * Returns the resolved active slug (or null if seeding failed fail-soft).
+   */
+  async seedDefaultBook(): Promise<string | null> {
+    if (this.activeBookSlug) return this.activeBookSlug;
+    const books = this.list();
+    try {
+      if (books.length === 0) {
+        const created = await this.create(DEFAULT_BOOK_SELECTION);
+        await this.setActiveBook(created.slug);
+        console.log(`  ✓ Books: seeded Default Book "${created.slug}" and set active`);
+        return created.slug;
+      }
+      const newest = books[0].slug; // list() sorts newest-first
+      await this.setActiveBook(newest);
+      console.log(`  ✓ Books: no active book — activated newest "${newest}"`);
+      return newest;
+    } catch (err) {
+      console.warn(`  ⚠ Books: default-book seed failed (continuing without an active book): ${(err as Error)?.message || err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Parse and return the active book's snapshotted pipeline definition
+   * (templates/pipeline.json → LibraryPipeline shape). Null if no active book
+   * or the file is missing/corrupt (fail-soft — the caller decides what to do).
+   */
+  activePipeline(): import('./library-types.js').LibraryPipeline | null {
+    const d = this.activeBookDir();
+    if (!d) return null;
+    const p = join(d, 'templates', 'pipeline.json');
+    if (!existsSync(p)) return null;
+    try {
+      return JSON.parse(readFileSync(p, 'utf-8'));
+    } catch (err) {
+      console.warn(`  ⚠ Books: could not parse active pipeline.json — ${(err as Error)?.message || err}`);
+      return null;
+    }
   }
 }

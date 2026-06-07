@@ -424,8 +424,14 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readdir: rd, stat: st } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
+    // Phase 3: outputs live in the ACTIVE BOOK's shared data/ dir. Fall back to
+    // the legacy per-project dir only when no book is active. Because the book
+    // dir is shared by every project in the book, scope the listing to THIS
+    // project's files via the `${project.id}-` filename prefix (mirrors the
+    // delete/restart guard) so sibling projects never show up here.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+    const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
 
     if (!ex(projectDir)) return res.json({ files: [] });
 
@@ -434,6 +440,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       const files: Array<{ name: string; size: number; type: string }> = [];
       for (const entry of entries) {
         if (entry === 'uploads') continue; // skip uploads subfolder
+        if (activeDataDir && !entry.startsWith(`${project.id}-`)) continue;
         const fullPath = j(projectDir, entry);
         const info = await st(fullPath);
         if (!info.isFile()) continue;
@@ -465,8 +472,16 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { existsSync: ex } = await import('fs');
 
     const filename = String(req.params.filename);
+    // Phase 3: serve from the ACTIVE BOOK's shared data/ dir (legacy per-project
+    // dir when no book is active). In the shared dir, restrict downloads to THIS
+    // project's files (`${project.id}-` prefix) so one project can't pull a
+    // sibling's output.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+    const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
+    if (activeDataDir && !filename.startsWith(`${project.id}-`)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
     const filePath = safePath(projectDir, filename);
 
     // Security: ensure the resolved path is inside the project directory
@@ -510,8 +525,17 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readFile: rf, writeFile: wf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
+    // Phase 3: read source / write docx in the ACTIVE BOOK's shared data/ dir
+    // (legacy per-project dir when no book is active). In the shared dir, only
+    // this project's files (`${project.id}-` prefix) are addressable; the
+    // generated docx inherits the prefix from the source name, so the returned
+    // download URL resolves under the same per-project scope.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+    const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
+    if (activeDataDir && !String(filename).startsWith(`${project.id}-`)) {
+      return res.status(404).json({ error: 'Source file not found' });
+    }
     const sourcePath = safePath(projectDir, String(filename));
 
     if (!sourcePath) {
@@ -551,13 +575,24 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readdir: rd, readFile: rf, writeFile: wf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
+    // Phase 3: compile from the ACTIVE BOOK's shared data/ dir (legacy
+    // per-project dir when no book is active). The shared dir holds every
+    // project's files, so the filename-pattern fallbacks and the universal
+    // "remaining *.md" pass are scoped to THIS project via the `${project.id}-`
+    // prefix; output files are written with that prefix too so they don't
+    // collide and stay downloadable. Step files (read by exact `${s.id}-...`
+    // name, where s.id already starts with `${project.id}-`) are inherently
+    // scoped.
+    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const projectDir = j(baseDir, 'workspace', 'projects', projectSlug);
+    const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
+    const outPrefix = activeDataDir ? `${project.id}-` : '';
 
     if (!ex(projectDir)) return res.status(404).json({ error: 'No project files found' });
 
     try {
-      const entries = await rd(projectDir);
+      const entries = (await rd(projectDir))
+        .filter(f => !activeDataDir || f.startsWith(`${project.id}-`));
       const sectionContents: string[] = [];
       const isChapterProject = project.type === 'book-production' || project.type === 'novel-pipeline';
       const isDeepRevision = project.type === 'deep-revision';
@@ -696,7 +731,8 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
 
         // Second: pick up any other .md files not already included (research files, extras)
         const remainingMd = entries
-          .filter(f => f.endsWith('.md') && !usedFiles.has(f) && f !== 'manuscript.md' && f !== 'compiled-output.md')
+          .filter(f => f.endsWith('.md') && !usedFiles.has(f) &&
+            f !== `${outPrefix}manuscript.md` && f !== `${outPrefix}compiled-output.md`)
           .sort();
         for (const mf of remainingMd) {
           const raw = await rf(j(projectDir, mf), 'utf-8');
@@ -712,12 +748,15 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       // Build compiled document
       const compiledMd = `# ${project.title}\n\n` + sectionContents.join('\n\n---\n\n');
       // Deep-revision produces a real revised manuscript, so name it 'manuscript' (not 'compiled-output').
-      const outputBaseName = (isChapterProject || isDeepRevision) ? 'manuscript' : 'compiled-output';
+      // In the shared book dir, prefix the output base name with the project id
+      // so sibling projects don't overwrite each other and the returned files
+      // stay downloadable (download/files are scoped to `${project.id}-`).
+      const outputBaseName = outPrefix + ((isChapterProject || isDeepRevision) ? 'manuscript' : 'compiled-output');
       await wf(j(projectDir, `${outputBaseName}.md`), compiledMd, 'utf-8');
 
       // For revision projects, save the diagnostic report as a companion file so users can download both.
       if (isDeepRevision && revisionReportContent) {
-        await wf(j(projectDir, 'revision-report.md'), revisionReportContent, 'utf-8');
+        await wf(j(projectDir, `${outPrefix}revision-report.md`), revisionReportContent, 'utf-8');
       }
 
       // Get persona info for metadata
@@ -755,7 +794,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
 
       const totalWords = compiledMd.split(/\s+/).length;
       // Report the revision-report companion file too, so the dashboard can offer a download link.
-      if (isDeepRevision && revisionReportContent) exportFiles.push('revision-report.md');
+      if (isDeepRevision && revisionReportContent) exportFiles.push(`${outPrefix}revision-report.md`);
       res.json({
         success: true,
         sections: sectionContents.length,

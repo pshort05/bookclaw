@@ -3,6 +3,7 @@
 import { api } from '../lib/api.js';
 import { showToast } from '../lib/ui.js';
 import { esc } from '../lib/format.js';
+import { refreshActiveBook } from '../main.js';
 
 function statusBadge(status) {
   const map = { ok: 'var(--success)', readonly: 'var(--info)', quarantined: 'var(--danger)' };
@@ -32,19 +33,37 @@ async function renderList() {
   let data = { books: [] };
   try { data = await api('GET', '/api/books'); }
   catch (e) { el.innerHTML = '<div style="color:var(--danger);">Failed to load books: ' + esc(e.message) + '</div>'; return; }
+  let active = null;
+  try { const a = await api('GET', '/api/books/active'); active = a.active?.slug || null; } catch (e) { /* non-fatal */ }
   if (!data.books.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No books yet. Click “New Book” to create one.</div>'; return; }
   let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-  html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Created</th></tr>';
+  html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Active</th><th>Created</th></tr>';
   for (const b of data.books) {
+    const isActive = b.slug === active;
     html += '<tr style="border-top:1px solid var(--border);">' +
       '<td style="padding:6px 8px;">' + esc(b.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b.slug) + '</span></td>' +
       '<td>' + esc(b.phase) + '</td>' +
       '<td>' + statusBadge(b.status) + '</td>' +
+      '<td style="text-align:center;">' +
+        (isActive
+          ? '<span class="badge" style="background:var(--success);color:#fff;">active</span>'
+          : '<button class="small secondary bkSetActive" data-slug="' + esc(b.slug) + '">Set active</button>') +
+        '</td>' +
       '<td style="color:var(--muted);">' + esc((b.createdAt || '').slice(0, 10)) + '</td>' +
       '</tr>';
   }
   html += '</table>';
   el.innerHTML = html;
+  el.querySelectorAll('.bkSetActive').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api('POST', '/api/books/active', { slug: btn.dataset.slug });
+        showToast('Active book set: ' + btn.dataset.slug);
+        await renderList();
+        refreshActiveBook();
+      } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+    });
+  });
 }
 
 async function openCreate() {

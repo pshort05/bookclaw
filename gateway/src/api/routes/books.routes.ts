@@ -11,6 +11,29 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({ books: services.books.list() });
   });
 
+  app.get('/api/books/active', async (_req: Request, res: Response) => {
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.json({ active: null });
+    const result = await services.books.open(slug);
+    if (!result) return res.json({ active: null });
+    res.json({ active: { slug, book: result.manifest, status: result.status } });
+  });
+
+  app.post('/api/books/active', async (req: Request, res: Response) => {
+    const slug = typeof req.body?.slug === 'string' ? req.body.slug : '';
+    if (!slug) return res.status(400).json({ error: 'slug (string) is required' });
+    try {
+      await services.books.setActiveBook(slug);
+      // Re-point the Author identity to the newly-active book (Phase 3b).
+      const authorDir = services.books.activeAuthorDir();
+      if (authorDir && gateway.soul) await gateway.soul.useBook(authorDir);
+      res.json({ success: true, active: slug });
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      res.status(/unknown/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
+  });
+
   app.get('/api/books/:slug', async (req: Request, res: Response) => {
     const result = await services.books.open(String(req.params.slug));
     if (!result) return res.status(404).json({ error: 'Book not found' });
