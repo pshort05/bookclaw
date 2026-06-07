@@ -23,6 +23,7 @@ function seedLibrary(root: string): LibraryService {
   const builtin = join(root, 'library');
   write(builtin, 'authors/default/SOUL.md', '# Default Author\n\ndefault soul');
   write(builtin, 'authors/default/STYLE-GUIDE.md', 'default style');
+  write(builtin, 'voices/default/STYLE-GUIDE.md', 'default voice style');
   write(builtin, 'pipelines/novel-pipeline.json', JSON.stringify({ schemaVersion: 1, name: 'novel-pipeline', label: 'Novel', description: 'd', dynamic: true, steps: [] }));
   return new LibraryService(builtin, join(root, 'workspace', 'library'), fakeSkills);
 }
@@ -46,7 +47,7 @@ test('setActiveBook persists and survives a reload', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-active-'));
   try {
     const svc = await makeSvc(root);
-    const book = await svc.create({ title: 'My Novel', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const book = await svc.create({ title: 'My Novel', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
     await svc.setActiveBook(book.slug);
     assert.equal(svc.getActiveBook(), book.slug);
     // Persisted to disk
@@ -83,11 +84,50 @@ test('seedDefaultBook activates the newest book when books exist but none active
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-active-'));
   try {
     const svc = await makeSvc(root);
-    await svc.create({ title: 'Older', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
-    const newer = await svc.create({ title: 'Newer', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.create({ title: 'Older', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const newer = await svc.create({ title: 'Newer', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
     const slug = await svc.seedDefaultBook();
     assert.equal(slug, newer.slug); // list() sorts newest-first
     assert.equal(svc.list().length, 2); // did NOT create a Default Book
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('delete() of the active book re-activates the newest remaining', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-del-'));
+  try {
+    const svc = await makeSvc(root);
+    const older = await svc.create({ title: 'Older', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const active = await svc.create({ title: 'Active', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.setActiveBook(active.slug);
+    const { active: nowActive } = await svc.delete(active.slug);
+    assert.equal(nowActive, older.slug, 're-activated the remaining book');
+    assert.equal(svc.getActiveBook(), older.slug);
+    assert.equal(svc.list().length, 1);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('delete() of the last book re-seeds a Default Book', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-del2-'));
+  try {
+    const svc = await makeSvc(root);
+    const only = await svc.create({ title: 'Only', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.setActiveBook(only.slug);
+    const { active } = await svc.delete(only.slug);
+    assert.ok(active && active !== only.slug, 'a fresh Default Book was seeded + activated');
+    assert.equal(svc.list().length, 1);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('delete() of a non-active book leaves active untouched', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-del3-'));
+  try {
+    const svc = await makeSvc(root);
+    const keep = await svc.create({ title: 'Keep', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const drop = await svc.create({ title: 'Drop', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.setActiveBook(keep.slug);
+    const { active } = await svc.delete(drop.slug);
+    assert.equal(active, keep.slug);
+    assert.equal(svc.list().length, 1);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

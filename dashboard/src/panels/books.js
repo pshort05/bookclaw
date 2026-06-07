@@ -44,10 +44,11 @@ async function renderList() {
       '<td style="padding:6px 8px;">' + esc(b.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b.slug) + '</span></td>' +
       '<td>' + esc(b.phase) + '</td>' +
       '<td>' + statusBadge(b.status) + '</td>' +
-      '<td style="text-align:center;">' +
+      '<td style="text-align:center;white-space:nowrap;">' +
         (isActive
           ? '<span class="badge" style="background:var(--success);color:#fff;">active</span>'
           : '<button class="small secondary bkSetActive" data-slug="' + esc(b.slug) + '">Set active</button>') +
+        ' <button class="small secondary bkDelete" data-slug="' + esc(b.slug) + '">Delete</button>' +
         '</td>' +
       '<td style="color:var(--muted);">' + esc((b.createdAt || '').slice(0, 10)) + '</td>' +
       '</tr>';
@@ -64,6 +65,18 @@ async function renderList() {
       } catch (e) { showToast('Failed: ' + e.message, 'error'); }
     });
   });
+  el.querySelectorAll('.bkDelete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug;
+      if (!confirm('Delete book "' + slug + '"? This permanently removes its data and cannot be undone.')) return;
+      try {
+        const r = await api('DELETE', '/api/books/' + encodeURIComponent(slug));
+        showToast('Deleted ' + slug + ((r && r.active) ? ' — active is now ' + r.active : ''));
+        await renderList();
+        refreshActiveBook();
+      } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+    });
+  });
 }
 
 async function openCreate() {
@@ -76,7 +89,7 @@ async function openCreate() {
   try { lib = await api('GET', '/api/library'); }
   catch (e) { box.innerHTML = '<div style="color:var(--danger);">Failed to load library: ' + esc(e.message) + '</div>'; return; }
 
-  const byKind = { author: [], genre: [], pipeline: [], section: [] };
+  const byKind = { author: [], voice: [], genre: [], pipeline: [], section: [] };
   (lib.entries || []).forEach((e) => { if (byKind[e.kind]) byKind[e.kind].push(e); });
 
   const opts = (arr) => arr.map((e) => '<option value="' + esc(e.name) + '">' + esc(e.name) + ' (' + esc(e.source) + ')</option>').join('');
@@ -89,6 +102,7 @@ async function openCreate() {
     '<div style="display:grid;grid-template-columns:120px 1fr;gap:10px 12px;max-width:560px;align-items:center;">' +
       '<label>Title</label><input id="bkTitle" type="text" placeholder="My Novel" style="width:100%;">' +
       '<label>Author</label><select id="bkAuthor">' + opts(byKind.author) + '</select>' +
+      '<label>Voice</label><select id="bkVoice">' + opts(byKind.voice) + '</select>' +
       '<label>Genre</label><select id="bkGenre"><option value="">(none)</option>' + opts(byKind.genre) + '</select>' +
       '<label>Pipeline</label><select id="bkPipeline">' + opts(byKind.pipeline) + '</select>' +
       '<label style="align-self:start;">Sections</label><div>' + sectionChecks + '</div>' +
@@ -106,6 +120,7 @@ async function openCreate() {
 async function submitCreate(box) {
   const title = box.querySelector('#bkTitle').value.trim();
   const author = box.querySelector('#bkAuthor').value;
+  const voice = box.querySelector('#bkVoice').value;
   const genre = box.querySelector('#bkGenre').value || null;
   const pipeline = box.querySelector('#bkPipeline').value;
   const sections = Array.prototype.slice.call(box.querySelectorAll('.bkSection:checked')).map((c) => c.value);
@@ -113,9 +128,10 @@ async function submitCreate(box) {
   err.textContent = '';
   if (!title) { err.textContent = 'Title is required.'; return; }
   if (!author) { err.textContent = 'Pick an author (the library has none — create one first).'; return; }
+  if (!voice) { err.textContent = 'No voices in the library. Add one under library/voices/<name>/ (STYLE-GUIDE.md + VOICE-PROFILE.md) or workspace/library/voices/, then reload.'; return; }
   if (!pipeline) { err.textContent = 'Pick a pipeline.'; return; }
   try {
-    const res = await api('POST', '/api/books', { title, author, genre, pipeline, sections });
+    const res = await api('POST', '/api/books', { title, author, voice, genre, pipeline, sections });
     showToast('Created book: ' + res.book.title, 'success');
     box.style.display = 'none'; box.innerHTML = '';
     await renderList();

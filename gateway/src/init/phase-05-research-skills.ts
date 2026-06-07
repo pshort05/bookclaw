@@ -70,7 +70,7 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   // either way we degrade to whatever loaded and continue.
   try {
     await gw.library.loadAll();
-    console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/genres/pipelines/sections + skills)`);
+    console.log(`  ✓ Library: ${gw.library.getLoadedCount()} templates (authors/voices/genres/pipelines/sections + skills)`);
   } catch (err) {
     console.warn(`  ⚠ Library: load failed, continuing with degraded library — ${(err as Error)?.message || err}`);
   }
@@ -97,8 +97,8 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   // useBook() keeps the default Author if the snapshot is missing.
   const activeAuthorDir = gw.books.activeAuthorDir();
   if (activeAuthorDir) {
-    await gw.soul.useBook(activeAuthorDir);
-    console.log(`  ✓ Soul: using active book's Author ("${gw.soul.getName()}")`);
+    await gw.soul.useBook(activeAuthorDir, gw.books.activeVoiceDir());
+    console.log(`  ✓ Soul: using active book's Author + Voice ("${gw.soul.getName()}")`);
   }
 
   // ── Phase 6a: Auto-generate SKILLS.txt reference file ──

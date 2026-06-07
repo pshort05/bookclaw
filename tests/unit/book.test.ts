@@ -37,6 +37,7 @@ function seedLibrary(root: string): LibraryService {
   const builtin = join(root, 'library');
   write(builtin, 'authors/default/SOUL.md', 'default soul');
   write(builtin, 'authors/default/STYLE-GUIDE.md', 'default style');
+  write(builtin, 'voices/default/STYLE-GUIDE.md', 'default voice style');
   write(builtin, 'genres/romantasy/tropes.md', 'romantasy tropes');
   write(builtin, 'pipelines/novel-pipeline.json', JSON.stringify({ schemaVersion: 1, name: 'novel-pipeline', label: 'Novel', description: 'd', dynamic: true, steps: [] }));
   write(builtin, 'sections/front-matter.md', 'FRONT');
@@ -50,7 +51,7 @@ test('BookService.create snapshots selected templates and writes a manifest', as
     const lib = seedLibrary(root); await lib.loadAll();
     const booksDir = join(root, 'workspace', 'books');
     const svc = new BookService(booksDir, lib, '9.9.9');
-    const created = await svc.create({ title: "The Dragon's Heir", author: 'default', genre: 'romantasy', pipeline: 'novel-pipeline', sections: ['front-matter', 'back-matter'] });
+    const created = await svc.create({ title: "The Dragon's Heir", author: 'default', voice: 'default', genre: 'romantasy', pipeline: 'novel-pipeline', sections: ['front-matter', 'back-matter'] });
     assert.equal(created.slug, 'the-dragon-s-heir');
     const dir = join(booksDir, created.slug);
     const manifest = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
@@ -72,12 +73,12 @@ test('BookService.create de-duplicates slugs and validates inputs', async () => 
   try {
     const lib = seedLibrary(root); await lib.loadAll();
     const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
-    const a = await svc.create({ title: 'Same', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
-    const b = await svc.create({ title: 'Same', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const a = await svc.create({ title: 'Same', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const b = await svc.create({ title: 'Same', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
     assert.equal(a.slug, 'same');
     assert.equal(b.slug, 'same-2');
-    await assert.rejects(() => svc.create({ title: 'X', author: 'nope', genre: null, pipeline: 'novel-pipeline', sections: [] }), /author/i);
-    await assert.rejects(() => svc.create({ title: 'X', author: 'default', genre: null, pipeline: 'nope', sections: [] }), /pipeline/i);
+    await assert.rejects(() => svc.create({ title: 'X', author: 'nope', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] }), /author/i);
+    await assert.rejects(() => svc.create({ title: 'X', author: 'default', voice: 'default', genre: null, pipeline: 'nope', sections: [] }), /pipeline/i);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -87,7 +88,7 @@ test('BookService.list returns summaries with computed gate status', async () =>
     const lib = seedLibrary(root); await lib.loadAll();
     const booksDir = join(root, 'workspace', 'books');
     const svc = new BookService(booksDir, lib, '9.9.9');
-    await svc.create({ title: 'Good Book', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.create({ title: 'Good Book', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
     const dir = join(booksDir, 'future-book');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'book.json'), JSON.stringify({ slug: 'future-book', title: 'Future', phase: 'planning', schemaVersion: 999, createdAt: '2026-01-01T00:00:00Z' }));
@@ -103,11 +104,54 @@ test('BookService.create with no genre omits the genre snapshot + records null',
     const lib = seedLibrary(root); await lib.loadAll();
     const booksDir = join(root, 'workspace', 'books');
     const svc = new BookService(booksDir, lib, '9.9.9');
-    const created = await svc.create({ title: 'No Genre', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const created = await svc.create({ title: 'No Genre', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
     const dir = join(booksDir, created.slug);
     assert.equal(existsSync(join(dir, 'templates/genre')), false, 'no genre dir when genre is null');
     const manifest = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
     assert.equal(manifest.pulledFrom.genre, null);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('create() snapshots voice + pipeline-referenced skills into templates/', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-booksnap-'));
+  try {
+    const builtin = join(root, 'library');
+    write(builtin, 'authors/default/SOUL.md', '# A\nidentity');
+    write(builtin, 'voices/default/STYLE-GUIDE.md', 'style');
+    write(builtin, 'pipelines/mini.json', JSON.stringify({
+      schemaVersion: 1, name: 'mini', label: 'Mini', description: 'd',
+      steps: [{ id: 's1', label: 'Outline', taskType: 'outline', skill: 'outline-helper', promptTemplate: 'Write {{title}}' }],
+    }));
+    const skills = {
+      getSkillCatalog: () => [{ name: 'outline-helper', description: 'd', source: 'builtin' as const }],
+      getSkillByName: (n: string) => n === 'outline-helper' ? { content: 'SKILL BODY', description: 'd', source: 'builtin' as const } : undefined,
+    } as never;
+    const lib = new LibraryService(builtin, join(root, 'workspace', 'library'), skills);
+    await lib.loadAll();
+    const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+    await svc.initialize();
+
+    const m = await svc.create({ title: 'T', author: 'default', voice: 'default', genre: null, pipeline: 'mini', sections: [] });
+    const dir = join(root, 'workspace', 'books', m.slug);
+    assert.ok(existsSync(join(dir, 'templates', 'voice', 'STYLE-GUIDE.md')), 'voice snapshot');
+    assert.equal(readFileSync(join(dir, 'templates', 'skills', 'outline-helper', 'SKILL.md'), 'utf-8'), 'SKILL BODY');
+    assert.equal(m.pulledFrom.voice.name, 'default');
+    assert.deepEqual(m.pulledFrom.skills, ['outline-helper']);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('create() rejects an unknown voice', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-booksnap2-'));
+  try {
+    const builtin = join(root, 'library');
+    write(builtin, 'authors/default/SOUL.md', '# A\nx');
+    write(builtin, 'voices/default/STYLE-GUIDE.md', 'style');
+    write(builtin, 'pipelines/mini.json', JSON.stringify({ schemaVersion: 1, name: 'mini', label: 'M', description: 'd', dynamic: true, steps: [] }));
+    const lib = new LibraryService(builtin, join(root, 'workspace', 'library'), { getSkillCatalog: () => [], getSkillByName: () => undefined } as never);
+    await lib.loadAll();
+    const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+    await svc.initialize();
+    await assert.rejects(() => svc.create({ title: 'T', author: 'default', voice: 'nope', genre: null, pipeline: 'mini', sections: [] }), /voice/i);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -117,7 +161,7 @@ test('BookService.open returns manifest+status, quarantines too-old, undefined w
     const lib = seedLibrary(root); await lib.loadAll();
     const booksDir = join(root, 'workspace', 'books');
     const svc = new BookService(booksDir, lib, '9.9.9');
-    const created = await svc.create({ title: 'Openable', author: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    const created = await svc.create({ title: 'Openable', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
 
     const ok = await svc.open(created.slug);
     assert.equal(ok?.status, 'ok');

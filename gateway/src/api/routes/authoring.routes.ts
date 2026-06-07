@@ -10,8 +10,10 @@ import { safePath } from './_shared.js';
  *
  * Persistence model: built-in skills (shipped in skills/) are read-only; user
  * edits/new skills are written to the persisted workspace/library/skills/** overlay,
- * which SkillLoader merges over the built-ins by name. Prompt files already
- * live in workspace/soul/. All writes are path-whitelisted via safePath; these
+ * which SkillLoader merges over the built-ins by name. Prompt files live where
+ * SoulService reads them — the active book's Author/Voice snapshot when a book
+ * is active, else workspace/soul/ (see promptDirFor). All writes are
+ * path-whitelisted via safePath; these
  * are internal prompt files (no external side effect, so no confirmation gate).
  */
 export function mountAuthoring(app: Application, gateway: any, baseDir: string): void {
@@ -22,12 +24,29 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
   const PROMPT_FILES = ['SOUL.md', 'STYLE-GUIDE.md', 'VOICE-PROFILE.md', 'PERSONALITY.md'];
   const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'ops'];
 
+  // Resolve the directory a prompt file lives in, matching where SoulService
+  // reads it (book-container Phase 3): when a book is active, identity files
+  // (SOUL.md, PERSONALITY.md) live in the book's Author snapshot and style files
+  // (STYLE-GUIDE.md, VOICE-PROFILE.md) in its Voice snapshot. With no active
+  // book, fall back to the legacy workspace/soul dir (SoulService's initial dir).
+  // This keeps the editor's read/write target in sync with reload(), so an
+  // in-dashboard edit is no longer silently discarded by generation.
+  const promptDirFor = (file: string): string => {
+    const activeAuthor = services.books?.activeAuthorDir?.();
+    const activeVoice = services.books?.activeVoiceDir?.();
+    if (activeAuthor && activeVoice) {
+      if (file === 'STYLE-GUIDE.md' || file === 'VOICE-PROFILE.md') return activeVoice;
+      return activeAuthor; // SOUL.md, PERSONALITY.md
+    }
+    return soulDir; // no active book → legacy location
+  };
+
   // ── Prompts (author identity) ──────────────────────────────────────────────
 
   app.get('/api/prompts', async (_req: Request, res: Response) => {
     const files = [];
     for (const file of PROMPT_FILES) {
-      const p = join(soulDir, file);
+      const p = join(promptDirFor(file), file);
       const exists = existsSync(p);
       files.push({ file, exists, content: exists ? await readFile(p, 'utf-8') : '' });
     }
@@ -41,10 +60,11 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
     }
     const { content } = req.body || {};
     if (typeof content !== 'string') return res.status(400).json({ error: 'content (string) required' });
-    const dest = safePath(soulDir, file);
+    const dir = promptDirFor(file);
+    const dest = safePath(dir, file);
     if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
     try {
-      await mkdir(soulDir, { recursive: true });
+      await mkdir(dir, { recursive: true });
       await writeFile(dest, content, 'utf-8');
       await services.soul.reload();
       res.json({ success: true, file });

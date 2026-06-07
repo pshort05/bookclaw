@@ -36,7 +36,7 @@ test('useBook re-points the source and reload changes getFullContext', async () 
     assert.match(soul.getFullContext(), /Voice of A/);
     assert.equal(soul.getName(), 'Author A');
 
-    await soul.useBook(b);
+    await soul.useBook(b, null);
     assert.match(soul.getFullContext(), /Voice of B/);
     assert.equal(soul.getName(), 'Author B');
     assert.doesNotMatch(soul.getFullContext(), /Voice of A/);
@@ -49,7 +49,7 @@ test('useBook is fail-soft: a missing dir keeps the prior author loaded', async 
     const a = authorDir(root, 'authorA', '# Author A\n\nVoice of A');
     const soul = new SoulService(a);
     await soul.load();
-    await soul.useBook(join(root, 'does-not-exist'));
+    await soul.useBook(join(root, 'does-not-exist'), null);
     // Falls back: prior author context is retained, not blanked.
     assert.match(soul.getFullContext(), /Voice of A/);
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -74,11 +74,42 @@ test('useBook resets fields: switching to a leaner author does not leak style/vo
     assert.match(soul.getFullContext(), /Style guide of A/);
     assert.match(soul.getFullContext(), /Voice profile of A/);
 
-    await soul.useBook(b);
+    await soul.useBook(b, null);
     const ctx = soul.getFullContext();
     assert.match(ctx, /Voice of B/);
     // A's style guide and voice profile must NOT leak into B's context.
     assert.doesNotMatch(ctx, /Style guide of A/);
     assert.doesNotMatch(ctx, /Voice profile of A/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('useBook composes identity from authorDir and style from voiceDir', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-soul2-'));
+  try {
+    const authorDir = join(root, 'a'); const voiceDir = join(root, 'v');
+    mkdirSync(authorDir, { recursive: true }); mkdirSync(voiceDir, { recursive: true });
+    writeFileSync(join(authorDir, 'SOUL.md'), '# Author A\nidentity A', 'utf-8');
+    writeFileSync(join(voiceDir, 'STYLE-GUIDE.md'), 'Style of V', 'utf-8');
+    writeFileSync(join(voiceDir, 'VOICE-PROFILE.md'), 'Voice of V', 'utf-8');
+    const soul = new SoulService(join(root, 'unused'));
+    await soul.useBook(authorDir, voiceDir);
+    const ctx = soul.getFullContext();
+    assert.match(ctx, /identity A/);
+    assert.match(ctx, /Style of V/);
+    assert.match(ctx, /Voice of V/);
+    assert.equal(soul.getName(), 'Author A');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('useBook with no separate voiceDir falls back to reading style from the author dir', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-soul3-'));
+  try {
+    const authorDir = join(root, 'a');
+    mkdirSync(authorDir, { recursive: true });
+    writeFileSync(join(authorDir, 'SOUL.md'), '# Legacy\nx', 'utf-8');
+    writeFileSync(join(authorDir, 'STYLE-GUIDE.md'), 'Legacy style', 'utf-8');
+    const soul = new SoulService(join(root, 'unused'));
+    await soul.useBook(authorDir, null);
+    assert.match(soul.getFullContext(), /Legacy style/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

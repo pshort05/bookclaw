@@ -38,12 +38,13 @@ interface SkillCatalogLike {
 }
 
 /** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
-const FILE_KINDS = ['author', 'genre', 'pipeline', 'section'] as const;
+const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section'] as const;
 type FileKind = (typeof FILE_KINDS)[number];
 
 /** Subdirectory under the library root for each file-backed kind. */
 const DIR_LAYOUT: Record<FileKind, string> = {
   author: 'authors',
+  voice: 'voices',
   genre: 'genres',
   pipeline: 'pipelines',
   section: 'sections',

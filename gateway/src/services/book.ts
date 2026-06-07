@@ -10,7 +10,7 @@
  * Phase 2 STORES books; it does not wire them into generation (Phase 3). Skills
  * are not snapshotted yet (Phase 3/4). Reads/writes stay under booksDir.
  */
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
@@ -22,6 +22,7 @@ import {
 export interface BookSelection {
   title: string;
   author: string;
+  voice: string;
   genre: string | null;
   pipeline: string;
   sections: string[];
@@ -31,6 +32,7 @@ export interface BookSelection {
 const DEFAULT_BOOK_SELECTION: BookSelection = {
   title: 'Default Book',
   author: 'default',
+  voice: 'default',
   genre: null,
   pipeline: 'novel-pipeline',
   sections: [],
@@ -74,6 +76,8 @@ export class BookService {
 
     const author = this.library.get('author', sel.author);
     if (!author || !author.files) throw new Error(`Unknown author template: ${sel.author}`);
+    const voice = this.library.get('voice', sel.voice);
+    if (!voice || !voice.files) throw new Error(`Unknown voice template: ${sel.voice}`);
     const pipeline = this.library.get('pipeline', sel.pipeline);
     if (!pipeline || !pipeline.pipeline) throw new Error(`Unknown pipeline template: ${sel.pipeline}`);
     let genre: LibraryEntryFull | null = null;
@@ -95,6 +99,10 @@ export class BookService {
     for (const [file, content] of Object.entries(author.files)) {
       await writeFile(join(dir, 'templates', 'author', file), content, 'utf-8');
     }
+    await mkdir(join(dir, 'templates', 'voice'), { recursive: true });
+    for (const [file, content] of Object.entries(voice.files)) {
+      await writeFile(join(dir, 'templates', 'voice', file), content, 'utf-8');
+    }
     if (genre && genre.files) {
       await mkdir(join(dir, 'templates', 'genre'), { recursive: true });
       for (const [file, content] of Object.entries(genre.files)) {
@@ -102,6 +110,25 @@ export class BookService {
       }
     }
     await writeFile(join(dir, 'templates', 'pipeline.json'), JSON.stringify(pipeline.pipeline, null, 2) + '\n', 'utf-8');
+    // Frozen skills record: snapshot the SKILL.md of each skill the chosen
+    // pipeline's steps reference. SkillLoader matching stays global (not driven
+    // by this snapshot); a missing skill is skipped fail-soft.
+    const skillNames = Array.from(new Set(
+      (pipeline.pipeline.steps || [])
+        .map((s) => s.skill)
+        .filter((n): n is string => typeof n === 'string' && n.length > 0),
+    ));
+    const snappedSkills: string[] = [];
+    for (const name of skillNames) {
+      const sk = this.library.get('skill', name);
+      if (!sk || typeof sk.content !== 'string') {
+        console.warn(`  ⚠ Books: skill "${name}" referenced by pipeline not found — skipping snapshot`);
+        continue;
+      }
+      await mkdir(join(dir, 'templates', 'skills', name), { recursive: true });
+      await writeFile(join(dir, 'templates', 'skills', name, 'SKILL.md'), sk.content, 'utf-8');
+      snappedSkills.push(name);
+    }
     if (sectionEntries.length) {
       await mkdir(join(dir, 'templates', 'sections'), { recursive: true });
       for (const s of sectionEntries) {
@@ -124,9 +151,11 @@ export class BookService {
       createdAt: now,
       pulledFrom: {
         author: ref(sel.author, author.source),
+        voice: ref(sel.voice, voice.source),
         genre: genre ? ref(sel.genre as string, genre.source) : null,
         pipeline: ref(sel.pipeline, pipeline.source, pipeline.pipeline.schemaVersion),
         sections: sectionEntries.map((s) => s.name),
+        skills: snappedSkills,
       },
       history: [{ at: now, event: 'created' }],
     };
@@ -175,6 +204,12 @@ export class BookService {
     }
   }
 
+  /** True if a book directory with this slug exists (does NOT require a parseable book.json). */
+  exists(slug: string): boolean {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return false;
+    return existsSync(join(this.booksDir, slug));
+  }
+
   private uniqueSlug(base: string): string {
     if (!existsSync(join(this.booksDir, base))) return base;
     for (let i = 2; i < 1000; i++) {
@@ -217,6 +252,12 @@ export class BookService {
     return d ? join(d, 'templates', 'author') : null;
   }
 
+  /** Absolute templates/voice/ dir of the active book, or null. */
+  activeVoiceDir(): string | null {
+    const d = this.activeBookDir();
+    return d ? join(d, 'templates', 'voice') : null;
+  }
+
   /** Absolute data/ dir of the active book (where outputs land), or null. */
   activeDataDir(): string | null {
     const d = this.activeBookDir();
@@ -247,9 +288,25 @@ export class BookService {
       console.log(`  ✓ Books: no active book — activated newest "${newest}"`);
       return newest;
     } catch (err) {
-      console.warn(`  ⚠ Books: default-book seed failed (continuing without an active book): ${(err as Error)?.message || err}`);
+      console.error(`  ✗ Books: failed to seed/activate a Default Book — the app has NO active book. Check that the library has author 'default', voice 'default', and pipeline 'novel-pipeline' loaded. Cause: ${(err as Error)?.message || err}`);
       return null;
     }
+  }
+
+  /**
+   * Delete a book directory. If it was the active book, clear the pointer and
+   * re-resolve via seedDefaultBook() (activate newest, or seed a fresh Default
+   * Book if none remain). Returns the resulting active slug. The route confirms
+   * the book exists before calling.
+   */
+  async delete(slug: string): Promise<{ active: string | null }> {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Error(`Invalid slug: ${slug}`);
+    await rm(join(this.booksDir, slug), { recursive: true, force: true });
+    if (this.activeBookSlug === slug) {
+      this.activeBookSlug = null;
+      await this.seedDefaultBook();
+    }
+    return { active: this.activeBookSlug };
   }
 
   /**

@@ -166,8 +166,8 @@ restore(){
   done
   for slug in "${CREATED_BOOKS[@]:-}"; do
     [ -z "$slug" ] && continue
-    echo "  [cleanup] NOTE: book '$slug' has no DELETE endpoint yet (Phase 4) — remove manually:"
-    echo "            rm -rf <workspace>/books/$slug"
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/books/$slug" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted book $slug"
   done
 
   local c1; c1=$(daily)
@@ -198,10 +198,23 @@ elif [ "$LIBCODE" = "200" ] && echo "$LIB" | grep -q '"pipeline"' && echo "$LIB"
   # Pick a real pipeline name + author name + section names from the entries.
   PIPE_NAME=$(echo "$LIB" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const e=(JSON.parse(s).entries||[]).find(x=>x.kind==="pipeline"&&x.name!=="novel-pipeline")||(JSON.parse(s).entries||[]).find(x=>x.kind==="pipeline");console.log(e?e.name:"")}catch(e){console.log("")}})')
   AUTHOR_NAME=$(echo "$LIB" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const e=(JSON.parse(s).entries||[]).find(x=>x.kind==="author");console.log(e?e.name:"")}catch(e){console.log("")}})')
+  VOICE_NAME=$(echo "$LIB" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const e=(JSON.parse(s).entries||[]).find(x=>x.kind==="voice");console.log(e?e.name:"")}catch(e){console.log("")}})')
+  [ -z "$VOICE_NAME" ] && VOICE_NAME="default"
   SECTION_NAMES=$(echo "$LIB" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.stringify((JSON.parse(s).entries||[]).filter(x=>x.kind==="section").map(x=>x.name)))}catch(e){console.log("[]")}})')
 else
   fail "library list" "code=$LIBCODE"
   PIPE_NAME=""
+fi
+
+# ── Library: voice kind (POST /api/books now requires a voice) ──
+VOICES=$(req GET "/api/library?kind=voice")
+VOICESCODE=$(code GET "/api/library?kind=voice")
+if [ "$VOICESCODE" = "404" ]; then
+  skip "library voice kind" "(not on this build)"
+elif [ "$VOICESCODE" = "200" ] && echo "$VOICES" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const n=(JSON.parse(s).entries||[]).map(x=>x.name);process.exit(n.includes("default")||n.length>0?0:1)}catch(e){process.exit(1)}})'; then
+  pass "library voice kind" "voice present"
+else
+  fail "library voice kind" "code=$VOICESCODE"
 fi
 
 # ── Library: get one pipeline, error cases ──
@@ -229,10 +242,10 @@ elif [ -z "$PIPE_NAME" ] || [ -z "${AUTHOR_NAME:-}" ]; then
 else
   RAND=$RANDOM
   BODY=$(node -e '
-    const [title,author,pipeline,sectionsJson]=process.argv.slice(1);
+    const [title,author,voice,pipeline,sectionsJson]=process.argv.slice(1);
     let sections=[];try{sections=JSON.parse(sectionsJson)}catch(e){}
-    console.log(JSON.stringify({title,author,genre:null,pipeline,sections}));' \
-    "Smoke Book $RAND" "$AUTHOR_NAME" "$PIPE_NAME" "${SECTION_NAMES:-[]}")
+    console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections}));' \
+    "Smoke Book $RAND" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$PIPE_NAME" "${SECTION_NAMES:-[]}")
   BRESP=$(req POST /api/books "$BODY")
   BSUCCESS=$(echo "$BRESP" | jget success)
   BSLUG=$(echo "$BRESP" | jget book.slug)

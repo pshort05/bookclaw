@@ -9,6 +9,8 @@ import { join } from 'path';
 
 export class SoulService {
   private soulDir: string;
+  private readonly initialSoulDir: string;
+  private voiceDir: string | null = null;
   private personality = '';
   private personalityOverride = '';
   private styleGuide = '';
@@ -17,6 +19,7 @@ export class SoulService {
 
   constructor(soulDir: string) {
     this.soulDir = soulDir;
+    this.initialSoulDir = soulDir;
   }
 
   async load(): Promise<void> {
@@ -44,14 +47,15 @@ export class SoulService {
       this.personalityOverride = await readFile(personalityPath, 'utf-8');
     }
 
-    // Load style guide
-    const stylePath = join(this.soulDir, 'STYLE-GUIDE.md');
+    // Style + voice come from the Voice snapshot (templates/voice/); fall back to
+    // the author dir when no separate voice dir is set (legacy/old-shape books).
+    const styleBase = this.voiceDir ?? this.soulDir;
+    const stylePath = join(styleBase, 'STYLE-GUIDE.md');
     if (existsSync(stylePath)) {
       this.styleGuide = await readFile(stylePath, 'utf-8');
     }
 
-    // Load voice profile (learned from author's writing)
-    const voicePath = join(this.soulDir, 'VOICE-PROFILE.md');
+    const voicePath = join(styleBase, 'VOICE-PROFILE.md');
     if (existsSync(voicePath)) {
       this.voiceProfile = await readFile(voicePath, 'utf-8');
     }
@@ -71,20 +75,33 @@ export class SoulService {
    * Author rather than blanking it — generation must never lose its voice.
    * getFullContext() consumers are unchanged.
    */
-  async useBook(authorDir: string): Promise<void> {
+  async useBook(authorDir: string, voiceDir: string | null): Promise<void> {
     if (!authorDir || !existsSync(authorDir)) {
       console.warn(`  ⚠ Soul: author snapshot not found at "${authorDir}" — keeping current Author`);
       return;
     }
-    const prev = this.soulDir;
+    const prevSoul = this.soulDir;
+    const prevVoice = this.voiceDir;
     this.soulDir = authorDir;
+    this.voiceDir = voiceDir && existsSync(voiceDir) ? voiceDir : null;
+    if (voiceDir && !existsSync(voiceDir)) {
+      console.warn(`  ⚠ Soul: voice snapshot not found at "${voiceDir}" — falling back to the author dir for style (a new-shape book may have no style there)`);
+    }
     try {
       await this.load();
     } catch (err) {
-      // Restore the previous source on a load error and keep the prior context.
-      this.soulDir = prev;
+      // Restore the previous sources on a load error and keep the prior context.
+      this.soulDir = prevSoul;
+      this.voiceDir = prevVoice;
       console.warn(`  ⚠ Soul: failed to load author snapshot at "${authorDir}" — keeping current Author: ${(err as Error)?.message || err}`);
     }
+  }
+
+  /** Re-point back to the initial (workspace/soul) source — e.g. when no book is active. */
+  async resetToInitial(): Promise<void> {
+    this.soulDir = this.initialSoulDir;
+    this.voiceDir = null;
+    try { await this.load(); } catch { /* fail-soft: keep whatever is loaded */ }
   }
 
   getName(): string {
@@ -116,7 +133,7 @@ export class SoulService {
   }
 
   async updateVoiceProfile(analysis: string): Promise<void> {
-    const voicePath = join(this.soulDir, 'VOICE-PROFILE.md');
+    const voicePath = join(this.voiceDir ?? this.soulDir, 'VOICE-PROFILE.md');
     const { writeFile } = await import('fs/promises');
     await writeFile(voicePath, analysis);
     this.voiceProfile = analysis;

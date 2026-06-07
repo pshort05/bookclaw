@@ -26,11 +26,35 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       await services.books.setActiveBook(slug);
       // Re-point the Author identity to the newly-active book (Phase 3b).
       const authorDir = services.books.activeAuthorDir();
-      if (authorDir && gateway.soul) await gateway.soul.useBook(authorDir);
+      if (authorDir && gateway.soul) await gateway.soul.useBook(authorDir, services.books.activeVoiceDir());
       res.json({ success: true, active: slug });
     } catch (err) {
       const msg = (err as Error)?.message || String(err);
       res.status(/unknown/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
+  });
+
+  app.delete('/api/books/:slug', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    // #3: gate on directory existence, NOT a parseable book.json — a book with a
+    // corrupt manifest must still be deletable (DELETE is the recovery path).
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const wasActive = services.books.getActiveBook() === slug;
+    try {
+      const { active } = await services.books.delete(slug);
+      // #10: only touch the soul when the ACTIVE book actually changed.
+      if (wasActive && gateway.soul) {
+        if (active) {
+          await gateway.soul.useBook(services.books.activeAuthorDir(), services.books.activeVoiceDir());
+        } else {
+          // #4: re-seed failed → no active book → reset soul off the now-deleted dir.
+          await gateway.soul.resetToInitial();
+        }
+      }
+      res.json({ deleted: slug, active });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
     }
   });
 
@@ -45,11 +69,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     if (!title) return res.status(400).json({ error: 'title (string) is required' });
     if (typeof body.author !== 'string' || !body.author) return res.status(400).json({ error: 'author (string) is required' });
+    if (typeof body.voice !== 'string' || !body.voice) return res.status(400).json({ error: 'voice (string) is required' });
     if (typeof body.pipeline !== 'string' || !body.pipeline) return res.status(400).json({ error: 'pipeline (string) is required' });
     const genre = (typeof body.genre === 'string' && body.genre) ? body.genre : null;
     const sections = Array.isArray(body.sections) ? body.sections.filter((s: unknown) => typeof s === 'string') : [];
     try {
-      const manifest = await services.books.create({ title, author: body.author, genre, pipeline: body.pipeline, sections });
+      const manifest = await services.books.create({ title, author: body.author, voice: body.voice, genre, pipeline: body.pipeline, sections });
       res.json({ success: true, book: manifest });
     } catch (err) {
       const msg = (err as Error)?.message || String(err);

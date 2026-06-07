@@ -31,9 +31,11 @@ export interface BookManifest {
   createdAt: string;          // ISO
   pulledFrom: {
     author: PulledRef;
+    voice?: PulledRef;
     genre?: PulledRef | null;
     pipeline: PulledRef;
     sections: string[];       // section names snapshotted
+    skills?: string[];        // pipeline-referenced skill names snapshotted (frozen record)
   };
   history: Array<{ at: string; event: string; detail?: string }>;
 }
