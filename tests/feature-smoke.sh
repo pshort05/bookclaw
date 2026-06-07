@@ -67,6 +67,10 @@ if [ -z "$TOKEN" ]; then
 fi
 
 H=(-H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
+# Auth ONLY (no Content-Type) — for multipart -F uploads, where curl must set
+# its own multipart/form-data boundary. Using H here would force application/json
+# onto the body and the server's express.json() would choke on the boundary.
+HAUTH=(-H "Authorization: Bearer $TOKEN")
 
 # ── Counters + tracked resources ──
 PASSES=0
@@ -75,6 +79,9 @@ SKIPS=0
 CREATED_PROJECTS=()
 CREATED_PERSONAS=()
 CREATED_BOOKS=()
+CREATED_SKILLS=()
+CREATED_SERIES=()
+CREATED_DOCS=()
 
 pass(){ PASSES=$((PASSES+1)); echo "  [PASS] $1${2:+ :: $2}"; }
 fail(){ FAILS=$((FAILS+1));   echo "  [FAIL] $1${2:+ :: $2}"; }
@@ -168,6 +175,21 @@ restore(){
     [ -z "$slug" ] && continue
     curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/books/$slug" >/dev/null 2>&1 || true
     echo "  [cleanup] deleted book $slug"
+  done
+  for sk in "${CREATED_SKILLS[@]:-}"; do
+    [ -z "$sk" ] && continue
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/skills/$sk" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted skill $sk"
+  done
+  for sid in "${CREATED_SERIES[@]:-}"; do
+    [ -z "$sid" ] && continue
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/series/$sid" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted series $sid"
+  done
+  for doc in "${CREATED_DOCS[@]:-}"; do
+    [ -z "$doc" ] && continue
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/documents/$doc" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted document $doc"
   done
 
   local c1; c1=$(daily)
@@ -433,7 +455,7 @@ else
       fi
 
       # ── 2. Import it back (clean round-trip) ──
-      IMPRESP=$(curl -s --max-time 60 "${H[@]}" -F "file=@$EXPZIP" "$BASE_URL/api/books/import")
+      IMPRESP=$(curl -s --max-time 60 "${HAUTH[@]}" -F "file=@$EXPZIP" "$BASE_URL/api/books/import")
       IMP_SLUG=$(printf '%s' "$IMPRESP" | jget imported)
       if [ -n "$IMP_SLUG" ]; then
         CREATED_BOOKS+=("$IMP_SLUG")
@@ -460,7 +482,7 @@ else
         skip "gated import (malicious skill held)" "(could not build test zip)"
         skip "gated import confirmation created"   "(could not build test zip)"
       else
-        GATERESP=$(curl -s --max-time 60 "${H[@]}" -F "file=@$EVILZIP" "$BASE_URL/api/books/import")
+        GATERESP=$(curl -s --max-time 60 "${HAUTH[@]}" -F "file=@$EVILZIP" "$BASE_URL/api/books/import")
         GATED=$(printf '%s' "$GATERESP" | jget gated)
         CONF_ID=$(printf '%s' "$GATERESP" | jget confirmationId)
         if [ "$GATED" = "true" ] && [ -n "$CONF_ID" ]; then
@@ -471,6 +493,19 @@ else
             pass "gated import confirmation created" "type=book-transfer"
           else
             fail "gated import confirmation created" "resp=$(printf '%s' "$CONFGET" | head -c 200)"
+          fi
+          # The held request must appear in the confirmations list, then reject
+          # it — both verifies the lifecycle AND cleans up the dangling pending
+          # confirmation the gated import created (previously left behind).
+          if [ -n "$CONF_ID" ]; then
+            CONFLIST=$(req GET /api/confirmations)
+            if printf '%s' "$CONFLIST" | grep -q "$CONF_ID" || printf '%s' "$CONFLIST" | grep -q '"book-transfer"'; then
+              pass "confirmations list includes import"
+            else
+              fail "confirmations list includes import" "resp=$(printf '%s' "$CONFLIST" | head -c 200)"
+            fi
+            REJ_CODE=$(code POST "/api/confirmations/$CONF_ID/reject")
+            [ "$REJ_CODE" = "200" ] && pass "confirmation reject" || fail "confirmation reject" "code=$REJ_CODE"
           fi
         else
           fail "gated import (malicious skill held)" "gated=$GATED resp=$(printf '%s' "$GATERESP" | head -c 200)"
@@ -483,6 +518,129 @@ else
 
   else
     fail "books create" "resp=$(echo "$BRESP" | head -c 200)"
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
+echo "### Tier A2 — additional features (free, no AI)"
+
+# ── health + config (free reads) ──
+HCODE=$(code GET /api/health)
+[ "$HCODE" = "200" ] && pass "health endpoint" || fail "health endpoint" "code=$HCODE"
+CFGCODE=$(code GET /api/config)
+[ "$CFGCODE" = "200" ] && pass "config read" || fail "config read" "code=$CFGCODE"
+
+# ── documents (upload → list → delete) ──
+if [ "$(has_endpoint GET /api/documents)" = "no" ]; then
+  skip "document upload" "(documents not on this build)"
+  skip "document listed" "(documents not on this build)"
+  skip "document delete" "(documents not on this build)"
+else
+  DOCFILE="/tmp/smoke-doc-$$.md"
+  printf '# Smoke Doc\n\nThis is a throwaway smoke-test document.\n' > "$DOCFILE"
+  UPRESP=$(curl -s --max-time 30 "${HAUTH[@]}" -F "file=@$DOCFILE" "$BASE_URL/api/documents/upload")
+  DOCNAME=$(printf '%s' "$UPRESP" | jget filename)
+  if [ -n "$DOCNAME" ]; then
+    CREATED_DOCS+=("$DOCNAME")
+    pass "document upload" "filename=$DOCNAME"
+    DOCLISTED=$(req GET /api/documents | grep -c "$DOCNAME")
+    [ "$DOCLISTED" -ge 1 ] && pass "document listed" || fail "document listed"
+    DELDOC_CODE=$(code DELETE "/api/documents/$DOCNAME")
+    [ "$DELDOC_CODE" = "200" ] && pass "document delete" || fail "document delete" "code=$DELDOC_CODE"
+  else
+    fail "document upload" "resp=$(printf '%s' "$UPRESP" | head -c 200)"
+    skip "document listed" "(upload failed)"
+    skip "document delete" "(upload failed)"
+  fi
+  rm -f "$DOCFILE"
+fi
+
+# ── personas CRUD (no-AI create) ──
+if [ "$(has_endpoint GET /api/personas)" = "no" ]; then
+  skip "personas create" "(not on this build)"
+  skip "personas get"    "(not on this build)"
+else
+  PCRESP=$(req POST /api/personas "{\"penName\":\"Smoke Pen $RANDOM\"}")
+  PCID=$(printf '%s' "$PCRESP" | jget id)
+  if [ -n "$PCID" ]; then
+    CREATED_PERSONAS+=("$PCID")
+    pass "personas create" "id=$PCID"
+    PGET_CODE=$(code GET "/api/personas/$PCID")
+    [ "$PGET_CODE" = "200" ] && pass "personas get" || fail "personas get" "code=$PGET_CODE"
+  else
+    fail "personas create" "resp=$(printf '%s' "$PCRESP" | head -c 200)"
+    skip "personas get" "(create failed)"
+  fi
+fi
+
+# ── skills CRUD (authoring overlay) ──
+if [ "$(has_endpoint GET /api/skills)" = "no" ]; then
+  skip "skill create (workspace overlay)" "(not on this build)"
+  skip "skill listed" "(not on this build)"
+  skip "skill delete" "(not on this build)"
+else
+  SMOKE_SKILL="smoke-skill-$RANDOM"
+  SKILL_BODY=$(node -e 'console.log(JSON.stringify({category:"core",content:"---\ndescription: smoke test skill\ntriggers:\n  - smoke\n---\n# Smoke\nbody\n"}))')
+  SKRESP=$(req PUT "/api/skills/$SMOKE_SKILL" "$SKILL_BODY")
+  if [ "$(printf '%s' "$SKRESP" | jget success)" = "true" ]; then
+    CREATED_SKILLS+=("$SMOKE_SKILL")
+    pass "skill create (workspace overlay)"
+    SKLISTED=$(req GET /api/skills | grep -c "$SMOKE_SKILL")
+    [ "$SKLISTED" -ge 1 ] && pass "skill listed" || fail "skill listed"
+    DELSK_CODE=$(code DELETE "/api/skills/$SMOKE_SKILL")
+    [ "$DELSK_CODE" = "200" ] && pass "skill delete" || fail "skill delete" "code=$DELSK_CODE"
+  else
+    fail "skill create (workspace overlay)" "resp=$(printf '%s' "$SKRESP" | head -c 200)"
+    skip "skill listed" "(create failed)"
+    skip "skill delete" "(create failed)"
+  fi
+fi
+
+# ── series + goals (free reads/CRUD) ──
+if [ "$(has_endpoint GET /api/series)" = "no" ]; then
+  skip "series list" "(not on this build)"
+else
+  SLCODE=$(code GET /api/series)
+  [ "$SLCODE" = "200" ] && pass "series list" || fail "series list" "code=$SLCODE"
+fi
+if [ "$(has_endpoint GET /api/goals)" = "no" ]; then
+  skip "goals list" "(not on this build)"
+else
+  GLCODE=$(code GET /api/goals)
+  [ "$GLCODE" = "200" ] && pass "goals list" || fail "goals list" "code=$GLCODE"
+fi
+# Series create → report → delete (body is just {title}, no AI).
+if [ "$(has_endpoint GET /api/series)" != "no" ]; then
+  SCRESP=$(req POST /api/series "{\"title\":\"Smoke Series $RANDOM\"}")
+  SCID=$(printf '%s' "$SCRESP" | jget series.id)
+  if [ -n "$SCID" ]; then
+    CREATED_SERIES+=("$SCID")
+    pass "series create" "id=$SCID"
+    SRCODE=$(code GET "/api/series/$SCID/report")
+    [ "$SRCODE" = "200" ] && pass "series report" || fail "series report" "code=$SRCODE"
+    DELSR_CODE=$(code DELETE "/api/series/$SCID")
+    [ "$DELSR_CODE" = "200" ] && pass "series delete" || fail "series delete" "code=$DELSR_CODE"
+  else
+    fail "series create" "resp=$(printf '%s' "$SCRESP" | head -c 200)"
+  fi
+fi
+
+# ── memory (free reads) ──
+if [ "$(has_endpoint GET /api/memory/stats)" = "no" ]; then
+  skip "memory stats" "(not on this build)"
+  skip "memory search" "(not on this build)"
+else
+  MSCODE=$(code GET /api/memory/stats)
+  [ "$MSCODE" = "200" ] && pass "memory stats" || fail "memory stats" "code=$MSCODE"
+  # search is 503 when better-sqlite3 didn't build (fail-soft) — treat as skip.
+  MSRCODE=$(code "GET" "/api/memory/search?q=test")
+  if [ "$MSRCODE" = "200" ]; then
+    pass "memory search"
+  elif [ "$MSRCODE" = "503" ]; then
+    skip "memory search" "(search index unavailable — 503)"
+  else
+    fail "memory search" "code=$MSRCODE"
   fi
 fi
 
