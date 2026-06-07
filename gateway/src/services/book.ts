@@ -14,6 +14,7 @@ import { readFile, writeFile, mkdir, rm, cp } from 'fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
+import { mergeText } from './merge.js';
 import {
   BOOK_SCHEMA_VERSION, slugify, classifyVersion,
   type BookManifest, type BookSummary, type PulledRef,
@@ -27,6 +28,21 @@ export interface BookSelection {
   pipeline: string;
   sections: string[];
 }
+
+export type RepullStatus =
+  | 'in-sync' | 'library-updated' | 'locally-edited' | 'diverged'
+  | 'library-removed' | 'no-baseline';
+
+export interface RepullAsset {
+  kind: 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill';
+  name: string;
+  status: RepullStatus;
+  libraryPresent: boolean;
+  hasBaseline: boolean;
+  wired: boolean;
+}
+
+export interface RepullResult { merged: boolean; hadConflicts: boolean; }
 
 /** The library names used to seed the first-run Default Book. */
 const DEFAULT_BOOK_SELECTION: BookSelection = {
@@ -348,5 +364,158 @@ export class BookService {
       console.warn(`  ⚠ Books: could not parse active pipeline.json — ${(err as Error)?.message || err}`);
       return null;
     }
+  }
+
+  // ── Phase 4: per-asset re-pull from the library ────────────────────────────
+
+  private readonly WIRED = new Set(['author', 'voice', 'pipeline']);
+
+  /** The library's current files/content for an asset, normalised to a file map. */
+  private libraryFiles(kind: RepullAsset['kind'], name: string): Record<string, string> | null {
+    const e = this.library.get(kind, name);
+    if (!e) return null;
+    if (e.files) return e.files;
+    if (kind === 'pipeline' && e.pipeline) return { 'pipeline.json': JSON.stringify(e.pipeline, null, 2) + '\n' };
+    if (typeof e.content === 'string') return { [kind === 'section' ? `${name}.md` : 'SKILL.md']: e.content };
+    return null;
+  }
+
+  /** templates/ (or .baseline/) relative dir for an asset's files. */
+  private assetRel(kind: RepullAsset['kind'], name: string): string {
+    if (kind === 'pipeline') return '';            // file lives at <root>/pipeline.json
+    if (kind === 'section') return 'sections';
+    if (kind === 'skill') return join('skills', name);
+    return kind;                                   // author/voice/genre dir
+  }
+
+  /** Map a library file name to its on-disk name under templates/. */
+  private assetFileName(kind: RepullAsset['kind'], libFileName: string, name: string): string {
+    if (kind === 'pipeline') return 'pipeline.json';
+    if (kind === 'section') return `${name}.md`;
+    return libFileName;
+  }
+
+  /** Compare two file maps for equality (keys + contents). */
+  private sameFiles(a: Record<string, string> | null, b: Record<string, string> | null): boolean {
+    if (!a || !b) return a === b;
+    const ka = Object.keys(a).sort(), kb = Object.keys(b).sort();
+    if (ka.length !== kb.length || ka.some((k, i) => k !== kb[i])) return false;
+    return ka.every(k => a[k] === b[k]);
+  }
+
+  /** Read a templates/ or .baseline/ asset as a file map (keyed by library file name). */
+  private readAssetFrom(slug: string, root: 'templates' | '.baseline', kind: RepullAsset['kind'], name: string): Record<string, string> | null {
+    const base = this.bookDir(slug);
+    if (!base) return null;
+    if (kind === 'pipeline') {
+      const p = join(base, root, 'pipeline.json');
+      return existsSync(p) ? { 'pipeline.json': readFileSync(p, 'utf-8') } : null;
+    }
+    if (kind === 'section') {
+      const p = join(base, root, 'sections', `${name}.md`);
+      return existsSync(p) ? { [`${name}.md`]: readFileSync(p, 'utf-8') } : null;
+    }
+    // author/voice/genre dir, or skill dir (skills/<name>/) — read all .md
+    const dir = join(base, root, this.assetRel(kind, name));
+    if (!existsSync(dir)) return null;
+    const out: Record<string, string> = {};
+    for (const f of readdirSync(dir)) {
+      if (f.endsWith('.md')) out[f] = readFileSync(join(dir, f), 'utf-8');
+    }
+    return Object.keys(out).length ? out : null;
+  }
+
+  /** The list of snapshotted assets for a book, from its pulledFrom manifest. */
+  private async assetsOf(slug: string): Promise<Array<{ kind: RepullAsset['kind']; name: string }>> {
+    const opened = await this.open(slug);
+    if (!opened) return [];
+    const pf = opened.manifest.pulledFrom;
+    const out: Array<{ kind: RepullAsset['kind']; name: string }> = [
+      { kind: 'author', name: pf.author.name },
+      { kind: 'pipeline', name: pf.pipeline.name },
+    ];
+    if (pf.voice) out.push({ kind: 'voice', name: pf.voice.name });
+    if (pf.genre) out.push({ kind: 'genre', name: pf.genre.name });
+    for (const s of pf.sections || []) out.push({ kind: 'section', name: s });
+    for (const s of pf.skills || []) out.push({ kind: 'skill', name: s });
+    return out;
+  }
+
+  /** Per-asset re-pull status for a book. */
+  async repullStatus(slug: string): Promise<RepullAsset[]> {
+    const assets = await this.assetsOf(slug);
+    return assets.map(({ kind, name }) => {
+      const lib = this.libraryFiles(kind, name);
+      const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
+      const book = this.readAssetFrom(slug, 'templates', kind, name);
+      const hasBaseline = !!baseline;
+      const wired = this.WIRED.has(kind);
+      if (!lib) return { kind, name, status: 'library-removed' as const, libraryPresent: false, hasBaseline, wired };
+      if (!hasBaseline) return { kind, name, status: 'no-baseline' as const, libraryPresent: true, hasBaseline, wired };
+      const locallyEdited = !this.sameFiles(baseline, book);
+      const libraryChanged = !this.sameFiles(baseline, lib);
+      const status: RepullStatus =
+        locallyEdited && libraryChanged ? 'diverged'
+        : libraryChanged ? 'library-updated'
+        : locallyEdited ? 'locally-edited'
+        : 'in-sync';
+      return { kind, name, status, libraryPresent: true, hasBaseline, wired };
+    });
+  }
+
+  /**
+   * Re-pull one asset. With a baseline + a text kind: 3-way merge per file,
+   * write merged into templates/, advance baseline to the library version.
+   * Pipeline + no-baseline fall back to opts.resolution (take-library | keep-book).
+   */
+  async repull(
+    slug: string,
+    kind: RepullAsset['kind'],
+    name: string,
+    opts: { resolution?: 'take-library' | 'keep-book' },
+  ): Promise<RepullResult> {
+    const base = this.bookDir(slug);
+    if (!base) throw new Error(`Invalid slug: ${slug}`);
+    const lib = this.libraryFiles(kind, name);
+    if (!lib) throw new Error(`Library no longer has ${kind}/${name}`);
+    const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
+    const book = this.readAssetFrom(slug, 'templates', kind, name);
+
+    const writeMap = async (root: 'templates' | '.baseline', files: Record<string, string>) => {
+      const rel = this.assetRel(kind, name);
+      const dir = kind === 'pipeline' ? join(base, root) : join(base, root, rel);
+      await mkdir(dir, { recursive: true });
+      for (const [libName, content] of Object.entries(files)) {
+        await writeFile(join(dir, this.assetFileName(kind, libName, name)), content, 'utf-8');
+      }
+    };
+
+    // Pipeline (JSON) or no baseline → whole-asset keep/take.
+    if (kind === 'pipeline' || !baseline) {
+      const res = opts.resolution ?? 'take-library';
+      if (res === 'take-library') {
+        await writeMap('templates', lib);
+        await writeMap('.baseline', lib);
+      } else { // keep-book: leave templates, just establish/advance baseline
+        await writeMap('.baseline', book ?? lib);
+      }
+      return { merged: true, hadConflicts: false };
+    }
+
+    // Text 3-way merge per file (union of file names across baseline/book/library).
+    const names = new Set([...Object.keys(baseline), ...Object.keys(book ?? {}), ...Object.keys(lib)]);
+    const mergedFiles: Record<string, string> = {};
+    let hadConflicts = false;
+    for (const f of names) {
+      const b = baseline[f] ?? '';
+      const m = (book ?? {})[f] ?? '';
+      const t = lib[f] ?? '';
+      const { merged, hadConflicts: c } = mergeText(b, m, t);
+      mergedFiles[f] = merged;
+      if (c) hadConflicts = true;
+    }
+    await writeMap('templates', mergedFiles);
+    await writeMap('.baseline', lib); // baseline advances to the just-pulled library version
+    return { merged: true, hadConflicts };
   }
 }
