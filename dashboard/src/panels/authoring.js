@@ -265,10 +265,10 @@ async function renderBookList(el) {
   let data;
   try { data = await api('GET', '/api/books/active/repull'); }
   catch (e) {
-    if (e.message && e.message.includes('409')) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No active book. Set one in the Books panel.</div>';
+    if (e.message && (e.message.includes('409') || e.message.includes('No active book'))) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No active book — create or activate one in the Books panel.</div>';
     } else {
-      el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No active book. Set one in the Books panel.</div>';
+      el.innerHTML = '<div style="color:var(--danger);padding:8px;">Failed to load book assets: ' + esc(e.message) + '</div>';
     }
     return;
   }
@@ -284,7 +284,10 @@ async function renderBookList(el) {
 
   let html = '';
   for (const asset of assets.sort((a, b) => a.name.localeCompare(b.name))) {
-    const statusColor = asset.status === 'ok' ? 'var(--success)' : asset.status === 'readonly' ? 'var(--info)' : 'var(--muted)';
+    const statusColor =
+      asset.status === 'in-sync' ? 'var(--success)' :
+      asset.status === 'locally-edited' ? 'var(--info)' :
+      'var(--warning, var(--danger))'; // library-updated / diverged / no-baseline / library-removed → needs attention
     html += '<div class="au-item" data-name="' + esc(asset.name) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:center;">' +
       '<span>' + esc(asset.name) + '</span>' +
       '<span style="font-size:10px;color:' + statusColor + ';">' + esc(asset.status || '') + '</span>' +
