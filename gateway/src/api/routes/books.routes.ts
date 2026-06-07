@@ -1,4 +1,7 @@
 import { Application, Request, Response } from 'express';
+import { uploadZip } from './_shared.js';
+import { type ImportFinding } from '../../services/book-transfer.js';
+import { SLUG_RE } from '../../services/book-types.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -44,7 +47,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
 
   app.delete('/api/books/:slug', async (req: Request, res: Response) => {
     const slug = String(req.params.slug);
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
     // #3: gate on directory existence, NOT a parseable book.json — a book with a
     // corrupt manifest must still be deletable (DELETE is the recovery path).
     if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
@@ -100,7 +103,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!TEMPLATE_KINDS.includes(kind)) return res.status(400).json({ error: `invalid kind: ${kind}` });
     if (name !== undefined && NO_NAME_KINDS.has(kind)) return res.status(400).json({ error: `${kind} takes no name` });
     if (kind === 'skill' && name === undefined) return res.status(400).json({ error: 'skill requires a name' });
-    if (name !== undefined && !/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'invalid name' });
+    if (name !== undefined && !SLUG_RE.test(name)) return res.status(400).json({ error: 'invalid name' });
     try {
       const out = services.books.readTemplate(slug, kind as any, name);
       if (!out) return res.status(404).json({ error: `${kind} snapshot not found` });
@@ -143,7 +146,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!slug) return res.status(409).json({ error: 'No active book' });
     const kind = String(req.params.kind), name = String(req.params.name);
     if (!REPULL_KINDS.includes(kind)) return res.status(400).json({ error: 'invalid kind' });
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'invalid name' });
+    if (!SLUG_RE.test(name)) return res.status(400).json({ error: 'invalid name' });
     const resolution = req.body?.resolution === 'keep-book' ? 'keep-book'
       : req.body?.resolution === 'take-library' ? 'take-library' : undefined;
     try {
@@ -153,6 +156,71 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     } catch (err) {
       const msg = (err as Error)?.message || String(err);
       res.status(/no longer has|invalid/i.test(msg) ? 400 : 500).json({ error: msg });
+    }
+  });
+
+  // ── Phase 5: share / import ────────────────────────────────────────────────
+  // Export a book as a .zip download. ?token= fallback works (native <a download>).
+  app.get('/api/books/:slug/export', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    try {
+      const buf = services.bookTransfer.export(slug);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${slug}.zip"`);
+      res.send(buf);
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      res.status(/not found|invalid/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
+  });
+
+  // Import a book .zip. Clean → lands; flagged → ConfirmationGate; structural → 400.
+  app.post('/api/books/import', uploadZip.single('file'), async (req: Request, res: Response) => {
+    const file = (req as unknown as { file?: { buffer: Buffer } }).file;
+    if (!file?.buffer) return res.status(400).json({ error: 'a .zip file upload (field "file") is required' });
+    try {
+      const staged = services.bookTransfer.validateAndStage(file.buffer);
+      if (staged.structuralError) return res.status(400).json({ error: staged.structuralError });
+      try {
+        if (staged.findings.length === 0 && staged.versionStatus === 'ok') {
+          const mf = await services.bookTransfer.finalizeImport(staged.stagingId);
+          return res.json({ imported: mf.slug });
+        }
+        const reasons: string[] = [];
+        if (staged.findings.length) reasons.push(`${staged.findings.length} injection finding(s)`);
+        if (staged.versionStatus !== 'ok') reasons.push(`version ${staged.versionStatus}`);
+        const conf = await services.confirmationGate.createRequest({
+          service: 'book-transfer',
+          action: 'import',
+          platform: 'api',
+          description: `Import a book — ${reasons.join(', ')}`,
+          payload: { stagingId: staged.stagingId, versionStatus: staged.versionStatus, findingCount: staged.findings.length },
+          riskLevel: 'high',
+          isReversible: true,
+          disclosures: staged.findings.map((f: ImportFinding) => `${f.path}: ${f.type} (${f.confidence})`),
+        });
+        return res.json({ gated: true, confirmationId: conf.id, findings: staged.findings, versionStatus: staged.versionStatus });
+      } catch (err) {
+        services.bookTransfer.purgeStaging(staged.stagingId);
+        return res.status(500).json({ error: (err as Error)?.message || String(err) });
+      }
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
+  // Finalize a gated import AFTER the confirmation was approved in the dashboard.
+  app.post('/api/books/import/finalize', async (req: Request, res: Response) => {
+    const id = typeof req.body?.confirmationId === 'string' ? req.body.confirmationId : '';
+    if (!id) return res.status(400).json({ error: 'confirmationId required' });
+    const { status, request } = services.confirmationGate.checkDecision(id);
+    if (!request || request.service !== 'book-transfer') return res.status(404).json({ error: 'no such import confirmation' });
+    if (status !== 'approved') return res.status(409).json({ error: `confirmation is ${status} (must be approved)` });
+    try {
+      const mf = await services.bookTransfer.finalizeImport(String(request.payload?.stagingId));
+      res.json({ imported: mf.slug });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
     }
   });
 }

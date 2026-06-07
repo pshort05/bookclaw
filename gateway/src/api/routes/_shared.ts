@@ -32,6 +32,17 @@ export const upload = multer({
   storage: multer.memoryStorage(),
 });
 
+/** Multer for .zip book imports — 200MB, .zip only, in-memory. */
+export const uploadZip = multer({
+  limits: { fileSize: 200 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = file.originalname.toLowerCase().endsWith('.zip')
+      || file.mimetype === 'application/zip' || file.mimetype === 'application/x-zip-compressed';
+    if (ok) cb(null, true); else cb(new Error('Only .zip files are supported'));
+  },
+  storage: multer.memoryStorage(),
+});
+
 /**
  * Resolve the effective AI provider + model for executing a project step,
  * for passing to handleMessage(..., preferredProvider, overrideModel).

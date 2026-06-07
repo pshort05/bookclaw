@@ -20,6 +20,7 @@ import { ReleaseCalendarService } from '../services/release-calendar.js';
 import { ReaderIntelService } from '../services/reader-intel.js';
 import { TranslationPipelineService } from '../services/translation-pipeline.js';
 import { WebsiteBuilderService } from '../services/website-builder.js';
+import { BookTransferService } from '../services/book-transfer.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -61,6 +62,38 @@ export async function initExportAndWaves(gw: BookClawGateway): Promise<void> {
   gw.confirmationGate.setAuditLogger((category, action, meta) => gw.audit.log(category, action, meta));
   await gw.confirmationGate.initialize();
   console.log(`  ✓ Confirmation gate: ${gw.confirmationGate.list({ status: 'pending' }).length} pending`);
+
+  gw.bookTransfer = new BookTransferService(
+    join(ROOT_DIR, 'workspace', 'books'),
+    gw.books,
+    gw.injectionDetector,
+    join(ROOT_DIR, 'workspace', '.import-staging'),
+  );
+  // Purge orphan import-staging dirs (expired/denied/crashed imports). Keep dirs
+  // referenced by a still-pending book-transfer confirmation.
+  const pendingImportIds = new Set(
+    gw.confirmationGate.list({ status: 'pending' })
+      .filter(r => r.service === 'book-transfer')
+      .map(r => String(r.payload?.stagingId))
+      .filter(Boolean),
+  );
+  gw.bookTransfer.sweepStaging(pendingImportIds);
+  // Re-sweep periodically so denied/expired imports don't accumulate between
+  // restarts. unref() so this timer never keeps the process alive.
+  const SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6h
+  const sweepTimer = setInterval(() => {
+    try {
+      const pending = new Set(
+        gw.confirmationGate.list({ status: 'pending' })
+          .filter(r => r.service === 'book-transfer')
+          .map(r => String(r.payload?.stagingId))
+          .filter(Boolean),
+      );
+      gw.bookTransfer.sweepStaging(pending);
+    } catch { /* sweep is best-effort */ }
+  }, SWEEP_INTERVAL_MS);
+  sweepTimer.unref?.();
+  console.log('  ✓ Book transfer (share/import) ready');
 
   gw.disclosures = new DisclosuresService();
 

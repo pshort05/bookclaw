@@ -122,18 +122,27 @@ export class LibraryService {
       await writeFile(target, body.content, 'utf-8');
       return;
     }
-    // author / voice / genre: a directory of .md files. Per-file UPSERT — we
-    // write the provided files and leave any sibling overlay files untouched
-    // (the editor saves one file at a time; SOUL.md must not wipe PERSONALITY.md).
-    // To remove an entry entirely, use deleteOverlayEntry().
+    // author / voice / genre: a directory of .md files. Per-file UPSERT that
+    // PRESERVES siblings: merge the provided files over the entry's CURRENT
+    // resolved files and write the full set into the overlay. This matters when
+    // the overlay first shadows a built-in multi-file entry — writing only the
+    // edited file would otherwise drop the built-in's other files from the
+    // resolved entry (an overlay shadows the built-in by whole entry, not per
+    // file). To remove an entry entirely, use deleteOverlayEntry().
     const files = body.files;
     if (!files || Object.keys(files).length === 0) throw new Error(`${kind} requires at least one .md file`);
     for (const fname of Object.keys(files)) {
       if (!MD_FILE_RE.test(fname)) throw new Error(`Invalid file name: ${fname}`);
       if (typeof files[fname] !== 'string') throw new Error(`File content must be a string: ${fname}`);
     }
+    // NOTE (deliberate): this UPSERTs files and never deletes — to drop a single
+    // file from an entry, delete the whole overlay (deleteOverlayEntry) and re-add.
+    // Also: first-overlaying a built-in snapshots its CURRENT files; files the
+    // built-in adds later won't surface through the overlay until it's re-pulled.
+    const current = this.get(kind, name)?.files ?? {};
+    const finalFiles: Record<string, string> = { ...current, ...files };
     await mkdir(target, { recursive: true });
-    for (const [fname, content] of Object.entries(files)) {
+    for (const [fname, content] of Object.entries(finalFiles)) {
       await writeFile(join(target, fname), content, 'utf-8');
     }
   }

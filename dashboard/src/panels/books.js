@@ -1,6 +1,6 @@
 // Books panel (book-container Phase 2): list existing books and create a new one
 // by selecting library components. Backed by /api/books and /api/library.
-import { api } from '../lib/api.js';
+import { api, authUrl, authHeaders } from '../lib/api.js';
 import { showToast } from '../lib/ui.js';
 import { esc } from '../lib/format.js';
 import { refreshActiveBook } from '../main.js';
@@ -26,14 +26,67 @@ export async function loadBooks() {
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
       '<h3 style="margin:0;flex:1;">Books</h3>' +
       '<button class="small" id="bkNew">+ New Book</button>' +
+      '<button class="small secondary" id="bkImport">Import</button>' +
+      '<input type="file" id="bkImportFile" accept=".zip" style="display:none;">' +
     '</div>' +
+    '<div id="bkImportHint" style="margin-top:8px;"></div>' +
     '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A book is a self-contained container. Creating one snapshots the chosen library templates into the book; editing the library later does not change existing books. Use Re-pull on the active book to bring in library changes. Books do not drive generation yet.</div>' +
     '<div id="bkList"></div>' +
     '<div id="bkRepull" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div>' +
     '<div id="bkCreate" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div>';
 
   root.querySelector('#bkNew').addEventListener('click', () => openCreate());
+
+  const importBtn = root.querySelector('#bkImport');
+  const importFile = root.querySelector('#bkImportFile');
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      const fd = new FormData(); fd.append('file', f);
+      try {
+        const res = await fetch('/api/books/import', { method: 'POST', headers: authHeaders(), body: fd });
+        const r = await res.json();
+        if (r.imported) {
+          showToast('Imported book: ' + r.imported, 'success');
+          await renderList(); refreshActiveBook();
+        } else if (r.gated) {
+          showToast('Import flagged (' + (r.findings ? r.findings.length : 0) + ' finding(s)) — approve it in Confirmations, then Finalize.', 'info');
+          renderImportHint(r.confirmationId, r.findings || [], r.versionStatus);
+        } else {
+          showToast('Import failed: ' + (r.error || ('HTTP ' + res.status)), 'error');
+        }
+      } catch (e) { showToast('Import failed: ' + e.message, 'error'); }
+      ev.target.value = '';
+    });
+  }
+
   await renderList();
+}
+
+function renderImportHint(confirmationId, findings, versionStatus) {
+  const el = document.getElementById('bkImportHint');
+  if (!el) return;
+  el.innerHTML =
+    '<div style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">' +
+      '<div>Import held for review: ' + esc(String(findings.length)) + ' finding(s)' + (versionStatus && versionStatus !== 'ok' ? ', version ' + esc(versionStatus) : '') + '. Approve the request in the Confirmations view, then:</div>' +
+      '<button class="small" id="bkImportFinalize" style="margin-top:6px;">Finalize import</button>' +
+      ' <button class="small secondary" id="bkImportCancel">Dismiss</button>' +
+    '</div>';
+  el.querySelector('#bkImportCancel').addEventListener('click', () => { el.innerHTML = ''; });
+  el.querySelector('#bkImportFinalize').addEventListener('click', async () => {
+    try {
+      const r = await api('POST', '/api/books/import/finalize', { confirmationId });
+      if (r.imported) {
+        showToast('Imported book: ' + r.imported, 'success');
+        el.innerHTML = '';
+        await renderList(); refreshActiveBook();
+      }
+    } catch (e) {
+      showToast(e.message.indexOf('approved') !== -1 ? 'Not approved yet — approve it in Confirmations first.' : ('Finalize failed: ' + e.message), 'error');
+    }
+  });
 }
 
 async function renderList() {
@@ -63,6 +116,7 @@ async function renderList() {
             ' <button class="small secondary bkRepullBtn" data-slug="' + esc(b.slug) + '">Re-pull</button>'
           : '<button class="small secondary bkSetActive" data-slug="' + esc(b.slug) + '">Set active</button>') +
         ' <button class="small secondary bkDelete" data-slug="' + esc(b.slug) + '">Delete</button>' +
+        ' <a class="small secondary" href="' + authUrl('/api/books/' + encodeURIComponent(b.slug) + '/export') + '" download>Export</a> ' +
         '</td>' +
       '<td style="color:var(--muted);">' + esc((b.createdAt || '').slice(0, 10)) + '</td>' +
       '</tr>';

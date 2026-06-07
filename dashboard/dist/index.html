@@ -651,7 +651,7 @@ textarea { resize: vertical; min-height: 60px; }
         <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
     </div>
-    <div class="footer-label" id="appVersion" title="Running build version" style="opacity:0.55;font-size:11px;margin-top:4px;">—</div>
+    <div class="footer-label" id="appVersion" title="Running build version" style="opacity:0.9;font-size:14px;font-weight:700;letter-spacing:0.5px;margin-top:6px;">—</div>
   </div>
 </div>
 
@@ -5119,9 +5119,58 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   async function loadBooks() {
     const root = document.getElementById("panel-books");
     if (!root) return;
-    root.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><h3 style="margin:0;flex:1;">Books</h3><button class="small" id="bkNew">+ New Book</button></div><div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A book is a self-contained container. Creating one snapshots the chosen library templates into the book; editing the library later does not change existing books. Use Re-pull on the active book to bring in library changes. Books do not drive generation yet.</div><div id="bkList"></div><div id="bkRepull" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div><div id="bkCreate" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div>';
+    root.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><h3 style="margin:0;flex:1;">Books</h3><button class="small" id="bkNew">+ New Book</button><button class="small secondary" id="bkImport">Import</button><input type="file" id="bkImportFile" accept=".zip" style="display:none;"></div><div id="bkImportHint" style="margin-top:8px;"></div><div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A book is a self-contained container. Creating one snapshots the chosen library templates into the book; editing the library later does not change existing books. Use Re-pull on the active book to bring in library changes. Books do not drive generation yet.</div><div id="bkList"></div><div id="bkRepull" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div><div id="bkCreate" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"></div>';
     root.querySelector("#bkNew").addEventListener("click", () => openCreate());
+    const importBtn = root.querySelector("#bkImport");
+    const importFile = root.querySelector("#bkImportFile");
+    if (importBtn && importFile) {
+      importBtn.addEventListener("click", () => importFile.click());
+      importFile.addEventListener("change", async (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        const fd = new FormData();
+        fd.append("file", f);
+        try {
+          const res = await fetch("/api/books/import", { method: "POST", headers: authHeaders(), body: fd });
+          const r = await res.json();
+          if (r.imported) {
+            showToast("Imported book: " + r.imported, "success");
+            await renderList2();
+            refreshActiveBook();
+          } else if (r.gated) {
+            showToast("Import flagged (" + (r.findings ? r.findings.length : 0) + " finding(s)) \u2014 approve it in Confirmations, then Finalize.", "info");
+            renderImportHint(r.confirmationId, r.findings || [], r.versionStatus);
+          } else {
+            showToast("Import failed: " + (r.error || "HTTP " + res.status), "error");
+          }
+        } catch (e) {
+          showToast("Import failed: " + e.message, "error");
+        }
+        ev.target.value = "";
+      });
+    }
     await renderList2();
+  }
+  function renderImportHint(confirmationId, findings, versionStatus) {
+    const el = document.getElementById("bkImportHint");
+    if (!el) return;
+    el.innerHTML = '<div style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;"><div>Import held for review: ' + esc(String(findings.length)) + " finding(s)" + (versionStatus && versionStatus !== "ok" ? ", version " + esc(versionStatus) : "") + '. Approve the request in the Confirmations view, then:</div><button class="small" id="bkImportFinalize" style="margin-top:6px;">Finalize import</button> <button class="small secondary" id="bkImportCancel">Dismiss</button></div>';
+    el.querySelector("#bkImportCancel").addEventListener("click", () => {
+      el.innerHTML = "";
+    });
+    el.querySelector("#bkImportFinalize").addEventListener("click", async () => {
+      try {
+        const r = await api("POST", "/api/books/import/finalize", { confirmationId });
+        if (r.imported) {
+          showToast("Imported book: " + r.imported, "success");
+          el.innerHTML = "";
+          await renderList2();
+          refreshActiveBook();
+        }
+      } catch (e) {
+        showToast(e.message.indexOf("approved") !== -1 ? "Not approved yet \u2014 approve it in Confirmations first." : "Finalize failed: " + e.message, "error");
+      }
+    });
   }
   async function renderList2() {
     var _a2;
@@ -5153,7 +5202,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     html += '<tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;"><th style="padding:6px 8px;">Title</th><th>Phase</th><th>Status</th><th>Active</th><th>Created</th></tr>';
     for (const b2 of data.books) {
       const isActive = b2.slug === active;
-      html += '<tr style="border-top:1px solid var(--border);"><td style="padding:6px 8px;">' + esc(b2.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b2.slug) + "</span></td><td>" + esc(b2.phase) + "</td><td>" + statusBadge(b2.status) + '</td><td style="text-align:center;white-space:nowrap;">' + (isActive ? '<span class="badge" style="background:var(--success);color:#fff;">active</span> <button class="small secondary bkRepullBtn" data-slug="' + esc(b2.slug) + '">Re-pull</button>' : '<button class="small secondary bkSetActive" data-slug="' + esc(b2.slug) + '">Set active</button>') + ' <button class="small secondary bkDelete" data-slug="' + esc(b2.slug) + '">Delete</button></td><td style="color:var(--muted);">' + esc((b2.createdAt || "").slice(0, 10)) + "</td></tr>";
+      html += '<tr style="border-top:1px solid var(--border);"><td style="padding:6px 8px;">' + esc(b2.title) + ' <span style="color:var(--muted);font-size:11px;">' + esc(b2.slug) + "</span></td><td>" + esc(b2.phase) + "</td><td>" + statusBadge(b2.status) + '</td><td style="text-align:center;white-space:nowrap;">' + (isActive ? '<span class="badge" style="background:var(--success);color:#fff;">active</span> <button class="small secondary bkRepullBtn" data-slug="' + esc(b2.slug) + '">Re-pull</button>' : '<button class="small secondary bkSetActive" data-slug="' + esc(b2.slug) + '">Set active</button>') + ' <button class="small secondary bkDelete" data-slug="' + esc(b2.slug) + '">Delete</button> <a class="small secondary" href="' + authUrl("/api/books/" + encodeURIComponent(b2.slug) + "/export") + '" download>Export</a> </td><td style="color:var(--muted);">' + esc((b2.createdAt || "").slice(0, 10)) + "</td></tr>";
     }
     html += "</table>";
     el.innerHTML = html;

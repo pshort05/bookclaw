@@ -72,6 +72,24 @@ test('createEntry rejects a name that exists as a built-in', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('editing one file of a built-in multi-file author preserves siblings', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
+  try {
+    const builtin = join(root, 'library');
+    write(builtin, 'authors/multi/SOUL.md', 'soul orig');
+    write(builtin, 'authors/multi/PERSONALITY.md', 'persona orig');
+    const lib = new LibraryService(builtin, join(root, 'workspace', 'library'), fakeSkills);
+    await lib.loadAll();
+    // edit ONLY SOUL.md
+    await lib.writeEntry('author', 'multi', { files: { 'SOUL.md': 'soul EDITED' } });
+    await lib.reload();
+    const e = lib.get('author', 'multi')!;
+    assert.equal(e.source, 'workspace');
+    assert.equal(e.files!['SOUL.md'], 'soul EDITED');
+    assert.equal(e.files!['PERSONALITY.md'], 'persona orig'); // sibling preserved
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('createEntry writes a section and a pipeline; bad JSON rejected', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
   try {

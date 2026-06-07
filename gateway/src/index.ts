@@ -80,6 +80,7 @@ import { ReleaseCalendarService } from './services/release-calendar.js';
 import { ReaderIntelService } from './services/reader-intel.js';
 import { TranslationPipelineService } from './services/translation-pipeline.js';
 import { WebsiteBuilderService } from './services/website-builder.js';
+import { BookTransferService } from './services/book-transfer.js';
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
@@ -207,6 +208,7 @@ class BookClawGateway {
   public readerIntel!: ReaderIntelService;
   public translationPipeline!: TranslationPipelineService;
   public websiteBuilder!: WebsiteBuilderService;
+  public bookTransfer!: BookTransferService;
   public telegram?: TelegramBridge;
   public discord?: DiscordBridge;
 
@@ -1006,6 +1008,7 @@ class BookClawGateway {
       readerIntel: this.readerIntel,
       translationPipeline: this.translationPipeline,
       websiteBuilder: this.websiteBuilder,
+      bookTransfer: this.bookTransfer,
     };
   }
 

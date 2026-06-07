@@ -63,6 +63,9 @@ export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pip
 /** A single .md filename (no path separators) allowed inside a multi-file template entry. */
 export const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;
 
+/** A filesystem-safe slug / entry name: lowercase alnum + hyphen, leading alnum. */
+export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+
 /** Parse + shape-validate a pipeline JSON string. Throws on invalid. Returns the parsed object. */
 export function parsePipelineJson(raw: string): { steps: unknown[]; schemaVersion: number; [k: string]: unknown } {
   let parsed: unknown;

@@ -481,26 +481,83 @@ Each phase is independently shippable and verifiable.
   take/keep; baseline-less (pre-Phase-4) books fall back to keep-mine/take-library.
   *Verify (post-deploy):* `tests/feature-smoke.sh` (library-write + book-snapshot
   + re-pull assertions) + `tests/openrouter-pipeline.sh`.
-- **Phase 5 — Share/import security.** Export a single book directory; import
-  runs `InjectionDetector` + frontmatter/JSON validation + confirmation gate;
-  `safePath` audit across new roots. *Verify:* traversal blocked; importing a
-  book with a malicious skill is gated; share refuses to include `.vault`.
-- **Phase 6 — Backup & recovery.** Local mirror snapshots (keep-N, default 10) +
-  restore (whole-workspace and per-book); default-ON with the off-warning; cloud
-  zip push via directory-drop → optional rclone → optional hook, gated at
-  destination setup; triggers (scheduled + on-completion + manual). *Verify:* a
-  snapshot appears under the backup dir; the 11th prunes the oldest; a per-book
-  restore round-trips a modified book; disabling logs the warning; a too-old
-  restored book hits the version gate (read-only).
+- **Phase 5 — Share/import security.** *(Implemented 2026-06-07; pending Mercury
+  deploy + safety-net validation.)* Export a book as a single portable `.zip`
+  (whitelist: `book.json` + `templates/` + `data/`; never `.baseline/` or the
+  vault) and import one back via `BookTransferService` (`gateway/src/services/
+  book-transfer.ts`): extract to an isolated `workspace/.import-staging/`, with
+  per-entry zip-slip / absolute-path / symlink / off-whitelist rejection;
+  `classifyVersion`; `InjectionDetector` scan of every prompt-bearing file
+  (author/voice/genre/sections `.md`, pipeline step prompts, `SKILL.md`) + `data/`
+  text. **Structural violations hard-reject (400); a clean+compatible book lands
+  directly; injection findings OR an incompatible version route through the
+  `ConfirmationGate`** (24h, no auto-approve) — `POST /api/books/import/finalize`
+  consumes only an *approved* `book-transfer` confirmation. Imported books get a
+  fresh slug + re-seeded `.baseline/`; orphan staging dirs are swept on boot.
+  Routes `GET /api/books/:slug/export`, `POST /api/books/import`,
+  `POST /api/books/import/finalize`; dashboard Export/Import in the books panel.
+  *Verify (post-deploy):* `tests/feature-smoke.sh` export→import round-trip +
+  gated malicious-skill import. Spec/plan under `docs/superpowers/`.
+- **Phase 6 — Front-end / UI rewrite.** Replace the single self-contained
+  vanilla-JS dashboard bundle with a component-based front-end (framework + a
+  state layer that does **not** assume a single global active book). Migrate the
+  existing surfaces (chat, projects, books, the two-scope library editor,
+  re-pull, settings, HQ/insights) onto reusable components and establish the
+  multi-book-capable state model that the concurrency + book-board phases (8, 9)
+  build on. *Verify:* feature parity with the current dashboard; the smoke +
+  feature tests pass unchanged against the same API; the security perimeter
+  (token injection, same-origin CSP) is preserved.
+- **Phase 7 — Genre wiring.** Inject the active book's genre snapshot
+  (tropes / beats / reader-expectations / comps) into generation prompts
+  alongside the Author identity and Voice style, so a book genuinely "writes in
+  its own genre" end-to-end. Genre is snapshot-but-unwired until here.
+  *Verify:* genre content reaches the relevant pipeline steps; changing a book's
+  genre changes output; genre re-pull works.
+- **Phase 8 — Multi-book concurrency.** Replace the single global active-book
+  pointer with per-context book binding (per project / per channel) so several
+  books are in flight at once. *Verify:* two projects bound to different books
+  generate against their own Author / Voice / Pipeline with no cross-leakage;
+  `SoulService` composes per-book without a global mutable pointer.
+- **Phase 9 — Book-board UI.** The studio's face (built on the Phase 6
+  front-end): a surface listing every book with its phase, status, next-action,
+  and progress, with drill-in. *Verify:* all books shown with live
+  phase / next-action; create / activate / drill-in flows work.
+- **Phase 10 — Per-channel active book.** Telegram / web / API callers each
+  select their own active book independently (extends the
+  conversation-history-by-channel isolation). *Verify:* a Telegram command and a
+  web session target different books concurrently with no cross-contamination.
+- **Phase 11 — Backup & recovery.** *(Was Phase 6 in the original plan; moved to
+  the very end — a temporary host-level workaround covers backups in the interim,
+  and the official release is gated on this final step.)* Local mirror snapshots
+  (keep-N, default 10) + restore (whole-workspace and per-book); default-ON with
+  the off-warning; cloud zip push via directory-drop → optional rclone → optional
+  hook, gated at destination setup; triggers (scheduled + on-completion +
+  manual). *Verify:* a snapshot appears under the backup dir; the 11th prunes the
+  oldest; a per-book restore round-trips a modified book; disabling logs the
+  warning; a too-old restored book hits the version gate (read-only). **This is
+  the release gate.**
+- **Phase 12 — Library element share/import.** *(Post-release enhancement —
+  lands after the Phase 11 release gate.)* Export an individual **library entry**
+  (author / voice / genre / pipeline / section / skill) as a portable file, and
+  import one into the workspace **library overlay** — the library-level analog of
+  Phase 5's whole-book share/import. Reuses Phase 5's security pipeline
+  (extract-to-staging → structural validation → `InjectionDetector` scan of the
+  entry's prompt-bearing content → ConfirmationGate on detection) and Phase 4's
+  library write path (`LibraryService.writeEntry`/`createEntry`; overlay shadows
+  a built-in by name). *Verify:* export an author/genre/pipeline and re-import it
+  into the library (create-or-override by name, respecting the overlay-shadows
+  semantics); a malicious imported element is gated; traversal/zip-slip blocked;
+  importing a skill lands it via the SkillLoader overlay path.
 
 ## Out of scope (for this design)
 
 - Broad genre library content (ship a small seed set; expansion is content work).
-- Rich dashboard "book board" UI showing every book's phase/next-action (a
-  separate North Star surface; this design covers the data model + editor).
+  *(Genre **wiring** into generation is now Phase 7; this is the content/breadth, which stays out of scope.)*
+- The dashboard "book board" UI and per-channel active-book selection were
+  out-of-scope for the original data-model design; they are now scheduled as
+  **Phase 9** and **Phase 10** respectively (the front-end rewrite, Phase 6, is
+  their prerequisite).
 - Discord bridge parity (stub, per existing project posture).
-- Per-channel active-book selection (Telegram/web can share one active book
-  initially).
 - Incremental / deduplicated backups (rsync-delta, hardlink trees). Start with
   full mirror + keep-N; optimize only if snapshot size becomes a problem.
 - Automatic cloud retention/pruning — by decision, BookClaw never deletes remote

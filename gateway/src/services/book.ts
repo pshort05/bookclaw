@@ -16,7 +16,7 @@ import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
-  BOOK_SCHEMA_VERSION, WIRED_KINDS, MD_FILE_RE, parsePipelineJson, slugify, classifyVersion,
+  BOOK_SCHEMA_VERSION, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
   type BookManifest, type BookSummary, type PulledRef,
 } from './book-types.js';
 
@@ -214,7 +214,7 @@ export class BookService {
     // Slugs are always slugify()'d at creation (lowercase alnum + hyphen). Reject
     // anything else so a caller-supplied slug (e.g. GET /api/books/:slug, where
     // Express decodes %2e%2e%2f → ../) can never escape booksDir via join().
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return undefined;
+    if (!SLUG_RE.test(slug)) return undefined;
     const mf = join(this.booksDir, slug, 'book.json');
     if (!existsSync(mf)) return undefined;
     try {
@@ -227,7 +227,7 @@ export class BookService {
 
   /** True if a book directory with this slug exists (does NOT require a parseable book.json). */
   exists(slug: string): boolean {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return false;
+    if (!SLUG_RE.test(slug)) return false;
     return existsSync(join(this.booksDir, slug));
   }
 
@@ -238,6 +238,11 @@ export class BookService {
       if (!existsSync(join(this.booksDir, cand))) return cand;
     }
     return `${base}-${Date.now()}`;
+  }
+
+  /** Allocate a fresh, collision-free slug from a title (public wrapper over uniqueSlug). */
+  allocateSlug(title: string): string {
+    return this.uniqueSlug(slugify(title));
   }
 
   /** The currently-active book slug, or null if none has been set. */
@@ -269,7 +274,7 @@ export class BookService {
 
   /** Absolute book dir for a slug (slug-guarded; null if invalid). */
   bookDir(slug: string): string | null {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return null;
+    if (!SLUG_RE.test(slug)) return null;
     return join(this.booksDir, slug);
   }
 
@@ -339,7 +344,7 @@ export class BookService {
    * the book exists before calling.
    */
   async delete(slug: string): Promise<{ active: string | null }> {
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Error(`Invalid slug: ${slug}`);
+    if (!SLUG_RE.test(slug)) throw new Error(`Invalid slug: ${slug}`);
     await rm(join(this.booksDir, slug), { recursive: true, force: true });
     if (this.activeBookSlug === slug) {
       this.activeBookSlug = null;
@@ -574,14 +579,14 @@ export class BookService {
       return { wired };
     }
     if (kind === 'section') {
-      if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('invalid: section name required');
+      if (!name || !SLUG_RE.test(name)) throw new Error('invalid: section name required');
       if (typeof body.content !== 'string') throw new Error('invalid: content (string) required');
       await mkdir(join(tdir, 'sections'), { recursive: true });
       await writeFile(join(tdir, 'sections', `${name}.md`), body.content, 'utf-8');
       return { wired };
     }
     if (kind === 'skill') {
-      if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('invalid: skill name required');
+      if (!name || !SLUG_RE.test(name)) throw new Error('invalid: skill name required');
     }
     // skill (skills/<name>/) or author/voice/genre (kind dir): a map of .md files
     const files = body.files;
