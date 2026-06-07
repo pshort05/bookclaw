@@ -10,7 +10,7 @@
  * Phase 2 STORES books; it does not wire them into generation (Phase 3). Skills
  * are not snapshotted yet (Phase 3/4). Reads/writes stay under booksDir.
  */
-import { readFile, writeFile, mkdir, rm } from 'fs/promises';
+import { readFile, writeFile, mkdir, rm, cp } from 'fs/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
@@ -137,6 +137,11 @@ export class BookService {
     }
     await mkdir(join(dir, 'data'), { recursive: true });
 
+    // Phase 4: capture a pristine baseline mirror of the snapshot so re-pull can
+    // 3-way-merge (baseline vs the book's edited copy vs the current library).
+    // Never edited by the editor — only create() and a successful re-pull write it.
+    await cp(join(dir, 'templates'), join(dir, '.baseline'), { recursive: true });
+
     const ref = (name: string, source: PulledRef['source'], version?: number): PulledRef =>
       ({ name, source, ...(version != null ? { version } : {}) });
 
@@ -244,6 +249,24 @@ export class BookService {
   /** Absolute dir of the active book, or null. */
   activeBookDir(): string | null {
     return this.activeBookSlug ? join(this.booksDir, this.activeBookSlug) : null;
+  }
+
+  /** Absolute book dir for a slug (slug-guarded; null if invalid). */
+  bookDir(slug: string): string | null {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return null;
+    return join(this.booksDir, slug);
+  }
+
+  /** Absolute templates/ dir for a slug, or null if the slug is invalid. */
+  templatesDir(slug: string): string | null {
+    const d = this.bookDir(slug);
+    return d ? join(d, 'templates') : null;
+  }
+
+  /** Absolute .baseline/ dir for a slug, or null if the slug is invalid. */
+  baselineDir(slug: string): string | null {
+    const d = this.bookDir(slug);
+    return d ? join(d, '.baseline') : null;
   }
 
   /** Absolute templates/author/ dir of the active book, or null. */
