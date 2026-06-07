@@ -469,10 +469,18 @@ Each phase is independently shippable and verifiable.
   snapshot, the Author/Voice asset split, concurrency. *Verify (post-deploy):*
   `tests/openrouter-pipeline.sh` + `tests/feature-smoke.sh` are the end-to-end
   safety net for the rewired engine.
-- **Phase 4 — Re-point the editor (#1) + re-pull.** Editor targets library and
-  the active book's snapshot, two edit scopes; per-book "re-pull from library"
-  with a provenance/version diff. *Verify:* library edit affects only future
-  books; book-copy edit affects only that book; re-pull updates a chosen book.
+- **Phase 4 — Re-point the editor (#1) + re-pull.** *(Implemented 2026-06-07;
+  pending Mercury deploy + safety-net validation. Spec/plan under
+  `docs/superpowers/`.)* The editor edits either a shared **library** template
+  (workspace-overlay CRUD; built-ins read-only) or the **active book's
+  snapshot**, across author/voice/genre/sections/skills/pipeline. Per-book
+  **re-pull from library** does a true 3-way merge against a pristine
+  `.baseline/` captured at create time (`gateway/src/services/merge.ts` via
+  `node-diff3`; `BookService.repullStatus()`/`repull()`): non-conflicting changes
+  auto-merge, collisions get git-style markers; pipeline JSON is whole-asset
+  take/keep; baseline-less (pre-Phase-4) books fall back to keep-mine/take-library.
+  *Verify (post-deploy):* `tests/feature-smoke.sh` (library-write + book-snapshot
+  + re-pull assertions) + `tests/openrouter-pipeline.sh`.
 - **Phase 5 — Share/import security.** Export a single book directory; import
   runs `InjectionDetector` + frontmatter/JSON validation + confirmation gate;
   `safePath` audit across new roots. *Verify:* traversal blocked; importing a

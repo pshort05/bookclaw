@@ -2,9 +2,10 @@ import { Application, Request, Response } from 'express';
 import { LIBRARY_KINDS, type LibraryKind } from '../../services/library-types.js';
 
 /**
- * Library read API (book-container Phase 1). Read-only: lists and serves the
- * resolved built-in + workspace-overlay templates. The write/edit path (editor
- * re-point, two edit scopes, re-pull) is Phase 4; book snapshots are Phase 2.
+ * Library API (book-container). Read: lists/serves the resolved built-in +
+ * workspace-overlay templates. Write (Phase 4): POST/PUT/DELETE manage the
+ * workspace overlay (built-ins stay read-only; deleting an overlay reverts to
+ * its built-in). Skills are handled by /api/skills, not here.
  * Sits behind the same bearer-auth + IP allowlist as the rest of /api/*.
  */
 export function mountLibrary(app: Application, gateway: any, _baseDir: string): void {
