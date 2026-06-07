@@ -16,7 +16,7 @@ import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
-  BOOK_SCHEMA_VERSION, WIRED_KINDS, slugify, classifyVersion,
+  BOOK_SCHEMA_VERSION, WIRED_KINDS, MD_FILE_RE, parsePipelineJson, slugify, classifyVersion,
   type BookManifest, type BookSummary, type PulledRef,
 } from './book-types.js';
 
@@ -520,6 +520,79 @@ export class BookService {
     await writeMap('.baseline', lib); // baseline advances to the just-pulled library version
     await this.updatePulledFrom(slug, kind, name);
     return { hadConflicts };
+  }
+
+  /**
+   * Read a book's snapshot for one kind (singular).
+   * Returns a shape the API/UI consumes, or null when the asset is absent.
+   * - pipeline → { content, wired }
+   * - section, no name → { entries: string[], wired }   (lists section names)
+   * - section, name → { content, wired } | null
+   * - skill, name → { files, wired } | null
+   * - author/voice/genre → { files, wired } | null
+   */
+  readTemplate(slug: string, kind: RepullAsset['kind'], name?: string): { files?: Record<string, string>; content?: string; entries?: string[]; wired: boolean } | null {
+    const tdir = this.templatesDir(slug);
+    if (!tdir) return null;
+    const wired = WIRED_KINDS.has(kind);
+    if (kind === 'pipeline') {
+      const p = join(tdir, 'pipeline.json');
+      return existsSync(p) ? { content: readFileSync(p, 'utf-8'), wired } : null;
+    }
+    if (kind === 'section') {
+      if (!name) {
+        const dir = join(tdir, 'sections');
+        const entries = existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')) : [];
+        return { entries, wired };
+      }
+      const p = join(tdir, 'sections', `${name}.md`);
+      return existsSync(p) ? { content: readFileSync(p, 'utf-8'), wired } : null;
+    }
+    // skill (needs name) or author/voice/genre (dir of .md)
+    const rel = this.assetRel(kind, name ?? '');
+    const dir = join(tdir, rel);
+    if (!existsSync(dir)) return null;
+    const files: Record<string, string> = {};
+    for (const f of readdirSync(dir)) if (f.endsWith('.md')) files[f] = readFileSync(join(dir, f), 'utf-8');
+    return { files, wired };
+  }
+
+  /**
+   * Write a book's snapshot for one kind (singular). Validates input; throws on
+   * bad input (message starts with 'invalid:' so routes map it to 400). Returns
+   * { wired }. author/voice writes should trigger soul reload at the call site.
+   */
+  async writeTemplate(slug: string, kind: RepullAsset['kind'], name: string | undefined, body: { files?: Record<string, string>; content?: string }): Promise<{ wired: boolean }> {
+    const tdir = this.templatesDir(slug);
+    if (!tdir) throw new Error('invalid: no active/valid book');
+    const wired = WIRED_KINDS.has(kind);
+    if (kind === 'pipeline') {
+      const raw = String(body.content ?? '');
+      parsePipelineJson(raw); // throws 'pipeline content must be...' on bad input
+      await mkdir(tdir, { recursive: true });
+      await writeFile(join(tdir, 'pipeline.json'), raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      return { wired };
+    }
+    if (kind === 'section') {
+      if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('invalid: section name required');
+      if (typeof body.content !== 'string') throw new Error('invalid: content (string) required');
+      await mkdir(join(tdir, 'sections'), { recursive: true });
+      await writeFile(join(tdir, 'sections', `${name}.md`), body.content, 'utf-8');
+      return { wired };
+    }
+    if (kind === 'skill') {
+      if (!name || !/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error('invalid: skill name required');
+    }
+    // skill (skills/<name>/) or author/voice/genre (kind dir): a map of .md files
+    const files = body.files;
+    if (!files || typeof files !== 'object' || Object.keys(files).length === 0) throw new Error('invalid: files (object) required');
+    for (const f of Object.keys(files)) {
+      if (!MD_FILE_RE.test(f)) throw new Error(`invalid: bad file name ${f}`);
+    }
+    const dir = join(tdir, this.assetRel(kind, name ?? ''));
+    await mkdir(dir, { recursive: true });
+    for (const [f, content] of Object.entries(files)) await writeFile(join(dir, f), String(content), 'utf-8');
+    return { wired };
   }
 
   /** After a successful re-pull, refresh the manifest's provenance for the asset. */

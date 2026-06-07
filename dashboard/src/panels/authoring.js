@@ -32,15 +32,6 @@ const KINDS = [
 // Multi-file kinds (the rest are single-content kinds).
 const MULTI_FILE_KINDS = new Set(['author', 'voice', 'genre', 'skill']);
 
-// Map a singular kind to the book-templates path segment.
-// The books/active/templates endpoint uses 'sections' and 'skills' (plural);
-// everything else is singular.
-function toTemplatePath(kind) {
-  if (kind === 'section') return 'sections';
-  if (kind === 'skill') return 'skills';
-  return kind;
-}
-
 // Starter file maps for "+ New" (library scope).
 const NEW_STARTERS = {
   author: { 'SOUL.md': '' },
@@ -391,12 +382,10 @@ async function openBookEntry(name) {
     return;
   }
 
-  const templatePath = toTemplatePath(_kind);
-
   if (MULTI_FILE_KINDS.has(_kind)) {
-    // author / voice / genre
+    // author / voice / genre — singular kind goes straight to the route
     let data;
-    try { data = await api('GET', '/api/books/active/templates/' + encodeURIComponent(templatePath)); }
+    try { data = await api('GET', '/api/books/active/templates/' + encodeURIComponent(_kind)); }
     catch (e) { showToast('Load failed: ' + e.message, 'error'); return; }
     const files = data.files || {};
     const wired = data.wired;
@@ -407,7 +396,7 @@ async function openBookEntry(name) {
       source: 'book',
       wired,
       saveHandler: async (fname, content) => {
-        await api('PUT', '/api/books/active/templates/' + encodeURIComponent(templatePath),
+        await api('PUT', '/api/books/active/templates/' + encodeURIComponent(_kind),
           { files: { [fname]: content } });
         showToast('Saved ' + fname, 'success');
       },
@@ -442,7 +431,7 @@ async function openBookEntry(name) {
 
   if (_kind === 'section') {
     let data;
-    try { data = await api('GET', '/api/books/active/templates/sections/' + encodeURIComponent(name)); }
+    try { data = await api('GET', '/api/books/active/templates/section/' + encodeURIComponent(name)); }
     catch (e) { showToast('Load failed: ' + e.message, 'error'); return; }
     const state = { content: data.content || '' };
     const wiredNote = '<span style="color:var(--muted);font-size:11px;">Stored — not yet active in generation.</span>';
@@ -452,7 +441,7 @@ async function openBookEntry(name) {
     document.getElementById('auSave').addEventListener('click', async () => {
       tabs.sync();
       try {
-        await api('PUT', '/api/books/active/templates/sections/' + encodeURIComponent(name), { content: state.content });
+        await api('PUT', '/api/books/active/templates/section/' + encodeURIComponent(name), { content: state.content });
         showToast('Saved section ' + name, 'success');
       } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
     });
@@ -560,7 +549,7 @@ async function openSkill(name) {
 async function openBookSkill(name) {
   // Book scope: read the skill's SKILL.md from the book snapshot.
   let data;
-  try { data = await api('GET', '/api/books/active/templates/skills/' + encodeURIComponent(name)); }
+  try { data = await api('GET', '/api/books/active/templates/skill/' + encodeURIComponent(name)); }
   catch (e) { showToast('Load failed: ' + e.message, 'error'); return; }
   const files = data.files || {};
   const wired = data.wired;
@@ -577,7 +566,7 @@ async function openBookSkill(name) {
   document.getElementById('auSave').addEventListener('click', async () => {
     tabs.sync();
     try {
-      await api('PUT', '/api/books/active/templates/skills/' + encodeURIComponent(name), { files: { 'SKILL.md': state.content } });
+      await api('PUT', '/api/books/active/templates/skill/' + encodeURIComponent(name), { files: { 'SKILL.md': state.content } });
       showToast('Saved skill ' + name, 'success');
     } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
   });
@@ -636,7 +625,7 @@ async function handleNew() {
       await api('POST', '/api/library/' + encodeURIComponent(_kind), { name, content: starter });
       showToast('Created ' + name, 'success');
       await renderList();
-      openLibraryEntry(name);
+      await openLibraryEntry(name);
     } catch (e) { showToast('Create failed: ' + e.message, 'error'); }
     return;
   }
@@ -649,7 +638,7 @@ async function handleNew() {
       await api('POST', '/api/library/' + encodeURIComponent(_kind), { name, content: '# ' + name + '\n' });
       showToast('Created ' + name, 'success');
       await renderList();
-      openLibraryEntry(name);
+      await openLibraryEntry(name);
     } catch (e) { showToast('Create failed: ' + e.message, 'error'); }
     return;
   }
@@ -664,6 +653,6 @@ async function handleNew() {
     showToast('Created ' + name, 'success');
     await renderList();
     _currentFile = null;
-    openLibraryEntry(name);
+    await openLibraryEntry(name);
   } catch (e) { showToast('Create failed: ' + e.message, 'error'); }
 }

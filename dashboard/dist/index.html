@@ -4510,11 +4510,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     { label: "Pipeline", kind: "pipeline" }
   ];
   var MULTI_FILE_KINDS = /* @__PURE__ */ new Set(["author", "voice", "genre", "skill"]);
-  function toTemplatePath(kind) {
-    if (kind === "section") return "sections";
-    if (kind === "skill") return "skills";
-    return kind;
-  }
   var NEW_STARTERS = {
     author: { "SOUL.md": "" },
     voice: { "STYLE-GUIDE.md": "" },
@@ -4817,11 +4812,10 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       await openBookSkill(name);
       return;
     }
-    const templatePath = toTemplatePath(_kind);
     if (MULTI_FILE_KINDS.has(_kind)) {
       let data;
       try {
-        data = await api("GET", "/api/books/active/templates/" + encodeURIComponent(templatePath));
+        data = await api("GET", "/api/books/active/templates/" + encodeURIComponent(_kind));
       } catch (e) {
         showToast("Load failed: " + e.message, "error");
         return;
@@ -4836,7 +4830,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         saveHandler: async (fname, content) => {
           await api(
             "PUT",
-            "/api/books/active/templates/" + encodeURIComponent(templatePath),
+            "/api/books/active/templates/" + encodeURIComponent(_kind),
             { files: { [fname]: content } }
           );
           showToast("Saved " + fname, "success");
@@ -4882,7 +4876,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     if (_kind === "section") {
       let data;
       try {
-        data = await api("GET", "/api/books/active/templates/sections/" + encodeURIComponent(name));
+        data = await api("GET", "/api/books/active/templates/section/" + encodeURIComponent(name));
       } catch (e) {
         showToast("Load failed: " + e.message, "error");
         return;
@@ -4895,7 +4889,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       document.getElementById("auSave").addEventListener("click", async () => {
         tabs.sync();
         try {
-          await api("PUT", "/api/books/active/templates/sections/" + encodeURIComponent(name), { content: state2.content });
+          await api("PUT", "/api/books/active/templates/section/" + encodeURIComponent(name), { content: state2.content });
           showToast("Saved section " + name, "success");
         } catch (e) {
           showToast("Save failed: " + e.message, "error");
@@ -4996,7 +4990,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   async function openBookSkill(name) {
     let data;
     try {
-      data = await api("GET", "/api/books/active/templates/skills/" + encodeURIComponent(name));
+      data = await api("GET", "/api/books/active/templates/skill/" + encodeURIComponent(name));
     } catch (e) {
       showToast("Load failed: " + e.message, "error");
       return;
@@ -5012,7 +5006,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     document.getElementById("auSave").addEventListener("click", async () => {
       tabs.sync();
       try {
-        await api("PUT", "/api/books/active/templates/skills/" + encodeURIComponent(name), { files: { "SKILL.md": state2.content } });
+        await api("PUT", "/api/books/active/templates/skill/" + encodeURIComponent(name), { files: { "SKILL.md": state2.content } });
         showToast("Saved skill " + name, "success");
       } catch (e) {
         showToast("Save failed: " + e.message, "error");
@@ -5068,7 +5062,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         await api("POST", "/api/library/" + encodeURIComponent(_kind), { name: name2, content: starter });
         showToast("Created " + name2, "success");
         await renderList();
-        openLibraryEntry(name2);
+        await openLibraryEntry(name2);
       } catch (e) {
         showToast("Create failed: " + e.message, "error");
       }
@@ -5085,7 +5079,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         await api("POST", "/api/library/" + encodeURIComponent(_kind), { name: name2, content: "# " + name2 + "\n" });
         showToast("Created " + name2, "success");
         await renderList();
-        openLibraryEntry(name2);
+        await openLibraryEntry(name2);
       } catch (e) {
         showToast("Create failed: " + e.message, "error");
       }
@@ -5103,7 +5097,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       showToast("Created " + name, "success");
       await renderList();
       _currentFile = null;
-      openLibraryEntry(name);
+      await openLibraryEntry(name);
     } catch (e) {
       showToast("Create failed: " + e.message, "error");
     }

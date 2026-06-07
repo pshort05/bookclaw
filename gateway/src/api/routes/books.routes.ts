@@ -1,9 +1,4 @@
 import { Application, Request, Response } from 'express';
-import { join } from 'path';
-import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import { safePath } from './_shared.js';
-import { WIRED_KINDS, MD_FILE_RE, parsePipelineJson } from '../../services/book-types.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -14,16 +9,11 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
 
   // Allowlist for repull :kind param — defense-in-depth guard on the POST route.
   const REPULL_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section', 'skill'];
-  // Relative location under templates/ for each kind.
-  const TEMPLATE_SUBDIR: Record<string, string> = {
-    author: 'author', voice: 'voice', genre: 'genre',
-    sections: 'sections', skills: 'skills',
-  };
-  // Resolve the active book's templates/ dir, or null when none is active.
-  const activeTemplates = (): string | null => {
-    const slug = services.books.getActiveBook();
-    return slug ? services.books.templatesDir(slug) : null;
-  };
+
+  // Singular kind allowlist for the templates routes.
+  const TEMPLATE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section', 'skill'];
+  // Kinds that have a single snapshot per book — reject a :name param for these.
+  const NO_NAME_KINDS = new Set(['author', 'voice', 'genre', 'pipeline']);
 
   app.get('/api/books', (_req: Request, res: Response) => {
     res.json({ books: services.books.list() });
@@ -100,92 +90,38 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     }
   });
 
-  // Read the active book's snapshot for a kind. Multi-file kinds → {files};
-  // pipeline → {content} (raw JSON); section by name → {content}.
-  app.get('/api/books/active/templates/:kind/:name?', async (req: Request, res: Response) => {
-    const base = activeTemplates();
-    if (!base) return res.status(409).json({ error: 'No active book' });
+  // Read the active book's snapshot for a kind (singular). Multi-file kinds → {files};
+  // pipeline → {content}; section (no name) → {entries}; section (name) → {content}.
+  app.get('/api/books/active/templates/:kind/:name?', (req: Request, res: Response) => {
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.status(409).json({ error: 'No active book' });
     const kind = String(req.params.kind);
+    const name = req.params.name ? String(req.params.name) : undefined;
+    if (!TEMPLATE_KINDS.includes(kind)) return res.status(400).json({ error: `invalid kind: ${kind}` });
+    if (name !== undefined && NO_NAME_KINDS.has(kind)) return res.status(400).json({ error: `${kind} takes no name` });
+    if (name !== undefined && !/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'invalid name' });
     try {
-      if (kind === 'pipeline') {
-        const p = safePath(base, 'pipeline.json');
-        if (!p || !existsSync(p)) return res.status(404).json({ error: 'pipeline.json not found' });
-        return res.json({ kind, content: await readFile(p, 'utf-8'), wired: true });
-      }
-      if (kind === 'sections') {
-        const name = String(req.params.name || '');
-        if (!name) {
-          const dir = safePath(base, 'sections');
-          const list = dir && existsSync(dir) ? (await readdir(dir)).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')) : [];
-          return res.json({ kind, entries: list, wired: false });
-        }
-        const p = safePath(base, join('sections', `${name}.md`));
-        if (!p || !existsSync(p)) return res.status(404).json({ error: 'section not found' });
-        return res.json({ kind, name, content: await readFile(p, 'utf-8'), wired: false });
-      }
-      // author / voice / genre / skills: directory of files
-      const sub = TEMPLATE_SUBDIR[kind];
-      if (!sub) return res.status(400).json({ error: `Unknown kind: ${kind}` });
-      if (kind === 'skills' && req.params.name && !/^[a-z0-9][a-z0-9-]*$/.test(String(req.params.name))) {
-        return res.status(400).json({ error: 'invalid skill name' });
-      }
-      const dir = safePath(base, kind === 'skills' && req.params.name ? join('skills', String(req.params.name)) : sub);
-      if (!dir || !existsSync(dir)) return res.status(404).json({ error: `${kind} snapshot not found` });
-      const files: Record<string, string> = {};
-      for (const f of await readdir(dir)) {
-        if (f.endsWith('.md')) files[f] = await readFile(join(dir, f), 'utf-8');
-      }
-      return res.json({ kind, files, wired: WIRED_KINDS.has(kind) });
-    } catch (err) {
-      res.status(500).json({ error: (err as Error)?.message || String(err) });
-    }
+      const out = services.books.readTemplate(slug, kind as any, name);
+      if (!out) return res.status(404).json({ error: `${kind} snapshot not found` });
+      res.json({ kind, ...(name ? { name } : {}), ...out });
+    } catch (err) { res.status(500).json({ error: (err as Error)?.message || String(err) }); }
   });
 
-  // Write the active book's snapshot for a kind. Same body shapes as the library
-  // write API. author/voice → soul.reload(); others read at run-time or unwired.
+  // Write the active book's snapshot for a kind (singular). author/voice → soul.reload().
   app.put('/api/books/active/templates/:kind/:name?', async (req: Request, res: Response) => {
-    const base = activeTemplates();
-    if (!base) return res.status(409).json({ error: 'No active book' });
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.status(409).json({ error: 'No active book' });
     const kind = String(req.params.kind);
+    const name = req.params.name ? String(req.params.name) : undefined;
+    if (!TEMPLATE_KINDS.includes(kind)) return res.status(400).json({ error: `invalid kind: ${kind}` });
+    if (name !== undefined && NO_NAME_KINDS.has(kind)) return res.status(400).json({ error: `${kind} takes no name` });
     try {
-      if (kind === 'pipeline') {
-        const raw = String(req.body?.content ?? '');
-        try { parsePipelineJson(raw); }
-        catch (e) { return res.status(400).json({ error: (e as Error).message }); }
-        const dest = safePath(base, 'pipeline.json');
-        if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
-        await writeFile(dest, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
-        return res.json({ success: true, kind, wired: true });
-      }
-      if (kind === 'sections') {
-        const name = String(req.params.name || '');
-        if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'section name required' });
-        if (typeof req.body?.content !== 'string') return res.status(400).json({ error: 'content (string) required' });
-        const dest = safePath(base, join('sections', `${name}.md`));
-        if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
-        await mkdir(join(dest, '..'), { recursive: true });
-        await writeFile(dest, req.body.content, 'utf-8');
-        return res.json({ success: true, kind, name, wired: false });
-      }
-      // author / voice / genre / skills: directory of .md files
-      if (kind !== 'skills' && !TEMPLATE_SUBDIR[kind]) return res.status(400).json({ error: `Unknown kind: ${kind}` });
-      const files = req.body?.files;
-      if (!files || typeof files !== 'object') return res.status(400).json({ error: 'files (object) required' });
-      if (kind === 'skills' && !/^[a-z0-9][a-z0-9-]*$/.test(String(req.params.name || ''))) {
-        return res.status(400).json({ error: 'skill name required' });
-      }
-      const rel = kind === 'skills' ? join('skills', String(req.params.name)) : TEMPLATE_SUBDIR[kind];
-      for (const fname of Object.keys(files)) {
-        if (!MD_FILE_RE.test(fname)) return res.status(400).json({ error: `Invalid file name: ${fname}` });
-        const dest = safePath(base, join(rel, fname));
-        if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
-        await mkdir(join(dest, '..'), { recursive: true });
-        await writeFile(dest, String(files[fname]), 'utf-8');
-      }
+      const r = await services.books.writeTemplate(slug, kind as any, name, { files: req.body?.files, content: req.body?.content });
       if (kind === 'author' || kind === 'voice') await gateway.soul?.reload?.();
-      return res.json({ success: true, kind, wired: WIRED_KINDS.has(kind) });
+      res.json({ success: true, kind, ...(name ? { name } : {}), wired: r.wired });
     } catch (err) {
-      res.status(500).json({ error: (err as Error)?.message || String(err) });
+      const msg = (err as Error)?.message || String(err);
+      res.status(/^invalid:|required|bad file|must have|must be/i.test(msg) ? 400 : 500).json({ error: msg });
     }
   });
 
