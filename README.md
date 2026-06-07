@@ -44,6 +44,8 @@ Tell it what you want. It figures out the steps, picks the right skills, and exe
 4. **Work happens autonomously** — each step runs through the AI, output saved to files
 5. **Everything is logged** — universal activity feed tracks all agent actions in real-time
 
+> New to the vocabulary? See the **[Glossary](docs/GLOSSARY.md)** for what Book, Pipeline, Step, Model, Author, Voice, Genre, World, Characters, Outline, Manuscript, and Marketing mean.
+
 ```
 User: "/novel a small-town romance under pen name Lily Hart"
 
