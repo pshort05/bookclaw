@@ -42,4 +42,52 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     if (!entry) return res.status(404).json({ error: 'Template not found' });
     res.json({ entry });
   });
+
+  // ── Write path (Phase 4): workspace-overlay CRUD. Built-ins are read-only;
+  // skills are handled by /api/skills (SkillLoader overlay). ─────────────────
+  const WRITABLE = ['author', 'voice', 'genre', 'pipeline', 'section'] as const;
+  const isWritable = (v: string): v is (typeof WRITABLE)[number] =>
+    (WRITABLE as readonly string[]).includes(v);
+
+  // Create a new entry. 409 if the name already exists in any source.
+  app.post('/api/library/:kind', async (req: Request, res: Response) => {
+    const kind = String(req.params.kind);
+    if (!isWritable(kind)) return res.status(400).json({ error: `Cannot create kind "${kind}" here (skills use /api/skills)` });
+    const name = typeof req.body?.name === 'string' ? req.body.name : '';
+    try {
+      await services.library.createEntry(kind, name, { files: req.body?.files, content: req.body?.content });
+      await services.library.reload();
+      res.json({ success: true, kind, name, source: 'workspace' });
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      res.status(/already exists/i.test(msg) ? 409 : 400).json({ error: msg });
+    }
+  });
+
+  // Upsert (edit) an overlay entry.
+  app.put('/api/library/:kind/:name', async (req: Request, res: Response) => {
+    const kind = String(req.params.kind);
+    if (!isWritable(kind)) return res.status(400).json({ error: `Cannot edit kind "${kind}" here (skills use /api/skills)` });
+    try {
+      await services.library.writeEntry(kind, String(req.params.name), { files: req.body?.files, content: req.body?.content });
+      await services.library.reload();
+      res.json({ success: true, kind, name: String(req.params.name), source: 'workspace' });
+    } catch (err) {
+      res.status(400).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
+  // Delete an overlay entry (reverts to built-in if one exists). 404 if no overlay.
+  app.delete('/api/library/:kind/:name', async (req: Request, res: Response) => {
+    const kind = String(req.params.kind);
+    if (!isWritable(kind)) return res.status(400).json({ error: `Cannot delete kind "${kind}" here (skills use /api/skills)` });
+    try {
+      const removed = await services.library.deleteOverlayEntry(kind, String(req.params.name));
+      if (!removed) return res.status(404).json({ error: 'No workspace overlay entry to delete (built-ins are read-only)' });
+      await services.library.reload();
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
 }

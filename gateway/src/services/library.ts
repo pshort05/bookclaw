@@ -11,9 +11,9 @@
  * are Phase 2. Author/genre/section entries are directories of markdown files;
  * pipelines are single JSON files; skills come from SkillLoader's catalog.
  */
-import { readFile, readdir } from 'fs/promises';
+import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import type { LibraryKind, LibrarySource, LibraryPipeline } from './library-types.js';
 
 /** Lightweight catalog row for list(). */
@@ -50,6 +50,15 @@ const DIR_LAYOUT: Record<FileKind, string> = {
   section: 'sections',
 };
 
+/** Filenames allowed inside a multi-file overlay entry (no path separators). */
+const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;
+const ENTRY_NAME_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
+export interface LibraryWriteBody {
+  files?: Record<string, string>; // author/voice/genre
+  content?: string;               // section / pipeline (raw JSON text)
+}
+
 export class LibraryService {
   private builtinDir: string;
   private workspaceDir: string;
@@ -77,6 +86,71 @@ export class LibraryService {
   /** Re-read all file-backed kinds from disk (skills reload via SkillLoader.reload()). */
   async reload(): Promise<void> {
     await this.loadAll();
+  }
+
+  /** Absolute overlay dir/file path for an entry, or null if name invalid. */
+  private overlayPath(kind: FileKind, name: string): string | null {
+    if (!ENTRY_NAME_RE.test(name)) return null;
+    const dir = join(this.workspaceDir, DIR_LAYOUT[kind]);
+    if (kind === 'pipeline') return join(dir, `${name}.json`);
+    if (kind === 'section') return join(dir, `${name}.md`);
+    return join(dir, name); // author/voice/genre: a directory
+  }
+
+  /** True if a workspace-overlay entry exists for this kind/name. */
+  overlayExists(kind: FileKind, name: string): boolean {
+    const p = this.overlayPath(kind, name);
+    return !!p && existsSync(p);
+  }
+
+  /** Validate + persist an overlay entry. Throws on bad input. Caller reloads. */
+  async writeEntry(kind: FileKind, name: string, body: LibraryWriteBody): Promise<void> {
+    const target = this.overlayPath(kind, name);
+    if (!target) throw new Error(`Invalid name: ${name}`);
+    if (kind === 'pipeline') {
+      const raw = String(body.content ?? '');
+      let parsed: unknown;
+      try { parsed = JSON.parse(raw); } catch { throw new Error('pipeline content must be valid JSON'); }
+      const p = parsed as { steps?: unknown; schemaVersion?: unknown };
+      if (!Array.isArray(p.steps) || typeof p.schemaVersion !== 'number') {
+        throw new Error('pipeline JSON must have a steps array and a numeric schemaVersion');
+      }
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      return;
+    }
+    if (kind === 'section') {
+      if (typeof body.content !== 'string') throw new Error('section requires content (string)');
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, body.content, 'utf-8');
+      return;
+    }
+    // author / voice / genre: a directory of .md files
+    const files = body.files;
+    if (!files || Object.keys(files).length === 0) throw new Error(`${kind} requires at least one .md file`);
+    for (const fname of Object.keys(files)) {
+      if (!MD_FILE_RE.test(fname)) throw new Error(`Invalid file name: ${fname}`);
+      if (typeof files[fname] !== 'string') throw new Error(`File content must be a string: ${fname}`);
+    }
+    await mkdir(target, { recursive: true });
+    for (const [fname, content] of Object.entries(files)) {
+      await writeFile(join(target, fname), content, 'utf-8');
+    }
+  }
+
+  /** Create a NEW entry; throws if the name already exists in any source. */
+  async createEntry(kind: FileKind, name: string, body: LibraryWriteBody): Promise<void> {
+    if (!ENTRY_NAME_RE.test(name)) throw new Error(`Invalid name: ${name}`);
+    if (this.get(kind, name)) throw new Error(`Entry already exists: ${kind}/${name}`);
+    await this.writeEntry(kind, name, body);
+  }
+
+  /** Remove a workspace-overlay entry. Returns false if none existed (builtin stays). */
+  async deleteOverlayEntry(kind: FileKind, name: string): Promise<boolean> {
+    const p = this.overlayPath(kind, name);
+    if (!p || !existsSync(p)) return false;
+    await rm(p, { recursive: true, force: true });
+    return true;
   }
 
   private async loadKind(
