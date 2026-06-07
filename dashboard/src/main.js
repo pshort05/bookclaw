@@ -89,7 +89,7 @@ export function loadStatus() {
     dot.className = 'heartbeat-dot ok';
     label.textContent = 'Online';
 
-    // Running build version (V5.MM.DD.HH.MM)
+    // Running build version (V5.MM.DD.HH.MM) — footer only (bottom-left)
     var ver = document.getElementById('appVersion');
     if (ver && data.version) ver.textContent = data.version;
 

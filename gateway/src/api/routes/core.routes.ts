@@ -114,31 +114,16 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   });
 
   // ── Project Management ──
-  app.get('/api/projects', async (_req: Request, res: Response) => {
-    const { readdir } = await import('fs/promises');
-    const { existsSync } = await import('fs');
-    const { join } = await import('path');
-
-    // Phase 3 read-path: when a book is active, outputs are flat .md files in its
-    // data/ dir (project-id-prefixed) — list those. Otherwise fall back to the
-    // legacy workspace/projects/<slug>/ subdirectory listing.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
-    if (activeDataDir && existsSync(activeDataDir)) {
-      const entries = await readdir(activeDataDir, { withFileTypes: true });
-      const projects = entries
-        .filter(e => e.isFile() && e.name.endsWith('.md'))
-        .map(e => e.name);
-      return res.json({ projects });
+  // Returns the engine's known projects (id/title/status/...) — a single, stable
+  // contract regardless of whether a book is active. (Previously this listed
+  // filesystem entries, with a divergent shape under the active-book model:
+  // flat .md filenames vs. directory slugs. Mirrors /api/projects/list.)
+  app.get('/api/projects', (_req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) {
+      return res.status(503).json({ error: 'Project engine not initialized' });
     }
-
-    const projectsDir = join(baseDir, 'workspace', 'projects');
-    if (!existsSync(projectsDir)) {
-      return res.json({ projects: [] });
-    }
-
-    const entries = await readdir(projectsDir, { withFileTypes: true });
-    const projects = entries.filter(e => e.isDirectory() && e.name !== '.template').map(e => e.name);
-    res.json({ projects });
+    res.json({ projects: engine.listProjects() });
   });
 
   // ── Cost Report ──

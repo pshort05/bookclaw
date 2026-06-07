@@ -436,6 +436,8 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
         [j('workspace', 'projects'), 'projects'],
         [j('workspace', 'personas'), 'personas'],
         [j('workspace', 'memory'), 'memory'],
+        // Active-book pointer — without it, a restore can re-activate the wrong book.
+        [j('workspace', '.config', 'active-book.json'), 'active-book.json'],
         [j('config', 'user.json'), 'config/user.json'],
         [j('workspace', 'vault.enc'), 'vault.enc'],
       ];
@@ -566,6 +568,7 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
         [j('workspace', 'projects'), 'projects'],
         [j('workspace', 'personas'), 'personas'],
         [j('workspace', 'memory'), 'memory'],
+        [j('workspace', '.config', 'active-book.json'), 'active-book.json'],
         [j('config', 'user.json'), 'config/user.json'],
         [j('workspace', 'vault.enc'), 'vault.enc'],
       ];
@@ -597,6 +600,7 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
         ['projects', j('workspace', 'projects')],
         ['personas', j('workspace', 'personas')],
         ['memory', j('workspace', 'memory')],
+        ['active-book.json', j('workspace', '.config', 'active-book.json')],
         ['config/user.json', j('config', 'user.json')],
         ['vault.enc', j('workspace', 'vault.enc')],
       ];

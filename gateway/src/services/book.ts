@@ -155,7 +155,9 @@ export class BookService {
         console.warn(`  ⚠ Books: could not read ${e.name}/book.json — skipping`, err);
       }
     }
-    return out.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return out.sort((a, b) =>
+      a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.slug.localeCompare(b.slug),
+    );
   }
 
   async open(slug: string): Promise<{ manifest: BookManifest; status: BookSummary['status'] } | undefined> {

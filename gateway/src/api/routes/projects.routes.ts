@@ -90,59 +90,66 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       if (preferredProvider) project.preferredProvider = preferredProvider;
     };
 
-    // ── Chapter-count + words-per-chapter field aliasing ──
-    // Bug fix (2026-04): the dashboard sends `chapters` and `wordsPerChapter`
-    // at the top level, but createBookProduction / createNovelPipeline expect
-    // `config.targetChapters` and `config.targetWordsPerChapter`. Without this
-    // translation, projects silently default to 25 chapters / 3000 words
-    // regardless of what the user typed in the modal.
-    const resolvedConfig: any = { ...(config || context || {}) };
-    if (req.body.chapters !== undefined && resolvedConfig.targetChapters === undefined) {
-      const n = Number(req.body.chapters);
-      if (Number.isFinite(n) && n > 0) resolvedConfig.targetChapters = n;
-    }
-    if (req.body.wordsPerChapter !== undefined && resolvedConfig.targetWordsPerChapter === undefined) {
-      const n = Number(req.body.wordsPerChapter);
-      if (Number.isFinite(n) && n > 0) resolvedConfig.targetWordsPerChapter = n;
-    }
+    try {
+      // ── Chapter-count + words-per-chapter field aliasing ──
+      // Bug fix (2026-04): the dashboard sends `chapters` and `wordsPerChapter`
+      // at the top level, but createBookProduction / createNovelPipeline expect
+      // `config.targetChapters` and `config.targetWordsPerChapter`. Without this
+      // translation, projects silently default to 25 chapters / 3000 words
+      // regardless of what the user typed in the modal.
+      const resolvedConfig: any = { ...(config || context || {}) };
+      if (req.body.chapters !== undefined && resolvedConfig.targetChapters === undefined) {
+        const n = Number(req.body.chapters);
+        if (Number.isFinite(n) && n > 0) resolvedConfig.targetChapters = n;
+      }
+      if (req.body.wordsPerChapter !== undefined && resolvedConfig.targetWordsPerChapter === undefined) {
+        const n = Number(req.body.wordsPerChapter);
+        if (Number.isFinite(n) && n > 0) resolvedConfig.targetWordsPerChapter = n;
+      }
 
-    // Novel pipeline: use dedicated pipeline builder
-    // Trust the explicitly-sent type; only infer from description if no type provided
-    const inferredType = type || engine.inferProjectType(description);
-    if (inferredType === 'novel-pipeline') {
-      const project = engine.createNovelPipeline(title, description, resolvedConfig);
-      applyProjectOptions(project);
-      return res.json({ project, planning: 'novel-pipeline' });
-    }
+      // Novel pipeline: use dedicated pipeline builder
+      // Trust the explicitly-sent type; only infer from description if no type provided
+      const inferredType = type || engine.inferProjectType(description);
+      if (inferredType === 'novel-pipeline') {
+        const project = engine.createNovelPipeline(title, description, resolvedConfig);
+        applyProjectOptions(project);
+        return res.json({ project, planning: 'novel-pipeline' });
+      }
 
-    // Book Production: uses dynamic chapter generation
-    if (inferredType === 'book-production') {
-      const project = engine.createBookProduction(title, description, resolvedConfig);
-      applyProjectOptions(project);
-      return res.json({ project, planning: 'book-production' });
-    }
+      // Book Production: uses dynamic chapter generation
+      if (inferredType === 'book-production') {
+        const project = engine.createBookProduction(title, description, resolvedConfig);
+        applyProjectOptions(project);
+        return res.json({ project, planning: 'book-production' });
+      }
 
-    // Dynamic planning: ask the AI to figure out the steps
-    if (planning === 'dynamic') {
-      const skillCatalog = services.skills.getSkillCatalog();
-      const authorOSTools = services.authorOS?.getAvailableTools() || [];
-      const project = await engine.planProject(title, description, skillCatalog, authorOSTools, context);
-      applyProjectOptions(project);
-      return res.json({ project, planning: 'dynamic' });
-    }
+      // Dynamic planning: ask the AI to figure out the steps
+      if (planning === 'dynamic') {
+        const skillCatalog = services.skills.getSkillCatalog();
+        const authorOSTools = services.authorOS?.getAvailableTools() || [];
+        const project = await engine.planProject(title, description, skillCatalog, authorOSTools, context);
+        applyProjectOptions(project);
+        return res.json({ project, planning: 'dynamic' });
+      }
 
-    // Pipeline-based path: source Steps from the ACTIVE BOOK's pipeline.json
-    // (book-container Phase 3c). Falls back to the legacy single-step custom
-    // create only if no active book / pipeline is resolvable.
-    const activePipeline = services.books?.activePipeline?.();
-    if (activePipeline) {
-      const project = engine.createProjectFromPipeline(activePipeline, title, description, context);
+      // Pipeline-based path: source Steps from the ACTIVE BOOK's pipeline.json
+      // (book-container Phase 3c). Falls back to the legacy single-step custom
+      // create only if no active book / pipeline is resolvable.
+      const activePipeline = services.books?.activePipeline?.();
+      if (activePipeline) {
+        const project = engine.createProjectFromPipeline(activePipeline, title, description, context);
+        applyProjectOptions(project);
+        return res.json({ project, planning: 'book-pipeline', pipeline: activePipeline.name });
+      }
+      const project = engine.createProject(inferredType, title, description, context);
       applyProjectOptions(project);
-      return res.json({ project, planning: 'book-pipeline', pipeline: activePipeline.name });
+      return res.json({ project, planning: 'template' });
+    } catch (err) {
+      // A corrupted active pipeline.json (or any creation/validation failure)
+      // throws here; respond 400 rather than leaving the async handler to reject
+      // unhandled and hang the request.
+      return res.status(400).json({ error: 'Failed to create project: ' + String(err) });
     }
-    const project = engine.createProject(inferredType, title, description, context);
-    applyProjectOptions(project);
-    res.json({ project, planning: 'template' });
   });
 
   // ── Pipeline Creation (chains all 6 phases) ──

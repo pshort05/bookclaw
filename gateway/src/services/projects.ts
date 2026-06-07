@@ -610,6 +610,14 @@ Description: ${description}`;
     description: string,
     context?: Record<string, any>,
   ): Project {
+    // Validate the non-dynamic path up front: a corrupted pipeline.json (steps
+    // missing or not an array) would otherwise raise a raw TypeError inside the
+    // .map() below, surfacing as an unhandled rejection in the async create
+    // handler. The dynamic / novel-pipeline branch never touches steps.
+    if (!pipeline || (!pipeline.dynamic && pipeline.name !== 'novel-pipeline' && !Array.isArray(pipeline.steps))) {
+      throw new Error('Invalid pipeline: steps[] missing or not an array');
+    }
+
     if (pipeline.dynamic || pipeline.name === 'novel-pipeline') {
       // Dynamic novel pipeline stays code-generated; map book context → config.
       const cfg: NovelPipelineConfig = {

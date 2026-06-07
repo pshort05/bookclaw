@@ -38,6 +38,21 @@ test('createProjectFromPipeline builds Steps from JSON + interpolates context', 
   assert.equal(p.type, 'book-planning');
 });
 
+test('createProjectFromPipeline throws a clear error on a non-dynamic pipeline with missing/non-array steps', () => {
+  const eng = engine();
+  // A corrupted pipeline.json: non-dynamic, not novel-pipeline, steps not an array.
+  const noSteps = { schemaVersion: 1, name: 'book-planning', label: 'x', description: 'd' } as unknown as LibraryPipeline;
+  assert.throws(
+    () => eng.createProjectFromPipeline(noSteps, 'My Book', 'a story'),
+    /Invalid pipeline: steps\[\] missing or not an array/,
+  );
+  const badSteps = { schemaVersion: 1, name: 'book-planning', label: 'x', description: 'd', steps: 'oops' } as unknown as LibraryPipeline;
+  assert.throws(
+    () => eng.createProjectFromPipeline(badSteps, 'My Book', 'a story'),
+    /Invalid pipeline: steps\[\] missing or not an array/,
+  );
+});
+
 test('createProjectFromPipeline with dynamic=true delegates to the novel generator', () => {
   const eng = engine();
   const dyn: LibraryPipeline = { schemaVersion: 1, name: 'novel-pipeline', label: 'Novel', description: 'd', dynamic: true, steps: [] };

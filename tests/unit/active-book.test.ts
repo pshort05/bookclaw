@@ -90,3 +90,18 @@ test('seedDefaultBook activates the newest book when books exist but none active
     assert.equal(svc.list().length, 2); // did NOT create a Default Book
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('list() is deterministic when two books share the same createdAt (slug tiebreak)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-active-'));
+  try {
+    const svc = await makeSvc(root);
+    // Two books with an identical createdAt — without a tiebreak their relative
+    // order would be undefined, making seedDefaultBook's "activate newest" flaky.
+    const sameTs = '2026-06-06T00:00:00.000Z';
+    const booksDir = join(root, 'workspace', 'books');
+    write(booksDir, 'zebra/book.json', JSON.stringify({ slug: 'zebra', title: 'Zebra', createdAt: sameTs }));
+    write(booksDir, 'alpha/book.json', JSON.stringify({ slug: 'alpha', title: 'Alpha', createdAt: sameTs }));
+    const order = svc.list().map(b => b.slug);
+    assert.deepEqual(order, ['alpha', 'zebra'], 'equal createdAt → slug ascending (deterministic)');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
