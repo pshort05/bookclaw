@@ -28,6 +28,10 @@ services:
       # Bind to all interfaces inside the container so the published port is
       # reachable from the LAN. Set to 127.0.0.1 to restore localhost-only.
       - BOOKCLAW_BIND=${BOOKCLAW_BIND:-0.0.0.0}
+      # Date-time display version (V5.MM.DD.HH.MM) stamped by deploy.sh at build
+      # time, written to docker/.env. Shown in the banner, /api/status, and the
+      # dashboard. Unset (e.g. local dev) → the app falls back to a boot-time value.
+      - BOOKCLAW_VERSION=${BOOKCLAW_VERSION:-}
     # Security: Resource limits
     deploy:
       resources:

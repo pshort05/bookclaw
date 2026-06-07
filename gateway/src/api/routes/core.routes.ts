@@ -1,4 +1,5 @@
 import { Application, Request, Response } from 'express';
+import { DISPLAY_VERSION } from '../../version.js';
 
 /**
  * Core endpoints: health/liveness/readiness probes, status dashboard, chat API,
@@ -11,7 +12,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
-      version: '4.0.0',
+      version: DISPLAY_VERSION,
       name: 'BookClaw',
       brand: 'Writing Secrets',
       uptime: process.uptime(),
@@ -46,6 +47,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   // ── Status Dashboard ──
   app.get('/api/status', (_req: Request, res: Response) => {
     res.json({
+      version: DISPLAY_VERSION,
       soul: services.soul.getName(),
       providers: services.aiRouter.getActiveProviders().map((p: any) => ({
         id: p.id, name: p.name, model: p.model, tier: p.tier,

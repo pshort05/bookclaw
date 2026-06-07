@@ -36,6 +36,7 @@ import { InjectionDetector } from './security/injection.js';
 import { SkillLoader } from './skills/loader.js';
 import { LibraryService } from './services/library.js';
 import { BookService } from './services/book.js';
+import { DISPLAY_VERSION } from './version.js';
 import { AuthorOSService } from './services/author-os.js';
 import { TTSService } from './services/tts.js';
 import { ImageGenService } from './services/image-gen.js';
@@ -378,7 +379,7 @@ class BookClawGateway {
 
   async initialize(): Promise<void> {
     console.log('');
-    console.log('  ✍️  BookClaw v5.0.0');
+    console.log(`  ✍️  BookClaw ${DISPLAY_VERSION}`);
     console.log('  ═══════════════════════════════════');
     console.log('  The Autonomous AI Writing Agent');
     console.log('  An OpenClaw fork for authors');

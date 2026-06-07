@@ -54,6 +54,12 @@ if [ -z "$BOOKCLAW_AUTH_TOKEN" ]; then
     fi
 fi
 
+# ── Compute the date-time display version (V5.MM.DD.HH.MM) ──
+# Stamped at deploy time so every push/build shows a fresh version; a plain
+# container restart keeps this build's version. Local server time, to match the
+# operator's clock. Distinct from package.json's semver.
+BOOKCLAW_VERSION="V5.$(date +%m.%d.%H.%M)"
+
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
 WORKSPACE_PATH="${BOOKCLAW_WORKSPACE_PATH:-$HOME/bookclaw-workspace}"
@@ -62,8 +68,9 @@ BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY}
 BOOKCLAW_AUTH_TOKEN=${BOOKCLAW_AUTH_TOKEN}
 AUTHOR_OS_PATH=${AUTHOR_OS_PATH:-$HOME/author-os}
 BOOKCLAW_WORKSPACE_PATH=${WORKSPACE_PATH}
+BOOKCLAW_VERSION=${BOOKCLAW_VERSION}
 EOF
-echo "  ✓ Environment file created"
+echo "  ✓ Environment file created (version ${BOOKCLAW_VERSION})"
 
 # ── Ensure the host workspace dir exists (bind-mount target) ──
 # Create it as this user (uid 1000) so the container (also uid 1000) can write.
