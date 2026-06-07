@@ -141,6 +141,7 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
   app.post('/api/authoring/reload', async (_req: Request, res: Response) => {
     await services.skills.reload();
     await services.soul.reload();
+    await services.library?.reload?.();
     res.json({ success: true, skills: services.skills.getLoadedCount() });
   });
 }

@@ -15,6 +15,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
   // (via SoulService) and pipeline. genre/sections/skills are stored records,
   // not yet injected — the UI labels them so editing them isn't a silent no-op.
   const WIRED_KINDS = new Set(['author', 'voice', 'pipeline']);
+  // Allowlist for repull :kind param — defense-in-depth guard on the POST route.
+  const REPULL_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section', 'skill'];
   // Relative location under templates/ for each kind.
   const TEMPLATE_SUBDIR: Record<string, string> = {
     author: 'author', voice: 'voice', genre: 'genre',
@@ -206,6 +208,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const slug = services.books.getActiveBook();
     if (!slug) return res.status(409).json({ error: 'No active book' });
     const kind = String(req.params.kind), name = String(req.params.name);
+    if (!REPULL_KINDS.includes(kind)) return res.status(400).json({ error: 'invalid kind' });
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) return res.status(400).json({ error: 'invalid name' });
     const resolution = req.body?.resolution === 'keep-book' ? 'keep-book'
       : req.body?.resolution === 'take-library' ? 'take-library' : undefined;
     try {
