@@ -1443,20 +1443,20 @@ textarea { resize: vertical; min-height: 60px; }
     });
     overlay.querySelector("#idleEditSave").addEventListener("click", function() {
       var label = document.getElementById("idleEditLabel").value.trim();
-      var prompt = document.getElementById("idleEditPrompt").value.trim();
+      var prompt2 = document.getElementById("idleEditPrompt").value.trim();
       if (!label) {
         showToast("Task name is required", "error");
         return;
       }
-      if (!prompt) {
+      if (!prompt2) {
         showToast("AI instructions are required", "error");
         return;
       }
       if (isNew) {
-        state.idleTasksCache.push({ label, prompt, enabled: true });
+        state.idleTasksCache.push({ label, prompt: prompt2, enabled: true });
       } else {
         state.idleTasksCache[idx].label = label;
-        state.idleTasksCache[idx].prompt = prompt;
+        state.idleTasksCache[idx].prompt = prompt2;
       }
       saveIdleTasks();
       renderIdleTaskQueue();
@@ -4501,6 +4501,28 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   // dashboard/src/panels/authoring.js
   var SKILL_CATEGORIES = ["core", "author", "marketing", "ops"];
   var SKILL_TEMPLATE = "---\ndescription: One-line summary of what this skill does\ntriggers:\n  - keyword\npermissions:\n  - memory_read\n---\n\n# Skill Name\n\nInstructions the AI should follow when this skill is triggered.\n";
+  var KINDS = [
+    { label: "Author", kind: "author" },
+    { label: "Voice", kind: "voice" },
+    { label: "Genre", kind: "genre" },
+    { label: "Sections", kind: "section" },
+    { label: "Skills", kind: "skill" },
+    { label: "Pipeline", kind: "pipeline" }
+  ];
+  var MULTI_FILE_KINDS = /* @__PURE__ */ new Set(["author", "voice", "genre", "skill"]);
+  function toTemplatePath(kind) {
+    if (kind === "section") return "sections";
+    if (kind === "skill") return "skills";
+    return kind;
+  }
+  var NEW_STARTERS = {
+    author: { "SOUL.md": "" },
+    voice: { "STYLE-GUIDE.md": "" },
+    genre: { "tropes.md": "" }
+  };
+  var _scope = "library";
+  var _kind = "author";
+  var _currentFile = null;
   function md(text) {
     try {
       return g.parse(text || "", { breaks: true });
@@ -4511,56 +4533,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   function badge(source) {
     const color = source === "workspace" ? "var(--success)" : source === "synthetic" ? "var(--info)" : "var(--muted)";
     return '<span class="badge" style="font-size:9px;background:transparent;border:1px solid ' + color + ";color:" + color + ';">' + esc(source) + "</span>";
-  }
-  async function loadAuthoring() {
-    const root = document.getElementById("panel-authoring");
-    if (!root) return;
-    root.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><h3 style="margin:0;flex:1;">Prompts &amp; Skills</h3><button class="small" id="auNewSkill">+ New Skill</button><button class="small secondary" id="auReload">Reload from disk</button></div><div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Edit author identity (prompts) and skills live \u2014 changes apply immediately, no restart. User edits are saved to the workspace and override the built-ins; built-in skills are read-only (clone them with \u201CSave as new\u201D).</div><div style="display:flex;gap:16px;align-items:flex-start;"><div id="auList" style="width:300px;flex-shrink:0;max-height:70vh;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div><div id="auEditor" style="flex:1;min-width:0;"></div></div>';
-    root.querySelector("#auReload").addEventListener("click", async () => {
-      try {
-        await api("POST", "/api/authoring/reload");
-        showToast("Reloaded from disk", "success");
-        await loadAuthoring();
-      } catch (e) {
-        showToast("Reload failed: " + e.message, "error");
-      }
-    });
-    root.querySelector("#auNewSkill").addEventListener("click", () => openSkillCreate());
-    await renderList();
-  }
-  async function renderList() {
-    const el = document.getElementById("auList");
-    if (!el) return;
-    let prompts = { files: [] }, skills = { skills: [] };
-    try {
-      [prompts, skills] = await Promise.all([api("GET", "/api/prompts"), api("GET", "/api/skills")]);
-    } catch (e) {
-      el.innerHTML = '<div style="color:var(--danger);padding:8px;">Failed to load: ' + esc(e.message) + "</div>";
-      return;
-    }
-    let html = '<div style="font-weight:600;font-size:11px;text-transform:uppercase;color:var(--muted);margin:4px 0 6px;">Prompts</div>';
-    for (const f of prompts.files || []) {
-      html += '<div class="au-item" data-kind="prompt" data-id="' + esc(f.file) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;">' + esc(f.file) + (f.exists ? "" : ' <span style="color:var(--muted);font-size:11px;">(empty)</span>') + "</div>";
-    }
-    const byCat = {};
-    for (const s of skills.skills || []) {
-      (byCat[s.category] = byCat[s.category] || []).push(s);
-    }
-    for (const cat of Object.keys(byCat).sort()) {
-      html += '<div style="font-weight:600;font-size:11px;text-transform:uppercase;color:var(--muted);margin:12px 0 6px;">' + esc(cat) + "</div>";
-      for (const s of byCat[cat].sort((a, b2) => a.name.localeCompare(b2.name))) {
-        html += '<div class="au-item" data-kind="skill" data-id="' + esc(s.name) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:center;"><span>' + esc(s.name) + "</span>" + badge(s.source) + "</div>";
-      }
-    }
-    el.innerHTML = html;
-    el.querySelectorAll(".au-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        const kind = item.getAttribute("data-kind");
-        const id = item.getAttribute("data-id");
-        if (kind === "prompt") openPrompt(id);
-        else openSkill(id);
-      });
-    });
   }
   function editorShell(title, sourceHtml, bodyHtml, actionsHtml) {
     const ed = document.getElementById("auEditor");
@@ -4586,27 +4558,398 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     document.getElementById("auTabEdit").addEventListener("click", showEdit);
     return { showPreview, showEdit, sync };
   }
-  async function openPrompt(file) {
-    let data;
+  async function loadAuthoring() {
+    const root = document.getElementById("panel-authoring");
+    if (!root) return;
+    let hasActiveBook = false;
     try {
-      data = await api("GET", "/api/prompts");
+      const a = await api("GET", "/api/books/active");
+      hasActiveBook = !!(a.active && a.active.slug);
     } catch (e) {
-      return showToast("Load failed: " + e.message, "error");
     }
-    const f = (data.files || []).find((x2) => x2.file === file) || { file, content: "" };
-    const state2 = { content: f.content };
-    editorShell(esc(file), "", "", '<button class="success" id="auSave">Save</button>');
-    const tabs = wireTabs(state2);
-    tabs.showEdit();
-    document.getElementById("auSave").addEventListener("click", async () => {
-      tabs.sync();
+    _scope = hasActiveBook ? "book" : "library";
+    _kind = "author";
+    _currentFile = null;
+    root.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><h3 style="margin:0;flex:1;">Editor</h3><button class="small" id="auNewItem">+ New</button><button class="small secondary" id="auReload">Reload from disk</button></div><div style="display:flex;gap:6px;margin-bottom:10px;"><button class="small' + (_scope === "library" ? "" : " secondary") + '" id="auScopeLibrary">Library</button><button class="small' + (_scope === "book" ? "" : " secondary") + '" id="auScopeBook">This Book</button></div><div id="auKindRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div><div style="display:flex;gap:16px;align-items:flex-start;"><div id="auList" style="width:300px;flex-shrink:0;max-height:70vh;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div><div id="auEditor" style="flex:1;min-width:0;"></div></div>';
+    root.querySelector("#auReload").addEventListener("click", async () => {
       try {
-        await api("PUT", "/api/prompts/" + encodeURIComponent(file), { content: state2.content });
-        showToast("Saved " + file, "success");
+        await api("POST", "/api/authoring/reload");
+        showToast("Reloaded from disk", "success");
+        await loadAuthoring();
       } catch (e) {
-        showToast("Save failed: " + e.message, "error");
+        showToast("Reload failed: " + e.message, "error");
       }
     });
+    root.querySelector("#auNewItem").addEventListener("click", () => handleNew());
+    root.querySelector("#auScopeLibrary").addEventListener("click", () => {
+      _scope = "library";
+      document.getElementById("auScopeLibrary").classList.remove("secondary");
+      document.getElementById("auScopeBook").classList.add("secondary");
+      document.getElementById("auEditor").innerHTML = "";
+      renderKindRow();
+      renderList();
+    });
+    root.querySelector("#auScopeBook").addEventListener("click", () => {
+      _scope = "book";
+      document.getElementById("auScopeBook").classList.remove("secondary");
+      document.getElementById("auScopeLibrary").classList.add("secondary");
+      document.getElementById("auEditor").innerHTML = "";
+      renderKindRow();
+      renderList();
+    });
+    renderKindRow();
+    await renderList();
+  }
+  function renderKindRow() {
+    const row = document.getElementById("auKindRow");
+    if (!row) return;
+    row.innerHTML = KINDS.map(
+      (k) => '<button class="small' + (_kind === k.kind ? "" : " secondary") + '" data-kind="' + k.kind + '">' + k.label + "</button>"
+    ).join("");
+    row.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        _kind = btn.getAttribute("data-kind");
+        _currentFile = null;
+        row.querySelectorAll("button").forEach((b2) => b2.classList.add("secondary"));
+        btn.classList.remove("secondary");
+        document.getElementById("auEditor").innerHTML = "";
+        renderList();
+      });
+    });
+  }
+  async function renderList() {
+    const el = document.getElementById("auList");
+    if (!el) return;
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">Loading\u2026</div>';
+    if (_scope === "library") {
+      await renderLibraryList(el);
+    } else {
+      await renderBookList(el);
+    }
+  }
+  async function renderLibraryList(el) {
+    if (_kind === "skill") {
+      let skills = { skills: [] };
+      try {
+        skills = await api("GET", "/api/skills");
+      } catch (e) {
+        el.innerHTML = '<div style="color:var(--danger);padding:8px;">Failed: ' + esc(e.message) + "</div>";
+        return;
+      }
+      const byCat = {};
+      for (const s of skills.skills || []) {
+        (byCat[s.category] = byCat[s.category] || []).push(s);
+      }
+      let html2 = "";
+      for (const cat of Object.keys(byCat).sort()) {
+        html2 += '<div style="font-weight:600;font-size:11px;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;">' + esc(cat) + "</div>";
+        for (const s of byCat[cat].sort((a, b2) => a.name.localeCompare(b2.name))) {
+          html2 += '<div class="au-item" data-name="' + esc(s.name) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:center;"><span>' + esc(s.name) + "</span>" + badge(s.source) + "</div>";
+        }
+      }
+      el.innerHTML = html2 || '<div style="color:var(--muted);font-size:12px;padding:8px;">No skills found.</div>';
+      el.querySelectorAll(".au-item").forEach((item) => {
+        item.addEventListener("click", () => openSkill(item.getAttribute("data-name")));
+      });
+      return;
+    }
+    let data = { entries: [] };
+    try {
+      data = await api("GET", "/api/library/" + encodeURIComponent(_kind));
+    } catch (e) {
+      el.innerHTML = '<div style="color:var(--danger);padding:8px;">Failed: ' + esc(e.message) + "</div>";
+      return;
+    }
+    const entries = data.entries || [];
+    if (!entries.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No entries found.</div>';
+      return;
+    }
+    let html = "";
+    for (const entry of entries.sort((a, b2) => a.name.localeCompare(b2.name))) {
+      const canDelete = entry.source === "workspace";
+      html += '<div class="au-item" data-name="' + esc(entry.name) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:center;"><span>' + esc(entry.name) + '</span><span style="display:flex;gap:4px;align-items:center;">' + badge(entry.source) + (canDelete ? '<button class="small danger au-del" data-name="' + esc(entry.name) + '" style="font-size:10px;padding:2px 6px;" title="Delete overlay entry">\u2715</button>' : "") + "</span></div>";
+    }
+    el.innerHTML = html;
+    el.querySelectorAll(".au-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        if (e.target.classList.contains("au-del")) return;
+        openLibraryEntry(item.getAttribute("data-name"));
+      });
+    });
+    el.querySelectorAll(".au-del").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const name = btn.getAttribute("data-name");
+        if (!confirm('Delete workspace overlay "' + name + '"? The built-in will be restored if one exists.')) return;
+        try {
+          await api("DELETE", "/api/library/" + encodeURIComponent(_kind) + "/" + encodeURIComponent(name));
+          showToast("Deleted " + name, "success");
+          document.getElementById("auEditor").innerHTML = "";
+          await renderList();
+        } catch (e2) {
+          showToast("Delete failed: " + e2.message, "error");
+        }
+      });
+    });
+  }
+  async function renderBookList(el) {
+    let data;
+    try {
+      data = await api("GET", "/api/books/active/repull");
+    } catch (e) {
+      if (e.message && e.message.includes("409")) {
+        el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No active book. Set one in the Books panel.</div>';
+      } else {
+        el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No active book. Set one in the Books panel.</div>';
+      }
+      return;
+    }
+    const repullKind = _kind;
+    const assets = (data.assets || []).filter((a) => a.kind === repullKind);
+    if (!assets.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;">No ' + esc(_kind) + " assets in this book.</div>";
+      return;
+    }
+    let html = "";
+    for (const asset of assets.sort((a, b2) => a.name.localeCompare(b2.name))) {
+      const statusColor = asset.status === "ok" ? "var(--success)" : asset.status === "readonly" ? "var(--info)" : "var(--muted)";
+      html += '<div class="au-item" data-name="' + esc(asset.name) + '" style="padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:center;"><span>' + esc(asset.name) + '</span><span style="font-size:10px;color:' + statusColor + ';">' + esc(asset.status || "") + "</span></div>";
+    }
+    el.innerHTML = html;
+    el.querySelectorAll(".au-item").forEach((item) => {
+      item.addEventListener("click", () => openBookEntry(item.getAttribute("data-name")));
+    });
+  }
+  async function openLibraryEntry(name) {
+    if (_kind === "skill") {
+      openSkill(name);
+      return;
+    }
+    let data;
+    try {
+      data = await api("GET", "/api/library/" + encodeURIComponent(_kind) + "/" + encodeURIComponent(name));
+    } catch (e) {
+      showToast("Load failed: " + e.message, "error");
+      return;
+    }
+    const entry = data.entry;
+    const isWorkspace = entry.source === "workspace";
+    if (MULTI_FILE_KINDS.has(_kind)) {
+      const files = entry.files || {};
+      const fileNames = Object.keys(files);
+      if (!fileNames.length) {
+        showToast("No .md files found in this entry.", "error");
+        return;
+      }
+      const preferred = ["SOUL.md", "STYLE-GUIDE.md"];
+      _currentFile = fileNames.find((f) => preferred.includes(f)) || fileNames[0];
+      renderMultiFileEditor({
+        entryName: name,
+        files,
+        source: entry.source,
+        readOnly: !isWorkspace,
+        saveHandler: async (fname, content) => {
+          await api(
+            "PUT",
+            "/api/library/" + encodeURIComponent(_kind) + "/" + encodeURIComponent(name),
+            { files: { [fname]: content } }
+          );
+          showToast("Saved " + fname, "success");
+        }
+      });
+      return;
+    }
+    if (_kind === "pipeline") {
+      const rawContent = entry.pipeline ? JSON.stringify(entry.pipeline, null, 2) : entry.content || "{}";
+      const state2 = { content: rawContent };
+      const actions = (isWorkspace ? '<button class="success" id="auSave">Save</button>' : "") + (!isWorkspace ? '<span style="color:var(--muted);font-size:12px;">Built-in \u2014 read-only. Create a workspace copy via "+ New".</span>' : "");
+      editorShell(esc(name), badge(entry.source), "", actions);
+      const tabs = wireTabs(state2);
+      tabs.showEdit();
+      if (isWorkspace) {
+        document.getElementById("auSave").addEventListener("click", async () => {
+          tabs.sync();
+          let parsed;
+          try {
+            parsed = JSON.parse(state2.content);
+          } catch (e) {
+            showToast("Invalid JSON \u2014 fix before saving.", "error");
+            return;
+          }
+          if (!Array.isArray(parsed.steps) || typeof parsed.schemaVersion !== "number") {
+            showToast("Pipeline JSON must have schemaVersion (number) and steps (array).", "error");
+            return;
+          }
+          try {
+            await api("PUT", "/api/library/" + encodeURIComponent(_kind) + "/" + encodeURIComponent(name), { content: state2.content });
+            showToast("Saved pipeline " + name, "success");
+          } catch (e) {
+            showToast("Save failed: " + e.message, "error");
+          }
+        });
+      }
+      return;
+    }
+    if (_kind === "section") {
+      const rawContent = entry.content || "";
+      const state2 = { content: rawContent };
+      const actions = (isWorkspace ? '<button class="success" id="auSave">Save</button>' : "") + (!isWorkspace ? '<span style="color:var(--muted);font-size:12px;">Built-in \u2014 read-only.</span>' : "");
+      editorShell(esc(name), badge(entry.source), "", actions);
+      const tabs = wireTabs(state2);
+      tabs.showPreview();
+      if (isWorkspace) {
+        document.getElementById("auSave").addEventListener("click", async () => {
+          tabs.sync();
+          try {
+            await api("PUT", "/api/library/" + encodeURIComponent(_kind) + "/" + encodeURIComponent(name), { content: state2.content });
+            showToast("Saved " + name, "success");
+          } catch (e) {
+            showToast("Save failed: " + e.message, "error");
+          }
+        });
+      }
+      return;
+    }
+  }
+  async function openBookEntry(name) {
+    if (_kind === "skill") {
+      await openBookSkill(name);
+      return;
+    }
+    const templatePath = toTemplatePath(_kind);
+    if (MULTI_FILE_KINDS.has(_kind)) {
+      let data;
+      try {
+        data = await api("GET", "/api/books/active/templates/" + encodeURIComponent(templatePath));
+      } catch (e) {
+        showToast("Load failed: " + e.message, "error");
+        return;
+      }
+      const files = data.files || {};
+      const wired = data.wired;
+      renderMultiFileEditor({
+        entryName: name,
+        files,
+        source: "book",
+        wired,
+        saveHandler: async (fname, content) => {
+          await api(
+            "PUT",
+            "/api/books/active/templates/" + encodeURIComponent(templatePath),
+            { files: { [fname]: content } }
+          );
+          showToast("Saved " + fname, "success");
+        }
+      });
+      return;
+    }
+    if (_kind === "pipeline") {
+      let data;
+      try {
+        data = await api("GET", "/api/books/active/templates/pipeline");
+      } catch (e) {
+        showToast("Load failed: " + e.message, "error");
+        return;
+      }
+      const state2 = { content: data.content || "{}" };
+      const wiredNote = '<span style="color:var(--success);font-size:11px;">Active in generation</span>';
+      editorShell(esc(name), wiredNote, "", '<button class="success" id="auSave">Save</button>');
+      const tabs = wireTabs(state2);
+      tabs.showEdit();
+      document.getElementById("auSave").addEventListener("click", async () => {
+        tabs.sync();
+        let parsed;
+        try {
+          parsed = JSON.parse(state2.content);
+        } catch (e) {
+          showToast("Invalid JSON \u2014 fix before saving.", "error");
+          return;
+        }
+        if (!Array.isArray(parsed.steps) || typeof parsed.schemaVersion !== "number") {
+          showToast("Pipeline JSON must have schemaVersion (number) and steps (array).", "error");
+          return;
+        }
+        try {
+          await api("PUT", "/api/books/active/templates/pipeline", { content: state2.content });
+          showToast("Saved pipeline", "success");
+        } catch (e) {
+          showToast("Save failed: " + e.message, "error");
+        }
+      });
+      return;
+    }
+    if (_kind === "section") {
+      let data;
+      try {
+        data = await api("GET", "/api/books/active/templates/sections/" + encodeURIComponent(name));
+      } catch (e) {
+        showToast("Load failed: " + e.message, "error");
+        return;
+      }
+      const state2 = { content: data.content || "" };
+      const wiredNote = '<span style="color:var(--muted);font-size:11px;">Stored \u2014 not yet active in generation.</span>';
+      editorShell(esc(name), wiredNote, "", '<button class="success" id="auSave">Save</button>');
+      const tabs = wireTabs(state2);
+      tabs.showPreview();
+      document.getElementById("auSave").addEventListener("click", async () => {
+        tabs.sync();
+        try {
+          await api("PUT", "/api/books/active/templates/sections/" + encodeURIComponent(name), { content: state2.content });
+          showToast("Saved section " + name, "success");
+        } catch (e) {
+          showToast("Save failed: " + e.message, "error");
+        }
+      });
+      return;
+    }
+  }
+  function renderMultiFileEditor({ entryName, files, source, wired, readOnly, saveHandler }) {
+    const fileNames = Object.keys(files);
+    if (!_currentFile || !files[_currentFile]) {
+      const preferred = ["SOUL.md", "STYLE-GUIDE.md", "VOICE-PROFILE.md"];
+      _currentFile = fileNames.find((f) => preferred.includes(f)) || fileNames[0] || null;
+    }
+    if (!_currentFile) {
+      showToast("No files in this entry.", "error");
+      return;
+    }
+    const state2 = { content: files[_currentFile] || "" };
+    const wiredNote = wired === false ? '<span style="color:var(--muted);font-size:11px;">Stored \u2014 not yet active in generation.</span>' : wired === true ? '<span style="color:var(--success);font-size:11px;">Active in generation</span>' : source === "book" ? "" : "";
+    const sourceBadge = source === "book" ? wiredNote : badge(source);
+    const saveBtn = readOnly ? '<span style="color:var(--muted);font-size:12px;">Built-in \u2014 read-only. Create a workspace copy via "+ New".</span>' : '<button class="success" id="auSave">Save</button>';
+    editorShell(esc(entryName), sourceBadge, "", saveBtn);
+    if (fileNames.length > 1) {
+      const pickerHtml = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">' + fileNames.map(
+        (f) => '<button class="small' + (f === _currentFile ? "" : " secondary") + ' au-filepick" data-file="' + esc(f) + '">' + esc(f) + "</button>"
+      ).join("") + "</div>";
+      document.getElementById("auBody").insertAdjacentHTML("beforebegin", pickerHtml);
+    }
+    const tabs = wireTabs(state2);
+    tabs.showEdit();
+    document.querySelectorAll(".au-filepick").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tabs.sync();
+        files[_currentFile] = state2.content;
+        _currentFile = btn.getAttribute("data-file");
+        state2.content = files[_currentFile] || "";
+        document.querySelectorAll(".au-filepick").forEach((b2) => b2.classList.add("secondary"));
+        btn.classList.remove("secondary");
+        const t = document.getElementById("auText");
+        if (t) t.value = state2.content;
+      });
+    });
+    if (!readOnly) {
+      document.getElementById("auSave").addEventListener("click", async () => {
+        tabs.sync();
+        files[_currentFile] = state2.content;
+        try {
+          await saveHandler(_currentFile, state2.content);
+        } catch (e) {
+          showToast("Save failed: " + e.message, "error");
+        }
+      });
+    }
   }
   async function openSkill(name) {
     let data;
@@ -4650,6 +4993,32 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       }
     });
   }
+  async function openBookSkill(name) {
+    let data;
+    try {
+      data = await api("GET", "/api/books/active/templates/skills/" + encodeURIComponent(name));
+    } catch (e) {
+      showToast("Load failed: " + e.message, "error");
+      return;
+    }
+    const files = data.files || {};
+    const wired = data.wired;
+    const content = files["SKILL.md"] || "";
+    const state2 = { content };
+    const wiredNote = wired === false ? '<span style="color:var(--muted);font-size:11px;">Stored \u2014 not yet active in generation.</span>' : "";
+    editorShell(esc(name), wiredNote, "", '<button class="success" id="auSave">Save</button>');
+    const tabs = wireTabs(state2);
+    tabs.showPreview();
+    document.getElementById("auSave").addEventListener("click", async () => {
+      tabs.sync();
+      try {
+        await api("PUT", "/api/books/active/templates/skills/" + encodeURIComponent(name), { files: { "SKILL.md": state2.content } });
+        showToast("Saved skill " + name, "success");
+      } catch (e) {
+        showToast("Save failed: " + e.message, "error");
+      }
+    });
+  }
   function openSkillCreate(seed) {
     seed = seed || {};
     const catOpts = SKILL_CATEGORIES.map((c) => '<option value="' + c + '"' + (seed.category === c ? " selected" : "") + ">" + c + "</option>").join("");
@@ -4673,6 +5042,71 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         showToast("Create failed: " + e.message, "error");
       }
     });
+  }
+  async function handleNew() {
+    if (_scope === "book") {
+      showToast("Create new entries in Library scope \u2014 they can then be snapshot into a book.", "info");
+      return;
+    }
+    if (_kind === "skill") {
+      openSkillCreate();
+      return;
+    }
+    if (_kind === "pipeline") {
+      const name2 = prompt("Pipeline name (lowercase, hyphens, e.g. my-pipeline):");
+      if (!name2) return;
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(name2)) {
+        showToast("Invalid name (lowercase, hyphens only)", "error");
+        return;
+      }
+      const starter = JSON.stringify(
+        { schemaVersion: 1, name: name2, label: name2, description: "", steps: [] },
+        null,
+        2
+      );
+      try {
+        await api("POST", "/api/library/" + encodeURIComponent(_kind), { name: name2, content: starter });
+        showToast("Created " + name2, "success");
+        await renderList();
+        openLibraryEntry(name2);
+      } catch (e) {
+        showToast("Create failed: " + e.message, "error");
+      }
+      return;
+    }
+    if (_kind === "section") {
+      const name2 = prompt("Section name (lowercase, hyphens, e.g. world-building):");
+      if (!name2) return;
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(name2)) {
+        showToast("Invalid name (lowercase, hyphens only)", "error");
+        return;
+      }
+      try {
+        await api("POST", "/api/library/" + encodeURIComponent(_kind), { name: name2, content: "# " + name2 + "\n" });
+        showToast("Created " + name2, "success");
+        await renderList();
+        openLibraryEntry(name2);
+      } catch (e) {
+        showToast("Create failed: " + e.message, "error");
+      }
+      return;
+    }
+    const name = prompt(_kind.charAt(0).toUpperCase() + _kind.slice(1) + " name (lowercase, hyphens, e.g. my-" + _kind + "):");
+    if (!name) return;
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) {
+      showToast("Invalid name (lowercase, hyphens only)", "error");
+      return;
+    }
+    const starters = NEW_STARTERS[_kind] || { "notes.md": "" };
+    try {
+      await api("POST", "/api/library/" + encodeURIComponent(_kind), { name, files: starters });
+      showToast("Created " + name, "success");
+      await renderList();
+      _currentFile = null;
+      openLibraryEntry(name);
+    } catch (e) {
+      showToast("Create failed: " + e.message, "error");
+    }
   }
 
   // dashboard/src/panels/books.js
