@@ -54,6 +54,7 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     const kind = String(req.params.kind);
     if (!isWritable(kind)) return res.status(400).json({ error: `Cannot create kind "${kind}" here (skills use /api/skills)` });
     const name = typeof req.body?.name === 'string' ? req.body.name : '';
+    if (!name) return res.status(400).json({ error: 'body.name is required' });
     try {
       await services.library.createEntry(kind, name, { files: req.body?.files, content: req.body?.content });
       await services.library.reload();

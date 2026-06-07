@@ -125,7 +125,10 @@ export class LibraryService {
       await writeFile(target, body.content, 'utf-8');
       return;
     }
-    // author / voice / genre: a directory of .md files
+    // author / voice / genre: a directory of .md files. Per-file UPSERT — we
+    // write the provided files and leave any sibling overlay files untouched
+    // (the editor saves one file at a time; SOUL.md must not wipe PERSONALITY.md).
+    // To remove an entry entirely, use deleteOverlayEntry().
     const files = body.files;
     if (!files || Object.keys(files).length === 0) throw new Error(`${kind} requires at least one .md file`);
     for (const fname of Object.keys(files)) {

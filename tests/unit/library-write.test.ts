@@ -64,6 +64,14 @@ test('deleteOverlayEntry returns false for a builtin-only entry', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('createEntry rejects a name that exists as a built-in', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
+  try {
+    const lib = await makeLib(root);
+    await assert.rejects(() => lib.createEntry('author', 'default', { files: { 'SOUL.md': 'x' } }), /already exists/i);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('createEntry writes a section and a pipeline; bad JSON rejected', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
   try {
