@@ -5133,6 +5133,11 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     var _a2;
     const el = document.getElementById("bkList");
     if (!el) return;
+    const rp = document.getElementById("bkRepull");
+    if (rp) {
+      rp.style.display = "none";
+      rp.innerHTML = "";
+    }
     let data = { books: [] };
     try {
       data = await api("GET", "/api/books");

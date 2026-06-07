@@ -39,6 +39,10 @@ export async function loadBooks() {
 async function renderList() {
   const el = document.getElementById('bkList');
   if (!el) return;
+  // Reset any open re-pull panel: after set-active/delete the active book may
+  // have changed, so stale per-asset rows must not linger.
+  const rp = document.getElementById('bkRepull');
+  if (rp) { rp.style.display = 'none'; rp.innerHTML = ''; }
   let data = { books: [] };
   try { data = await api('GET', '/api/books'); }
   catch (e) { el.innerHTML = '<div style="color:var(--danger);">Failed to load books: ' + esc(e.message) + '</div>'; return; }
