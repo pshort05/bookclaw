@@ -15,6 +15,7 @@ import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryKind, LibrarySource, LibraryPipeline } from './library-types.js';
+import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 
 /** Lightweight catalog row for list(). */
 export interface LibraryEntry {
@@ -50,8 +51,9 @@ const DIR_LAYOUT: Record<FileKind, string> = {
   section: 'sections',
 };
 
-/** Filenames allowed inside a multi-file overlay entry (no path separators). */
-const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;
+// MD_FILE_RE is imported from book-types.ts (shared with books.routes.ts).
+// ENTRY_NAME_RE intentionally caps at 63 chars for library entry *creation*.
+// Book slugs use an uncapped variant because of the -<timestamp> uniqueness fallback.
 const ENTRY_NAME_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export interface LibraryWriteBody {
@@ -109,12 +111,7 @@ export class LibraryService {
     if (!target) throw new Error(`Invalid name: ${name}`);
     if (kind === 'pipeline') {
       const raw = String(body.content ?? '');
-      let parsed: unknown;
-      try { parsed = JSON.parse(raw); } catch { throw new Error('pipeline content must be valid JSON'); }
-      const p = parsed as { steps?: unknown; schemaVersion?: unknown };
-      if (!Array.isArray(p.steps) || typeof p.schemaVersion !== 'number') {
-        throw new Error('pipeline JSON must have a steps array and a numeric schemaVersion');
-      }
+      parsePipelineJson(raw); // throws on invalid JSON or missing steps/schemaVersion
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
       return;

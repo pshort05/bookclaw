@@ -57,6 +57,23 @@ export function classifyVersion(v: number): BookStatus {
   return 'ok';
 }
 
+/** Snapshot kinds that currently DRIVE generation (author+voice via SoulService, pipeline via the engine). genre/sections/skills are stored records, not yet injected. */
+export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline']);
+
+/** A single .md filename (no path separators) allowed inside a multi-file template entry. */
+export const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;
+
+/** Parse + shape-validate a pipeline JSON string. Throws on invalid. Returns the parsed object. */
+export function parsePipelineJson(raw: string): { steps: unknown[]; schemaVersion: number; [k: string]: unknown } {
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { throw new Error('pipeline content must be valid JSON'); }
+  const p = parsed as { steps?: unknown; schemaVersion?: unknown };
+  if (!Array.isArray(p.steps) || typeof p.schemaVersion !== 'number') {
+    throw new Error('pipeline JSON must have a steps array and a numeric schemaVersion');
+  }
+  return parsed as { steps: unknown[]; schemaVersion: number; [k: string]: unknown };
+}
+
 /** Derive a filesystem-safe slug from a title. Never returns ''. */
 export function slugify(title: string): string {
   const base = String(title || '')

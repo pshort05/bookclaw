@@ -16,7 +16,7 @@ import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
-  BOOK_SCHEMA_VERSION, slugify, classifyVersion,
+  BOOK_SCHEMA_VERSION, WIRED_KINDS, slugify, classifyVersion,
   type BookManifest, type BookSummary, type PulledRef,
 } from './book-types.js';
 
@@ -368,8 +368,6 @@ export class BookService {
 
   // ── Phase 4: per-asset re-pull from the library ────────────────────────────
 
-  private readonly WIRED = new Set(['author', 'voice', 'pipeline']);
-
   /** The library's current files/content for an asset, normalised to a file map. */
   private libraryFiles(kind: RepullAsset['kind'], name: string): Record<string, string> | null {
     const e = this.library.get(kind, name);
@@ -448,7 +446,7 @@ export class BookService {
       const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
       const book = this.readAssetFrom(slug, 'templates', kind, name);
       const hasBaseline = !!baseline;
-      const wired = this.WIRED.has(kind);
+      const wired = WIRED_KINDS.has(kind);
       if (!lib) return { kind, name, status: 'library-removed' as const, libraryPresent: false, hasBaseline, wired };
       if (!hasBaseline) return { kind, name, status: 'no-baseline' as const, libraryPresent: true, hasBaseline, wired };
       const locallyEdited = !this.sameFiles(baseline, book);

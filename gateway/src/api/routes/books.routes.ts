@@ -3,6 +3,7 @@ import { join } from 'path';
 import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { safePath } from './_shared.js';
+import { WIRED_KINDS, MD_FILE_RE, parsePipelineJson } from '../../services/book-types.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -11,10 +12,6 @@ import { safePath } from './_shared.js';
 export function mountBooks(app: Application, gateway: any, _baseDir: string): void {
   const services = gateway.getServices();
 
-  // Which snapshot kinds currently DRIVE generation (Phase 3): author + voice
-  // (via SoulService) and pipeline. genre/sections/skills are stored records,
-  // not yet injected — the UI labels them so editing them isn't a silent no-op.
-  const WIRED_KINDS = new Set(['author', 'voice', 'pipeline']);
   // Allowlist for repull :kind param — defense-in-depth guard on the POST route.
   const REPULL_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section', 'skill'];
   // Relative location under templates/ for each kind.
@@ -153,8 +150,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     try {
       if (kind === 'pipeline') {
         const raw = String(req.body?.content ?? '');
-        try { const p = JSON.parse(raw); if (!Array.isArray(p.steps) || typeof p.schemaVersion !== 'number') throw 0; }
-        catch { return res.status(400).json({ error: 'pipeline content must be JSON with a steps array and numeric schemaVersion' }); }
+        try { parsePipelineJson(raw); }
+        catch (e) { return res.status(400).json({ error: (e as Error).message }); }
         const dest = safePath(base, 'pipeline.json');
         if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
         await writeFile(dest, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
@@ -179,7 +176,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       }
       const rel = kind === 'skills' ? join('skills', String(req.params.name)) : TEMPLATE_SUBDIR[kind];
       for (const fname of Object.keys(files)) {
-        if (!/^[A-Za-z0-9._-]+\.md$/.test(fname)) return res.status(400).json({ error: `Invalid file name: ${fname}` });
+        if (!MD_FILE_RE.test(fname)) return res.status(400).json({ error: `Invalid file name: ${fname}` });
         const dest = safePath(base, join(rel, fname));
         if (!dest) return res.status(403).json({ error: 'Path traversal blocked' });
         await mkdir(join(dest, '..'), { recursive: true });
