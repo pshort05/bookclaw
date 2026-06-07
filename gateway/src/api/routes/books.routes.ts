@@ -189,4 +189,32 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       res.status(500).json({ error: (err as Error)?.message || String(err) });
     }
   });
+
+  // Per-asset re-pull status for the active book.
+  app.get('/api/books/active/repull', async (_req: Request, res: Response) => {
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.status(409).json({ error: 'No active book' });
+    try {
+      res.json({ slug, assets: await services.books.repullStatus(slug) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
+  // Re-pull one asset of the active book. body: { resolution?: 'take-library' | 'keep-book' }.
+  app.post('/api/books/active/repull/:kind/:name', async (req: Request, res: Response) => {
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.status(409).json({ error: 'No active book' });
+    const kind = String(req.params.kind), name = String(req.params.name);
+    const resolution = req.body?.resolution === 'keep-book' ? 'keep-book'
+      : req.body?.resolution === 'take-library' ? 'take-library' : undefined;
+    try {
+      const result = await services.books.repull(slug, kind as any, name, { resolution });
+      if (kind === 'author' || kind === 'voice') await gateway.soul?.reload?.();
+      res.json({ success: true, ...result });
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      res.status(/no longer has|invalid/i.test(msg) ? 400 : 500).json({ error: msg });
+    }
+  });
 }
