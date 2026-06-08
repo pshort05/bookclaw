@@ -1,0 +1,465 @@
+<!doctype html>
+<!--
+  BookClaw · Asset / Library Studio (concept)
+  The rich front-end over the Phase 4 two-scope editor + re-pull.
+  Maintain shared LIBRARY assets, or edit a BOOK's private snapshot — toggle the
+  scope (top right) and the framing, source badges, and re-pull panel change.
+
+  Canonical names: every asset KIND shows its exact GLOSSARY.md definition, and
+  every individual asset carries an editable DESCRIPTION (shown wherever it's
+  listed) — so the canonical vocabulary stays consistent.
+
+  Standalone concept — same Atelier theme, not wired to the app.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookClaw · Library &amp; Assets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110b; --bg-2:#1b150e; --panel:#221b12; --panel-2:#2a2217; --panel-hi:#322817;
+  --line:rgba(238,229,210,.075); --line-2:rgba(238,229,210,.14);
+  --text:#efe7d4; --dim:#b4a98f; --faint:#7d7359;
+  --ember:#f0913a; --ember-hot:#ff6a39; --gold:#e8c46a; --glow:rgba(240,145,58,.20);
+  --ember-grad:linear-gradient(105deg,#ff6a39 0%,#f0913a 55%,#e8c46a 100%);
+  --teal:#79b0a2; --launch:#8fbf7e; --alert:#ff6a39;
+  --rail:232px; --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 80% at 80% -10%,rgba(240,145,58,.09),transparent 55%),radial-gradient(140% 120% at 50% 50%,transparent 60%,rgba(0,0,0,.5))}
+body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:rgba(238,229,210,.1);border-radius:20px;border:3px solid transparent;background-clip:content-box}
+
+.app{position:relative;z-index:2;display:grid;grid-template-columns:var(--rail) 1fr;height:100vh}
+
+/* ---------- rail ---------- */
+.rail{border-right:1px solid var(--line);background:linear-gradient(180deg,var(--bg-2),var(--bg));display:flex;flex-direction:column;padding:22px 16px 16px}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px}
+.mark{width:34px;height:34px;border-radius:10px;flex:none;background:var(--ember-grad);display:grid;place-items:center;box-shadow:0 6px 18px -6px var(--glow)}
+.mark svg{width:18px;height:18px}
+.brand .name{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:-.02em}
+.brand .name b{color:var(--ember)}
+.brand .ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);margin-top:1px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;color:var(--dim);text-decoration:none;font-weight:500;font-size:13.5px;position:relative;cursor:pointer;transition:.16s}
+.nav a svg{width:17px;height:17px;opacity:.78}
+.nav a:hover{background:rgba(238,229,210,.04);color:var(--text)}
+.nav a.on{background:linear-gradient(90deg,rgba(240,145,58,.14),rgba(240,145,58,.02));color:var(--text)}
+.nav a.on::before{content:"";position:absolute;left:-16px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--ember-grad)}
+.nav a.on svg{color:var(--ember);opacity:1}
+.nav a svg.ext{width:13px;height:13px;margin-left:auto;opacity:.45}
+.spacer{flex:1}
+
+/* ---------- main ---------- */
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{height:62px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 26px;background:linear-gradient(180deg,rgba(27,21,14,.7),transparent)}
+.crumb{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint)}
+.crumb b{color:var(--dim)}
+.crumb .sep{margin:0 8px;opacity:.5}
+
+.scope{margin-left:auto;display:flex;align-items:center;gap:11px}
+.scope .lab{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line-2);border-radius:10px;padding:3px}
+.seg button{border:none;background:transparent;color:var(--dim);font-family:'Hanken Grotesk';font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.16s}
+.seg button svg{width:14px;height:14px}
+.seg button.on{background:var(--ember-grad);color:#1a0f08;box-shadow:0 3px 10px -4px var(--glow)}
+.seg button.on.book{background:linear-gradient(105deg,#7fb6a6,#a7d0c2);color:#0e1614}
+
+.btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-family:'Hanken Grotesk';font-weight:600;font-size:13px;color:#1a0f08;background:linear-gradient(180deg,#f7b15a,#ec8a34);border:1px solid #c9762a;border-radius:10px;padding:9px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 0 #9c5a1e,0 5px 12px -4px rgba(0,0,0,.5);transition:.1s}
+.btn:active{transform:translateY(2px);box-shadow:0 0 0 #9c5a1e}
+.btn svg{width:15px;height:15px}
+.btn-key{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-family:'Hanken Grotesk';font-weight:600;font-size:12.5px;color:var(--text);background:var(--panel-2);border:1px solid var(--line-2);border-radius:10px;padding:8px 9px 8px 14px;transition:.16s}
+.btn-key:hover{border-color:rgba(240,145,58,.5);background:var(--panel-hi)}
+.btn-key svg{width:14px;height:14px}
+.btn-key .kk{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);border:1px solid var(--line-2);border-radius:5px;padding:2px 7px}
+
+.banner{display:flex;align-items:center;gap:13px;padding:13px 18px;margin:18px 26px 0;border-radius:12px;font-size:13px}
+.banner svg{width:17px;height:17px;flex:none}
+.banner.lib{background:linear-gradient(100deg,rgba(240,145,58,.1),transparent);border:1px solid rgba(240,145,58,.25);color:#f3c992}
+.banner.lib svg{color:var(--ember)}
+.banner.book{background:linear-gradient(100deg,rgba(121,176,162,.12),transparent);border:1px solid rgba(121,176,162,.3);color:#b8d8cd;display:none}
+.banner.book svg{color:var(--teal)}
+.banner b{font-weight:600}
+
+.repull{display:none;align-items:center;gap:13px;margin:12px 26px 0;padding:12px 18px;border:1px solid rgba(255,170,90,.25);background:rgba(240,145,58,.05);border-radius:12px}
+.repull .ic{width:30px;height:30px;border-radius:8px;background:rgba(240,145,58,.14);display:grid;place-items:center;flex:none}
+.repull .ic svg{width:16px;height:16px;color:var(--ember)}
+.repull .tx{flex:1;font-size:13px;color:var(--dim)}
+.repull .tx b{color:var(--text)}
+.repull .tx .v{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold)}
+
+.work{flex:1;display:grid;grid-template-columns:186px 280px 1fr;min-height:0;margin-top:18px;border-top:1px solid var(--line)}
+.kinds{border-right:1px solid var(--line);padding:18px 12px;overflow-y:auto}
+.kinds .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);padding:4px 10px 10px}
+.kind{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:9px;cursor:pointer;color:var(--dim);font-weight:500;font-size:13.5px;transition:.15s}
+.kind:hover{background:rgba(238,229,210,.04);color:var(--text)}
+.kind.on{background:rgba(240,145,58,.1);color:var(--text)}
+.kind svg{width:16px;height:16px;opacity:.8}
+.kind.on svg{color:var(--ember);opacity:1}
+.kind .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint)}
+
+.entries{border-right:1px solid var(--line);padding:18px 14px;overflow-y:auto}
+.ehead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}
+.ehead h3{font-family:'Fraunces',serif;font-weight:460;font-size:18px;margin:0;display:flex;align-items:center;gap:9px}
+.canon{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(121,176,162,.35);background:rgba(121,176,162,.08);border-radius:20px;padding:2px 7px;white-space:nowrap}
+.addnew{width:28px;height:28px;border-radius:8px;border:1px dashed var(--line-2);background:transparent;color:var(--dim);cursor:pointer;display:grid;place-items:center;transition:.15s;flex:none}
+.addnew:hover{border-color:var(--ember);color:var(--ember)}
+.addnew svg{width:14px;height:14px}
+.kdef{font-size:11.5px;color:var(--faint);line-height:1.5;margin:0 0 16px;padding-right:6px;border-left:2px solid rgba(121,176,162,.3);padding-left:10px}
+.entry{padding:12px 13px;border-radius:10px;border:1px solid var(--line);background:var(--panel);margin-bottom:9px;cursor:pointer;transition:.15s}
+.entry:hover{border-color:var(--line-2);background:var(--panel-2)}
+.entry.on{border-color:rgba(240,145,58,.4);background:linear-gradient(180deg,rgba(240,145,58,.08),var(--panel))}
+.entry .et{font-family:'Fraunces',serif;font-weight:480;font-size:15px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.entry .ed{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.4}
+.src{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid var(--line-2);color:var(--faint);flex:none}
+.src.builtin{color:var(--dim)}
+.src.yours{color:var(--ember);border-color:rgba(240,145,58,.4)}
+.src.book{color:var(--teal);border-color:rgba(121,176,162,.4)}
+
+/* editor */
+.editor{overflow-y:auto;padding:24px 28px 60px}
+.edhead{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
+.edhead h2{font-family:'Fraunces',serif;font-weight:440;font-size:28px;letter-spacing:-.02em;margin:0;line-height:1.05}
+.edhead .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint);margin-top:7px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.edhead .acts{margin-left:auto;display:flex;gap:9px}
+
+/* description field (every asset) */
+.descfield{margin:0 0 24px}
+.descfield .fl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;display:flex;gap:9px;align-items:center}
+.descfield .fl em{text-transform:none;letter-spacing:0;color:var(--faint);opacity:.75;font-family:'Hanken Grotesk';font-size:11px;font-style:italic;font-weight:400}
+.descbox{background:var(--panel);border:1px solid var(--line-2);border-radius:11px;padding:13px 15px;font-size:14.5px;line-height:1.55;color:var(--text);min-height:48px;outline:none;transition:.15s}
+.descbox:focus{border-color:rgba(240,145,58,.45);box-shadow:0 0 0 3px rgba(240,145,58,.08)}
+
+.edesc{color:var(--dim);font-size:13px;margin:0 0 22px;max-width:64ch}
+.steplbl{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 14px}
+.steplbl .hr{flex:1;height:1px;background:var(--line)}
+
+.step{background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-radius:13px;margin-bottom:11px;transition:.18s;overflow:hidden}
+.step:hover{border-color:var(--line-2)}
+.step.open{border-color:rgba(240,145,58,.35);box-shadow:0 0 40px -28px var(--glow)}
+.srow{display:flex;align-items:center;gap:13px;padding:15px 16px;cursor:pointer}
+.grip{color:var(--faint);cursor:grab;flex:none;font-size:14px;opacity:.6}
+.snum{width:24px;height:24px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line-2);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);flex:none}
+.step.open .snum{background:var(--ember-grad);color:#1a0f08;border-color:transparent}
+.sname{font-family:'Fraunces',serif;font-weight:480;font-size:17px;flex:none}
+.sctrl{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;padding:4px 9px;border-radius:7px;border:1px solid var(--line-2);color:var(--dim);background:var(--panel-2)}
+.pill.tier{color:var(--gold);border-color:rgba(232,196,106,.3)}
+.pill.tool{color:var(--teal);border-color:rgba(121,176,162,.35)}
+.pill.model{color:var(--text)}
+.pill.skill{color:var(--teal);background:rgba(121,176,162,.08)}
+.pill.wc{color:var(--faint)}
+.chev{color:var(--faint);transition:.2s;flex:none}
+.step.open .chev{transform:rotate(180deg)}
+.sbody{display:none;padding:4px 16px 18px 53px;border-top:1px solid var(--line);background:rgba(0,0,0,.12)}
+.step.open .sbody{display:block;animation:fade .3s var(--ease)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.field{margin-top:16px}
+.field .fl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.prompt{background:var(--bg);border:1px solid var(--line-2);border-radius:10px;padding:14px 15px;font-family:'Fraunces',serif;font-size:14.5px;line-height:1.6;color:var(--text)}
+.prompt .var{color:var(--ember);font-family:'IBM Plex Mono',monospace;font-size:12.5px;background:rgba(240,145,58,.1);padding:1px 5px;border-radius:4px}
+.opts{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+.opt{min-width:150px}
+.opt .fl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.select{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:9px 12px;font-size:13px;color:var(--text);cursor:pointer;transition:.15s}
+.select:hover{border-color:rgba(240,145,58,.4)}
+.select svg{width:13px;height:13px;color:var(--faint)}
+.addstep{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:14px;border:1px dashed var(--line-2);border-radius:12px;background:transparent;color:var(--faint);font-weight:600;font-size:13px;cursor:pointer;transition:.15s;margin-top:4px}
+.addstep:hover{border-color:rgba(240,145,58,.45);color:var(--ember);background:rgba(240,145,58,.03)}
+.addstep svg{width:16px;height:16px}
+
+/* markdown (prose) editor */
+.md{display:flex;gap:16px}
+.md .col{flex:1;min-width:0}
+.md .fl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.md .raw{background:var(--bg);border:1px solid var(--line-2);border-radius:10px;padding:14px 15px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;color:var(--dim);white-space:pre-wrap;min-height:280px}
+.md .prev{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-height:280px}
+.md .prev h4{font-family:'Fraunces',serif;font-weight:480;font-size:17px;margin:0 0 10px}
+.md .prev p{font-size:13.5px;line-height:1.62;color:var(--dim);margin:0 0 11px}
+.md .prev b{color:var(--text)}
+.proseNote{margin-top:24px;font-size:12px;color:var(--faint);font-style:italic;border-left:2px solid var(--line-2);padding-left:14px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- rail -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19c3-1 5-5 5-10 0 5 3 8 6 8M9 4c.5 3 2 5 4 6M14 3c.3 2.5 1.6 4.3 3.4 5.6" stroke="#1a0f08" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+      <div><div class="name">Book<b>Claw</b></div><div class="ver">V6 · studio</div></div>
+    </div>
+    <nav class="nav">
+      <div class="lbl">Studio</div>
+      <a href="phase6-studio-shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Book Board</a>
+      <a href="chat-app.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/></svg> Chat <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+      <div class="lbl">Make</div>
+      <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v6l9 4 9-4V7"/></svg> Library</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/></svg> Insights</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a1.7 1.7 0 00.3 1.9 2 2 0 11-2.8 2.8 1.7 1.7 0 00-2.9 1.2 2 2 0 11-4 0 1.7 1.7 0 00-2.6-1.2 2 2 0 11-2.8-2.8A1.7 1.7 0 004 13a2 2 0 110-4 1.7 1.7 0 001.6-2.6A2 2 0 118.4 3.6 1.7 1.7 0 0011 4a2 2 0 114 0 1.7 1.7 0 002.6 1.6 2 2 0 112.8 2.8A1.7 1.7 0 0021 11a2 2 0 110 4z"/></svg> Settings</a>
+    </nav>
+    <div class="spacer"></div>
+  </aside>
+
+  <!-- main -->
+  <main class="main">
+    <header class="topbar">
+      <div class="crumb"><b>Make</b><span class="sep">/</span>Library &amp; Assets</div>
+      <div class="scope">
+        <span class="lab">Editing</span>
+        <div class="seg">
+          <button class="on" id="seg-lib" onclick="setScope('lib')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v6l9 4 9-4V7"/></svg>Library</button>
+          <button class="book" id="seg-book" onclick="setScope('book')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>The Dragon's Heir</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="banner lib" id="banner-lib">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span>Editing the <b>shared library</b>. Changes apply to <b>new books</b> you create from now on — existing books keep their own frozen copy until you re-pull.</span>
+    </div>
+    <div class="banner book" id="banner-book">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+      <span>Editing this book's <b>private snapshot</b>. Changes stay inside <b>The Dragon's Heir</b> and never touch the shared library or any other book.</span>
+    </div>
+
+    <div class="repull" id="repull">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg></div>
+      <div class="tx">The library version of this asset advanced — this book is pinned to an earlier one. Re-pull does a 3-way merge so your book edits aren't lost.</div>
+      <button class="btn-key">See changes</button>
+      <button class="btn">Re-pull from library</button>
+    </div>
+
+    <div class="work">
+      <!-- kinds -->
+      <div class="kinds">
+        <div class="lbl">Asset kinds</div>
+        <div class="kind" data-kind="authors"  onclick="setKind('authors',this)"  title="Author — the pen-name identity (who is writing)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg> Authors <span class="n">4</span></div>
+        <div class="kind" data-kind="voices"   onclick="setKind('voices',this)"   title="Voice — the writing style and tone (how it is written)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4M7 6v12M11 3v18M15 7v10M19 10v4"/></svg> Voices <span class="n">3</span></div>
+        <div class="kind" data-kind="genres"   onclick="setKind('genres',this)"   title="Genre — the market category and its conventions."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg> Genres <span class="n">5</span></div>
+        <div class="kind on" data-kind="pipelines" onclick="setKind('pipelines',this)" title="Pipeline — an ordered group of Steps that produce a book."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M7 6h7a3 3 0 013 3 3 3 0 01-3 3H7"/></svg> Pipelines <span class="n">3</span></div>
+        <div class="kind" data-kind="sections" onclick="setKind('sections',this)" title="Section — reusable front/back-matter; part of the Manuscript."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v5H4zM4 13h16v7H4z"/></svg> Sections <span class="n">6</span></div>
+        <div class="kind" data-kind="skills"   onclick="setKind('skills',this)"   title="Skill — a reusable instruction block injected into a Step's Prompt."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> Skills <span class="n">12</span></div>
+      </div>
+
+      <!-- entries -->
+      <div class="entries">
+        <div class="ehead">
+          <h3><span id="ek-name">Pipelines</span> <span class="canon" id="ek-canon" title="Canonical term (GLOSSARY.md)">term · Pipeline</span></h3>
+          <button class="addnew" id="ek-add" title="New pipeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </div>
+        <div class="kdef" id="ek-def"></div>
+        <div id="entryList"></div>
+      </div>
+
+      <!-- editor -->
+      <div class="editor">
+        <div class="edhead">
+          <div>
+            <h2 id="ed-title">novel-pipeline</h2>
+            <div class="meta"><span id="ed-src-badge" class="src builtin">library · built-in</span> · <span id="ed-canon-meta">Pipeline</span> · <span id="ed-extra">7 steps</span></div>
+          </div>
+          <div class="acts">
+            <button class="btn-key">Duplicate <span class="kk">D</span></button>
+            <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg> Save</button>
+          </div>
+        </div>
+
+        <!-- description: EVERY asset has one -->
+        <div class="descfield">
+          <div class="fl">Description <em>· shown wherever this asset is listed (entry list, New-Book picker, book cards)</em></div>
+          <div class="descbox" id="ed-desc" contenteditable="true" spellcheck="false"></div>
+        </div>
+
+        <!-- PIPELINE editor mode -->
+        <div id="editor-pipeline">
+          <p class="edesc">An ordered set of steps that turn an idea into a finished book. Each step runs a prompt on a model, optionally guided by a skill. Drag to reorder, edit any prompt, swap the model per step, or add and remove steps — no code.</p>
+          <div class="steplbl">Steps <span class="hr"></span> 7</div>
+
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">1</span><span class="sname">Premise &amp; Dossier</span><span class="sctrl"><span class="pill">planning</span><span class="pill tier">free</span><span class="pill model">Gemini Flash</span><span class="pill skill">idea-mining</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">2</span><span class="sname">World &amp; Characters</span><span class="sctrl"><span class="pill">book_bible</span><span class="pill tier">mid</span><span class="pill model">Claude Sonnet</span><span class="pill skill">world-building</span><span class="pill wc">6k</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">3</span><span class="sname">Outline</span><span class="sctrl"><span class="pill">outline</span><span class="pill tier">mid</span><span class="pill model">Gemini Pro</span><span class="pill skill">beat-sheet</span><span class="pill wc">4k</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="step open">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">4</span><span class="sname">Draft Chapter</span><span class="sctrl"><span class="pill">creative_writing</span><span class="pill tier">premium</span><span class="pill model">Claude Opus</span><span class="pill skill">sensory-detail</span><span class="pill wc">3.2k / ch</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="sbody">
+              <div class="field">
+                <div class="fl">Prompt <span style="color:var(--ember);text-transform:none;letter-spacing:0">edit</span></div>
+                <div class="prompt">Write chapter <span class="var">{{chapter.number}}</span> — <span class="var">{{chapter.title}}</span> — in <span class="var">{{author.name}}</span>'s voice (<span class="var">{{voice}}</span>). Honour the romantasy slow-burn convention from <span class="var">{{genre}}</span>. Follow the outline beat and continue from <span class="var">{{previous_chapter}}</span>. Target <span class="var">{{wordCountTarget}}</span> words.</div>
+              </div>
+              <div class="opts">
+                <div class="opt"><div class="fl">Model</div><div class="select">Claude Opus <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="opt"><div class="fl">Cheap draft pass</div><div class="select">Gemma 3 4B <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="opt"><div class="fl">Task tier</div><div class="select">Premium <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="opt"><div class="fl">Skill</div><div class="select">sensory-detail <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+                <div class="opt"><div class="fl">Words / chapter</div><div class="select">3,200 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">5</span><span class="sname">Revision</span><span class="sctrl"><span class="pill">editing</span><span class="pill tier">mid</span><span class="pill model">DeepSeek</span><span class="pill skill">line-edit</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">6</span><span class="sname">Format</span><span class="sctrl"><span class="pill tool">program · tool</span><span class="pill">DOCX · EPUB</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="step">
+            <div class="srow" onclick="toggleStep(this)"><span class="grip">⠿</span><span class="snum">7</span><span class="sname">Launch</span><span class="sctrl"><span class="pill">marketing</span><span class="pill tier">mid</span><span class="pill model">Claude Sonnet</span><span class="pill skill">blurb-craft</span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <button class="addstep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Add a step</button>
+        </div>
+
+        <!-- PROSE editor mode (authors / voices / genres / sections / skills) -->
+        <div id="editor-prose" style="display:none">
+          <div class="md">
+            <div class="col">
+              <div class="fl">Markdown source</div>
+              <div class="raw" id="md-raw"></div>
+            </div>
+            <div class="col">
+              <div class="fl">Preview</div>
+              <div class="prev" id="md-prev"></div>
+            </div>
+          </div>
+          <p class="proseNote">Same two-scope rule as pipelines: edit the shared library copy, or this book's private snapshot. The <b>Description</b> above is part of every asset and travels with it wherever it's listed.</p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* canonical definitions (verbatim from docs/GLOSSARY.md) + per-asset descriptions */
+const KINDS = {
+  authors:{name:'Authors',canon:'Author',mode:'prose',
+    def:'The pen-name identity — who is writing: name, bio, persona. One Author is assigned per Book; the same Author can write many Books. (Consolidates the older author / persona / soul concepts.)',
+    entries:[
+      {n:'Maeve Calloran',src:'yours',d:'Romantasy pen-name — lyrical and emotionally intense. Writes the Emberwryn books.'},
+      {n:'J. R. Vane',src:'yours',d:'Contemporary-romance identity — warm, wry, modern.'},
+      {n:'Theo Marsh',src:'yours',d:'Hard-SF pen-name — spare, precise, technically grounded.'},
+      {n:'default',src:'builtin',d:'The starter author identity shipped with BookClaw. Clone it to begin.'},
+    ]},
+  voices:{name:'Voices',canon:'Voice',mode:'prose',
+    def:'The writing style and tone — how it is written: prose style, sentence rhythm, register, narrative voice. Kept separate from Author so a style can be reused or swapped independently of the pen-name.',
+    entries:[
+      {n:'High-Romantasy',src:'yours',d:'Ornate and sensory; long rhythmic sentences; slow-burn tension.'},
+      {n:'Intimate-Close-Third',src:'yours',d:'Tight third person, emotionally close, contemporary cadence.'},
+      {n:'Lean-Hard-SF',src:'builtin',d:'Spare and concrete; minimal adornment; technical confidence.'},
+    ]},
+  genres:{name:'Genres',canon:'Genre',mode:'prose',
+    def:'The market category and its conventions — tropes, expected beats, reader-expectations, and comparable titles ("comps"). Drives what the story must deliver. Distinct from World (lore) and Voice (style).',
+    entries:[
+      {n:'Romantasy',src:'yours',d:'Romance + fantasy. Fated mates, court intrigue, slow burn. Comps: Maas, Yarros.'},
+      {n:'Contemporary Romance',src:'builtin',d:'Modern-day romance beats; a happy-ever-after is required.'},
+      {n:'Mundane Sci-Fi',src:'builtin',d:'Near-future, no FTL or aliens; only plausible technology.'},
+      {n:'Literary Fiction',src:'builtin',d:'Character-driven and theme-forward; quieter plotting.'},
+      {n:'Cozy Mystery',src:'builtin',d:'Amateur sleuth, low gore, tight community setting.'},
+    ]},
+  pipelines:{name:'Pipelines',canon:'Pipeline',mode:'pipeline',
+    def:'An ordered group of Steps that run in sequence to produce or transform assets (planning → world & characters → drafting → revision → format → launch). A Book selects a Pipeline; pipelines are reusable templates.',
+    entries:[
+      {n:'novel-pipeline',src:'book',d:'Full-length novel — idea to launch in 7 steps. This book is pinned to v1.',extra:'7 steps'},
+      {n:'short-pipeline',src:'builtin',d:'Short fiction in 4 steps — premise, draft, revise, format.',extra:'4 steps'},
+      {n:'my-romantasy',src:'yours',d:'The novel pipeline plus an extra tropes-audit pass before revision.',extra:'8 steps'},
+    ]},
+  sections:{name:'Sections',canon:'Section',mode:'prose',
+    def:'Reusable book-section templates — front and back matter (title page, dedication, author note, also-by). Sections are part of the Manuscript.',
+    entries:[
+      {n:'Title Page',src:'builtin',d:'Standard title-page layout with series line.'},
+      {n:'Also By',src:'builtin',d:'Back-matter list of the author\'s other books.'},
+      {n:'Author Note',src:'yours',d:'Personal end-note inviting a review and a newsletter sign-up.'},
+    ]},
+  skills:{name:'Skills',canon:'Skill',mode:'prose',
+    def:'A reusable instruction block attached to a Step and injected into its Prompt — focused know-how (e.g. "write vivid sensory detail", "audit dialogue"). Skills are machinery you attach to Steps, not content the Book owns.',
+    entries:[
+      {n:'sensory-detail',src:'builtin',d:'Push concrete five-senses detail into prose without purple overwriting.'},
+      {n:'world-building',src:'builtin',d:'Develop consistent settings, rules and lore.'},
+      {n:'line-edit',src:'builtin',d:'Tighten prose at the sentence level; cut filler.'},
+      {n:'blurb-craft',src:'yours',d:'Write a punchy back-cover blurb that sells the hook.'},
+    ]},
+};
+
+let scope='lib', kind='pipelines', idx=0;
+
+function srcBadge(e){
+  if(scope==='book') return '<span class="src book">book</span>';
+  const label = e.src==='builtin'?'built-in':e.src;
+  return `<span class="src ${e.src}">${label}</span>`;
+}
+
+function renderEntries(){
+  const K=KINDS[kind];
+  document.getElementById('entryList').innerHTML = K.entries.map((e,i)=>
+    `<div class="entry ${i===idx?'on':''}" onclick="selectEntry(${i})">
+       <div class="et"><span>${e.n}</span> ${srcBadge(e)}</div>
+       <div class="ed">${e.d}</div>
+     </div>`).join('');
+}
+
+function selectEntry(i){ idx=i; renderEntries(); updateEditor(); }
+
+function updateEditor(){
+  const K=KINDS[kind], e=K.entries[idx];
+  document.getElementById('ed-title').textContent = e.n;
+  document.getElementById('ed-canon-meta').textContent = K.canon;
+  document.getElementById('ed-extra').textContent = e.extra || (K.canon+' · markdown');
+  document.getElementById('ed-desc').textContent = e.d;          // the per-asset description
+  // source badge reflects scope + the asset's library source
+  const b=document.getElementById('ed-src-badge');
+  if(scope==='book'){ b.textContent='book copy'; b.className='src book'; }
+  else { b.textContent = 'library · '+(e.src==='builtin'?'built-in':e.src); b.className='src '+e.src; }
+  // editor mode
+  const pipe = K.mode==='pipeline';
+  document.getElementById('editor-pipeline').style.display = pipe?'block':'none';
+  document.getElementById('editor-prose').style.display = pipe?'none':'block';
+  if(!pipe){
+    const where = scope==='book' ? "this book's private snapshot" : 'the shared library template';
+    document.getElementById('md-raw').textContent =
+      `# ${e.n}\n\n> ${e.d}\n\n## ${K.canon} notes\n\nWrite freely in Markdown. You are editing ${where}.\n`;
+    document.getElementById('md-prev').innerHTML =
+      `<h4>${e.n}</h4><p><b>${e.d}</b></p><p><b>${K.canon} notes</b></p><p>Write freely in Markdown. You are editing ${where}.</p>`;
+  }
+}
+
+function setKind(k, el){
+  kind=k; idx=0;
+  document.querySelectorAll('.kind').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  const K=KINDS[k];
+  document.getElementById('ek-name').textContent = K.name;
+  document.getElementById('ek-canon').textContent = 'term · '+K.canon;
+  document.getElementById('ek-def').textContent = K.def;
+  document.getElementById('ek-add').title = 'New '+K.canon.toLowerCase();
+  renderEntries(); updateEditor();
+}
+
+function setScope(s){
+  scope=s; const lib=s==='lib';
+  document.getElementById('seg-lib').classList.toggle('on',lib);
+  document.getElementById('seg-book').classList.toggle('on',!lib);
+  document.getElementById('banner-lib').style.display = lib?'flex':'none';
+  document.getElementById('banner-book').style.display = lib?'none':'flex';
+  document.getElementById('repull').style.display = lib?'none':'flex';
+  renderEntries(); updateEditor();
+}
+
+function toggleStep(row){ row.parentElement.classList.toggle('open'); }
+
+// boot: Pipelines / library
+setKind('pipelines', document.querySelector('.kind[data-kind="pipelines"]'));
+setScope('lib');
+</script>
+</body>
+</html>

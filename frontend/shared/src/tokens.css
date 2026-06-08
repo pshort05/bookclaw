@@ -1,0 +1,65 @@
+/* ============================================================ tokens */
+:root{
+  --bg:        #15110b;   /* warm near-black, ink on a dark desk      */
+  --bg-2:      #1b150e;
+  --panel:     #221b12;
+  --panel-2:   #2a2217;
+  --panel-hi:  #322817;
+  --line:      rgba(238,229,210,.075);
+  --line-2:    rgba(238,229,210,.14);
+  --text:      #efe7d4;   /* parchment ink (inverted)                 */
+  --dim:       #b4a98f;
+  --faint:     #7d7359;
+  --ember:     #f0913a;   /* the hero accent — the "claw" / fire      */
+  --ember-hot: #ff6a39;
+  --gold:      #e8c46a;
+  --glow:      rgba(240,145,58,.20);
+  --ember-grad: linear-gradient(105deg,#ff6a39 0%,#f0913a 55%,#e8c46a 100%);
+
+  /* phase palette — muted so ember stays the one loud voice */
+  --ph-plan:   #8fa6b4;
+  --ph-world:  #79b0a2;
+  --ph-prod:   #f0913a;
+  --ph-rev:    #d79f57;
+  --ph-fmt:    #99a6c6;
+  --ph-launch: #8fbf7e;
+  --alert:     #ff6a39;
+
+  --r:   14px;
+  --r-s: 9px;
+  --rail: 232px;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Hanken Grotesk',sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+
+/* atmospheric base: two faint ember/cool light sources + vignette */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(120% 80% at 78% -10%, rgba(240,145,58,.10), transparent 55%),
+    radial-gradient(90% 70% at 0% 110%, rgba(121,176,162,.06), transparent 50%),
+    radial-gradient(140% 120% at 50% 50%, transparent 60%, rgba(0,0,0,.5));
+}
+/* film grain */
+body::after{
+  content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection{background:rgba(240,145,58,.28);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(238,229,210,.10);border-radius:20px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(238,229,210,.2);background-clip:content-box}

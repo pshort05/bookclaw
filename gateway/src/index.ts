@@ -262,13 +262,17 @@ class BookClawGateway {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          // The dashboard is one inline-JS HTML file, so 'unsafe-inline' is required
-          // for script/style. It has no external subresources (no CDN scripts, fonts,
-          // images, or data:/blob: URIs).
+          // Both UIs use inline script/style, so 'unsafe-inline' is required there.
+          // Subresources are same-origin: the legacy dashboard is one inline-JS file;
+          // the v6 React studio (BOOKCLAW_UI=v6) loads hashed /assets/* and self-hosts
+          // its fonts (no CDN). Fonts/scripts/styles stay 'self'.
           scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          // The dashboard fetches only its own origin (API base is a relative '') and
-          // opens no browser WebSocket, so 'self' is exact. CSP governs the browser
+          // 'self' + data: — the v6 studio uses a small inline data: SVG noise texture
+          // (film-grain overlay); the legacy dashboard uses no images. No remote img origins.
+          imgSrc: ["'self'", "data:"],
+          // Both UIs fetch only their own origin (relative API base) and open a
+          // same-origin Socket.IO websocket, so 'self' is exact. CSP governs the browser
           // page only — server-to-server / MCP clients are unaffected by this.
           connectSrc: ["'self'"],
           // Off by deliberate choice: the server speaks plain HTTP on the LAN, so

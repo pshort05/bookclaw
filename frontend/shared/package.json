@@ -1,0 +1,14 @@
+{
+  "name": "@bookclaw/shared",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@fontsource/fraunces": "^5.0.0",
+    "@fontsource/ibm-plex-mono": "^5.0.0",
+    "@fontsource/hanken-grotesk": "^5.0.0",
+    "socket.io-client": "^4.7.0",
+    "zustand": "^4.5.0"
+  },
+  "peerDependencies": { "react": "^18", "react-dom": "^18" }
+}

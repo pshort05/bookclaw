@@ -4,10 +4,12 @@
   "description": "The Autonomous AI Writing Agent — 6 book production phases, author personas, pipeline mode, 21-step deep revision, KDP-ready export. Built for authors who scale.",
   "main": "gateway/src/index.ts",
   "type": "module",
+  "workspaces": ["frontend/*"],
   "scripts": {
     "start": "node --import tsx gateway/src/index.ts",
     "dev": "node --watch --import tsx gateway/src/index.ts",
     "build": "tsc",
+    "build:frontend": "npm run -w frontend/studio build && npm run -w frontend/chat build || npm run -w frontend/studio build",
     "setup": "bash scripts/setup-wizard.sh",
     "setup:legacy": "bash scripts/setup.sh",
     "recover": "bash scripts/recover.sh",

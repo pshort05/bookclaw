@@ -50,3 +50,8 @@ author-os/
 # Internal testing docs (not for repo)
 scripts/FULL-TEST-CHECKLIST.md
 ROADMAP.md
+
+# Frontend build artifacts (built by Docker/CI; not committed)
+frontend/studio/dist/
+frontend/chat/dist/
+frontend/**/*.tsbuildinfo

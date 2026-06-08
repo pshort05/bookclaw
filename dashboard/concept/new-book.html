@@ -1,0 +1,319 @@
+<!doctype html>
+<!--
+  BookClaw · New Book picker (concept)
+  Create a book by pulling a SNAPSHOT of library assets. One choice per single
+  kind (Author / Voice / Genre / Pipeline), toggle the multi kinds (Sections /
+  Skills). Every option shows its source + description; every kind shows its
+  canonical GLOSSARY.md definition. Default pulls everything.
+  Live summary on the right. Standalone concept — Atelier theme, not wired.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookClaw · New Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110b; --bg-2:#1b150e; --panel:#221b12; --panel-2:#2a2217; --panel-hi:#322817;
+  --line:rgba(238,229,210,.075); --line-2:rgba(238,229,210,.14);
+  --text:#efe7d4; --dim:#b4a98f; --faint:#7d7359;
+  --ember:#f0913a; --ember-hot:#ff6a39; --gold:#e8c46a; --glow:rgba(240,145,58,.20);
+  --ember-grad:linear-gradient(105deg,#ff6a39 0%,#f0913a 55%,#e8c46a 100%);
+  --teal:#79b0a2; --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 80% at 80% -10%,rgba(240,145,58,.10),transparent 55%),radial-gradient(140% 120% at 50% 50%,transparent 60%,rgba(0,0,0,.5))}
+body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:rgba(238,229,210,.1);border-radius:20px;border:3px solid transparent;background-clip:content-box}
+
+.shell{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column}
+
+/* top bar */
+.top{height:62px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 26px;background:linear-gradient(180deg,rgba(27,21,14,.7),transparent)}
+.back{display:inline-flex;align-items:center;gap:8px;color:var(--dim);text-decoration:none;font-weight:500;font-size:13px;padding:8px 12px;border-radius:9px;transition:.15s}
+.back:hover{background:rgba(238,229,210,.04);color:var(--text)}
+.back svg{width:15px;height:15px}
+.top .mark{width:28px;height:28px;border-radius:8px;background:var(--ember-grad);display:grid;place-items:center}
+.top .mark svg{width:15px;height:15px}
+.top .ttl{font-family:'Fraunces',serif;font-weight:480;font-size:17px}
+
+/* body */
+.body{flex:1;overflow-y:auto;padding:30px 26px 60px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 332px;gap:34px;align-items:start}
+
+.hero h1{font-family:'Fraunces',serif;font-optical-sizing:auto;font-weight:340;font-size:38px;letter-spacing:-.025em;margin:0}
+.hero h1 em{font-style:italic;color:var(--ember)}
+.hero p{color:var(--dim);margin:8px 0 26px;max-width:54ch}
+
+/* title / series inputs */
+.idblock{margin-bottom:30px}
+.fl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.tin{width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;padding:13px 16px;color:var(--text);font-family:'Fraunces',serif;font-size:20px;outline:none;transition:.18s}
+.tin::placeholder{color:var(--faint);font-style:italic}
+.tin:focus{border-color:rgba(240,145,58,.45);box-shadow:0 0 0 3px rgba(240,145,58,.08)}
+.tin.series{font-family:'Hanken Grotesk';font-size:14px;padding:11px 14px}
+.idrow{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+
+/* pick sections */
+.pick{margin-bottom:30px}
+.ph{display:flex;align-items:baseline;gap:11px;margin-bottom:4px}
+.ph h3{font-family:'Fraunces',serif;font-weight:460;font-size:20px;margin:0}
+.canon{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(121,176,162,.35);background:rgba(121,176,162,.08);border-radius:20px;padding:2px 7px}
+.ph .pickone{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);letter-spacing:.04em}
+.def{font-size:11.5px;color:var(--faint);line-height:1.5;margin:0 0 14px;border-left:2px solid rgba(121,176,162,.3);padding-left:10px;max-width:70ch}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+
+.optcard{display:flex;gap:13px;align-items:flex-start;padding:14px;border:1px solid var(--line);background:var(--panel);border-radius:12px;cursor:pointer;transition:.16s}
+.optcard:hover{border-color:var(--line-2);background:var(--panel-2)}
+.optcard.sel{border-color:rgba(240,145,58,.45);background:linear-gradient(180deg,rgba(240,145,58,.07),var(--panel))}
+.optcard .body2{flex:1;min-width:0}
+.optcard .nm{font-family:'Fraunces',serif;font-weight:480;font-size:15.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.optcard .dsc{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.45}
+.optcard .mm{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);margin-top:7px}
+.rad{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);flex:none;display:grid;place-items:center;transition:.16s;margin-top:1px}
+.optcard.sel .rad{border-color:var(--ember);background:var(--ember)}
+.rad svg{width:11px;height:11px;color:#1a0f08;opacity:0;transition:.15s}
+.optcard.sel .rad svg{opacity:1}
+.tog{width:38px;height:22px;border-radius:20px;background:rgba(238,229,210,.12);border:1px solid var(--line-2);position:relative;flex:none;transition:.18s;margin-top:1px}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--dim);transition:.18s}
+.optcard.sel .tog{background:var(--ember-grad);border-color:transparent}
+.optcard.sel .tog::after{left:18px;background:#1a0f08}
+
+.src{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid var(--line-2);color:var(--faint)}
+.src.builtin{color:var(--dim)}
+.src.yours{color:var(--ember);border-color:rgba(240,145,58,.4)}
+
+.multihead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.lite{font-size:12px;color:var(--dim);background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;cursor:pointer;transition:.15s}
+.lite:hover{border-color:rgba(240,145,58,.4);color:var(--text)}
+
+/* summary */
+.summary{position:sticky;top:0}
+.scard{background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}
+.cover{height:150px;border-radius:11px;background:linear-gradient(160deg,#3a2c18,#241b10);border:1px solid var(--line-2);position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:16px;margin-bottom:18px}
+.cover::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 80% 0%,rgba(240,145,58,.28),transparent 60%)}
+.cover::after{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--ember-grad)}
+.cover .ct{position:relative;font-family:'Fraunces',serif;font-weight:460;font-size:20px;line-height:1.12;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.cover .cs{position:relative;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:12px;color:var(--dim);margin-top:3px}
+
+.slabel{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:4px 0 12px}
+.srow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.srow .k{font-size:12px;color:var(--faint)}
+.srow .v{font-size:13px;color:var(--text);font-weight:500;text-align:right}
+.srow .v.it{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px}
+.snote{display:flex;gap:10px;margin:16px 0 18px;font-size:11.5px;color:var(--faint);line-height:1.5}
+.snote svg{width:15px;height:15px;color:var(--teal);flex:none;margin-top:1px}
+.create{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font-family:'Hanken Grotesk';font-weight:600;font-size:14.5px;color:#1a0f08;background:linear-gradient(180deg,#f7b15a,#ec8a34);border:1px solid #c9762a;border-radius:12px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 0 #9c5a1e,0 6px 16px -6px var(--glow);transition:.1s}
+.create:active{transform:translateY(2px);box-shadow:0 0 0 #9c5a1e}
+.create svg{width:17px;height:17px}
+
+@media(max-width:980px){.wrap{grid-template-columns:1fr}.summary{position:static}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="top">
+    <a class="back" href="phase6-studio-shell.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> Book Board</a>
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19c3-1 5-5 5-10 0 5 3 8 6 8M9 4c.5 3 2 5 4 6M14 3c.3 2.5 1.6 4.3 3.4 5.6" stroke="#1a0f08" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+    <span class="ttl">New Book</span>
+  </header>
+
+  <div class="body">
+    <div class="wrap">
+
+      <!-- left: the form -->
+      <div>
+        <div class="hero">
+          <h1>Start a <em>new book</em></h1>
+          <p>A book pulls a snapshot of your library — an author, a voice, a genre, a pipeline, plus any sections and skills. You can change everything later, per book. Default pulls everything.</p>
+        </div>
+
+        <div class="idblock">
+          <div class="idrow">
+            <div>
+              <div class="fl">Book title</div>
+              <input class="tin" id="title" placeholder="Untitled book" oninput="renderSummary()">
+            </div>
+            <div>
+              <div class="fl">Series <span style="text-transform:none;letter-spacing:0;opacity:.7">· optional</span></div>
+              <input class="tin series" id="series" placeholder="No series" oninput="renderSummary()">
+            </div>
+          </div>
+        </div>
+
+        <div id="form"><!-- pick sections rendered here --></div>
+      </div>
+
+      <!-- right: live summary -->
+      <aside class="summary">
+        <div class="scard">
+          <div class="cover">
+            <div>
+              <div class="ct" id="sum-title">Untitled book</div>
+              <div class="cs" id="sum-series">a romantasy</div>
+            </div>
+          </div>
+          <div class="slabel">This book will contain</div>
+          <div class="srow"><span class="k">Author</span><span class="v" id="sum-author">—</span></div>
+          <div class="srow"><span class="k">Voice</span><span class="v it" id="sum-voice">—</span></div>
+          <div class="srow"><span class="k">Genre</span><span class="v it" id="sum-genre">—</span></div>
+          <div class="srow"><span class="k">Pipeline</span><span class="v" id="sum-pipeline">—</span></div>
+          <div class="srow"><span class="k">Sections</span><span class="v" id="sum-sections">—</span></div>
+          <div class="srow"><span class="k">Skills</span><span class="v" id="sum-skills">—</span></div>
+          <div class="snote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            A <b style="color:var(--dim)">copy</b> of these is frozen into the book. Later library edits won't change it until you re-pull.
+          </div>
+          <button class="create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Create book</button>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* descriptions + canonical defs consistent with the Asset Studio */
+const DATA = {
+  author:{label:'Author',canon:'Author',mode:'single',
+    def:'The pen-name identity — who is writing: name, bio, persona. One Author per book.',
+    entries:[
+      {n:'Maeve Calloran',src:'yours',d:'Romantasy pen-name — lyrical, emotionally intense.'},
+      {n:'J. R. Vane',src:'yours',d:'Contemporary-romance identity — warm, wry, modern.'},
+      {n:'Theo Marsh',src:'yours',d:'Hard-SF pen-name — spare, precise, technically grounded.'},
+      {n:'default',src:'builtin',d:'The starter author shipped with BookClaw.'},
+    ]},
+  voice:{label:'Voice',canon:'Voice',mode:'single',
+    def:'The writing style and tone — how it is written. Kept separate from the Author so a style can be reused or swapped.',
+    entries:[
+      {n:'High-Romantasy',src:'yours',d:'Ornate and sensory; long rhythmic sentences; slow-burn tension.'},
+      {n:'Intimate-Close-Third',src:'yours',d:'Tight third person, emotionally close, contemporary.'},
+      {n:'Lean-Hard-SF',src:'builtin',d:'Spare and concrete; minimal adornment.'},
+    ]},
+  genre:{label:'Genre',canon:'Genre',mode:'single',
+    def:'The market category and its conventions — tropes, beats, reader-expectations, comps.',
+    entries:[
+      {n:'Romantasy',src:'yours',d:'Romance + fantasy — fated mates, court intrigue, slow burn.'},
+      {n:'Contemporary Romance',src:'builtin',d:'Modern-day beats; a happy-ever-after is required.'},
+      {n:'Mundane Sci-Fi',src:'builtin',d:'Near-future; no FTL or aliens, only plausible tech.'},
+      {n:'Literary Fiction',src:'builtin',d:'Character-driven and theme-forward.'},
+      {n:'Cozy Mystery',src:'builtin',d:'Amateur sleuth, low gore, tight community setting.'},
+    ]},
+  pipeline:{label:'Pipeline',canon:'Pipeline',mode:'single',
+    def:'An ordered group of Steps that produce the book (planning → drafting → revision → format → launch).',
+    entries:[
+      {n:'novel-pipeline',src:'builtin',d:'Full-length novel — idea to launch.',meta:'7 steps · planning → launch'},
+      {n:'short-pipeline',src:'builtin',d:'Short fiction — premise, draft, revise, format.',meta:'4 steps'},
+      {n:'my-romantasy',src:'yours',d:'The novel pipeline plus a tropes-audit pass.',meta:'8 steps'},
+    ]},
+  section:{label:'Sections',canon:'Section',mode:'multi',
+    def:'Reusable front/back-matter templates. Part of the Manuscript.',
+    entries:[
+      {n:'Title Page',src:'builtin',d:'Title, author, series line.'},
+      {n:'Copyright',src:'builtin',d:'Standard copyright page.'},
+      {n:'Dedication',src:'builtin',d:'A short dedication page.'},
+      {n:'Also By',src:'builtin',d:'List of the author\'s other books.'},
+      {n:'Author Note',src:'yours',d:'End-note inviting a review + newsletter.'},
+      {n:'Newsletter CTA',src:'yours',d:'Back-matter sign-up call to action.'},
+    ]},
+  skill:{label:'Skills',canon:'Skill',mode:'multi',
+    def:'Reusable instruction blocks injected into a Step\'s prompt. Your pipeline already uses some of these.',
+    entries:[
+      {n:'sensory-detail',src:'builtin',d:'Concrete five-senses detail.'},
+      {n:'world-building',src:'builtin',d:'Consistent settings, rules, lore.'},
+      {n:'beat-sheet',src:'builtin',d:'Structure outlines to genre beats.'},
+      {n:'line-edit',src:'builtin',d:'Tighten prose at the sentence level.'},
+      {n:'dialogue-audit',src:'builtin',d:'Sharpen and de-stiffen dialogue.'},
+      {n:'blurb-craft',src:'yours',d:'Punchy back-cover blurb.'},
+    ]},
+};
+const ORDER = ['author','voice','genre','pipeline','section','skill'];
+
+const sel = {author:0,voice:0,genre:0,pipeline:0};
+const multi = {section:new Set([0,1,2,3,4,5]), skill:new Set([0,1,2,3,4,5])};
+
+function srcBadge(src){ const l=src==='builtin'?'built-in':src; return `<span class="src ${src}">${l}</span>`; }
+
+function optHTML(kind,e,i,on,mode){
+  const rad = mode==='single' ? `<div class="rad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>` : '';
+  const tog = mode==='multi' ? `<div class="tog"></div>` : '';
+  const meta = e.meta?`<div class="mm">${e.meta}</div>`:'';
+  return `<div class="optcard ${on?'sel':''}" onclick="pick('${kind}',${i})">
+    ${rad}
+    <div class="body2"><div class="nm">${e.n} ${srcBadge(e.src)}</div><div class="dsc">${e.d}</div>${meta}</div>
+    ${tog}
+  </div>`;
+}
+
+function renderKind(kind){
+  const K=DATA[kind];
+  const isMulti = K.mode==='multi';
+  const opts = K.entries.map((e,i)=>{
+    const on = isMulti ? multi[kind].has(i) : sel[kind]===i;
+    return optHTML(kind,e,i,on,K.mode);
+  }).join('');
+  const right = isMulti
+    ? `<span class="pickone" id="cnt-${kind}"></span>`
+    : `<span class="pickone">choose one</span>`;
+  return `<section class="pick">
+      <div class="ph"><h3>${K.label}</h3><span class="canon">term · ${K.canon}</span>${right}</div>
+      <div class="def">${K.def}</div>
+      ${isMulti?`<div class="multihead"><span class="lite" onclick="allMulti('${kind}',true)">Select all</span><span class="lite" onclick="allMulti('${kind}',false)">Clear</span></div>`:''}
+      <div class="grid2" id="grid-${kind}">${opts}</div>
+    </section>`;
+}
+
+function renderForm(){
+  document.getElementById('form').innerHTML = ORDER.map(renderKind).join('');
+  ORDER.forEach(k=>{ if(DATA[k].mode==='multi') updateCount(k); });
+}
+
+function pick(kind,i){
+  if(DATA[kind].mode==='single'){ sel[kind]=i; }
+  else { const s=multi[kind]; s.has(i)?s.delete(i):s.add(i); }
+  // re-render just this kind's grid
+  const K=DATA[kind], isMulti=K.mode==='multi';
+  document.getElementById('grid-'+kind).innerHTML = K.entries.map((e,j)=>{
+    const on = isMulti ? multi[kind].has(j) : sel[kind]===j;
+    return optHTML(kind,e,j,on,K.mode);
+  }).join('');
+  if(isMulti) updateCount(kind);
+  renderSummary();
+}
+
+function allMulti(kind,val){
+  const s=multi[kind]; s.clear();
+  if(val) DATA[kind].entries.forEach((_,i)=>s.add(i));
+  document.getElementById('grid-'+kind).innerHTML = DATA[kind].entries.map((e,j)=>optHTML(kind,e,j,s.has(j),'multi')).join('');
+  updateCount(kind); renderSummary();
+}
+
+function updateCount(kind){
+  const el=document.getElementById('cnt-'+kind);
+  if(el) el.textContent = `${multi[kind].size} of ${DATA[kind].entries.length} on`;
+}
+
+function renderSummary(){
+  const title=document.getElementById('title').value.trim()||'Untitled book';
+  const series=document.getElementById('series').value.trim();
+  document.getElementById('sum-title').textContent=title;
+  document.getElementById('sum-series').textContent = (series?series+' · ':'') + 'a '+DATA.genre.entries[sel.genre].n.toLowerCase();
+  document.getElementById('sum-author').textContent=DATA.author.entries[sel.author].n;
+  document.getElementById('sum-voice').textContent=DATA.voice.entries[sel.voice].n;
+  document.getElementById('sum-genre').textContent=DATA.genre.entries[sel.genre].n;
+  document.getElementById('sum-pipeline').textContent=DATA.pipeline.entries[sel.pipeline].n;
+  document.getElementById('sum-sections').textContent=`${multi.section.size} included`;
+  document.getElementById('sum-skills').textContent=`${multi.skill.size} included`;
+}
+
+renderForm();
+renderSummary();
+</script>
+</body>
+</html>

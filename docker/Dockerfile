@@ -13,6 +13,7 @@ WORKDIR /app
 COPY package.json package-lock.json* tsconfig.json ./
 COPY gateway ./gateway
 COPY dashboard ./dashboard
+COPY frontend ./frontend
 
 # Install ALL deps (including devDependencies for tsc + the dashboard build)
 RUN npm ci || npm install
@@ -23,6 +24,9 @@ RUN npx tsc --outDir dist
 # Build the dashboard (esbuild bundle → dashboard/dist/index.html). Must run
 # while devDependencies are still present, i.e. before the prune below.
 RUN node dashboard/build.mjs
+
+# Build frontend workspaces (studio + chat) while devDeps are still present.
+RUN npm run build:frontend
 
 # Prune to production deps only
 RUN npm prune --omit=dev
@@ -50,6 +54,8 @@ COPY workspace ./workspace
 # Dashboard comes from the builder so the freshly-built dist/ is shipped
 # (not a possibly-stale committed copy from the build context).
 COPY --from=builder /app/dashboard ./dashboard
+# Studio dist from builder (opt-in via BOOKCLAW_UI=v6; src not needed at runtime)
+COPY --from=builder /app/frontend/studio/dist ./frontend/studio/dist
 COPY package.json ./
 
 # Optional: Install Python for Author OS tool execution (Format Factory Pro)

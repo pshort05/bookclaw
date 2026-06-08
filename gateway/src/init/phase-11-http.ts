@@ -2,7 +2,7 @@ import express from 'express';
 import { join } from 'path';
 import fs from 'fs/promises';
 import { createAPIRoutes } from '../api/routes.js';
-import { ROOT_DIR } from '../paths.js';
+import { ROOT_DIR, STUDIO_DIST } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
 /**
@@ -20,8 +20,10 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   console.log('  ✓ WebSocket ready');
 
   // ── Phase 11: Static Dashboard ──
-  const dashboardPath = join(ROOT_DIR, 'dashboard', 'dist');
-  const dashboardHtmlFile = join(dashboardPath, 'index.html');
+  const useV6 = process.env.BOOKCLAW_UI === 'v6';
+  const uiDir = useV6 ? STUDIO_DIST : join(ROOT_DIR, 'dashboard', 'dist');
+  const uiHtml = join(uiDir, 'index.html');
+  console.log(`  ✓ UI: ${useV6 ? 'v6 studio (frontend/studio)' : 'legacy dashboard'}`);
 
   // Serve the dashboard HTML with the auth token injected so its fetch calls can
   // authenticate. The __BOOKCLAW_AUTH_TOKEN__ placeholder is replaced at serve
@@ -29,17 +31,17 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   // ensures "/" reaches this handler instead of the raw file.
   const serveDashboard = async (_req: any, res: any) => {
     try {
-      const html = await fs.readFile(dashboardHtmlFile, 'utf-8');
+      const html = await fs.readFile(uiHtml, 'utf-8');
       res.type('html').send(html.replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? ''));
     } catch {
       if (!res.headersSent) {
-        res.status(500).json({ status: 'error', message: 'BookClaw running but dashboard HTML not found.' });
+        res.status(500).json({ status: 'error', message: 'BookClaw running but UI HTML not found.' });
       }
     }
   };
 
   gw.app.get('/', serveDashboard);
-  gw.app.use(express.static(dashboardPath, { index: false }));
+  gw.app.use(express.static(uiDir, { index: false }));
 
   // JSON 404 handler for API routes — MUST run before SPA fallback
   // so unmatched /api/ requests get JSON errors instead of the dashboard HTML.

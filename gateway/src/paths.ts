@@ -18,3 +18,5 @@ const __dirname = dirname(__filename);
 export const ROOT_DIR = __dirname.includes('dist')
   ? join(__dirname, '..', '..', '..')
   : join(__dirname, '..', '..');
+
+export const STUDIO_DIST = join(ROOT_DIR, 'frontend', 'studio', 'dist');
