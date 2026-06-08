@@ -57,7 +57,7 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     const name = typeof req.body?.name === 'string' ? req.body.name : '';
     if (!name) return res.status(400).json({ error: 'body.name is required' });
     try {
-      await services.library.createEntry(kind, name, { files: req.body?.files, content: req.body?.content });
+      await services.library.createEntry(kind, name, { files: req.body?.files, content: req.body?.content, description: req.body?.description });
       await services.library.reload();
       res.json({ success: true, kind, name, source: 'workspace' });
     } catch (err) {
@@ -71,7 +71,7 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     const kind = String(req.params.kind);
     if (!isWritable(kind)) return res.status(400).json({ error: `Cannot edit kind "${kind}" here (skills use /api/skills)` });
     try {
-      await services.library.writeEntry(kind, String(req.params.name), { files: req.body?.files, content: req.body?.content });
+      await services.library.writeEntry(kind, String(req.params.name), { files: req.body?.files, content: req.body?.content, description: req.body?.description });
       await services.library.reload();
       res.json({ success: true, kind, name: String(req.params.name), source: 'workspace' });
     } catch (err) {

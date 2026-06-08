@@ -181,6 +181,33 @@ test('finalizeImport builds .baseline before the move (no half-landed book)', as
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('validateAndStage flags HTML/XSS payloads in template .md files', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-xfer-'));
+  try {
+    const { xfer } = await setup(root);
+    // Each payload should produce a finding (not auto-finalize).
+    const payloads = [
+      '<script>alert(1)</script>',
+      '<img src=x onerror=alert(1)>',
+      '<svg onload=alert(1)>',
+      '<iframe src="javascript:alert(1)">',
+    ];
+    for (const payload of payloads) {
+      const entries: Record<string, string> = {
+        'book.json': validBookJson(),
+        'templates/author/SOUL.md': payload,
+      };
+      const r = xfer.validateAndStage(makeZip(entries));
+      assert.equal(r.structuralError, undefined, `no structural error for payload: ${payload}`);
+      assert.ok(
+        r.findings.some(f => f.path === 'templates/author/SOUL.md'),
+        `expected a finding for payload: ${payload}`,
+      );
+      xfer.purgeStaging(r.stagingId);
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('sweepStaging removes orphan staging dirs not in the pending set', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-xfer-'));
   try {

@@ -69,10 +69,35 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     }
   });
 
+  // Suggested next step for the active book. Must come before /api/books/:slug.
+  app.get('/api/books/active/next', (_req: Request, res: Response) => {
+    const slug = services.books.getActiveBook();
+    if (!slug) return res.status(404).json({ error: 'No active book' });
+    const next = services.books.nextStep(slug);
+    if (!next) return res.status(404).json({ error: 'Book not found' });
+    res.json({ next });
+  });
+
   app.get('/api/books/:slug', async (req: Request, res: Response) => {
-    const result = await services.books.open(String(req.params.slug));
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const result = await services.books.open(slug);
     if (!result) return res.status(404).json({ error: 'Book not found' });
-    res.json({ book: result.manifest, status: result.status });
+    const descriptions = {
+      author: services.books.assetDescription(slug, 'author'),
+      voice:  services.books.assetDescription(slug, 'voice'),
+      genre:  services.books.assetDescription(slug, 'genre'),
+    };
+    res.json({ book: result.manifest, status: result.status, descriptions });
+  });
+
+  // Suggested next step for a specific book.
+  app.get('/api/books/:slug/next', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const next = services.books.nextStep(slug);
+    if (!next) return res.status(404).json({ error: 'Book not found' });
+    res.json({ next });
   });
 
   app.post('/api/books', async (req: Request, res: Response) => {
@@ -119,8 +144,9 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const name = req.params.name ? String(req.params.name) : undefined;
     if (!TEMPLATE_KINDS.includes(kind)) return res.status(400).json({ error: `invalid kind: ${kind}` });
     if (name !== undefined && NO_NAME_KINDS.has(kind)) return res.status(400).json({ error: `${kind} takes no name` });
+    if (name !== undefined && !SLUG_RE.test(name)) return res.status(400).json({ error: 'invalid name' });
     try {
-      const r = await services.books.writeTemplate(slug, kind as any, name, { files: req.body?.files, content: req.body?.content });
+      const r = await services.books.writeTemplate(slug, kind as any, name, { files: req.body?.files, content: req.body?.content, description: req.body?.description });
       if (kind === 'author' || kind === 'voice') await gateway.soul?.reload?.();
       res.json({ success: true, kind, ...(name ? { name } : {}), wired: r.wired });
     } catch (err) {

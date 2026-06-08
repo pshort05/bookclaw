@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
-import { api, useStore, useActiveBook, type BookManifest, type BookStatus } from '@bookclaw/shared';
+import { api, useStore, useActiveBook, type BookDetail, type NextStep } from '@bookclaw/shared';
 import { Button } from '@bookclaw/shared';
 import styles from './BookDrawer.module.css';
 
 const PHASES = ['planning', 'bible', 'production', 'revision', 'format', 'launch'] as const;
 
 export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
-  const [data, setData] = useState<{ book: BookManifest; status: BookStatus } | null>(null);
+  const [data, setData] = useState<BookDetail | null>(null);
+  const [next, setNext] = useState<NextStep | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
   const activeBook = useActiveBook();
   const loadBooks = useStore((s) => s.loadBooks);
 
   useEffect(() => {
-    setData(null); setError(null);
-    api<{ book: BookManifest; status: BookStatus }>(`/api/books/${encodeURIComponent(slug)}`)
-      .then(setData)
-      .catch((e) => setError(String(e)));
+    let cancelled = false;
+    setData(null); setNext(null); setError(null);
+    api<BookDetail>(`/api/books/${encodeURIComponent(slug)}`)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => { if (!cancelled) setError(String(e)); });
+    api<{ next: NextStep | null }>(`/api/books/${encodeURIComponent(slug)}/next`)
+      .then((r) => { if (!cancelled) setNext(r.next); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [slug]);
 
   // Close on Escape.
@@ -59,13 +65,39 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
             <p>Loading…</p>
           ) : (
             <>
-              {/* Assets (names only; per-asset descriptions + canonical tooltips = 6e) */}
+              {/* Assets with optional per-asset descriptions */}
               <div className={styles.assets}>
-                <div className={styles.asset}><div className={styles.l}>Author</div><div className={styles.v}>{pf?.author?.name ?? '—'}</div></div>
-                <div className={styles.asset}><div className={styles.l}>Voice</div><div className={`${styles.v} ${styles.it}`}>{pf?.voice?.name ?? '—'}</div></div>
-                <div className={styles.asset}><div className={styles.l}>Genre</div><div className={`${styles.v} ${styles.it}`}>{pf?.genre?.name ?? '—'}</div></div>
-                <div className={styles.asset}><div className={styles.l}>Pipeline</div><div className={styles.v}>{pf?.pipeline?.name ?? '—'}</div></div>
+                <div className={styles.asset}>
+                  <div className={styles.l}>Author</div>
+                  <div className={styles.v}>{pf?.author?.name ?? '—'}</div>
+                  {data.descriptions?.author && <div className={styles.adesc}>{data.descriptions.author}</div>}
+                </div>
+                <div className={styles.asset}>
+                  <div className={styles.l}>Voice</div>
+                  <div className={`${styles.v} ${styles.it}`}>{pf?.voice?.name ?? '—'}</div>
+                  {data.descriptions?.voice && <div className={styles.adesc}>{data.descriptions.voice}</div>}
+                </div>
+                <div className={styles.asset}>
+                  <div className={styles.l}>Genre</div>
+                  <div className={`${styles.v} ${styles.it}`}>{pf?.genre?.name ?? '—'}</div>
+                  {data.descriptions?.genre && <div className={styles.adesc}>{data.descriptions.genre}</div>}
+                </div>
+                <div className={styles.asset}>
+                  <div className={styles.l}>Pipeline</div>
+                  <div className={styles.v}>{pf?.pipeline?.name ?? '—'}</div>
+                </div>
               </div>
+
+              {/* Suggested next step */}
+              {next && (
+                <>
+                  <div className={styles.sec}>Next step</div>
+                  <div className={styles.nextstep}>
+                    <b>{next.label}</b>
+                    <div className={styles.nexthint}>{next.hint}</div>
+                  </div>
+                </>
+              )}
 
               {/* Phase timeline — honest position derived from manifest.phase */}
               <div className={styles.sec}>Phase</div>

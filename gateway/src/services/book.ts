@@ -17,7 +17,8 @@ import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
   BOOK_SCHEMA_VERSION, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
-  type BookManifest, type BookSummary, type PulledRef,
+  suggestedNextStep,
+  type BookManifest, type BookSummary, type PulledRef, type NextStep,
 } from './book-types.js';
 
 export interface BookSelection {
@@ -115,14 +116,23 @@ export class BookService {
     for (const [file, content] of Object.entries(author.files)) {
       await writeFile(join(dir, 'templates', 'author', file), content, 'utf-8');
     }
+    if (typeof author.description === 'string') {
+      await writeFile(join(dir, 'templates', 'author', 'meta.json'), JSON.stringify({ description: author.description }), 'utf-8');
+    }
     await mkdir(join(dir, 'templates', 'voice'), { recursive: true });
     for (const [file, content] of Object.entries(voice.files)) {
       await writeFile(join(dir, 'templates', 'voice', file), content, 'utf-8');
+    }
+    if (typeof voice.description === 'string') {
+      await writeFile(join(dir, 'templates', 'voice', 'meta.json'), JSON.stringify({ description: voice.description }), 'utf-8');
     }
     if (genre && genre.files) {
       await mkdir(join(dir, 'templates', 'genre'), { recursive: true });
       for (const [file, content] of Object.entries(genre.files)) {
         await writeFile(join(dir, 'templates', 'genre', file), content, 'utf-8');
+      }
+      if (typeof genre.description === 'string') {
+        await writeFile(join(dir, 'templates', 'genre', 'meta.json'), JSON.stringify({ description: genre.description }), 'utf-8');
       }
     }
     await writeFile(join(dir, 'templates', 'pipeline.json'), JSON.stringify(pipeline.pipeline, null, 2) + '\n', 'utf-8');
@@ -149,6 +159,10 @@ export class BookService {
       await mkdir(join(dir, 'templates', 'sections'), { recursive: true });
       for (const s of sectionEntries) {
         await writeFile(join(dir, 'templates', 'sections', `${s.name}.md`), s.content, 'utf-8');
+        const sectionEntry = this.library.get('section', s.name);
+        if (typeof sectionEntry?.description === 'string') {
+          await writeFile(join(dir, 'templates', 'sections', `${s.name}.meta.json`), JSON.stringify({ description: sectionEntry.description }), 'utf-8');
+        }
       }
     }
     await mkdir(join(dir, 'data'), { recursive: true });
@@ -309,6 +323,30 @@ export class BookService {
   activeDataDir(): string | null {
     const d = this.activeBookDir();
     return d ? join(d, 'data') : null;
+  }
+
+  /**
+   * Returns the suggested next step for a book (phase 6e).
+   * Derives `phase` from the book manifest and `hasOutput` from whether data/ is non-empty.
+   * Returns null if the book doesn't exist or the slug is invalid.
+   */
+  nextStep(slug: string): NextStep | null {
+    const dir = this.bookDir(slug);
+    if (!dir || !existsSync(join(dir, 'book.json'))) return null;
+    let phase = 'planning';
+    try {
+      const m = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
+      if (typeof m?.phase === 'string') phase = m.phase;
+    } catch { /* fail-soft: use default 'planning' */ }
+    const dataDir = join(dir, 'data');
+    let hasOutput = false;
+    try {
+      if (existsSync(dataDir)) {
+        hasOutput = readdirSync(dataDir, { withFileTypes: true })
+          .some((e) => e.isFile() && !e.name.startsWith('.'));
+      }
+    } catch { /* fail-soft */ }
+    return { phase, hasOutput, ...suggestedNextStep(phase, hasOutput) };
   }
 
   /**
@@ -530,6 +568,22 @@ export class BookService {
     return { hadConflicts };
   }
 
+  /** Read ONLY the description sidecar for a book's author/voice/genre snapshot. */
+  assetDescription(slug: string, kind: 'author' | 'voice' | 'genre'): string | undefined {
+    const dir = this.templatesDir(slug);
+    if (!dir) return undefined;
+    return this.readTemplateSidecar(join(dir, kind, 'meta.json'));
+  }
+
+  /** Read a description from a meta.json sidecar; returns undefined on missing/invalid. */
+  private readTemplateSidecar(file: string): string | undefined {
+    try {
+      if (!existsSync(file)) return undefined;
+      const meta = JSON.parse(readFileSync(file, 'utf-8'));
+      return typeof meta?.description === 'string' ? meta.description : undefined;
+    } catch { return undefined; }
+  }
+
   /**
    * Read a book's snapshot for one kind (singular).
    * Returns a shape the API/UI consumes, or null when the asset is absent.
@@ -537,9 +591,9 @@ export class BookService {
    * - section, no name → { entries: string[], wired }   (lists section names)
    * - section, name → { content, wired } | null
    * - skill, name → { files, wired } | null
-   * - author/voice/genre → { files, wired } | null
+   * - author/voice/genre → { files, wired, description? } | null
    */
-  readTemplate(slug: string, kind: RepullAsset['kind'], name?: string): { files?: Record<string, string>; content?: string; entries?: string[]; wired: boolean } | null {
+  readTemplate(slug: string, kind: RepullAsset['kind'], name?: string): { files?: Record<string, string>; content?: string; entries?: string[]; wired: boolean; description?: string } | null {
     const tdir = this.templatesDir(slug);
     if (!tdir) return null;
     const wired = WIRED_KINDS.has(kind);
@@ -554,7 +608,9 @@ export class BookService {
         return { entries, wired };
       }
       const p = join(tdir, 'sections', `${name}.md`);
-      return existsSync(p) ? { content: readFileSync(p, 'utf-8'), wired } : null;
+      if (!existsSync(p)) return null;
+      const description = this.readTemplateSidecar(join(tdir, 'sections', `${name}.meta.json`));
+      return { content: readFileSync(p, 'utf-8'), wired, ...(description !== undefined ? { description } : {}) };
     }
     // skill (needs name) or author/voice/genre (dir of .md)
     const rel = this.assetRel(kind, name ?? '');
@@ -562,7 +618,11 @@ export class BookService {
     if (!existsSync(dir)) return null;
     const files: Record<string, string> = {};
     for (const f of readdirSync(dir)) if (f.endsWith('.md')) files[f] = readFileSync(join(dir, f), 'utf-8');
-    return { files, wired };
+    // Include description sidecar for author/voice/genre (not skill)
+    const description = (kind === 'author' || kind === 'voice' || kind === 'genre')
+      ? this.readTemplateSidecar(join(dir, 'meta.json'))
+      : undefined;
+    return { files, wired, ...(description !== undefined ? { description } : {}) };
   }
 
   /**
@@ -570,7 +630,7 @@ export class BookService {
    * bad input (message starts with 'invalid:' so routes map it to 400). Returns
    * { wired }. author/voice writes should trigger soul reload at the call site.
    */
-  async writeTemplate(slug: string, kind: RepullAsset['kind'], name: string | undefined, body: { files?: Record<string, string>; content?: string }): Promise<{ wired: boolean }> {
+  async writeTemplate(slug: string, kind: RepullAsset['kind'], name: string | undefined, body: { files?: Record<string, string>; content?: string; description?: string }): Promise<{ wired: boolean }> {
     const tdir = this.templatesDir(slug);
     if (!tdir) throw new Error('invalid: no active/valid book');
     const wired = WIRED_KINDS.has(kind);
@@ -586,6 +646,9 @@ export class BookService {
       if (typeof body.content !== 'string') throw new Error('invalid: content (string) required');
       await mkdir(join(tdir, 'sections'), { recursive: true });
       await writeFile(join(tdir, 'sections', `${name}.md`), body.content, 'utf-8');
+      if (typeof body.description === 'string') {
+        await writeFile(join(tdir, 'sections', `${name}.meta.json`), JSON.stringify({ description: body.description }), 'utf-8');
+      }
       return { wired };
     }
     if (kind === 'skill') {
@@ -600,6 +663,10 @@ export class BookService {
     const dir = join(tdir, this.assetRel(kind, name ?? ''));
     await mkdir(dir, { recursive: true });
     for (const [f, content] of Object.entries(files)) await writeFile(join(dir, f), String(content), 'utf-8');
+    // Persist description sidecar for author/voice/genre/section (not skill/pipeline).
+    if (typeof body.description === 'string' && (kind === 'author' || kind === 'voice' || kind === 'genre')) {
+      await writeFile(join(dir, 'meta.json'), JSON.stringify({ description: body.description }), 'utf-8');
+    }
     return { wired };
   }
 

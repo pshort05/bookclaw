@@ -89,6 +89,28 @@ test('readTemplate returns null for a missing section', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('writeTemplate(author) with description persists via readTemplate', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-tmpl-'));
+  try {
+    const svc = await makeSvc(root);
+    const book = await svc.create({ title: 'T', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.writeTemplate(book.slug, 'author', undefined, { files: { 'SOUL.md': 'soul' }, description: 'A warm romantasy pen-name.' });
+    const out = svc.readTemplate(book.slug, 'author');
+    assert.equal(out?.description, 'A warm romantasy pen-name.');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('writeTemplate(section) with description persists via readTemplate', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-tmpl-'));
+  try {
+    const svc = await makeSvc(root);
+    const book = await svc.create({ title: 'T', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    await svc.writeTemplate(book.slug, 'section', 'epilogue', { content: '# Epilogue\n', description: 'Closing matter.' });
+    const out = svc.readTemplate(book.slug, 'section', 'epilogue');
+    assert.equal(out?.description, 'Closing matter.');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('writeTemplate/readTemplate round-trip for a skill', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-tmpl-'));
   try {

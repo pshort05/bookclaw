@@ -211,6 +211,29 @@
   margin-top: 2px;
 }
 
+.adesc {
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 6px;
+  line-height: 1.42;
+}
+
+.nextstep {
+  margin-bottom: 20px;
+  font-size: 13.5px;
+}
+
+.nextstep b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.nexthint {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 3px;
+}
+
 .dfoot {
   padding: 18px 26px;
   border-top: 1px solid var(--line);

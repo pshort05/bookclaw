@@ -7,6 +7,7 @@ import { App } from './App.js';
 import { Board } from './routes/Board.js';
 import { Activity } from './routes/Activity.js';
 import { NewBook } from './routes/NewBook.js';
+import { AssetStudio } from './routes/AssetStudio.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<Board />} />
           <Route path="activity" element={<Activity />} />
           <Route path="new-book" element={<NewBook />} />
+          <Route path="library" element={<AssetStudio />} />
         </Route>
       </Routes>
     </BrowserRouter>

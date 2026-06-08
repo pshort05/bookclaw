@@ -73,6 +73,12 @@ export class BookTransferService {
     return out;
   }
 
+  // Detects raw HTML/script payloads that the prompt-injection detector doesn't cover.
+  // These could execute in the studio origin (which holds the auth token) via the
+  // markdown preview's dangerouslySetInnerHTML, even after DOMPurify — defense-in-depth.
+  private static HTML_RE = /<\s*(script|iframe|object|embed|svg)\b/i;
+  private static EVENT_RE = /\son\w+\s*=/i;
+
   /** Scan every prompt-bearing/text file under a staged book dir. */
   scan(baseDir: string): ImportFinding[] {
     const findings: ImportFinding[] = [];
@@ -80,7 +86,13 @@ export class BookTransferService {
       let text = '';
       try { text = readFileSync(join(baseDir, rel), 'utf-8'); } catch { continue; }
       const r = this.injection.scan(text);
-      if (r.detected) findings.push({ path: rel, type: r.type || 'unknown', confidence: r.confidence || 0, pattern: r.pattern || '' });
+      if (r.detected) {
+        findings.push({ path: rel, type: r.type || 'unknown', confidence: r.confidence || 0, pattern: r.pattern || '' });
+        continue; // already flagged — no need for the HTML check
+      }
+      if (BookTransferService.HTML_RE.test(text) || BookTransferService.EVENT_RE.test(text)) {
+        findings.push({ path: rel, type: 'html_payload', confidence: 0.9, pattern: 'html/event-handler tag' });
+      }
     }
     return findings;
   }

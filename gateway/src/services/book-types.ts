@@ -81,6 +81,26 @@ export function parsePipelineJson(raw: string): { steps: unknown[]; schemaVersio
   return parsed as { steps: unknown[]; schemaVersion: number; [k: string]: unknown };
 }
 
+/** Suggested next action for a book, derived from phase + hasOutput. */
+export interface NextStep {
+  phase: string;
+  hasOutput: boolean;
+  label: string;
+  hint: string;
+}
+
+export function suggestedNextStep(phase: string, hasOutput: boolean): { label: string; hint: string } {
+  switch (phase) {
+    case 'planning':   return { label: 'Plan the book',          hint: hasOutput ? 'Refine the premise and plan.' : 'Define the premise and high-level plan.' };
+    case 'bible':      return { label: 'Build the story bible',  hint: 'Develop characters, world, and outline.' };
+    case 'production': return { label: hasOutput ? 'Continue drafting' : 'Start drafting', hint: hasOutput ? 'Write the next chapters.' : 'Begin writing chapter one.' };
+    case 'revision':   return { label: 'Revise the manuscript',  hint: 'Edit for craft, consistency, and pace.' };
+    case 'format':     return { label: 'Format & compile',       hint: 'Produce the formatted manuscript and exports.' };
+    case 'launch':     return { label: 'Launch',                 hint: 'Prepare marketing and publish.' };
+    default:           return { label: 'Open the book',          hint: 'Review the current state.' };
+  }
+}
+
 /** Derive a filesystem-safe slug from a title. Never returns ''. */
 export function slugify(title: string): string {
   const base = String(title || '')

@@ -12,7 +12,7 @@
  * pipelines are single JSON files; skills come from SkillLoader's catalog.
  */
 import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryKind, LibrarySource, LibraryPipeline } from './library-types.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
@@ -59,6 +59,7 @@ const ENTRY_NAME_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 export interface LibraryWriteBody {
   files?: Record<string, string>; // author/voice/genre
   content?: string;               // section / pipeline (raw JSON text)
+  description?: string;           // author/voice/genre/section: sidecar meta.json
 }
 
 export class LibraryService {
@@ -120,6 +121,10 @@ export class LibraryService {
       if (typeof body.content !== 'string') throw new Error('section requires content (string)');
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, body.content, 'utf-8');
+      if (typeof body.description === 'string') {
+        const sidecar = join(dirname(target), `${name}.meta.json`);
+        await writeFile(sidecar, JSON.stringify({ description: body.description }), 'utf-8');
+      }
       return;
     }
     // author / voice / genre: a directory of .md files. Per-file UPSERT that
@@ -130,20 +135,48 @@ export class LibraryService {
     // resolved entry (an overlay shadows the built-in by whole entry, not per
     // file). To remove an entry entirely, use deleteOverlayEntry().
     const files = body.files;
-    if (!files || Object.keys(files).length === 0) throw new Error(`${kind} requires at least one .md file`);
-    for (const fname of Object.keys(files)) {
-      if (!MD_FILE_RE.test(fname)) throw new Error(`Invalid file name: ${fname}`);
-      if (typeof files[fname] !== 'string') throw new Error(`File content must be a string: ${fname}`);
+    // A description-only write is allowed (no files required); but if files are
+    // provided, every entry must be a valid .md file with string content.
+    if (files && Object.keys(files).length > 0) {
+      for (const fname of Object.keys(files)) {
+        if (!MD_FILE_RE.test(fname)) throw new Error(`Invalid file name: ${fname}`);
+        if (typeof files[fname] !== 'string') throw new Error(`File content must be a string: ${fname}`);
+      }
+    } else if (!files || Object.keys(files).length === 0) {
+      // No files provided — require at least a description so the write does something.
+      if (typeof body.description !== 'string') throw new Error(`${kind} requires at least one .md file`);
     }
     // NOTE (deliberate): this UPSERTs files and never deletes — to drop a single
     // file from an entry, delete the whole overlay (deleteOverlayEntry) and re-add.
     // Also: first-overlaying a built-in snapshots its CURRENT files; files the
     // built-in adds later won't surface through the overlay until it's re-pulled.
-    const current = this.get(kind, name)?.files ?? {};
-    const finalFiles: Record<string, string> = { ...current, ...files };
-    await mkdir(target, { recursive: true });
-    for (const [fname, content] of Object.entries(finalFiles)) {
-      await writeFile(join(target, fname), content, 'utf-8');
+    if (files && Object.keys(files).length > 0) {
+      const current = this.get(kind, name)?.files ?? {};
+      const finalFiles: Record<string, string> = { ...current, ...files };
+      await mkdir(target, { recursive: true });
+      for (const [fname, content] of Object.entries(finalFiles)) {
+        await writeFile(join(target, fname), content, 'utf-8');
+      }
+    } else if (typeof body.description === 'string') {
+      // Description-only write: materialize the currently-resolved .md files into
+      // the overlay dir before writing the sidecar. Without this, the overlay would
+      // contain only meta.json with no .md files, silently shadowing the builtin's
+      // real content and leaving the entry with files: {}.
+      const currentFiles = this.get(kind, name)?.files ?? {};
+      if (Object.keys(currentFiles).length === 0) {
+        // Entry doesn't exist anywhere — a description-only create would produce
+        // an empty overlay with no content files. Reject it.
+        throw new Error(`invalid: ${kind} requires at least one .md file`);
+      }
+      await mkdir(target, { recursive: true });
+      for (const [fname, content] of Object.entries(currentFiles)) {
+        await writeFile(join(target, fname), content, 'utf-8');
+      }
+    }
+    // Persist description sidecar if provided (only for author/voice/genre/section).
+    if (typeof body.description === 'string') {
+      await mkdir(target, { recursive: true });
+      await writeFile(join(target, 'meta.json'), JSON.stringify({ description: body.description }), 'utf-8');
     }
   }
 
@@ -160,6 +193,14 @@ export class LibraryService {
     if (!p || !existsSync(p)) return false;
     await rm(p, { recursive: true, force: true });
     return true;
+  }
+
+  private readDescriptionSidecar(file: string): string | undefined {
+    try {
+      if (!existsSync(file)) return undefined;
+      const meta = JSON.parse(readFileSync(file, 'utf-8'));
+      return typeof meta?.description === 'string' ? meta.description : undefined;
+    } catch { return undefined; }
   }
 
   private async loadKind(
@@ -191,9 +232,10 @@ export class LibraryService {
           if (!item.isFile() || !item.name.endsWith('.md')) continue;
           const content = await readFile(join(dir, item.name), 'utf-8');
           const name = item.name.replace(/\.md$/, '');
-          out.set(name, { kind, name, source, content });
+          const description = this.readDescriptionSidecar(join(dir, `${name}.meta.json`));
+          out.set(name, { kind, name, source, content, ...(description !== undefined ? { description } : {}) });
         } else {
-          // author / genre: a directory of markdown files.
+          // author / voice / genre: a directory of markdown files.
           if (!item.isDirectory()) continue;
           const sub = await readdir(join(dir, item.name), { withFileTypes: true });
           const files: Record<string, string> = {};
@@ -202,7 +244,11 @@ export class LibraryService {
               files[f.name] = await readFile(join(dir, item.name, f.name), 'utf-8');
             }
           }
-          out.set(item.name, { kind, name: item.name, source, files });
+          const ownDescription = this.readDescriptionSidecar(join(dir, item.name, 'meta.json'));
+          // When the workspace overlay shadows a builtin but has no sidecar of its
+          // own, fall back to the builtin's description already in the Map.
+          const description = ownDescription ?? out.get(item.name)?.description;
+          out.set(item.name, { kind, name: item.name, source, files, ...(description !== undefined ? { description } : {}) });
         }
       } catch (err) {
         console.error(`  ⚠ Library: failed to load ${kind}/${item.name}`, err);

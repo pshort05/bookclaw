@@ -90,14 +90,17 @@ export function Rail() {
 
         <div className={styles.lbl}>Make</div>
 
-        {/* Library — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Library — Asset Studio */}
+        <NavLink
+          to="/library"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 7l9-4 9 4-9 4-9-4z"/>
             <path d="M3 7v6l9 4 9-4V7"/>
           </svg>
           Library
-        </a>
+        </NavLink>
 
         {/* Insights — placeholder */}
         <a href="#" className={styles.navLink}>

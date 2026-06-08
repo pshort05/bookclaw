@@ -68,6 +68,25 @@ export interface PulledRef {
   version?: number;
 }
 
+/** Suggested next action for a book — returned by GET /api/books/:slug/next. */
+export interface NextStep {
+  phase: string;
+  hasOutput: boolean;
+  label: string;
+  hint: string;
+}
+
+/** Response from GET /api/books/:slug (descriptions are additive; absent when no sidecars). */
+export interface BookDetail {
+  book: BookManifest;
+  status: BookStatus;
+  descriptions?: {
+    author?: string;
+    voice?: string;
+    genre?: string;
+  };
+}
+
 /** Full book.json manifest — returned by GET /api/books/:slug. */
 export interface BookManifest {
   id: string;
@@ -94,6 +113,22 @@ export interface LibraryEntry {
   source: 'builtin' | 'workspace' | 'synthetic';
   description?: string;
 }
+
+export interface LibraryPipelineStep {
+  label: string; skill?: string; toolSuggestion?: string; taskType: string;
+  promptTemplate: string; phase?: string; wordCountTarget?: number; chapterNumber?: number;
+}
+export interface LibraryPipeline {
+  schemaVersion: number; name: string; label: string; description: string;
+  dynamic?: boolean; steps: LibraryPipelineStep[];
+}
+export interface LibraryEntryFull extends LibraryEntry {
+  files?: Record<string, string>;
+  content?: string;
+  pipeline?: LibraryPipeline;
+}
+export type RepullStatus = 'in-sync'|'library-updated'|'locally-edited'|'diverged'|'library-removed'|'no-baseline';
+export interface RepullAsset { kind: LibraryKind; name: string; status: RepullStatus; libraryPresent: boolean; hasBaseline: boolean; wired: boolean; }
 
 /** ConfirmationGate queue — mirrors gateway/src/services/confirmation-gate.ts (only fields the UI reads). */
 export type ConfirmationStatus =
