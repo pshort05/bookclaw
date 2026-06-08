@@ -82,6 +82,8 @@ CREATED_BOOKS=()
 CREATED_SKILLS=()
 CREATED_SERIES=()
 CREATED_DOCS=()
+CREATED_LIBRARY_GENRES=()
+CREATED_LIBRARY_AUTHORS=()
 
 pass(){ PASSES=$((PASSES+1)); echo "  [PASS] $1${2:+ :: $2}"; }
 fail(){ FAILS=$((FAILS+1));   echo "  [FAIL] $1${2:+ :: $2}"; }
@@ -190,6 +192,16 @@ restore(){
     [ -z "$doc" ] && continue
     curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/documents/$doc" >/dev/null 2>&1 || true
     echo "  [cleanup] deleted document $doc"
+  done
+  for gname in "${CREATED_LIBRARY_GENRES[@]:-}"; do
+    [ -z "$gname" ] && continue
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/genre/$gname" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted library/genre $gname"
+  done
+  for aname in "${CREATED_LIBRARY_AUTHORS[@]:-}"; do
+    [ -z "$aname" ] && continue
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/author/$aname" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted library/author $aname"
   done
 
   local c1; c1=$(daily)
@@ -513,8 +525,175 @@ else
         fi
       fi
       rm -f "$EVILZIP"
+
+      # ── 4. Gated import (HTML/XSS payload in template markdown) ──
+      # Mirrors test 3 above, but the malicious payload is an HTML <script> tag
+      # inside templates/author/SOUL.md rather than a prompt-injection phrase in a
+      # skill. BookTransferService.scan() checks HTML_RE against every .md file;
+      # the import must be GATED (not auto-finalized) and produce a book-transfer
+      # confirmation — proof that the XSS defense is active.
+      XSSZIP="/tmp/smoke-xss-$$.zip"
+      node --input-type=commonjs -e '
+        const AdmZip = require("adm-zip");
+        const z = new AdmZip();
+        const manifest = { id:"xss-test", slug:"xss-test", title:"XSS Import", schemaVersion:1, createdByApp:"1", lastWrittenByApp:"1", phase:"planning", createdAt:"2026-01-01T00:00:00.000Z", pulledFrom:{ author:{name:"default",source:"builtin"}, pipeline:{name:"novel-pipeline",source:"builtin",version:1}, sections:[] }, history:[] };
+        z.addFile("book.json", Buffer.from(JSON.stringify(manifest)));
+        z.addFile("templates/author/SOUL.md", Buffer.from("<script>alert(1)</script>\n\nThis author template has been compromised."));
+        z.writeZip(process.argv[1]);
+      ' "$XSSZIP" 2>/dev/null || true
+      if [ ! -s "$XSSZIP" ]; then
+        skip "gated import (XSS in template SOUL.md)" "(could not build test zip)"
+      else
+        XSSRESP=$(curl -s --max-time 60 "${HAUTH[@]}" -F "file=@$XSSZIP" "$BASE_URL/api/books/import")
+        XSS_GATED=$(printf '%s' "$XSSRESP" | jget gated)
+        XSS_CONF=$(printf '%s' "$XSSRESP" | jget confirmationId)
+        if [ "$XSS_GATED" = "true" ] && [ -n "$XSS_CONF" ]; then
+          pass "gated import (XSS in template SOUL.md)" "conf=$XSS_CONF"
+          # Reject the held confirmation so it doesn't litter pending requests.
+          code POST "/api/confirmations/$XSS_CONF/reject" >/dev/null 2>&1 || true
+        else
+          fail "gated import (XSS in template SOUL.md)" "gated=$XSS_GATED resp=$(printf '%s' "$XSSRESP" | head -c 200)"
+        fi
+      fi
+      rm -f "$XSSZIP"
     fi
     # ── End Phase 5 block ──
+
+    # ── Phase 6e: next-step endpoint ──
+    echo ""
+    echo "### Tier A (Phase 6e) — next-step endpoints"
+
+    NEXT_PRESENT=$(has_endpoint GET /api/books/active/next)
+    if [ "$NEXT_PRESENT" = "no" ]; then
+      skip "books/active/next" "(endpoint absent)"
+      skip "books/:slug/next"  "(endpoint absent)"
+    else
+      # Ensure the smoke book is still set active before probing (Phase 4 may have
+      # re-pointed it; set it back to BSLUG so next returns data for our book).
+      code POST /api/books/active "{\"slug\":\"$BSLUG\"}" >/dev/null
+
+      ACT_NEXT=$(req GET /api/books/active/next)
+      ACT_NEXT_LABEL=$(printf '%s' "$ACT_NEXT" | jget next.label)
+      ACT_NEXT_PHASE=$(printf '%s' "$ACT_NEXT" | jget next.phase)
+      if [ -n "$ACT_NEXT_LABEL" ] && [ -n "$ACT_NEXT_PHASE" ]; then
+        pass "books/active/next" "phase=$ACT_NEXT_PHASE label=$ACT_NEXT_LABEL"
+      else
+        fail "books/active/next" "label=$ACT_NEXT_LABEL phase=$ACT_NEXT_PHASE resp=$(printf '%s' "$ACT_NEXT" | head -c 200)"
+      fi
+
+      SLUG_NEXT=$(req GET "/api/books/$BSLUG/next")
+      SLUG_NEXT_PHASE=$(printf '%s' "$SLUG_NEXT" | jget next.phase)
+      if [ -n "$SLUG_NEXT_PHASE" ]; then
+        pass "books/:slug/next" "phase=$SLUG_NEXT_PHASE"
+      else
+        fail "books/:slug/next" "resp=$(printf '%s' "$SLUG_NEXT" | head -c 200)"
+      fi
+    fi
+
+    # ── Phase 6f: library description round-trip ──
+    echo ""
+    echo "### Tier A (Phase 6f) — library description round-trip"
+
+    LIB_WRITE_PRESENT=$(has_endpoint POST /api/library/genre)
+    if [ "$LIB_WRITE_PRESENT" = "no" ]; then
+      skip "library genre description POST"  "(Phase 4 library-write not deployed)"
+      skip "library genre description PUT"   "(Phase 4 library-write not deployed)"
+    else
+      GRND=$RANDOM
+      GNAME="smoke-genre-$GRND"
+      GCREATE_RESP=$(req POST /api/library/genre \
+        "{\"name\":\"$GNAME\",\"files\":{\"tropes.md\":\"x\"},\"description\":\"smoke-desc-A\"}")
+      GCREATE_OK=$(printf '%s' "$GCREATE_RESP" | jget success)
+      if [ "$GCREATE_OK" = "true" ]; then
+        CREATED_LIBRARY_GENRES+=("$GNAME")
+        # Verify description present in the GET /api/library/genre list
+        GLIST=$(req GET /api/library/genre)
+        GDESC_A=$(printf '%s' "$GLIST" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const name=process.argv[1];
+              const e=(JSON.parse(s).entries||[]).find(x=>x.name===name);
+              console.log(e?e.description||"":"");
+            }catch(e){console.log("")}
+          })' "$GNAME")
+        if [ "$GDESC_A" = "smoke-desc-A" ]; then
+          pass "library genre description POST" "description=smoke-desc-A"
+        else
+          fail "library genre description POST" "got '$GDESC_A'"
+        fi
+
+        # Update description with PUT (description-only write allowed on existing entry)
+        GPUT_CODE=$(code PUT "/api/library/genre/$GNAME" '{"description":"smoke-desc-B"}')
+        if [ "$GPUT_CODE" = "200" ] || [ "$GPUT_CODE" = "204" ]; then
+          GLIST2=$(req GET /api/library/genre)
+          GDESC_B=$(printf '%s' "$GLIST2" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              try{
+                const name=process.argv[1];
+                const e=(JSON.parse(s).entries||[]).find(x=>x.name===name);
+                console.log(e?e.description||"":"");
+              }catch(e){console.log("")}
+            })' "$GNAME")
+          if [ "$GDESC_B" = "smoke-desc-B" ]; then
+            pass "library genre description PUT" "description updated to smoke-desc-B"
+          else
+            fail "library genre description PUT" "got '$GDESC_B'"
+          fi
+        else
+          fail "library genre description PUT" "PUT code=$GPUT_CODE"
+        fi
+      else
+        fail "library genre description POST" "resp=$(printf '%s' "$GCREATE_RESP" | head -c 200)"
+        skip "library genre description PUT" "(POST failed)"
+      fi
+    fi
+
+    # ── Book-template description round-trip ──
+    echo ""
+    echo "### Tier A (Phase 6f continued) — book-template description round-trip"
+
+    TMPL_PRESENT=$(has_endpoint GET /api/books/active/templates/author)
+    if [ "$TMPL_PRESENT" = "no" ]; then
+      skip "book-template description round-trip" "(templates endpoint absent)"
+    else
+      # Set the smoke book active so templates/* points at our book.
+      code POST /api/books/active "{\"slug\":\"$BSLUG\"}" >/dev/null
+      BTRND=$RANDOM
+      # Read an existing file from the author template so the PUT body includes
+      # files (author kind requires files — description-only writes are rejected).
+      BTMPL_RESP=$(req GET /api/books/active/templates/author)
+      BTMPL_FILE_KEY=$(printf '%s' "$BTMPL_RESP" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{ const f=JSON.parse(s).files||{}; console.log(Object.keys(f)[0]||""); }
+          catch(e){ console.log(""); }
+        })')
+      BTMPL_FILE_VAL=$(printf '%s' "$BTMPL_RESP" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{
+            const f=JSON.parse(s).files||{};
+            const k=Object.keys(f)[0]||"";
+            process.stdout.write(k?JSON.stringify(f[k]):"\"\"");
+          }catch(e){ process.stdout.write("\"\""); }
+        })')
+      if [ -z "$BTMPL_FILE_KEY" ]; then
+        skip "book-template description round-trip" "(no .md file in author template)"
+      else
+        BTMPL_KEY_ESC=$(printf '%s' "$BTMPL_FILE_KEY" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{ console.log(JSON.stringify(s)); })')
+        BT_BODY="{\"files\":{$BTMPL_KEY_ESC:$BTMPL_FILE_VAL},\"description\":\"book-desc-$BTRND\"}"
+        BT_PUT_CODE=$(code PUT /api/books/active/templates/author "$BT_BODY")
+        if [ "$BT_PUT_CODE" = "200" ] || [ "$BT_PUT_CODE" = "204" ]; then
+          BT_GET=$(req GET /api/books/active/templates/author)
+          BT_DESC=$(printf '%s' "$BT_GET" | jget description)
+          if [ "$BT_DESC" = "book-desc-$BTRND" ]; then
+            pass "book-template description round-trip" "description=book-desc-$BTRND"
+          else
+            fail "book-template description round-trip" "got '$BT_DESC'"
+          fi
+        else
+          fail "book-template description round-trip" "PUT code=$BT_PUT_CODE"
+        fi
+      fi
+    fi
 
   else
     fail "books create" "resp=$(echo "$BRESP" | head -c 200)"
@@ -795,6 +974,246 @@ else
       pass "compile" "files=$CMP_FILES"
     else
       fail "compile" "code=$CMPCODE resp=$(printf '%s' "$CMP" | head -c 200)"
+    fi
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
+echo "### Tier D — multi-book isolation (sequential; Phase-8 concurrency precursor)"
+# NOTE: TRUE simultaneous two-book generation is Phase 8 (per-context binding) and
+# is not yet supported. This section proves per-book isolation under the current
+# single global active-book pointer — it is the precursor to the Phase-8 concurrency
+# acceptance test. Steps: distinct manifests, active re-point, and one optional
+# tiny generation to confirm output doesn't leak across books.
+
+# Guard: require the books group and at least 2 resolvable pipelines.
+_TD_BOOKS_PRESENT=$(has_endpoint GET /api/books)
+_TD_PIPELINES=$(req GET "/api/library?kind=pipeline")
+_TD_PIPE1=$(printf '%s' "$_TD_PIPELINES" | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    try{
+      const es=(JSON.parse(s).entries||[]).filter(x=>x.kind==="pipeline"&&x.name!=="novel-pipeline");
+      console.log(es[0]?es[0].name:"");
+    }catch(e){console.log("")}
+  })')
+_TD_PIPE2=$(printf '%s' "$_TD_PIPELINES" | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    try{
+      const es=(JSON.parse(s).entries||[]).filter(x=>x.kind==="pipeline"&&x.name!=="novel-pipeline");
+      console.log(es[1]?es[1].name:"");
+    }catch(e){console.log("")}
+  })')
+_TD_DEFAULT_AUTHOR=$(req GET "/api/library?kind=author" | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    try{
+      const e=(JSON.parse(s).entries||[]).find(x=>x.kind==="author");
+      console.log(e?e.name:"");
+    }catch(e){console.log("")}
+  })')
+_TD_DEFAULT_VOICE=$(req GET "/api/library?kind=voice" | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    try{
+      const e=(JSON.parse(s).entries||[]).find(x=>x.kind==="voice");
+      console.log(e?e.name:"default");
+    }catch(e){console.log("default")}
+  })')
+
+if [ "$_TD_BOOKS_PRESENT" = "no" ]; then
+  skip "Tier D: two-book manifest isolation" "(books group absent)"
+  skip "Tier D: active flip re-points templates per book" "(books group absent)"
+  skip "Tier D: output isolated to active book" "(books group absent)"
+elif [ -z "$_TD_PIPE1" ] || [ -z "$_TD_PIPE2" ]; then
+  skip "Tier D: two-book manifest isolation" "(fewer than 2 non-novel pipelines; need 2 for isolation test)"
+  skip "Tier D: active flip re-points templates per book" "(fewer than 2 non-novel pipelines)"
+  skip "Tier D: output isolated to active book" "(fewer than 2 non-novel pipelines)"
+elif [ -z "$_TD_DEFAULT_AUTHOR" ]; then
+  skip "Tier D: two-book manifest isolation" "(no author in library)"
+  skip "Tier D: active flip re-points templates per book" "(no author in library)"
+  skip "Tier D: output isolated to active book" "(no author in library)"
+else
+  TD_RAND=$RANDOM
+  TD_MARKER="MARKER-$TD_RAND"
+
+  # ── Create throwaway author B overlay with unique marker ──
+  TD_AUTHOR_B="smoke-author-b-$TD_RAND"
+  TD_AUTHOR_B_BODY=$(node -e '
+    const [name,marker]=process.argv.slice(1);
+    console.log(JSON.stringify({name,files:{"SOUL.md":marker+" I am author B."}}));
+  ' "$TD_AUTHOR_B" "$TD_MARKER")
+  TD_AUTH_RESP=$(req POST /api/library/author "$TD_AUTHOR_B_BODY")
+  TD_AUTH_OK=$(printf '%s' "$TD_AUTH_RESP" | jget success)
+  if [ "$TD_AUTH_OK" = "true" ]; then
+    CREATED_LIBRARY_AUTHORS+=("$TD_AUTHOR_B")
+  else
+    skip "Tier D: two-book manifest isolation" "(could not create author-b overlay: $(printf '%s' "$TD_AUTH_RESP" | head -c 200))"
+    skip "Tier D: active flip re-points templates per book" "(author-b create failed)"
+    skip "Tier D: output isolated to active book" "(author-b create failed)"
+    TD_AUTH_OK="skip"
+  fi
+
+  if [ "$TD_AUTH_OK" = "true" ]; then
+    # ── Create Book A (first author + PIPE1) ──
+    TD_BODY_A=$(node -e '
+      const [title,author,voice,pipeline]=process.argv.slice(1);
+      console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));
+    ' "Smoke Book A $TD_RAND" "$_TD_DEFAULT_AUTHOR" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE1")
+    TD_RESP_A=$(req POST /api/books "$TD_BODY_A")
+    ASLUG=$(printf '%s' "$TD_RESP_A" | jget book.slug)
+    if [ -n "$ASLUG" ]; then
+      CREATED_BOOKS+=("$ASLUG")
+    fi
+
+    # ── Create Book B (author-b + PIPE2) ──
+    TD_BODY_B=$(node -e '
+      const [title,author,voice,pipeline]=process.argv.slice(1);
+      console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));
+    ' "Smoke Book B $TD_RAND" "$TD_AUTHOR_B" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE2")
+    TD_RESP_B=$(req POST /api/books "$TD_BODY_B")
+    BSLUG_D=$(printf '%s' "$TD_RESP_B" | jget book.slug)
+    if [ -n "$BSLUG_D" ]; then
+      CREATED_BOOKS+=("$BSLUG_D")
+    fi
+
+    if [ -z "$ASLUG" ] || [ -z "$BSLUG_D" ]; then
+      skip "Tier D: two-book manifest isolation" "(book create failed A=$ASLUG B=$BSLUG_D)"
+      skip "Tier D: active flip re-points templates per book" "(book create failed)"
+      skip "Tier D: output isolated to active book" "(book create failed)"
+    else
+      # ── Assert distinct manifests ──
+      TD_A_GET=$(req GET "/api/books/$ASLUG")
+      TD_A_PIPE=$(printf '%s' "$TD_A_GET" | jget book.pulledFrom.pipeline.name)
+      TD_A_AUTHOR=$(printf '%s' "$TD_A_GET" | jget book.pulledFrom.author.name)
+      TD_B_GET=$(req GET "/api/books/$BSLUG_D")
+      TD_B_PIPE=$(printf '%s' "$TD_B_GET" | jget book.pulledFrom.pipeline.name)
+      TD_B_AUTHOR=$(printf '%s' "$TD_B_GET" | jget book.pulledFrom.author.name)
+
+      if [ "$TD_A_PIPE" = "$_TD_PIPE1" ] && [ "$TD_A_AUTHOR" = "$_TD_DEFAULT_AUTHOR" ] \
+         && [ "$TD_B_PIPE" = "$_TD_PIPE2" ] && [ "$TD_B_AUTHOR" = "$TD_AUTHOR_B" ] \
+         && [ "$TD_A_PIPE" != "$TD_B_PIPE" ]; then
+        pass "Tier D: two-book manifests distinct" \
+          "A(author=$TD_A_AUTHOR pipe=$TD_A_PIPE) B(author=$TD_B_AUTHOR pipe=$TD_B_PIPE)"
+      else
+        fail "Tier D: two-book manifests distinct" \
+          "A(author=$TD_A_AUTHOR pipe=$TD_A_PIPE) B(author=$TD_B_AUTHOR pipe=$TD_B_PIPE)"
+      fi
+
+      # ── Active re-point isolation ──
+      # Point active → B; verify the author template contains B's unique marker.
+      code POST /api/books/active "{\"slug\":\"$BSLUG_D\"}" >/dev/null
+      TD_ACT_B=$(req GET /api/books/active | jget active.slug)
+      TD_ATPL_B=$(req GET /api/books/active/templates/author)
+      TD_B_FILES=$(printf '%s' "$TD_ATPL_B" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{ console.log(JSON.stringify(JSON.parse(s).files||{})); }
+          catch(e){ console.log("{}"); }
+        })')
+      TD_B_HAS_MARKER=$(printf '%s' "$TD_B_FILES" | grep -c "$TD_MARKER" || true)
+
+      # Retrieve pipeline template for B and check it matches PIPE2.
+      TD_BPIPE_CONTENT=$(req GET /api/books/active/templates/pipeline)
+      TD_BPIPE_NAME=$(printf '%s' "$TD_BPIPE_CONTENT" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{
+            const c=JSON.parse(s).content||"";
+            const m=JSON.parse(c);
+            console.log(m.name||"");
+          }catch(e){console.log("")}
+        })')
+
+      # Point active → A; verify B's marker is gone.
+      code POST /api/books/active "{\"slug\":\"$ASLUG\"}" >/dev/null
+      TD_ATPL_A_BACK=$(req GET /api/books/active/templates/author)
+      TD_A_FILES_BACK=$(printf '%s' "$TD_ATPL_A_BACK" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          try{ console.log(JSON.stringify(JSON.parse(s).files||{})); }
+          catch(e){ console.log("{}"); }
+        })')
+      TD_A_HAS_MARKER=$(printf '%s' "$TD_A_FILES_BACK" | grep -c "$TD_MARKER" || true)
+
+      if [ "$TD_ACT_B" = "$BSLUG_D" ] \
+         && [ "$TD_B_HAS_MARKER" -ge 1 ] \
+         && [ "$TD_A_HAS_MARKER" -eq 0 ]; then
+        pass "Tier D: active flip re-points templates per book" \
+          "B has marker, A does not; pipeline=$TD_BPIPE_NAME"
+      else
+        fail "Tier D: active flip re-points templates per book" \
+          "active=$TD_ACT_B B_has_marker=$TD_B_HAS_MARKER A_has_marker=$TD_A_HAS_MARKER pipe=$TD_BPIPE_NAME"
+      fi
+
+      # ── Output isolation via generation (tiny, bounded) ──
+      # Re-activate A and kick the smallest possible pipeline (book-planning, 1ch/300w).
+      # Poll /api/books/ASLUG/next for hasOutput==true with a 90s timeout.
+      # If generation doesn't finish in budget: skip (not a fail — latency is env).
+      # If it does finish: assert BSLUG_D/next hasOutput==false (A's output didn't leak to B).
+      NEXT_PRESENT_D=$(has_endpoint GET "/api/books/$ASLUG/next")
+      if [ "$NEXT_PRESENT_D" = "no" ]; then
+        skip "Tier D: output isolated to active book" "(books/:slug/next endpoint absent)"
+      else
+        code POST /api/books/active "{\"slug\":\"$ASLUG\"}" >/dev/null
+        # Kick a tiny generation against A using the per-step model override mini-pipeline.
+        TD_MINI=$(req POST /api/pipeline/create \
+          "{\"title\":\"Smoke TD A $TD_RAND\",\"description\":\"Tier-D isolation test novel: a mole builds a library underground.\",\"config\":{\"targetChapters\":1,\"targetWordsPerChapter\":300,\"genre\":\"cozy\"}}")
+        for pid in $(printf '%s' "$TD_MINI" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).phases||[]).forEach(p=>console.log(p.id))}catch(e){}})'); do
+          CREATED_PROJECTS+=("$pid")
+        done
+        TD_MINI_PROD=$(printf '%s' "$TD_MINI" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const p=(JSON.parse(s).phases||[]).find(x=>x.type==="book-production");
+              console.log(p?p.id:"");
+            }catch(e){console.log("")}
+          })')
+        TD_MINI_PLAN=$(printf '%s' "$TD_MINI" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const p=(JSON.parse(s).phases||[]).find(x=>x.type==="book-planning");
+              console.log(p?p.id:"");
+            }catch(e){console.log("")}
+          })')
+        TD_MINI_BIBLE=$(printf '%s' "$TD_MINI" | node -e '
+          let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+            try{
+              const p=(JSON.parse(s).phases||[]).find(x=>x.type==="book-bible");
+              console.log(p?p.id:"");
+            }catch(e){console.log("")}
+          })')
+
+        if [ -z "$TD_MINI_PROD" ]; then
+          skip "Tier D: output isolated to active book" "(mini pipeline create returned no production phase)"
+        else
+          # Auto-execute the pipeline phases for Book A.
+          [ -n "$TD_MINI_PLAN" ]  && req POST "/api/projects/$TD_MINI_PLAN/auto-execute"  "" 600 >/dev/null
+          [ -n "$TD_MINI_BIBLE" ] && req POST "/api/projects/$TD_MINI_BIBLE/auto-execute" "" 600 >/dev/null
+          [ -n "$TD_MINI_PROD" ]  && req POST "/api/projects/$TD_MINI_PROD/auto-execute"  "" 1800 >/dev/null
+
+          # Poll /api/books/ASLUG/next for hasOutput==true (max ~90s).
+          TD_GEN_DONE=0
+          TD_POLLS=0
+          while [ "$TD_POLLS" -lt 18 ]; do
+            TD_NEXT_A=$(req GET "/api/books/$ASLUG/next")
+            TD_HAS_OUT_A=$(printf '%s' "$TD_NEXT_A" | jget next.hasOutput)
+            if [ "$TD_HAS_OUT_A" = "true" ]; then
+              TD_GEN_DONE=1
+              break
+            fi
+            sleep 5
+            TD_POLLS=$((TD_POLLS+1))
+          done
+
+          if [ "$TD_GEN_DONE" -eq 0 ]; then
+            skip "Tier D: output isolated to active book" "(generation did not complete within 90s; latency too high)"
+          else
+            TD_NEXT_B=$(req GET "/api/books/$BSLUG_D/next")
+            TD_HAS_OUT_B=$(printf '%s' "$TD_NEXT_B" | jget next.hasOutput)
+            if [ "$TD_HAS_OUT_B" = "false" ] || [ -z "$TD_HAS_OUT_B" ]; then
+              pass "Tier D: output isolated to active book" "A hasOutput=true, B hasOutput=${TD_HAS_OUT_B:-false}"
+            else
+              fail "Tier D: output isolated to active book" "A hasOutput=true but B hasOutput=$TD_HAS_OUT_B (leak?)"
+            fi
+          fi
+        fi
+      fi
     fi
   fi
 fi
