@@ -21,10 +21,11 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   console.log('  ✓ WebSocket ready');
 
   // ── Phase 11: Static Dashboard ──
-  const useV6 = process.env.BOOKCLAW_UI === 'v6';
+  // v6 React studio is the default UI. Opt back to the legacy dashboard with BOOKCLAW_UI=legacy.
+  const useV6 = process.env.BOOKCLAW_UI !== 'legacy';
   const uiDir = useV6 ? STUDIO_DIST : join(ROOT_DIR, 'dashboard', 'dist');
   const uiHtml = join(uiDir, 'index.html');
-  console.log(`  ✓ UI: ${useV6 ? 'v6 studio (frontend/studio)' : 'legacy dashboard'}`);
+  console.log(`  ✓ UI: ${useV6 ? 'v6 studio (frontend/studio)' : 'legacy dashboard (BOOKCLAW_UI=legacy)'}`);
   if (!existsSync(uiHtml)) {
     console.log(`  ⚠ UI build not found at ${uiHtml}` +
       (useV6 ? ' — run `npm run -w frontend/studio build` (or rebuild the image). GET / will 500 until built.' : ''));

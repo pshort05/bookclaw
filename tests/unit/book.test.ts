@@ -95,6 +95,13 @@ test('BookService.list returns summaries with computed gate status', async () =>
     const list = svc.list();
     assert.equal(list.find(b => b.slug === 'good-book')?.status, 'ok');
     assert.equal(list.find(b => b.slug === 'future-book')?.status, 'readonly');
+    const good = list.find(b => b.slug === 'good-book');
+    assert.equal(good?.author, 'default');
+    assert.equal(good?.voice, 'default');
+    assert.equal(good?.genre, null);
+    // future-book.json has no pulledFrom — byline fields must be absent, not a crash:
+    const future = list.find(b => b.slug === 'future-book');
+    assert.equal(future?.author, undefined);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

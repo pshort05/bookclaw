@@ -1,0 +1,125 @@
+/* NewBook route — ported from dashboard/concept/new-book.html */
+
+.wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 30px 28px 60px;
+}
+
+.hero {
+  margin-bottom: 26px;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-optical-sizing: auto;
+  font-weight: 340;
+  font-size: 38px;
+  letter-spacing: -.025em;
+  margin: 0;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--ember);
+}
+
+.hero p {
+  color: var(--dim);
+  margin: 8px 0 0;
+  max-width: 54ch;
+}
+
+.fl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 9px;
+}
+
+.tin {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 13px 16px;
+  color: var(--text);
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  outline: none;
+  transition: .18s;
+}
+
+.tin::placeholder {
+  color: var(--faint);
+  font-style: italic;
+}
+
+.tin:focus {
+  border-color: rgba(240,145,58,.45);
+  box-shadow: 0 0 0 3px rgba(240,145,58,.08);
+}
+
+.create {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: #1a0f08;
+  background: linear-gradient(180deg, #f7b15a, #ec8a34);
+  border: 1px solid #c9762a;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 #9c5a1e, 0 6px 16px -6px var(--glow);
+  transition: .1s;
+}
+
+.create:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 #9c5a1e;
+}
+
+/* field wrapper */
+.field {
+  margin-bottom: 18px;
+}
+
+.field select {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: .18s;
+  cursor: pointer;
+}
+
+.field select:focus {
+  border-color: rgba(240,145,58,.45);
+  box-shadow: 0 0 0 3px rgba(240,145,58,.08);
+}
+
+/* action row */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+/* error message */
+.err {
+  color: #ffb59a;
+  font-size: 13px;
+  margin-top: 12px;
+}

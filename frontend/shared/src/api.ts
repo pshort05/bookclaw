@@ -5,15 +5,15 @@ declare global {
   }
 }
 
-const token = (): string =>
+export const authToken = (): string =>
   (typeof window !== 'undefined' && window.__BOOKCLAW_TOKEN__) || '';
 
-const base = (): string =>
+export const apiBase = (): string =>
   (typeof window !== 'undefined' && window.__BOOKCLAW_API_BASE__) || '';
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const t = token();
-  const res = await fetch(base() + path, {
+  const t = authToken();
+  const res = await fetch(apiBase() + path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',

@@ -200,6 +200,9 @@ export class BookService {
           schemaVersion: m.schemaVersion ?? 0,
           status: classifyVersion(m.schemaVersion ?? 0),
           createdAt: m.createdAt || '',
+          author: m.pulledFrom?.author?.name,
+          voice: m.pulledFrom?.voice?.name,
+          genre: m.pulledFrom?.genre?.name ?? null,
         });
       } catch (err) {
         console.warn(`  ⚠ Books: could not read ${e.name}/book.json — skipping`, err);

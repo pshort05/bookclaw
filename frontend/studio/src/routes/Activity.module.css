@@ -1,0 +1,176 @@
+/* Activity route — ported verbatim from dashboard/concept/phase6-studio-shell.html */
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 28px 60px;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 24px;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-optical-sizing: auto;
+  font-weight: 340;
+  font-size: 40px;
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--ember);
+  font-weight: 340;
+}
+
+.hero p {
+  color: var(--dim);
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  max-width: 46ch;
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 13px;
+  cursor: pointer;
+  transition: 0.16s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--line-2);
+  color: var(--text);
+}
+
+.chip.on {
+  background: rgba(240, 145, 58, 0.12);
+  border-color: rgba(240, 145, 58, 0.4);
+  color: var(--text);
+}
+
+.chip .n {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  margin-left: 6px;
+}
+
+.feed {
+  max-width: 920px;
+}
+
+.ev {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  padding: 11px 14px;
+  border-radius: 9px;
+  border-left: 2px solid transparent;
+  transition: 0.15s;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 0.5s var(--ease) forwards;
+}
+
+.ev:hover {
+  background: rgba(238, 229, 210, 0.03);
+}
+
+.ts {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  flex: none;
+  width: 60px;
+}
+
+.cat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: none;
+  width: 96px;
+  color: var(--c);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
+  flex: none;
+}
+
+.bd {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--dim);
+  min-width: 0;
+}
+
+.sl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+}
+
+.mt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  flex: none;
+}
+
+.now {
+  border-left-color: var(--ember);
+  background: rgba(240, 145, 58, 0.05);
+}
+
+.now .cat i {
+  box-shadow: 0 0 0 0 var(--ember);
+  animation: pulse 1.3s infinite;
+  color: var(--ember);
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* empty state — matches Board.module.css */
+.empty {
+  color: var(--faint);
+  font-size: 14px;
+  text-align: center;
+  margin: 60px auto;
+}

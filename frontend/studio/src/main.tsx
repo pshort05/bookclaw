@@ -5,10 +5,18 @@ import '../../shared/src/tokens.css';
 import '../../shared/src/fonts.js';
 import { App } from './App.js';
 import { Board } from './routes/Board.js';
+import { Activity } from './routes/Activity.js';
+import { NewBook } from './routes/NewBook.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes><Route element={<App />}><Route index element={<Board />} /></Route></Routes>
+      <Routes>
+        <Route element={<App />}>
+          <Route index element={<Board />} />
+          <Route path="activity" element={<Activity />} />
+          <Route path="new-book" element={<NewBook />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   </React.StrictMode>
 );

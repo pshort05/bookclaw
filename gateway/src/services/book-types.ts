@@ -48,6 +48,10 @@ export interface BookSummary {
   schemaVersion: number;
   status: BookStatus;
   createdAt: string;
+  // byline (book-container Phase 6c) — names only, from the manifest's pulledFrom snapshot
+  author?: string;
+  voice?: string;
+  genre?: string | null;
 }
 
 /** Classify a stored schemaVersion against this app's supported range. */

@@ -21,9 +21,9 @@
     "build:dashboard": "node dashboard/build.mjs",
     "build:dashboard:watch": "node dashboard/build.mjs --watch",
     "test": "npm run test:unit && npm run test:api && npm run test:smoke",
-    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
+    "test:unit": "npm run build:frontend && node --import tsx --test tests/unit/*.test.ts",
     "test:api": "bash tests/api/api-test.sh",
-    "test:smoke": "bash tests/smoke-test.sh"
+    "test:smoke": "npm run build:frontend && bash tests/smoke-test.sh"
   },
   "keywords": [
     "ai",

@@ -1,7 +1,19 @@
 import { NavLink } from 'react-router-dom';
+import { useStore, useCosts, usePendingConfirmations, useBooks } from '@bookclaw/shared';
+import { useEffect } from 'react';
 import styles from './Rail.module.css';
 
 export function Rail() {
+  const costs = useCosts();
+  const pending = usePendingConfirmations();
+  const books = useBooks();
+  const loadCosts = useStore((s) => s.loadCosts);
+  const loadConfirmations = useStore((s) => s.loadConfirmations);
+  useEffect(() => {
+    loadCosts().catch(() => {});
+    loadConfirmations().catch(() => {});
+  }, [loadCosts, loadConfirmations]);
+
   return (
     <aside className={styles.rail}>
       {/* Brand */}
@@ -33,7 +45,7 @@ export function Rail() {
             <rect x="14" y="12" width="7" height="9" rx="1.5"/>
             <rect x="3" y="16" width="7" height="5" rx="1.5"/>
           </svg>
-          Book Board <span className={styles.count}>5</span>
+          Book Board <span className={styles.count}>{books.length}</span>
         </NavLink>
 
         {/* Write — placeholder */}
@@ -65,13 +77,16 @@ export function Rail() {
           Series <span className={styles.count}>2</span>
         </a>
 
-        {/* Activity — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Activity — live route */}
+        <NavLink
+          to="/activity"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 12h4l2 6 4-14 2 8h6"/>
           </svg>
-          Activity <span className={`${styles.dot} ${styles.dotGen}`} style={{ marginLeft: 'auto' }}></span>
-        </a>
+          Activity
+        </NavLink>
 
         <div className={styles.lbl}>Make</div>
 
@@ -109,7 +124,7 @@ export function Rail() {
             <path d="M12 2l8 4v5c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V6l8-4z"/>
             <path d="M9 12l2 2 4-4"/>
           </svg>
-          Confirmations <span className={styles.badge}>1</span>
+          Confirmations {pending.length > 0 && <span className={styles.badge}>{pending.length}</span>}
         </a>
       </nav>
 
@@ -126,8 +141,13 @@ export function Rail() {
           Idle <span className={styles.v}>3 books</span>
         </div>
         <div className={styles.budget}>
-          <div className={styles.cap}><span>AI spend · today</span><b>$23.41 / $40</b></div>
-          <div className={styles.bar}><i style={{ width: '58%' }}></i></div>
+          <div className={styles.cap}>
+            <span>AI spend · today</span>
+            <b>${(costs?.daily ?? 0).toFixed(2)} / ${costs?.dailyLimit ?? 0}</b>
+          </div>
+          <div className={styles.bar}>
+            <i style={{ width: `${costs && costs.dailyLimit > 0 ? Math.min(100, (costs.daily / costs.dailyLimit) * 100) : 0}%` }} />
+          </div>
         </div>
       </div>
     </aside>

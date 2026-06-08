@@ -134,3 +134,124 @@
   text-align: center;
   margin: 60px auto;
 }
+
+/* filters row */
+.filters {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 13px;
+  cursor: pointer;
+  transition: .16s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--line-2);
+  color: var(--text);
+}
+
+.chip.on {
+  background: rgba(240,145,58,.12);
+  border-color: rgba(240,145,58,.4);
+  color: var(--text);
+}
+
+/* card top row */
+.ctop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* genre line */
+.genre {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--dim);
+  margin-top: 3px;
+}
+
+/* byline */
+.byline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.byline b {
+  color: var(--dim);
+  font-weight: 500;
+}
+
+.byline .v {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--faint);
+  opacity: .6;
+}
+
+/* ghost "new book" card */
+.card.ghost {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed var(--line-2);
+  background: transparent;
+  color: var(--faint);
+  min-height: 240px;
+  text-align: center;
+}
+
+.card.ghost:hover {
+  border-color: rgba(240,145,58,.4);
+  color: var(--ember);
+  background: rgba(240,145,58,.03);
+}
+
+.plus {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  transition: .2s;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.card.ghost:hover .plus {
+  border-color: var(--ember);
+  transform: scale(1.06);
+}
+
+.card.ghost h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 380;
+  font-size: 19px;
+  color: inherit;
+}
+
+.card.ghost small {
+  font-size: 12px;
+  max-width: 24ch;
+}
