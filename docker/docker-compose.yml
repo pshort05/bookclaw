@@ -32,6 +32,9 @@ services:
       # time, written to docker/.env. Shown in the banner, /api/status, and the
       # dashboard. Unset (e.g. local dev) → the app falls back to a boot-time value.
       - BOOKCLAW_VERSION=${BOOKCLAW_VERSION:-}
+      # Which front-end to serve at "/": set to "v6" for the React studio
+      # (frontend/studio), unset for the legacy dashboard. Written to docker/.env.
+      - BOOKCLAW_UI=${BOOKCLAW_UI:-}
     # Security: Resource limits
     deploy:
       resources:
