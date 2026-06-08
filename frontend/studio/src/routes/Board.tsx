@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useStore, useBooks } from '../../../shared/src/store.js';
+import { useStore, useBooks } from '@bookclaw/shared';
 import styles from './Board.module.css';
 
 const PHASE_VAR: Record<string, string> = {

@@ -3,12 +3,14 @@
   "version": "0.0.0",
   "type": "module",
   "main": "src/index.ts",
-  "dependencies": {
+  "comment": "Internal (unpublished) build-time package. All deps — including react/react-dom — are devDependencies, not peer/prod: Vite bundles them into each app's dist/, so `npm prune --omit=dev` drops them from the production image. react is consumed only at build time here.",
+  "devDependencies": {
     "@fontsource/fraunces": "^5.0.0",
     "@fontsource/ibm-plex-mono": "^5.0.0",
     "@fontsource/hanken-grotesk": "^5.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
     "socket.io-client": "^4.7.0",
     "zustand": "^4.5.0"
-  },
-  "peerDependencies": { "react": "^18", "react-dom": "^18" }
+  }
 }

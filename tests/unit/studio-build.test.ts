@@ -15,7 +15,16 @@ const distHtml = join(repo, 'frontend/studio/dist/index.html');
 
 test('studio build carries the token placeholder + hashed module entry', { timeout: 180000 }, () => {
   if (!existsSync(distHtml)) {
-    execSync('npm run -w frontend/studio build', { cwd: repo, stdio: 'ignore' });
+    // Build on demand (dist is gitignored). Capture output and surface it on
+    // failure so a broken build is diagnosable from the test run, not opaque.
+    try {
+      execSync('npm run -w frontend/studio build', { cwd: repo, stdio: 'pipe' });
+    } catch (err) {
+      const e = err as { stdout?: Buffer; stderr?: Buffer };
+      if (e.stdout) process.stderr.write(e.stdout);
+      if (e.stderr) process.stderr.write(e.stderr);
+      throw err;
+    }
   }
   const html = readFileSync(distHtml, 'utf-8');
   assert.ok(html.includes('__BOOKCLAW_AUTH_TOKEN__'), 'token placeholder must survive the build');

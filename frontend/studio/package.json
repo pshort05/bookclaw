@@ -3,13 +3,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": { "dev": "vite", "build": "tsc -b && vite build", "preview": "vite preview" },
-  "dependencies": {
+  "comment": "All deps are build-time only: Vite bundles them into dist/, which is what the gateway serves. Declaring them devDependencies keeps them out of the production image after `npm prune --omit=dev`.",
+  "devDependencies": {
     "@bookclaw/shared": "*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "react-router-dom": "^6.26.0"
-  },
-  "devDependencies": {
+    "react-router-dom": "^6.26.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",

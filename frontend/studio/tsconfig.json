@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2020", "lib": ["ES2020", "DOM", "DOM.Iterable"], "module": "ESNext",
     "moduleResolution": "Bundler", "jsx": "react-jsx", "strict": true,
-    "isolatedModules": true, "noEmit": true, "skipLibCheck": true, "types": ["vite/client"]
+    "isolatedModules": true, "noEmit": true, "skipLibCheck": true, "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": { "@bookclaw/shared": ["../shared/src/index.ts"] }
   },
   "include": ["src", "../shared/src"]
 }

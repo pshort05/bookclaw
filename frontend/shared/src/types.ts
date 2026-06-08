@@ -1,3 +1,9 @@
+// Hand-mirrored from the server contracts — keep in sync when the source changes:
+//   BookStatus / BookSummary → gateway/src/services/book-types.ts
+//   Status                    → GET /api/status (gateway/src/api/routes/core.routes.ts)
+//   Costs                     → CostTracker.getStatus() (gateway/src/services/costs.ts)
+// (No build-time link between the two trees; a mismatch is only a narrower type, not an error.)
+
 /** BookStatus gate outcome for a book on open. */
 export type BookStatus = 'ok' | 'readonly' | 'quarantined';
 

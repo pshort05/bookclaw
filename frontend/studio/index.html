@@ -1,6 +1,12 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BookClaw · Studio</title>
+<!-- Token bridge — do not rename either side. The gateway injects the bearer token
+     into the placeholder below at serve time (gateway/src/init/phase-11-http.ts), and
+     @bookclaw/shared (api.ts/socket.ts) reads it from window.__BOOKCLAW_TOKEN__. Copy
+     this <script> verbatim into any other app entry (e.g. the chat app); changing the
+     global name yields silent 401s. (Keep this comment free of the placeholder literal
+     so the serve-time replace doesn't copy the token into it.) -->
 <script>window.__BOOKCLAW_TOKEN__='__BOOKCLAW_AUTH_TOKEN__';</script>
 </head><body><div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>

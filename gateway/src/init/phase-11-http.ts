@@ -1,6 +1,7 @@
 import express from 'express';
 import { join } from 'path';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { createAPIRoutes } from '../api/routes.js';
 import { ROOT_DIR, STUDIO_DIST } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
@@ -24,6 +25,10 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   const uiDir = useV6 ? STUDIO_DIST : join(ROOT_DIR, 'dashboard', 'dist');
   const uiHtml = join(uiDir, 'index.html');
   console.log(`  ✓ UI: ${useV6 ? 'v6 studio (frontend/studio)' : 'legacy dashboard'}`);
+  if (!existsSync(uiHtml)) {
+    console.log(`  ⚠ UI build not found at ${uiHtml}` +
+      (useV6 ? ' — run `npm run -w frontend/studio build` (or rebuild the image). GET / will 500 until built.' : ''));
+  }
 
   // Serve the dashboard HTML with the auth token injected so its fetch calls can
   // authenticate. The __BOOKCLAW_AUTH_TOKEN__ placeholder is replaced at serve
@@ -52,9 +57,16 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
     next();
   });
 
-  // SPA fallback — any non-API path serves the dashboard HTML
+  // SPA fallback — a non-API path with no file extension is a client-side route,
+  // so serve the app HTML. A path that LOOKS like a static file (has an extension)
+  // but reached here means express.static missed it (e.g. a stale-cached page asking
+  // for an old hashed /assets/*.js after a redeploy) — return 404 rather than HTML,
+  // so the browser gets a clean miss instead of "Unexpected token '<'".
   gw.app.get('*', (req, res) => {
     if (req.path.startsWith('/api/')) return; // already handled above
+    if (/\.[a-zA-Z0-9]+$/.test(req.path)) {
+      return res.status(404).type('txt').send('Not found');
+    }
     serveDashboard(req, res);
   });
 
