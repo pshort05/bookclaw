@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useStore, useActivity, streamActivity } from '@bookclaw/shared';
+import { useStore, useActivity, streamActivity, hhmm } from '@bookclaw/shared';
 import type { ActivityEntry } from '@bookclaw/shared';
 import styles from './Activity.module.css';
 
@@ -26,12 +26,6 @@ function category(e: ActivityEntry): { label: string; varName: string } {
 
 const FILTERS = ['All', 'Production', 'Cost', 'Model', 'Book', 'System'] as const;
 type Filter = typeof FILTERS[number];
-
-function clock(ts: string): string {
-  // HH:MM, local — defensive against a bad timestamp.
-  const d = new Date(ts);
-  return isNaN(d.getTime()) ? '' : d.toTimeString().slice(0, 5);
-}
 
 export function Activity() {
   const entries = useActivity();
@@ -78,7 +72,7 @@ export function Activity() {
       <div className={styles.feed}>
         {shown.map(({ e, c }, i) => (
           <div key={`${e.timestamp}-${i}`} className={i === 0 ? `${styles.ev} ${styles.now}` : styles.ev}>
-            <span className={styles.ts}>{clock(e.timestamp)}</span>
+            <span className={styles.ts}>{hhmm(e.timestamp)}</span>
             <span className={styles.cat} style={{ ['--c' as string]: `var(${c.varName})` }}>
               <i /> {c.label}
             </span>

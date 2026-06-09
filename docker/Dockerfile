@@ -56,6 +56,8 @@ COPY workspace ./workspace
 COPY --from=builder /app/dashboard ./dashboard
 # Studio dist from builder (opt-in via BOOKCLAW_UI=v6; src not needed at runtime)
 COPY --from=builder /app/frontend/studio/dist ./frontend/studio/dist
+# Chat app dist from builder (enabled when BOOKCLAW_CHAT_PORT is set)
+COPY --from=builder /app/frontend/chat/dist ./frontend/chat/dist
 COPY package.json ./
 
 # Optional: Install Python for Author OS tool execution (Format Factory Pro)
@@ -82,7 +84,7 @@ USER bookclaw
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://localhost:3847/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-EXPOSE 3847
+EXPOSE 3847 3848
 
 # Run compiled JavaScript
 CMD ["node", "dist/gateway/src/index.js"]

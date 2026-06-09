@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, useStore, useActiveBook, type BookDetail, type NextStep } from '@bookclaw/shared';
 import { Button } from '@bookclaw/shared';
 import styles from './BookDrawer.module.css';
@@ -12,6 +13,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
   const [activating, setActivating] = useState(false);
   const activeBook = useActiveBook();
   const loadBooks = useStore((s) => s.loadBooks);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +125,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
           <Button variant="secondary" onClick={setActive} disabled={!data || isActive || activating}>
             {isActive ? 'Active book' : activating ? 'Activating…' : 'Set as active'}
           </Button>
-          <Button variant="primary" disabled title="Write workspace — sub-phase 6d">Open in Write</Button>
+          <Button variant="primary" onClick={() => { onClose(); navigate(`/write/${slug}`); }}>Open in Write</Button>
         </div>
       </aside>
     </>

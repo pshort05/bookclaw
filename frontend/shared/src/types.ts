@@ -30,6 +30,7 @@ export interface Status {
   providers?: Array<{ id: string; name: string; model: string; tier: string }>;
   costs?: Costs;
   permissions?: string;
+  skills?: { total: number; author?: number; premium?: number; premiumInstalled?: number };
   [k: string]: unknown;
 }
 
@@ -104,6 +105,29 @@ export interface BookManifest {
     skills?: string[];
   };
   history: Array<{ at: string; event: string; detail?: string }>;
+}
+
+/** A single step within a project — mirrors the projects API step shape. */
+export interface ProjectStep {
+  id: string;
+  label: string;
+  status: 'pending' | 'active' | 'completed' | 'failed' | 'skipped';
+  phase?: string;
+  skill?: string;
+  chapterNumber?: number;
+  wordCountTarget?: number;
+  modelOverride?: { provider: string; model?: string } | null;
+}
+
+/** Project shape from GET /api/projects/list and GET /api/projects/:id. */
+export interface Project {
+  id: string;
+  title: string;
+  type: string;
+  status: 'pending' | 'active' | 'completed' | 'failed' | 'paused';
+  progress: number;
+  steps: ProjectStep[];
+  [k: string]: unknown;
 }
 
 export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill';

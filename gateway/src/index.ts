@@ -95,6 +95,7 @@ import { initWebsiteAndOrchestrator } from './init/phase-08-website.js';
 import { initExportAndWaves } from './init/phase-09-export-wave.js';
 import { initHeartbeatAndBridges } from './init/phase-10-heartbeat-bridges.js';
 import { initHttp } from './init/phase-11-http.js';
+import { initChatHttp } from './init/phase-12-chat-http.js';
 
 // Constant-time comparison of a request's bearer token against the expected token.
 // Length check first because timingSafeEqual throws on unequal-length buffers.
@@ -122,6 +123,8 @@ class BookClawGateway {
   public app: express.Application;
   public server: ReturnType<typeof createServer>;
   public io: SocketIO;
+  // Second HTTP server for the standalone Chat SPA (BOOKCLAW_CHAT_PORT). Optional.
+  public chatServer?: ReturnType<typeof createServer>;
 
   // Core services
   public config!: ConfigService;
@@ -240,11 +243,23 @@ class BookClawGateway {
       .split(',').map((s) => s.trim()).filter(Boolean);
     this.corsWildcard = corsEnv.includes('*');
     const corsAllowlist = corsEnv.filter((o) => o !== '*');
+    // Phase 6i: when BOOKCLAW_CHAT_PORT is set, auto-add the chat origin to the
+    // allowlist so the chat SPA can reach the gateway cross-origin. Only localhost
+    // + 127.0.0.1 are added automatically; LAN access requires BOOKCLAW_CORS_ORIGINS.
+    // Never add a wildcard — the bearer token is the real gate.
+    const chatPort = Number(process.env.BOOKCLAW_CHAT_PORT || 0);
+    if (chatPort && !this.corsWildcard) {
+      const chatOrigins = [`http://localhost:${chatPort}`, `http://127.0.0.1:${chatPort}`];
+      for (const o of chatOrigins) {
+        if (!corsAllowlist.includes(o)) corsAllowlist.push(o);
+      }
+    }
+    const chatOriginSuffix = chatPort ? ` + chat :${chatPort}` : '';
     this.corsSummary = this.corsWildcard
       ? '⚠ CORS: wildcard (all origins allowed) — BOOKCLAW_CORS_ORIGINS=*'
       : corsAllowlist.length
         ? `✓ CORS: ${corsAllowlist.length} allowed origin(s) — ${corsAllowlist.join(', ')}`
-        : '✓ CORS: cross-origin denied (set BOOKCLAW_CORS_ORIGINS to allow browser origins)';
+        : `✓ CORS: cross-origin denied${chatOriginSuffix} (set BOOKCLAW_CORS_ORIGINS to allow LAN browser origins)`;
     const wildcard = this.corsWildcard;
     const corsOptions: cors.CorsOptions = {
       origin: (origin, cb) => {
@@ -402,6 +417,7 @@ class BookClawGateway {
     await initExportAndWaves(this);
     await initHeartbeatAndBridges(this);
     await initHttp(this);
+    await initChatHttp(this);
   }
 
   // True if the given source IP is permitted by the allowlist. Loopback is always

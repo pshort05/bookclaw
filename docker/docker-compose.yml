@@ -9,7 +9,8 @@ services:
     container_name: bookclaw
     restart: unless-stopped
     ports:
-      - "3847:3847"  # All interfaces (needed for VirtualBox NAT port forwarding)
+      - "3847:3847"  # Gateway + Studio (all interfaces; needed for VirtualBox NAT port forwarding)
+      - "3848:3848"  # Standalone Chat app (enabled when BOOKCLAW_CHAT_PORT is set)
     volumes:
       # Persist workspace data on a host bind-mount (backup/share friendly;
       # default lives outside the repo). Override with BOOKCLAW_WORKSPACE_PATH.
@@ -35,6 +36,10 @@ services:
       # Which front-end to serve at "/": set to "v6" for the React studio
       # (frontend/studio), unset for the legacy dashboard. Written to docker/.env.
       - BOOKCLAW_UI=${BOOKCLAW_UI:-}
+      # Chat app second port. Unset = chat app disabled. Set to 3848 to enable.
+      - BOOKCLAW_CHAT_PORT=${BOOKCLAW_CHAT_PORT:-}
+      # Cross-origin browser origins (comma-separated). Required for LAN chat access.
+      - BOOKCLAW_CORS_ORIGINS=${BOOKCLAW_CORS_ORIGINS:-}
     # Security: Resource limits
     deploy:
       resources:

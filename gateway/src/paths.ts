@@ -20,3 +20,4 @@ export const ROOT_DIR = __dirname.includes('dist')
   : join(__dirname, '..', '..');
 
 export const STUDIO_DIST = join(ROOT_DIR, 'frontend', 'studio', 'dist');
+export const CHAT_DIST = join(ROOT_DIR, 'frontend', 'chat', 'dist');

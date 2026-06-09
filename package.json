@@ -9,7 +9,7 @@
     "start": "node --import tsx gateway/src/index.ts",
     "dev": "node --watch --import tsx gateway/src/index.ts",
     "build": "tsc",
-    "build:frontend": "npm run -w frontend/studio build",
+    "build:frontend": "npm run -w frontend/studio build && npm run -w frontend/chat build",
     "setup": "bash scripts/setup-wizard.sh",
     "setup:legacy": "bash scripts/setup.sh",
     "recover": "bash scripts/recover.sh",

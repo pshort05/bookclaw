@@ -48,17 +48,28 @@ export function Rail() {
           Book Board <span className={styles.count}>{books.length}</span>
         </NavLink>
 
-        {/* Write — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Write — live route */}
+        <NavLink
+          to="/write"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
             <path d="M4 20l3-1 11-11-2-2L5 17l-1 3z"/>
             <path d="M14 5l3 3"/>
           </svg>
-          Write <span className={`${styles.dot} ${styles.dotGen}`} style={{ marginLeft: 'auto' }}></span>
-        </a>
+          Write
+        </NavLink>
 
-        {/* Chat — external link placeholder */}
-        <a href="#" className={styles.navLink} title="Open the Chat app">
+        {/* Chat — external link to the standalone Chat app on port 3848.
+            Known limitation: hardcodes port 3848 (the default BOOKCLAW_CHAT_PORT).
+            If the operator sets a different chat port, they must open it manually. */}
+        <a
+          href={`${location.protocol}//${location.hostname}:3848/`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.navLink}
+          title="Open the Chat app"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/>
           </svg>
@@ -102,33 +113,42 @@ export function Rail() {
           Library
         </NavLink>
 
-        {/* Insights — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Insights — live route */}
+        <NavLink
+          to="/insights"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
             <path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/>
           </svg>
           Insights
-        </a>
+        </NavLink>
 
-        {/* Settings — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Settings — live route */}
+        <NavLink
+          to="/settings"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
             <path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.3 1a7 7 0 00-1.7-1l-.4-2.5H9.5L9 5.4a7 7 0 00-1.7 1l-2.3-1-2 3.4L5 11a7 7 0 000 2l-2 1.6 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.5h4.9l.4-2.5a7 7 0 001.7-1l2.3 1 2-3.4-2-1.6c.1-.3.1-.6.1-1z"/>
           </svg>
           Settings
-        </a>
+        </NavLink>
 
         <div className={styles.lbl}>Approvals</div>
 
-        {/* Confirmations — placeholder with badge */}
-        <a href="#" className={styles.navLink}>
+        {/* Confirmations — live route with badge */}
+        <NavLink
+          to="/confirmations"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2l8 4v5c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V6l8-4z"/>
             <path d="M9 12l2 2 4-4"/>
           </svg>
           Confirmations {pending.length > 0 && <span className={styles.badge}>{pending.length}</span>}
-        </a>
+        </NavLink>
       </nav>
 
       <div className={styles.spacer}></div>
