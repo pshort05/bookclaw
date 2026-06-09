@@ -292,6 +292,15 @@ else
     LISTED=$(req GET /api/books | grep -c "$BSLUG")
     [ "$LISTED" -ge 1 ] && pass "books list includes slug" || fail "books list includes slug"
 
+    # GET /api/books/:slug/files — list a book's data/ outputs (Phase 6 follow-up).
+    # A fresh book has an empty data/, so files is an array of length 0.
+    if [ "$(has_endpoint GET "/api/books/$BSLUG/files")" = "no" ]; then
+      skip "books :slug/files" "(endpoint absent)"
+    else
+      BFILES_IS_ARR=$(req GET "/api/books/$BSLUG/files" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(Array.isArray(JSON.parse(s).files)?"yes":"no")}catch(e){console.log("no")}})')
+      [ "$BFILES_IS_ARR" = "yes" ] && pass "books :slug/files" "files[] returned" || fail "books :slug/files" "no files array"
+    fi
+
     # ── Phase 4: library-write, book-snapshot, re-pull ──
     echo ""
     echo "### Tier A (Phase 4) — library overlay + book snapshot + re-pull"

@@ -20,15 +20,12 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   gw.setupWebSocket();
   console.log('  ✓ WebSocket ready');
 
-  // ── Phase 11: Static Dashboard ──
-  // v6 React studio is the default UI. Opt back to the legacy dashboard with BOOKCLAW_UI=legacy.
-  const useV6 = process.env.BOOKCLAW_UI !== 'legacy';
-  const uiDir = useV6 ? STUDIO_DIST : join(ROOT_DIR, 'dashboard', 'dist');
+  // ── Phase 11: Static UI (v6 React studio) ──
+  const uiDir = STUDIO_DIST;
   const uiHtml = join(uiDir, 'index.html');
-  console.log(`  ✓ UI: ${useV6 ? 'v6 studio (frontend/studio)' : 'legacy dashboard (BOOKCLAW_UI=legacy)'}`);
+  console.log('  ✓ UI: v6 studio (frontend/studio)');
   if (!existsSync(uiHtml)) {
-    console.log(`  ⚠ UI build not found at ${uiHtml}` +
-      (useV6 ? ' — run `npm run -w frontend/studio build` (or rebuild the image). GET / will 500 until built.' : ''));
+    console.log(`  ⚠ UI build not found at ${uiHtml} — run \`npm run -w frontend/studio build\` (or rebuild the image). GET / will 500 until built.`);
   }
 
   // Serve the dashboard HTML with the auth token injected so its fetch calls can

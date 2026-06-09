@@ -35,7 +35,7 @@ $acDest = Join-Path $SharedFolder "bookclaw"
 if (Test-Path $acDest) { Remove-Item -Recurse -Force $acDest }
 
 # Copy excluding node_modules, .git, and zip files
-# Note: don't exclude 'dist' globally — dashboard/dist has the HTML
+# Note: don't exclude 'dist' globally — frontend/studio/dist + frontend/chat/dist hold the built UI
 robocopy $BookClawSource $acDest /E /NFL /NDL /NJH /NJS /NC /NS `
     /XD node_modules .git `
     /XF *.zip 2>$null

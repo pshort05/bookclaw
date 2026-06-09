@@ -12,20 +12,16 @@ FROM node:22-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json* tsconfig.json ./
 COPY gateway ./gateway
-COPY dashboard ./dashboard
 COPY frontend ./frontend
 
-# Install ALL deps (including devDependencies for tsc + the dashboard build)
+# Install ALL deps (including devDependencies for tsc + the frontend build)
 RUN npm ci || npm install
 
 # Compile TypeScript to JavaScript
 RUN npx tsc --outDir dist
 
-# Build the dashboard (esbuild bundle → dashboard/dist/index.html). Must run
-# while devDependencies are still present, i.e. before the prune below.
-RUN node dashboard/build.mjs
-
-# Build frontend workspaces (studio + chat) while devDeps are still present.
+# Build frontend workspaces (studio + chat) while devDeps are still present,
+# i.e. before the prune below.
 RUN npm run build:frontend
 
 # Prune to production deps only
@@ -51,10 +47,7 @@ COPY skills ./skills
 COPY library ./library
 COPY config ./config
 COPY workspace ./workspace
-# Dashboard comes from the builder so the freshly-built dist/ is shipped
-# (not a possibly-stale committed copy from the build context).
-COPY --from=builder /app/dashboard ./dashboard
-# Studio dist from builder (opt-in via BOOKCLAW_UI=v6; src not needed at runtime)
+# Studio dist from builder (the default UI; src not needed at runtime)
 COPY --from=builder /app/frontend/studio/dist ./frontend/studio/dist
 # Chat app dist from builder (enabled when BOOKCLAW_CHAT_PORT is set)
 COPY --from=builder /app/frontend/chat/dist ./frontend/chat/dist

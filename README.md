@@ -36,39 +36,11 @@ Tell it what you want. It figures out the steps, picks the right skills, and exe
 
 ---
 
-## How It Works
+## Requirements
 
-1. **You say what you want** — via Telegram, dashboard, or API
-2. **BookClaw plans the steps** — AI dynamically decomposes your task into executable steps
-3. **Skills are auto-selected** — 19 focused writing skills get injected into each step's context
-4. **Work happens autonomously** — each step runs through the AI, output saved to files
-5. **Everything is logged** — universal activity feed tracks all agent actions in real-time
-
-> New to the vocabulary? See the **[Glossary](docs/GLOSSARY.md)** for what Book, Pipeline, Step, Model, Author, Voice, Genre, World, Characters, Outline, Manuscript, and Marketing mean.
-
-```
-User: "/novel a small-town romance under pen name Lily Hart"
-
-BookClaw: "Pipeline created — 6 phases, 48 steps total"
-  Phase 1: Book Planning    (6 steps)  — market analysis, premise, characters, outline, synopsis
-  Phase 2: Book Bible       (5 steps)  — world-building, character bible, continuity, themes, style
-  Phase 3: Book Production  (20 steps) — write + self-review per chapter
-  Phase 4: Deep Revision    (21 steps) — 3-pass editing + AI beta readers
-  Phase 5: Format & Export  (4 steps)  — front matter, back matter, DOCX, EPUB
-  Phase 6: Book Launch      (6 steps)  — blurb, Amazon description, keywords, ad copy, social posts
-
-  "Phase 1 started. Persona 'Lily Hart' context injected."
-```
-
----
-
-## Where BookClaw is heading
-
-The rename from AuthorClaw is more than cosmetic. The name now centers the **book** — and that is the direction the project is steering toward: a **multi-author, multi-book studio**.
-
-Today BookClaw runs one pipeline at a time around author personas. The North Star is many books in flight at once, each a first-class entity with its own author profile, genre, and customizable production pipeline — so a single instance can manage a whole catalog, not just one author's voice.
-
-> **This is aspirational.** Not all of it is built yet. It is the lens used to weigh design decisions (storage shapes, API design, new features) — prefer the option that moves toward a multi-book model rather than re-cementing "the author" as a singleton. Track progress in [docs/TODO.md](docs/TODO.md).
+- **Node.js 22+** (TypeScript runs directly through `tsx` — no build step in development)
+- **An AI provider key** — at minimum a free [Google Gemini](https://aistudio.google.com/apikey) key, or a local [Ollama](https://ollama.com) install for $0 offline use
+- **Optional:** Docker + Docker Compose for containerized/LAN deployment; a Telegram bot token for phone control
 
 ---
 
@@ -80,226 +52,121 @@ git clone https://github.com/pshort05/bookclaw.git
 cd bookclaw
 npm install
 
-# 2. Start BookClaw (auto-generates vault key on first run)
-npx tsx gateway/src/index.ts
+# 2. Start BookClaw (auto-generates a vault encryption key into .env on first run)
+npm start                      # → http://localhost:3847
 
-# 3. Open dashboard: http://localhost:3847
-#    Settings (sidebar) → paste your Gemini API key → Save
-#    (Free tier — the whole book costs $0)
+# 3. Open the studio at http://localhost:3847
+#    Settings → add an AI provider key (Gemini's free tier writes a whole book for $0) → Save
 
-# 4. Home → chat: "Write me a thriller about rogue AI" → Send
-#    OR send /project to your Telegram bot
+# 4. Create a book and start writing — or send /novel to your Telegram bot
 ```
 
-> **First run?** BookClaw auto-generates a vault encryption key and saves it to `.env`.
-> Your API keys will persist across restarts. For a guided setup, run `bash scripts/setup-wizard.sh`.
+On first run BookClaw generates a vault key, writes it to `.env`, and creates the `workspace/` data directory. Your API keys (stored in the encrypted vault) persist across restarts.
 
-See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) for a step-by-step walkthrough of writing your first novel.
+For a guided, interactive setup, run the wizard:
+
+```bash
+npm run setup                  # OS detection, Node/Ollama install, keys, personalization
+```
+
+See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide and [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) for a step-by-step walkthrough of writing your first novel.
 
 ---
 
-## Architecture
+## Usage
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    BOOKCLAW v5 ARCHITECTURE                │
-│                                                             │
-│  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
-│  │ Channels  │   │    Gateway       │   │  AI Router     │  │
-│  │           │   │                  │   │                │  │
-│  │ Telegram  │──>│ Auth + Sandbox   │──>│ Ollama (free)  │  │
-│  │ Dashboard │   │ Rate Limiting    │   │ Gemini (free)  │  │
-│  │ API       │   │ Injection Detect │   │ DeepSeek ($)   │  │
-│  │ WebSocket │   │ Audit Logging    │   │ Claude ($$)    │  │
-│  └───────────┘   └─────────────────┘   │ OpenAI ($$)    │  │
-│                                         └────────────────┘  │
-│  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
-│  │ Soul      │   │ Project Engine  │   │ Skills (29)    │  │
-│  │           │   │                  │   │ Core (6)       │  │
-│  │ SOUL.md   │   │ 6 Templates     │   │ Author (15)    │  │
-│  │ STYLE.md  │   │ Pipeline Mode   │   │ Marketing (4)  │  │
-│  │ VOICE.md  │   │ Author Personas │   │ Ops (4)        │  │
-│  │           │   │ DOCX + EPUB     │   │                │  │
-│  └───────────┘   └─────────────────┘   └────────────────┘  │
-│                                                             │
-│  ┌───────────┐   ┌─────────────────┐   ┌────────────────┐  │
-│  │ Security  │   │ Smart Agent     │   │ Research Gate  │  │
-│  │           │   │                  │   │                │  │
-│  │ Vault     │   │ Priority Scoring│   │ Web Search     │  │
-│  │ Sandbox   │   │ Self-Improve    │   │ HTML Extraction│  │
-│  │ Audit     │   │ Agent Journal   │   │ Domain Allowlist│  │
-│  │ Injection │   │ Sub-Projects    │   │ Rate Limiting  │  │
-│  └───────────┘   └─────────────────┘   └────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
+BookClaw exposes the same agent through several surfaces, all backed by one REST + WebSocket API.
+
+### The Studio (web)
+
+Open `http://localhost:3847` for the React studio: a Book Board of every book in flight, a Write workspace (outline + chat + the production pipeline with per-step model overrides), an Asset Studio for editing authors/voices/genres/pipelines, Insights, Settings, and the Confirmations approval queue.
+
+### The Chat app (web, optional)
+
+A deliberately simple, non-technical chat interface runs on a second port when `BOOKCLAW_CHAT_PORT` is set (e.g. `3848`). It talks to the same gateway API and is ideal for "just write with me" use.
+
+### Telegram
+
+Connect a Telegram bot to drive BookClaw from your phone. Common commands:
+
+| Command | What it does |
+|---------|--------------|
+| `/novel [idea]` | Create a full novel pipeline (planning → bible → production → revision → format → launch) |
+| `/project [task]` | Plan and auto-execute any task — BookClaw decides the steps |
+| `/write [idea]` | A quick, short-form writing task |
+| `/projects`, `/status` | List projects / check what's running |
+| `/stop`, `continue` | Pause / resume the active project |
+| `/research [topic]` | Research over allowlisted domains (Wikipedia, Google Books, …) |
+| `/files`, `/read [#]`, `/export [#] [fmt]` | List, preview, and export output files |
+| `/speak [text or #]`, `/voice [on/off/preset]` | Neural TTS — generate or read aloud |
+
+See [docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md) for end-to-end bot setup, LAN access, and multi-user allowlists.
+
+### How autonomous execution works
+
+1. You describe what you want (studio, chat, Telegram, or API).
+2. BookClaw plans the steps — the AI decomposes the task, or a pipeline template supplies a fixed sequence.
+3. The right **skills** are auto-selected and their content is injected into each step's prompt.
+4. Each step runs through the [tiered AI router](#ai-providers); output is saved to the active book.
+5. Everything is recorded in a universal, live-tailing activity feed.
+
+New to the vocabulary (Book, Pipeline, Step, Author, Voice, Genre, …)? See the **[Glossary](docs/GLOSSARY.md)**.
 
 ---
 
 ## AI Providers
 
-BookClaw supports 5 AI providers with tiered routing:
+BookClaw routes each task to a provider tier automatically — planning and research use free models, creative writing uses mid-tier, and final editing uses premium when a key is available.
 
-| Provider | Tier | Cost | Best For | Setup |
-|----------|------|------|----------|-------|
-| Ollama | FREE | $0 | Local, private | Install Ollama, runs at localhost:11434 |
-| Google Gemini | FREE | $0 | General writing, planning | Dashboard → Settings → paste Gemini key |
-| DeepSeek | CHEAP | ~$0.14/M tokens | Creative writing | Dashboard → Settings → paste DeepSeek key |
-| Anthropic Claude | PAID | ~$3/M tokens | Complex reasoning, editing | Dashboard → Settings → paste Anthropic key |
-| OpenAI GPT-4o | PAID | ~$2.5/M tokens | Alternative premium | Dashboard → Settings → paste OpenAI key |
+| Provider | Tier | Typical cost | Best for |
+|----------|------|--------------|----------|
+| Ollama | Free | $0 (local) | Private, offline drafting |
+| Google Gemini | Free | $0 | General writing, planning |
+| DeepSeek | Cheap | ~$0.14/M tokens | Creative writing |
+| OpenRouter | Varies | per-model | One key, many models |
+| Anthropic Claude | Paid | ~$3/M tokens | Complex reasoning, editing |
+| OpenAI | Paid | ~$2.5/M tokens | Alternative premium |
 
-Task routing is automatic — planning and research use free models, creative writing uses mid-tier, final editing uses premium (when available).
-
----
-
-## Telegram Command Center
-
-Connect a Telegram bot to control BookClaw from your phone:
-
-| Command | What It Does |
-|---------|-------------|
-| `/novel [idea]` | Create a full novel pipeline (premise → characters → world → outline → chapters → revision → assembly) |
-| `/project [task]` | Plan & auto-execute any task — BookClaw figures out the steps |
-| `/write [idea]` | Quick writing task (short-form content, scenes, intros) |
-| `/projects` | List all projects with status and progress |
-| `/status` | Quick status check on what's running |
-| `/stop` | Pause the active project immediately |
-| `continue` | Resume a paused project |
-| `/research [topic]` | Research a topic using Wikipedia + Google Books (allowlisted domains) |
-| `/files [folder]` | List output files (numbered for easy `/read` and `/export`) |
-| `/read [# or name]` | Preview a file's contents |
-| `/export [# or name] [format]` | Export to Word (.docx), HTML, or TXT |
-| `/speak [text or #]` | Generate a voice message — text or read a file aloud |
-| `/voice [on/off/preset]` | Toggle voice chat responses (all replies become voice + text) |
-| `/clean` | View workspace disk usage and clean up old files |
-
-### Example Session
-
-```
-You:        /write a short snarky YouTube intro for my channel
-BookClaw: On it. Planning "a short snarky YouTube intro"...
-BookClaw: Planned 2 steps. Running autonomously...
-BookClaw: 1/2: Draft the intro (~400 words)
-BookClaw: All 2 steps complete!
-
-You:        /novel a sci-fi thriller about rogue AI in aviation
-BookClaw: Novel pipeline created: 32 steps
-            (premise → bible → outline → chapters → revision → assembly)
-BookClaw: 1/32: Develop premise (~800 words)
-            Next: Refine premise...
-You:        /stop
-BookClaw: Paused at step 4/32. Say "continue" to resume.
-
-You:        /clean
-BookClaw: Workspace Usage: 2.1 MB (67 files)
-            projects: 43 files (1.8 MB)
-            exports: 2 files (21 KB)
-            /clean projects — delete all project files
-```
-
----
-
-## Dashboard
-
-Open `http://localhost:3847` to access the web dashboard — a sidebar-driven interface with 6 panels:
-
-- **Home** — Quick stats (words today, active projects, heartbeat status, personas), active project cards, full chat interface with slash command parity (all Telegram commands work in chat), today's writing progress bar, idle task count
-- **Author HQ** — Single-page aggregate of everything in flight: today-at-a-glance stats, active projects, per-persona breakdown, and recent activity
-- **Projects** — 7 template tiles (Book Planning, Book Bible, Book Production, Deep Revision, Format & Export, Book Launch, Full Novel Pipeline) + Custom AI-planned. Projects auto-execute on creation — no manual start needed. Project list with status filters, inline detail views with step progress, file downloads (MD + DOCX), and compile controls
-- **Personas** — Author persona card grid with pen names, genres, style tags, and TTS voice. Create manually or generate with AI. Assign personas to projects for voice-consistent writing. Personas persist across updates with auto-backup
-- **Library** — Document uploads and compiled manuscripts. Download DOCX and EPUB exports
-- **Settings** — API keys (vault-encrypted), Telegram bot config, voice/TTS presets, research domain allowlist, autonomous heartbeat mode with configurable word goal, editable idle task queue (CRUD)
-
----
-
-## Voice & Text-to-Speech
-
-BookClaw includes a built-in neural voice engine powered by Microsoft Edge TTS — no API keys, no binary installation, no cost.
-
-**9 author-optimized voice presets:**
-
-| Preset | Best For |
-|--------|----------|
-| `narrator_female` | Most genres — clear, expressive (default) |
-| `narrator_male` | Literary fiction, thrillers |
-| `narrator_deep` | Epic fantasy, sci-fi, nonfiction |
-| `narrator_warm` | Romance, memoir |
-| `british_male` | Period pieces, cozy mysteries |
-| `british_female` | Elegant literary fiction |
-| `storyteller` | Adventure, YA |
-| `snarky_nerd` | Witty banter, smart humor, sci-fi |
-| `curious_kid` | Full of wonder, MG, picture books, whimsical |
-
-**Telegram voice features:**
-- `/speak Hello world` — Generate and send a voice message
-- `/speak narrator_deep In a world...` — Use a specific voice
-- `/speak 3` — Read file #3 from your last `/files` listing aloud
-- `/voice on` — Toggle voice mode (all chat replies become voice + text)
-- `/voice narrator_deep` — Set voice mode with a specific preset
-- "Read that back" — Re-read the last response as voice
-
-**API:** `POST /api/audio/generate` with `{ text, voice, rate, pitch, volume }`
-
-> **Audio files are automatically deleted after 24 hours.** If you generate a voice file you want to keep (e.g., a narration of your chapter), save or download it before the auto-cleanup runs. Use `/clean audio` to clear them manually, or find them in `workspace/audio/`.
-
----
-
-## Document Library & Large Manuscript Support
-
-BookClaw supports uploading manuscripts of any size — from short stories to 100K+ word novels.
-
-**Two-tier upload system:**
-
-| Upload Type | Size | How It Works |
-|-------------|------|-------------|
-| **Small files** (< 15K words) | Short stories, chapters, articles | Stored inline in project context — full text sent to AI |
-| **Large files** (15K+ words) | Novels, full manuscripts | Auto-saved to `workspace/documents/` — smart excerpts sent to AI |
-
-**How smart excerpts work for large manuscripts:**
-- The first ~4,000 words (setup, voice, style) and last ~1,000 words (current state) are sent to the AI
-- A truncation marker tells the AI the full document is available on disk
-- This keeps AI context manageable while giving it enough to work with
-- The full manuscript is always saved in `workspace/documents/` for reference
-
-**Document Library API:**
-- `GET /api/documents` — List all documents in the library
-- `POST /api/documents/upload` — Upload directly to the library (up to 50MB)
-- `DELETE /api/documents/:filename` — Remove a document
-
-**Dashboard:** Upload files via the Projects tab (Upload button). Large files are automatically saved to both the project and the central library.
-
----
-
-## Dynamic Task Planning
-
-When you give BookClaw a task, it doesn't use hardcoded templates. Instead:
-
-1. The AI receives a catalog of all available skills (with descriptions and triggers)
-2. The AI receives the list of Author OS tools
-3. The AI dynamically plans the right number of steps, picks the right skills (19 focused) for each
-4. Each step is executed with that skill's full content injected into the AI's context
-5. Results from earlier steps are chained into later steps for continuity
-
-If AI planning fails, the system falls back to template-based planning (6 project types with pre-built step sequences). For pipeline mode, BookClaw chains all 6 phases (Planning → Bible → Production → Revision → Format → Launch) into a single automated workflow, passing outputs forward between phases.
+Add keys in the studio's **Settings** (they are stored write-only in the encrypted vault). Task-to-tier mapping lives in `gateway/src/ai/router.ts`.
 
 ---
 
 ## Skills
 
-Skills are markdown files that teach the AI how to handle specific writing tasks. BookClaw ships with 29 focused, author-centric skills:
+Skills are markdown files (`skills/<category>/<name>/SKILL.md`, YAML frontmatter + body) that teach the agent how to handle a specific writing task. They are matched by trigger keywords and injected into the relevant step's prompt. BookClaw ships ~29 author-centric skills across **core**, **author**, **marketing**, and **ops** categories, plus optional purchasable **premium** skills (gitignored). BookClaw can also read a tool's source code and synthesize a new skill from it.
 
-**Core Skills (6):** self-improve, after-action-review, prompt-optimizer, error-recovery, preference-learner, skill-acquisition
+---
 
-**Author Skills (15):** premise, outline, book-bible, write, revise, dialogue, style-clone, beta-reader, continuity-check, cover-designer, format, research, nonfiction-research, manuscript-hub, ingest-tool
+## Configuration
 
-**Marketing Skills (4):** blurb-writer, ad-copy, marketing-research, website-publisher
+Configuration comes from `config/default.json` (versioned), overridden by `config/user.json` (gitignored), with environment variables for runtime/security posture. Key variables:
 
-**Ops Skills (4):** task-planner, decision-maker, orchestrator-mgmt, browser-automation
+| Variable | Purpose |
+|----------|---------|
+| `BOOKCLAW_AUTH_TOKEN` | Bearer token gating `/api/*` + the Socket.IO handshake (auto-generated on first run) |
+| `BOOKCLAW_AUTH_DISABLED` | `1` turns auth off (development only; logged loudly) |
+| `BOOKCLAW_BIND` | Server bind address (default `0.0.0.0` for LAN; `127.0.0.1` for loopback-only) |
+| `BOOKCLAW_CORS_ORIGINS` | Comma-separated browser-origin allowlist (unset = deny all cross-origin) |
+| `BOOKCLAW_ALLOWED_IPS` | Optional source-IP/CIDR allowlist in front of auth (loopback always allowed) |
+| `BOOKCLAW_CHAT_PORT` | Enables the standalone Chat app on a second port (e.g. `3848`) |
+| `BOOKCLAW_VAULT_KEY` | Master key for the credential vault (auto-generated into `.env` if missing) |
+| `BOOKCLAW_WORKSPACE_PATH` | Host path bind-mounted as `workspace/` in Docker |
 
-Plus purchasable **premium** skills (gitignored; the folder ships with a README only).
+See [docs/SECURITY.md](docs/SECURITY.md) for the full security-posture reference.
 
-**Tool Ingestion:** BookClaw can read source code of any tool and generate a new skill from it. Just say "create a skill from this code" or use `POST /api/tools/ingest`.
+---
 
-Skills are automatically matched by keyword triggers and injected into the AI's context. A full reference with descriptions and example trigger keywords is available in `workspace/SKILLS.txt`.
+## Architecture
+
+One Node process runs an Express + Socket.IO server on port `3847`. It serves the React studio, exposes a REST + WebSocket API, optionally bridges to Telegram/Discord, and serves the standalone Chat app on a second port. The agent executes "projects" (multi-step writing pipelines) by chaining tiered AI calls and injecting skill content into each step.
+
+Three concentric layers wrap the work:
+
+- **Security perimeter** — bearer auth, deny-by-default CORS, optional source-IP allowlist, encrypted vault, workspace sandbox, prompt-injection detection, audit logging, and a confirmation gate for irreversible external actions.
+- **AI routing** — six providers mapped to free / mid / premium tiers with per-task reasoning and output budgets.
+- **Skills + Projects** — markdown skills injected into a project engine that runs hardcoded templates or AI-planned pipelines, with per-book containers (a portable `book.json` + template snapshot + outputs) as the emerging data model.
+
+**For the full design — entry point and init sequence, request/data flow, the three layers in detail, the book-container model, and the on-disk layout — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).**
 
 ---
 
@@ -307,69 +174,52 @@ Skills are automatically matched by keyword triggers and injected into the AI's 
 
 ```
 bookclaw/
-├── gateway/src/          # Core application (TypeScript, run via tsx)
-│   ├── index.ts          # Entry point + BookClawGateway class (wiring, handlers)
-│   ├── paths.ts          # Shared filesystem paths (ROOT_DIR)
-│   ├── init/             # Numbered init-phase modules (config → security → soul/
-│   │                     #   memory → ai → research/skills → … → http); index.ts's
-│   │                     #   initialize() is a thin composition root over these
-│   ├── ai/router.ts      # Multi-provider AI routing (tiers, per-step model, cost)
-│   ├── api/
-│   │   ├── routes.ts      # Composition root — mounts the per-feature routers below
-│   │   └── routes/        # Per-feature route mounters (core, projects, personas,
-│   │                      #   documents, export, settings, media, ops, wave,
-│   │                      #   knowledge, heartbeat, website) + _shared.ts helpers
-│   ├── bridges/          # Telegram, Discord bridges
-│   ├── security/         # Vault, audit, sandbox, injection detection
-│   ├── services/         # Memory, soul, projects, personas, research, heartbeat, …
-│   │   ├── projects.ts   # Project engine (6 templates, pipeline mode, per-step model)
-│   │   ├── personas.ts   # Author persona management
-│   │   ├── docx-export.ts # KDP-ready DOCX generation
-│   │   └── epub-export.ts # EPUB3 generation
-│   └── skills/loader.ts  # Skill loading and matching
-├── dashboard/            # Web dashboard (single-page, sidebar layout)
-│   ├── src/              # Source — esbuild bundles this into dist/index.html
-│   │   ├── index.html    # HTML template (CSS/JS inlined at build; token placeholder)
-│   │   ├── styles.css    # Styles
-│   │   ├── main.js       # App shell: nav (switchPanel), status polling, init
-│   │   ├── lib/          # Leaf modules: state, api, ui, format
-│   │   └── panels/       # Feature panels: home, chat, projects, personas,
-│   │                     #   library, settings, idle-tasks, insights, hq
-│   ├── build.mjs         # esbuild build (`npm run build:dashboard`)
-│   └── dist/index.html   # Built, self-contained dashboard (served statically)
-├── skills/               # Skill definitions (SKILL.md files)
-│   ├── core/             # System skills (6)
-│   ├── author/           # Writing skills (15)
-│   ├── marketing/        # Marketing skills (4)
-│   ├── ops/              # Operations skills (4)
-│   └── premium/          # Purchased skills (gitignored; ships with README only)
-├── tests/                # Scripted tests (no framework deps)
-│   ├── unit/             # node --test (via tsx): router, projects
-│   ├── api/api-test.sh   # curl-based REST API contract test
-│   ├── smoke-test.sh     # boot + security-perimeter smoke test
-│   └── openrouter-pipeline.sh  # end-to-end pipeline test (live container)
-├── workspace/            # Working directory (gitignored)
-│   ├── soul/             # SOUL.md, STYLE-GUIDE.md, VOICE-PROFILE.md
-│   ├── memory/           # Conversations, book bible, summaries
-│   ├── projects/         # Project output files organized by project
-│   ├── documents/        # Document library (large manuscripts, novels)
-│   ├── research/         # Research output files
-│   ├── .config/          # Persona data, project state
-│   ├── .agent/           # Agent journal, self-improve logs
-│   ├── audio/            # Generated TTS voice files (auto-cleaned after 24hr)
-│   ├── .activity/        # Universal activity log (JSONL)
-│   └── .audit/           # Security audit log (JSONL)
-├── config/               # Configuration files
-│   ├── default.json      # Main config (versioned)
-│   ├── .vault/           # Encrypted API key storage
-│   └── research-allowlist.json  # Approved research domains
+├── gateway/src/          # Core application (TypeScript via tsx)
+│   ├── index.ts          # Entry point + BookClawGateway class
+│   ├── init/             # Numbered init-phase modules (config → … → http + chat)
+│   ├── ai/router.ts      # Multi-provider tiered AI routing
+│   ├── api/              # routes.ts composition root + per-feature routes/
+│   ├── bridges/          # Telegram, Discord
+│   ├── security/         # Vault, sandbox, injection detection, audit
+│   └── services/         # projects, personas, books, library, memory, soul, …
+├── frontend/             # v6 React UI (npm workspaces, built with Vite)
+│   ├── shared/           #   shared api/socket/store seam, types
+│   ├── studio/           #   the studio served at "/"
+│   └── chat/             #   standalone Chat app (own port)
+├── dashboard/concept/    # Design source-of-truth mockups (legacy UI retired)
+├── skills/               # SKILL.md definitions (core/author/marketing/ops/premium)
+├── library/              # Built-in authors/voices/genres/pipelines/sections
+├── tests/                # Scripted tests (unit + smoke + feature smoke)
+├── config/               # default.json (versioned), .vault/, research allowlist
 ├── docker/               # Dockerfile + docker-compose.yml
-└── scripts/              # Utility scripts (setup, deploy, build-watch, reset-test-data)
+├── scripts/              # setup, deploy, build-watch, security-check
+└── workspace/            # Runtime data (gitignored): books, projects, soul, memory, audio, logs
 ```
 
-> **Editing the dashboard:** change files under `dashboard/src/`, then run
-> `npm run build:dashboard` (or `npm run build:dashboard:watch`) to regenerate
-> `dashboard/dist/index.html`. The Docker build does this automatically.
+---
+
+## Testing
+
+Tests are plain scripts (no test-framework dependency) so any check can be re-run:
+
+```bash
+npm run test:unit      # node --test (via tsx) over tests/unit/*.test.ts (+ builds the frontend)
+npm run test:smoke     # boots the gateway and asserts the security perimeter (hermetic)
+npm test               # unit + api + smoke
+npx tsc --noEmit       # type-check only
+```
+
+`tests/feature-smoke.sh` exercises the live product surface (library, books, chat, the novel pipeline, the craft suite, compile) against a running instance.
+
+---
+
+## Deployment
+
+- **Local development** — `npm start` (or `npm run dev` for file-watch reload).
+- **Docker / LAN** — `npm run docker:up` (uses `docker/docker-compose.yml`); the image binds `0.0.0.0` so the published port is reachable across the LAN, gated by the bearer token.
+- **Always-on / remote** — run inside a VM or VPS with Docker, and front it with a VPN (e.g. Tailscale) or a TLS-terminating reverse proxy. BookClaw is built for a trusted single-user home-LAN threat model, **not** direct hostile-internet exposure.
+
+Full operational guidance — ports, environment, start/stop/monitor across local, Docker, and VPS — is in [docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md).
 
 ---
 
@@ -377,194 +227,70 @@ bookclaw/
 
 BookClaw ships a security perimeter tuned for a single-user home-LAN threat model:
 
-- **Authentication**: bearer token gating every `/api/*` route and the Socket.IO handshake. Auto-generated into `.env` on first run; `BOOKCLAW_AUTH_DISABLED=1` turns it off (with a loud warning).
-- **CORS**: cross-origin requests **denied by default**; allow specific browser origins via `BOOKCLAW_CORS_ORIGINS`.
-- **Source-IP allowlist**: optional network gate (`BOOKCLAW_ALLOWED_IPS`, CIDRs supported) sitting in front of auth; loopback always allowed. `BOOKCLAW_TRUST_PROXY=1` reads the client IP from `X-Forwarded-For` behind a trusted proxy.
-- **Content Security Policy**: Helmet CSP with `connect-src 'self'` (the dashboard is same-origin only).
-- **Confirmation Gate**: every irreversible external action (publish, send, submit, upload, purchase) requires explicit user approval before it runs.
-- **Vault**: AES-256-GCM encrypted credential storage (scrypt KDF).
-- **Sandbox**: Workspace-only file access enforcement.
-- **Audit**: Daily JSONL logs with categories (message, security, error, connection).
-- **Injection Detection**: Pattern matching for prompt injection attempts.
-- **Rate Limiting**: Per-channel rate limits.
-- **Research Gate**: Real web search + HTML extraction, 50+ allowlisted domains, 60 req/hr rate limit.
-- **Configurable Bind**: Server bind address controlled by `BOOKCLAW_BIND` (default `0.0.0.0` for LAN reach; set to `127.0.0.1` for loopback-only). See the **Deployment — Defense in Depth** section below for the full fork posture.
+- **Authentication** — bearer token on every `/api/*` route and the Socket.IO handshake.
+- **CORS** — cross-origin denied by default; allow specific origins via `BOOKCLAW_CORS_ORIGINS`.
+- **Source-IP allowlist** — optional network gate in front of auth (`BOOKCLAW_ALLOWED_IPS`, CIDRs supported).
+- **Vault** — AES-256-GCM encrypted credential storage (scrypt KDF); key values are write-only in the UI.
+- **Sandbox** — file access is confined to `workspace/`.
+- **Injection detection** — inbound messages are scanned for prompt-injection patterns.
+- **Confirmation gate** — every irreversible external action (publish, send, submit, upload, purchase) requires explicit approval.
+- **Audit logging** — daily JSONL logs under `workspace/.audit/`.
 
----
-
-## Deployment — Defense in Depth
-
-> **We strongly recommend running BookClaw inside a VM or VPS with Docker.** Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers — not just application-level security.
-
-> **Fork posture — LAN-accessible by default, authenticated.** This fork ships the Docker
-> image bound to `0.0.0.0` so the published port is reachable from other hosts
-> on the same LAN. The bind address is controlled by the `BOOKCLAW_BIND`
-> env var (default `0.0.0.0`; set to `127.0.0.1` for loopback-only). This is
-> intentional and overrides the upstream localhost-only behavior. **A bearer
-> token gates every `/api/*` route and the WebSocket handshake** (auto-generated
-> on first run), CORS is deny-by-default, and an optional source-IP allowlist
-> can gate connections in front of auth. This perimeter targets a trusted
-> single-user home LAN — not a hostile internet. For untrusted networks, still
-> front it with a reverse proxy (Caddy / Nginx / Traefik) that enforces TLS.
-> See [SECURITY.md](SECURITY.md#3-security-posture-of-the-local-installation) for the full posture.
-
-### Recommended: VPS + Docker + VPN (Best Security)
-
-This is the gold standard for always-on, secure operation:
-
-1. **Rent a VPS** ($5-6/month) — Hetzner, DigitalOcean, or Linode
-2. **Install Docker** — containerizes BookClaw with strict resource limits
-3. **Install Tailscale** — free mesh VPN, no public ports exposed
-4. **Deploy BookClaw** — `docker compose up -d`
-
-```bash
-# On your VPS:
-curl -fsSL https://get.docker.com | sh
-curl -fsSL https://tailscale.com/install.sh | sh
-tailscale up
-
-# Clone and deploy:
-git clone https://github.com/pshort05/bookclaw.git
-cd bookclaw/docker
-docker compose up -d
-```
-
-**Why this matters:**
-- VPS isolates BookClaw from your personal machine
-- Docker containers limit file access and resource usage
-- Tailscale VPN means zero public ports — only your devices can connect
-- Telegram works 24/7 even when your computer is off
-- Your manuscripts and API keys never leave the VPS
-
-### Alternative: Local VM (Good Security)
-
-If you prefer running locally:
-
-1. **VirtualBox/UTM** — free VM software
-2. **Ubuntu 24.04** — lightweight Linux inside the VM
-3. **Run BookClaw natively** or with Docker inside the VM
-
-```bash
-# In your VM:
-bash /media/sf_bookclaw-transfer/run.sh
-```
-
-**Why a VM helps:**
-- Isolates BookClaw from your host OS
-- If something goes wrong, the VM is disposable
-- Shared folders let you copy files in/out safely
-- Snapshots let you roll back to a known-good state
-
-### Minimum: Local Development (Acceptable)
-
-Running directly on your machine works fine for development and testing:
-
-```bash
-git clone https://github.com/pshort05/bookclaw.git
-cd bookclaw && npm install
-npx tsx gateway/src/index.ts
-```
-
-By default this fork binds BookClaw to `0.0.0.0:3847` so the Docker image is reachable on the LAN. For a pure-local dev box, set `BOOKCLAW_BIND=127.0.0.1` to restore loopback-only behavior. Either way, your API keys and manuscripts live on your main OS with no isolation layer.
-
-### Security Layers Summary
-
-| Layer | Local | VM | LAN Docker | VPS + Docker + VPN |
-|-------|-------|-----|------------|--------------------|
-| App-level vault (AES-256) | Yes | Yes | Yes | Yes |
-| Sandbox file access | Yes | Yes | Yes | Yes |
-| Audit logging | Yes | Yes | Yes | Yes |
-| Bearer-token HTTP/WS auth | Yes | Yes | Yes | Yes |
-| CORS deny-by-default | Yes | Yes | Yes | Yes |
-| Source-IP allowlist (optional) | Yes | Yes | Yes | Yes |
-| OS isolation | No | Yes | Yes | Yes |
-| Container isolation | No | Optional | Yes | Yes |
-| Loopback-only network | Default | Default | No (LAN-exposed) | Yes (VPN-only) |
-| TLS termination | No — add reverse proxy | No — add reverse proxy | No — add reverse proxy | No — add reverse proxy |
-| Always-on (Telegram 24/7) | No | No | Yes | Yes |
-| Disposable environment | No | Yes | Yes | Yes |
-
-The "LAN Docker" column is this fork's default. The bearer token gates HTTP and WebSocket in every column; what's missing on the LAN is **TLS** — if you're exposing beyond a trusted LAN, front BookClaw with a reverse proxy that terminates HTTPS.
-
----
-
-## Setup Wizard
-
-For a guided setup experience, run the interactive wizard:
-
-```bash
-bash scripts/setup-wizard.sh
-```
-
-It walks you through everything: OS detection, Node.js installation, Ollama setup, API key configuration, vault passphrase creation, and personalization (genre, word goals). It even generates a troubleshooting prompt you can paste into any AI chatbot if you get stuck.
-
----
-
-## Documentation
-
-All supporting guides live in [`docs/`](docs/). Start with whichever matches what you need to do:
-
-### Getting started
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — Install BookClaw and run your first task in under 5 minutes.
-- **[docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md)** *new* — Step-by-step walkthrough from "I have an idea" to chapter files on disk. The how-to-use guide for the full novel pipeline (persona → planning → bible → production → revision → format → launch).
-
-### Operations
-- **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage BookClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
-- **[docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md)** *new* — End-to-end Telegram bot setup on Linux or macOS, with LAN access from other devices, firewall configuration, multi-user allowlists, and persistent service setup (systemd / launchd).
-- **[docs/SECURITY.md](docs/SECURITY.md)** — Vault, sandbox, audit log, network posture, deployment guidance for trusted LAN vs untrusted exposure.
-
-### Roadmap & planning
-- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit BookClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
-- **[docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md)** *new* — Audit of StoryHackerAI (n8n-based author pipeline) for patterns to port. Top item: **make OpenRouter the canonical AI gateway** instead of one provider among five. Also covers the Selector → Brief → Draft → Check multi-pass chapter pattern, genre templates as reusable artifacts, and explicit Chronology / Style / Wordcount checks.
-- **[docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md)** — Analysis of the former `index.ts` (2,649 lines) and `routes.ts` (5,516 lines, 234 endpoints in one function) god classes, and a three-level incremental refactor plan (phase extraction → service registry → plugin contracts). **Level 1 is complete** — init phases extracted into `gateway/src/init/` and the routes split into per-feature mounters under `gateway/src/api/routes/`; Levels 2–3 remain.
-- **[docs/TODO.md](docs/TODO.md)** — Tracked work items: security review, quick cleanups, larger refactors, and standing constraints not to "fix."
-- **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Historical record of the AuthorClaw → BookClaw rename (completed 2026-05-31): decisions, runbook, and verification.
+For untrusted networks, front BookClaw with a reverse proxy that enforces TLS. See [docs/SECURITY.md](docs/SECURITY.md) for the complete posture and deployment guidance.
 
 ---
 
 ## Contributing
 
-BookClaw is open source and contributions are welcome! Whether you're an author with ideas for new skills, a developer who wants to improve the codebase, or a tinkerer who built a cool integration — we'd love your help.
+Contributions are welcome — new skills, bug fixes, AI providers, bridges, UI improvements, and documentation.
 
-### Ways to Contribute
+1. Fork the repository and create a feature branch.
+2. Make your changes and test locally (`npm test`, `npx tsc --noEmit`).
+3. Open a Pull Request with a clear description.
 
-- **New Skills** — Create SKILL.md files for writing tasks we haven't covered yet
-- **Bug Fixes** — Find and fix issues in the gateway, dashboard, or bridges
-- **New AI Providers** — Add support for additional AI services
-- **New Bridges** — Build integrations for Slack, WhatsApp, Matrix, etc.
-- **Dashboard Improvements** — Modular ES modules under `dashboard/src/` (`lib/` + `panels/`), bundled by esbuild — lots of room to grow
-- **Documentation** — Better guides, tutorials, and examples
-
-### How to Contribute
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-new-skill`)
-3. Make your changes
-4. Test locally (`npx tsx gateway/src/index.ts`)
-5. Submit a Pull Request with a clear description
-
-For new skills, create a folder in `skills/author/`, `skills/marketing/`, or `skills/core/` with a `SKILL.md` file following the existing format (YAML frontmatter + markdown body).
+For new skills, add a folder under `skills/author/`, `skills/marketing/`, `skills/ops/`, or `skills/core/` with a `SKILL.md` (YAML frontmatter + markdown body) following the existing format.
 
 ---
 
 ## Acknowledgements
 
-BookClaw is a fork of **[AuthorClaw](https://github.com/Ckokoski/authorclaw)** by **Christopher Kokoski (Writing Secrets)**. Enormous thanks to Christopher for building the foundation — the autonomous pipeline, author personas, skills system, and book-production workflow that BookClaw extends all originate in AuthorClaw.
-
-AuthorClaw is itself a fork of **OpenClaw**, whose architecture and feature set (TTS engine, thinking-budget controls, browser-doctor probe, and more) this project continues to build on. Fork-attribution and "Inspired by OpenClaw …" credits remain throughout the code by design.
-
-This project stands on both. Where BookClaw goes next — toward a multi-author, multi-book studio — is its own direction, but the starting point was their work.
+BookClaw is a fork of **[AuthorClaw](https://github.com/Ckokoski/authorclaw)** by **Christopher Kokoski (Writing Secrets)** — enormous thanks for the foundation: the autonomous pipeline, author personas, skills system, and book-production workflow all originate there. AuthorClaw is itself a fork of **OpenClaw**, whose architecture and features (TTS engine, thinking-budget controls, browser-doctor probe, and more) this project continues to build on. Fork-attribution and "Inspired by OpenClaw …" credits remain throughout the code by design.
 
 ---
 
-## Disclaimer
+## License & Disclaimer
 
-This software is provided "as is" without warranty of any kind. **Use at your own risk.** BookClaw is an experimental AI writing tool — some configuration and code tinkering may be required to get the agent working exactly the way you want it. AI outputs should always be reviewed by a human before publishing. The authors are not responsible for any content generated by the AI or any consequences of using this software.
+MIT License — see [LICENSE](LICENSE).
 
-BookClaw relies on third-party AI providers (Gemini, Claude, OpenAI, DeepSeek, Ollama). Usage of those services is subject to their respective terms and pricing. API costs are your responsibility.
+This software is provided "as is" without warranty of any kind. **Use at your own risk.** BookClaw is an experimental AI writing tool; AI output should always be reviewed by a human before publishing. BookClaw relies on third-party AI providers (Gemini, Claude, OpenAI, DeepSeek, OpenRouter, Ollama), whose usage is subject to their respective terms and pricing. API costs are your responsibility.
 
-## License
+---
 
-MIT License. See [LICENSE](LICENSE) for details.
+## Additional Documentation
 
-Built with love for writers by an author who believes AI should amplify creativity, not replace it.
+All supporting documents live in [`docs/`](docs/).
+
+**Getting started**
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) — Install and run your first task in minutes.
+- [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) — Step-by-step walkthrough of the full novel pipeline.
+- [docs/GLOSSARY.md](docs/GLOSSARY.md) — Canonical vocabulary (Book, Pipeline, Step, Author, Voice, Genre, …).
+
+**Operations & security**
+- [docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md) — Start, stop, monitor, and manage across local, Docker, and VPS.
+- [docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md) — End-to-end Telegram bot setup, LAN access, and multi-user allowlists.
+- [docs/SECURITY.md](docs/SECURITY.md) — Vault, sandbox, audit log, network posture, and deployment guidance.
+
+**Architecture & design**
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture: entry point, init sequence, the three layers, and on-disk layout.
+- [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md) — The book-as-container data model and its phased roadmap toward a multi-book studio.
+- [docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md) — The incremental refactor of the former `index.ts` / `routes.ts` god classes.
+- [docs/PRODUCT-DIRECTION.md](docs/PRODUCT-DIRECTION.md) — Product vision and the North Star.
+
+**Roadmap, research & history**
+- [docs/TODO.md](docs/TODO.md) / [docs/COMPLETED.md](docs/COMPLETED.md) — Tracked work items, and finished items by date.
+- [docs/NERDY-NOVELIST-WORKFLOW.md](docs/NERDY-NOVELIST-WORKFLOW.md) — Design for a human-in-the-loop novel mode.
+- [docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md) — Audit of upstream OpenClaw features worth adopting.
+- [docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md) — Patterns to port from StoryHackerAI.
+- [docs/MATTERMOST-AGENT-CHAT-PLAN.md](docs/MATTERMOST-AGENT-CHAT-PLAN.md) — Plan for a Mattermost chat bridge.
+- [docs/BOOKCLAW-FORK-DECISION.md](docs/BOOKCLAW-FORK-DECISION.md) — Why BookClaw forked from AuthorClaw.
+- [docs/RENAME-PLAN.md](docs/RENAME-PLAN.md) — Historical record of the AuthorClaw → BookClaw rename.

@@ -11,7 +11,7 @@
  * are not snapshotted yet (Phase 3/4). Reads/writes stay under booksDir.
  */
 import { readFile, writeFile, mkdir, rm, cp } from 'fs/promises';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
@@ -347,6 +347,32 @@ export class BookService {
       }
     } catch { /* fail-soft */ }
     return { phase, hasOutput, ...suggestedNextStep(phase, hasOutput) };
+  }
+
+  /**
+   * Lists the book's data/ output files (name, byte size, modified ISO),
+   * newest-first. Top-level real files only — dotfiles and subdirectories are
+   * skipped, matching nextStep()'s notion of a "real output". Returns null if the
+   * slug is invalid or the book doesn't exist; [] when data/ is absent or empty.
+   * Lets the Write OutlinePane / Chat list a book's prior outputs without a
+   * bound project (Phase 8 will bind projects to books).
+   */
+  listFiles(slug: string): { name: string; bytes: number; modified: string }[] | null {
+    const dir = this.bookDir(slug);
+    if (!dir || !existsSync(join(dir, 'book.json'))) return null;
+    const dataDir = join(dir, 'data');
+    if (!existsSync(dataDir)) return [];
+    try {
+      return readdirSync(dataDir, { withFileTypes: true })
+        .filter((e) => e.isFile() && !e.name.startsWith('.'))
+        .map((e) => {
+          const st = statSync(join(dataDir, e.name));
+          return { name: e.name, bytes: st.size, modified: st.mtime.toISOString() };
+        })
+        .sort((a, b) => b.modified.localeCompare(a.modified));
+    } catch {
+      return [];
+    }
   }
 
   /**

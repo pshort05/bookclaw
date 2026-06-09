@@ -100,6 +100,16 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({ next });
   });
 
+  // Output files in a book's data/ dir — lets Write/Chat list a book's prior
+  // outputs without a bound project (Phase 8 will bind projects to books).
+  app.get('/api/books/:slug/files', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const files = services.books.listFiles(slug);
+    if (files === null) return res.status(404).json({ error: 'Book not found' });
+    res.json({ files });
+  });
+
   app.post('/api/books', async (req: Request, res: Response) => {
     const body = req.body || {};
     const title = typeof body.title === 'string' ? body.title.trim() : '';

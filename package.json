@@ -18,8 +18,6 @@
     "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
     "security-audit": "node scripts/security-check.js",
     "export-book": "bash scripts/export-book.sh",
-    "build:dashboard": "node dashboard/build.mjs",
-    "build:dashboard:watch": "node dashboard/build.mjs --watch",
     "test": "npm run test:unit && npm run test:api && npm run test:smoke",
     "test:unit": "npm run build:frontend && node --import tsx --test tests/unit/*.test.ts",
     "test:api": "bash tests/api/api-test.sh",
