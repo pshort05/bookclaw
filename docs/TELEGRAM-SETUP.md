@@ -154,7 +154,7 @@ http://<host-ip>:3847
 ```
 If the dashboard loads, LAN access works. If it doesn't, jump to the **Firewall** section below.
 
-> **Trusted LAN only.** BookClaw has no HTTP/WebSocket authentication on the dashboard. Anyone who can reach `<host-ip>:3847` can drive the agent and read your workspace. Only do this on a network you trust. For untrusted networks, see [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md#network-access) for the loopback + reverse-proxy pattern.
+> **Trusted LAN only.** The API and Socket.IO handshake require the bearer token (`BOOKCLAW_AUTH_TOKEN`); an unauthenticated visitor to `:3847` cannot drive the agent. However, the security perimeter is designed for a trusted single-user LAN, not a hostile network. Only expose this on a network you trust. For untrusted networks, see [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md#network-access) for the loopback + reverse-proxy pattern.
 
 ---
 
@@ -195,7 +195,7 @@ On your phone, open Telegram, search for `@bookclaw_home_bot`, press **Start**, 
 You should get a reply within a second or two. If you do — Telegram is wired up.
 
 ### 5b. LAN test (dashboard)
-From another device on your LAN, open `http://<host-ip>:3847`. You should see the same dashboard, same project list, same Activity Log as on the host machine. Both surfaces drive the same agent — start a project from your phone via Telegram, then watch it run live from your laptop's browser.
+From another device on your LAN, open `http://<host-ip>:3847`. You should see the same dashboard, same project list, same Activity Log as on the host machine. Both surfaces drive the same agent — start a project from your phone via Telegram, then watch it run live from your laptop's browser. A standalone Chat app is also available on port 3848 (`BOOKCLAW_CHAT_PORT`).
 
 ### 5c. Sanity check the allowlist
 Ask a friend (or a second Telegram account) who's **not** on the allowlist to open the bot and send `/status`. They should get:
@@ -401,6 +401,9 @@ For genuinely isolated multi-tenant use (one bot per pen name, separate workspac
 
 ## Security checklist before you call it done
 
+- [ ] `BOOKCLAW_AUTH_TOKEN` is set (auto-generated into `.env` on first run) — this is the primary API/WebSocket perimeter
+- [ ] `BOOKCLAW_CORS_ORIGINS` is set to an explicit allowlist (unset = deny all cross-origin; do not set to `*` on a shared network)
+- [ ] `BOOKCLAW_ALLOWED_IPS` configured if you want to restrict by source IP (optional; loopback is always allowed)
 - [ ] Bot token is only in the vault, never pasted into a chat or a config file in plain text
 - [ ] `config/.vault/vault.enc` exists and has restrictive permissions (`chmod 600 config/.vault/vault.enc`)
 - [ ] `.env` exists and has `chmod 600`

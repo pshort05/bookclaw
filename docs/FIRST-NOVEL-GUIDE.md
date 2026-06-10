@@ -2,7 +2,7 @@
 
 A practical, end-to-end walkthrough: from a one-sentence idea to chapter files on disk. Assumes you've already installed BookClaw and the dashboard loads at **http://localhost:3847**. If you haven't, see [QUICKSTART.md](QUICKSTART.md) and come back here.
 
-This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with BookClaw — pipeline mode, dashboard-driven, with Telegram on the side for mobile control. Once you've shipped one book this way, branch out.
+This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with BookClaw — pipeline mode, studio-driven, with Telegram on the side for mobile control. The standalone Chat app at **http://localhost:3848** is a phone-friendly alternative surface for the same chat interface. Once you've shipped one book this way, branch out.
 
 ---
 
@@ -25,7 +25,7 @@ Don't skip these. The single biggest determinant of output quality is the inputs
 
 - [ ] **Decide your pen name.** Real or fictional. This will become the *Persona* and will color voice, themes, and bio.
 - [ ] **Write your idea in one to three sentences.** Not a synopsis — a logline. Example: *"A burned-out hedge fund analyst on vacation falls for the rival firm's heir, only to discover their families have been at war for thirty years."*
-- [ ] **Pick a genre + sub-genre.** "Romance" is too broad. "Contemporary romance, billionaire/dual-POV, heat level 4" is workable. The narrower, the better the planning.
+- [ ] **Pick a genre + sub-genre.** "Romance" is too broad. "Contemporary romance, billionaire/dual-POV, heat level 4" is workable. The narrower, the better the planning. (Genre now maps to a named library profile in BookClaw — Phase 7 — that shapes generation at every step, so a specific genre choice matters more than it used to.)
 - [ ] **Pick a target word count.** 75k–95k for romance, 90k–110k for thriller, 100k–130k for epic fantasy. Don't say "long" — say "85,000 words."
 - [ ] **Have a Gemini API key saved in Settings.** Free tier is enough for your first book. Add Claude later for the revision phase if you want premium edits.
 - [ ] **Decide where you'll review the output.** Dashboard (browser) and Telegram (phone) both work. The dashboard is better for the first book — you see file contents inline.
@@ -38,8 +38,8 @@ If any of those bullets stall you, pause here. Five minutes of clarity now saves
 
 The persona is the single most-injected piece of context in every step that follows. Get it right.
 
-### 1a. Open the Personas tab
-Dashboard → **Personas** (sidebar). You'll see a card grid, probably empty on a fresh install.
+### 1a. Open the Personas area
+In the v6 studio, persona selection is part of the **New-Book picker** flow. You'll see a card grid of existing personas (probably empty on a fresh install) before you create a book.
 
 ### 1b. Create your persona
 Two paths:
@@ -81,8 +81,8 @@ For this guide we run **Pipeline mode.** Once you've shipped one book this way y
 
 ## STEP 3 — Kick off the novel pipeline
 
-### 3a. From the dashboard
-Dashboard → **Home** tab → chat box at the bottom.
+### 3a. From the studio
+Studio → **Write** workspace (left rail) → chat box.
 
 Type:
 ```
@@ -135,7 +135,7 @@ Phase 1 runs automatically. It produces ~6 files in `workspace/projects/<project
 | `structure.md` | Chosen story structure | Should match your genre (Romancing the Beat for romance, Save the Cat for thriller, etc.) |
 
 ### 4a. Stop the pipeline after Planning
-While Phase 1 is running, watch the Activity Log. The moment the dashboard shows **Phase 1 complete, starting Phase 2**, click **Stop** (or send `/stop`).
+While Phase 1 is running, watch the **Activity** view (left rail in the studio). The moment it shows **Phase 1 complete, starting Phase 2**, click **Stop** (or send `/stop`).
 
 ```
 /stop
@@ -323,10 +323,10 @@ continue   ← resumes from where it stopped
 ```
 
 ### Track word count toward a daily goal
-Dashboard → **Home** → today's writing progress bar. Set your goal in **Settings → Autonomous Heartbeat Mode**.
+Studio → **Insights** view (left rail) → today's writing progress. Set your goal in **Settings → Autonomous Heartbeat Mode**.
 
 ### Switch the active persona
-Dashboard → **Personas** → click a card → **Set Active**. Or assign a persona explicitly when you create a project.
+Studio → **New-Book picker** → select a different persona card → **Set Active**. Or assign a persona explicitly when you create a project.
 
 ---
 
@@ -342,7 +342,7 @@ Dashboard → **Personas** → click a card → **Set Active**. Or assign a pers
 | Agent re-asks for info you already gave | Context truncation | Check `workspace/memory/` — it should have the bible + prior chapters. If not, run `/compact` and continue. |
 | Project totally derailed | Bad Phase 1 output | Faster to start a new project with a tighter premise than to dig out |
 
-For everything else: the **Activity Log** tab on the dashboard shows every step the agent took, what skills it called, and what the output was. Read it like a flight recorder.
+For everything else: the **Activity** view (left rail in the studio) shows every step the agent took, what skills it called, and what the output was. Read it like a flight recorder.
 
 ---
 

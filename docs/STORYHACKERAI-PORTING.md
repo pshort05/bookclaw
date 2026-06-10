@@ -1,5 +1,7 @@
 # StoryHackerAI → BookClaw Feature-Porting Candidates
 
+> **Status (2026-06-09):** Porting roadmap snapshot (~2026-05-28), mostly unimplemented. Item #3 (genre templates) was since built in Phase 7 via a different 7-file schema — see docs/GENRE-GUIDE-TEMPLATE.md. Other items remain candidates.
+
 Snapshot taken 2026-05-28. Compares **StoryHackerAI** (`~/data/Writing/StoryHackerAI/`) against the current BookClaw tree.
 
 StoryHackerAI is a local-filesystem port of the Story Hacker "Book Builder" n8n workflow set — 6 workflow JSONs (1 orchestrator + 5 stage workflows, ~4,600 lines total) running entirely on **OpenRouter** as the LLM gateway. It's a different product than BookClaw architecturally (n8n vs. custom Node daemon), but it solves the same author problem with a meaningfully different decomposition. Several patterns from it would materially improve BookClaw, and one of them — making **OpenRouter** the canonical AI gateway — was specifically called out as a priority.

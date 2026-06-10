@@ -1,5 +1,7 @@
 # The Nerdy Novelist Workflow
 
+> **Status (2026-06-09):** Design approved 2026-06-02, NOT yet implemented. Since this was written the book-container model (Phases 0–7) shipped, so the "shared container" decision (§2.1) must be revisited before implementation — canonical artifacts should live under workspace/books/<slug>/ rather than workspace/projects/<slug>/, and code line-references here predate the god-class refactor.
+
 Design for a net-new, human-in-the-loop novel-writing mode in BookClaw, modelled
 on the four-step process described by The Nerdy Novelist
 ([video](http://www.youtube.com/watch?v=y2yam3wlTjE)).

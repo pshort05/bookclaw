@@ -40,7 +40,7 @@ should be suspicious of any future version or fork that claims otherwise:
   dashboard, nothing happens.
 - **It does not store your platform passwords.** API keys, bot tokens,
   and OAuth refresh tokens are stored in the local AES-256-GCM vault at
-  `workspace/.vault/vault.enc`. Passwords for username+password logins
+  `config/.vault/vault.enc`. Passwords for username+password logins
   should be entered by you at runtime — never saved.
 - **It does not bypass CAPTCHA, 2FA, or human verification** on any
   platform. If a site asks a human to do something, a human has to do it.
@@ -76,12 +76,12 @@ should be suspicious of any future version or fork that claims otherwise:
 | Concern | Status |
 |---|---|
 | Network binding | `BOOKCLAW_BIND` env var (default `0.0.0.0`). Set to `127.0.0.1` for loopback-only. |
-| Credential storage | AES-256-GCM in `workspace/.vault/vault.enc`. Atomic writes. `chmod 0600` on POSIX. |
+| Credential storage | AES-256-GCM in `config/.vault/vault.enc`. Atomic writes. `chmod 0600` on POSIX. |
 | Master key | Auto-generated on first run, stored in `.env` (see note below). |
 | Path traversal | Validated via `SandboxGuard` + per-endpoint sanitization. |
 | Prompt injection | Scanned on every incoming message via `InjectionDetector`. |
 | Budget cap | Persisted daily + monthly spend; fallback provider respects cap. |
-| Audit log | Every action written to `workspace/activity.jsonl`. Secrets redacted. |
+| Audit log | Every action written to daily JSONL files under `workspace/.audit/`. Secrets redacted. |
 | Confirmation gate | Universal — all Wave 3 writes go through `ConfirmationGateService`. 24h expiry. |
 | Rate limiting | In-process per-channel rate limits. External scraping backs off on 429. |
 
@@ -173,7 +173,7 @@ When in doubt, BookClaw is designed to **fail closed**:
 ## 7. What to do if something goes wrong
 
 1. Stop BookClaw (`Ctrl+C` on the terminal running it).
-2. Open `workspace/activity.jsonl` — this is an append-only log of every
+2. Open the daily JSONL files under `workspace/.audit/` — this is an append-only log of every
    action. Find the relevant timestamp.
 3. Check `workspace/confirmations.json` for the confirmation card that
    preceded the action.

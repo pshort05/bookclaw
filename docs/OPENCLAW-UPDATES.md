@@ -1,5 +1,7 @@
 # OpenClaw → BookClaw Feature-Backport Candidates
 
+> **Status (2026-06-09):** Forward-looking backport-candidate list (snapshot ~2026-05-28); none of the items have been ported. Note: Phase 6b later added a live Activity SSE feed, partially addressing the pipeline-introspection item. Treat as a candidate list, not current state.
+
 Snapshot taken 2026-05-28. Sources reviewed:
 - OpenClaw `main` README inventory
 - OpenClaw release notes for **2026.5.26-beta.1** (May 26), **2026.5.26** (May 27), **2026.5.27** (May 28)

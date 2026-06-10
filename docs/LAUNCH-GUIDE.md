@@ -66,8 +66,11 @@ http://<docker-host-ip>:3847
 # Explicit (already the default in docker/docker-compose.yml):
 BOOKCLAW_BIND=0.0.0.0 npm start
 ```
-There is no built-in HTTP/WebSocket authentication. Only do this on a
-trusted single-user LAN.
+The gateway enforces bearer-token auth (`BOOKCLAW_AUTH_TOKEN`, auto-generated
+into `.env` on first run), deny-by-default CORS (`BOOKCLAW_CORS_ORIGINS`), and
+an optional source-IP allowlist (`BOOKCLAW_ALLOWED_IPS`). For any internet-facing
+or untrusted-network exposure, also front it with a TLS/auth reverse proxy. Only
+deploy on a trusted single-user LAN without a reverse proxy.
 
 **Untrusted network / public VPS:** lock the bind to loopback and reach it
 through a tunnel or an authenticating reverse proxy.
@@ -89,7 +92,7 @@ ssh -L 3847:localhost:3847 user@your-vps-ip
 | What | Path |
 |---|---|
 | Main code | `gateway/src/index.ts` |
-| Dashboard | `dashboard/dist/index.html` |
+| UI (v6 React studio) | Served statically at `/` (built from `frontend/studio/`). The old vanilla-JS dashboard was retired. |
 | Skills | `skills/{core,author,marketing}/` (19 active, rest in `_archived/`) |
 | Config | `config/default.json` (public), `config/user.json` (private) |
 | Vault (encrypted keys) | `config/.vault/vault.enc` |
@@ -126,9 +129,11 @@ All keys are stored in the encrypted vault. Set them via the dashboard:
 
 ## Common Commands
 
+All `/api/*` endpoints require the bearer token. Use `-H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN"` or append `?token=$BOOKCLAW_AUTH_TOKEN`. The token is auto-generated into `.env` on first run.
+
 ```bash
 # Check if server is running
-curl http://localhost:3847/api/status
+curl -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" http://localhost:3847/api/status
 
 # TypeScript compile check (no output = success)
 npx tsc --noEmit
@@ -148,6 +153,7 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 | Service | Port | Binding |
 |---|---|---|
 | BookClaw | 3847 | configurable via `BOOKCLAW_BIND` (default `0.0.0.0`; set `127.0.0.1` for loopback-only) |
+| Chat app | 3848 | configurable via `BOOKCLAW_CHAT_PORT`; served separately from the main studio |
 | Ollama (if installed) | 11434 | localhost only |
 
 ## Security Checklist

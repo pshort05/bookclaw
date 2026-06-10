@@ -1,6 +1,6 @@
 # BookClaw — Product Direction
 
-Status: draft for review. Date: 2026-05-31.
+Status: living document. Updated 2026-06-09.
 
 This document sets the product and market direction for BookClaw. It is the "why and for whom" companion to the [North Star](TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision) in `TODO.md` (the "what to build") and the [god-class refactor](GOD-CLASS-REFACTOR.md) and [OpenClaw backport audit](OPENCLAW-UPDATES.md) (the "how"). Where any of those conflict with this document on priority, this document wins.
 
@@ -36,7 +36,7 @@ These are the concrete workflows the direction must serve. All five are supporta
 
 | # | Use case | Today | Net-new | Effort |
 |---|----------|-------|---------|--------|
-| 1 | **5 novel types across 3 pen names** (Sweet Romance; Contemporary Romance with spice; Romantasy with spice; Mundane Sci-Fi; Techno-thriller) | `personas.ts` (multi-pen-name) and project-level `preferredProvider` exist; one global `workspace/soul/` identity | First-class `Author-profile` (per-book selectable identity) and `Novel-type` entities; `genre` is free-text today | Medium |
+| 1 | **5 novel types across 3 pen names** (Sweet Romance; Contemporary Romance with spice; Romantasy with spice; Mundane Sci-Fi; Techno-thriller) | `personas.ts` (multi-pen-name) and project-level `preferredProvider` exist; one global `workspace/soul/` identity; first-class `Author-profile` and `Voice` library kinds built (Phase 1); `Genre` is a named library profile snapshotted per book and wired into the system prompt (Phase 7, 2026-06-09) | Per-step `model` override does not exist yet; full pipeline-editor GUI deferred | Medium |
 | 2 | **Custom steps/prompts per novel type, with a different model per step** | Steps carry `taskType`, `wordCountTarget`, IDs, status | Largest piece. Pipelines are hardcoded in `services/projects.ts` and must become data-driven per-novel-type definitions; per-step `model` does not exist and must be added to `ProjectStep` and threaded through `ai/router.ts` | Medium-High |
 | 3 | **Edit details at any step, go back, rerun** | Solid foundation: `paused` status, `retryStep()`, `/steps/:id/retry`, restart-from-clean, a judge/retry-with-feedback loop | "Edit a step's prompt/output then rerun", and a go-back policy for downstream steps | Medium |
 | 4 | **Markdown working copy, final delivered as two Word docs** (KDP-formatted and soft/hardcover-formatted) | `docx-export.ts` already does trim sizes (5x8 / 5.5x8.5 / 6x9) with per-trim margins, front/back matter, section breaks; EPUB exporter exists | Two named export profiles and an "export both" action | Low-Medium |
@@ -46,10 +46,10 @@ Generalizability: only the *specific five genres* are personal — and those shi
 
 ## 5. Data model (North Star entities, sharpened by the use cases)
 
-- **Author profile** (pen name) — voice/identity bundle (SOUL / STYLE-GUIDE / VOICE-PROFILE / PERSONALITY). Build on the existing `personas.ts` and `style-clone.ts` rather than a parallel system; cloneable and editable without touching the global `workspace/soul/`.
-- **Novel-type** (genre) — **owns the customizable pipeline** plus genre context (tropes, beats, reader-expectation notes). This is the unit the owner customizes per requirement #2.
-- **Book** — first-class entity that spans `planning → bible → production → revision → format → launch`. A book = *pick an Author profile + a Novel-type* → it instantiates that Novel-type's pipeline, **version-pinned** so editing a pipeline template never corrupts a book already mid-production. Carries its own history; multiple books are in flight at once.
-- **Pipeline** — data-driven, versioned list of steps; each step has a prompt, a `taskType`/tier, an optional **per-step model override**, an optional `wordCountTarget`, and optional attached skills. The current 6 templates + `novel-pipeline` become built-in seed pipelines that can be cloned.
+- **Author profile** (pen name) — voice/identity bundle (SOUL / STYLE-GUIDE / VOICE-PROFILE / PERSONALITY). **Built** (book-container Phase 1): `Author` and `Voice` are first-class library kinds, cloneable and editable without touching the global `workspace/soul/`. Extends `personas.ts` and `style-clone.ts` rather than replacing them.
+- **Novel-type** (genre) — **owns the customizable pipeline** plus genre context (tropes, beats, reader-expectation notes). **Built** (book-container Phase 7, 2026-06-09): `Genre` is a named library profile (7-file schema; see `docs/GENRE-GUIDE-TEMPLATE.md`), snapshotted per book at creation time and wired into the system prompt via `BookService.getActiveGenreGuide()`. Per-step pipeline customization beyond genre context is the remaining piece per requirement #2.
+- **Book** — first-class entity that spans `planning → bible → production → revision → format → launch`. **Built** (book-container Phase 2+): a book = *pick an Author profile + a Novel-type* → it instantiates that Novel-type's pipeline, **version-pinned** so editing a pipeline template never corrupts a book already mid-production. Carries its own history; multiple books are in flight at once.
+- **Pipeline** — data-driven, versioned list of steps; each step has a prompt, a `taskType`/tier, an optional **per-step model override**, an optional `wordCountTarget`, and optional attached skills. The current 6 templates + `novel-pipeline` become built-in seed pipelines that can be cloned. (Per-step model override and full pipeline-editor GUI remain future work.)
 - **Relationship:** Author profile and Novel-type are **independent picks** per book (any pen name can write any type), with optional per-pen-name default types. *(Open — see section 10.)*
 
 ## 6. Strategy: vertical thin-slice

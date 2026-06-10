@@ -1,6 +1,6 @@
 # Book-Container Architecture
 
-**Status:** Design approved 2026-06-04. Not yet implemented. This is the concrete
+**Status:** Phases 0–7 implemented and deployed (as of 2026-06-09). Phases 8–12 remain. This doc is the roadmap source-of-truth; per-phase completion detail is in docs/COMPLETED.md and docs/TODO.md. This is the concrete
 data-model design for the [North Star](TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision)
 multi-author / multi-book platform, and it subsumes the in-dashboard
 prompt/skill editor (the "[In-dashboard editor for prompts + skills]" TODO item,
@@ -10,7 +10,7 @@ standalone global editor.
 ## Purpose
 
 Today BookClaw assumes a single author identity (`workspace/soul/*.md`), treats
-genre as a free-text field, hardcodes the production pipeline in
+genre as a named genre profile (a library kind), snapshotted per book and injected into generation, hardcodes the production pipeline in
 `services/projects.ts`, and stores per-project outputs in a flat
 `workspace/projects/<slug>/`. There is no first-class "book" that owns state
 across phases.
@@ -74,7 +74,7 @@ the container.
 workspace/                       ← host bind-mount (entire tree; decision 3)
   library/                       ← USER library: editable source templates (overlay)
     authors/<name>/{SOUL,STYLE-GUIDE,VOICE-PROFILE,PERSONALITY}.md
-    genres/<name>/{tropes,beats,reader-expectations,comps}.md
+    genres/<name>/{reader-expectations,tropes,themes,beats,must-haves,genre-killers,comps}.md
     pipelines/<name>.json        ← pipeline-as-data (steps, prompts, taskType, wordCountTarget, skill refs)
     sections/<name>.md           ← reusable book-section templates (front/back matter, etc.)
     skills/<category>/<name>/SKILL.md
@@ -83,7 +83,7 @@ workspace/                       ← host bind-mount (entire tree; decision 3)
       book.json                  ← manifest (see below)
       templates/                 ← SNAPSHOT, copied from the resolved library at create; editable, frozen to this book
         author/{SOUL,STYLE-GUIDE,VOICE-PROFILE,PERSONALITY}.md
-        genre/{tropes,beats,reader-expectations,comps}.md
+        genre/{reader-expectations,tropes,themes,beats,must-haves,genre-killers,comps}.md
         pipeline.json
         skills/<category>/<name>/SKILL.md
       data/                      ← generated outputs (today's workspace/projects/<slug>/ contents)
@@ -425,9 +425,9 @@ Each phase is independently shippable and verifiable.
   `library/pipelines/*.json`, drift-guarded by a unit test) so they are
   selectable; `novel-pipeline` ships as a `dynamic:true` descriptor (full
   data-expansion deferred to Phase 3). The skills overlay was folded in (see
-  "collides with" #3). Plan + status:
-  `docs/superpowers/plans/2026-06-06-book-container-phase-1-library.md`,
-  `docs/BOOK-CONTAINER-PHASE-1-STATUS.md`. *Verified:* unit tests
+  "collides with" #3). Plan:
+  `docs/superpowers/plans/2026-06-06-book-container-phase-1-library.md`
+  (completion recorded in `docs/COMPLETED.md`). *Verified:* unit tests
   override-by-name + reload + pipeline drift guard + migration; API lists
   templates; `tsc` clean. *Deferred to Phase 3:* the engine still reads the
   hardcoded `PROJECT_TEMPLATES` (the JSON is a parallel copy kept in sync by the
@@ -442,9 +442,9 @@ Each phase is independently shippable and verifiable.
   → ok, too-old → quarantine, too-new → read-only). API `GET /api/books`,
   `GET /api/books/:slug`, `POST /api/books`. **New Book page** (dashboard "Books"
   panel) lists books with gate-status badges and creates one by selecting library
-  components. Plan + status:
-  `docs/superpowers/plans/2026-06-06-book-container-phase-2-book-entity.md`,
-  `docs/BOOK-CONTAINER-PHASE-2-STATUS.md`. *Verified:* unit tests for slug, the
+  components. Plan:
+  `docs/superpowers/plans/2026-06-06-book-container-phase-2-book-entity.md`
+  (completion recorded in `docs/COMPLETED.md`). *Verified:* unit tests for slug, the
   gate (too-old/too-new/in-range via `classifyVersion`, `list`, `open`), and
   create→snapshot+manifest (incl. genre-less path + dedup); API contract tests.
   **Deferred (lean):** the migration *runners* (ordered `vN→vN+1` chains +
@@ -498,21 +498,21 @@ Each phase is independently shippable and verifiable.
   `POST /api/books/import/finalize`; dashboard Export/Import in the books panel.
   *Verify (post-deploy):* `tests/feature-smoke.sh` export→import round-trip +
   gated malicious-skill import. Spec/plan under `docs/superpowers/`.
-- **Phase 6 — Front-end / UI rewrite.** Replace the single self-contained
+- **Phase 6 — Front-end / UI rewrite.** **(Implemented 2026-06-08.)** Replaced the single self-contained
   vanilla-JS dashboard bundle with a component-based front-end (framework + a
-  state layer that does **not** assume a single global active book). Migrate the
+  state layer that does **not** assume a single global active book). Migrated the
   existing surfaces (chat, projects, books, the two-scope library editor,
-  re-pull, settings, HQ/insights) onto reusable components and establish the
+  re-pull, settings, HQ/insights) onto reusable components and established the
   multi-book-capable state model that the concurrency + book-board phases (8, 9)
-  build on. *Verify:* feature parity with the current dashboard; the smoke +
+  build on. The v6 React + Vite studio became the only UI at port 3847; a standalone Chat app launched on a 2nd port (3848); the legacy vanilla-JS dashboard was retired. *Verify:* feature parity with the current dashboard; the smoke +
   feature tests pass unchanged against the same API; the security perimeter
   (token injection, same-origin CSP) is preserved.
-- **Phase 7 — Genre wiring.** Inject the active book's genre snapshot
+- **Phase 7 — Genre wiring.** **(Implemented 2026-06-09.)** Injected the active book's genre snapshot
   (tropes / beats / reader-expectations / comps) into generation prompts
   alongside the Author identity and Voice style, so a book genuinely "writes in
-  its own genre" end-to-end. Genre is snapshot-but-unwired until here.
+  its own genre" end-to-end. Genre was snapshot-but-unwired until here.
   *Verify:* genre content reaches the relevant pipeline steps; changing a book's
-  genre changes output; genre re-pull works.
+  genre changes output; genre re-pull works. BookService.getActiveGenreGuide() composes the active book's templates/genre/*.md (7-file schema) and buildSystemPrompt injects a '# Active Book — Genre Guide' block reaching chat and every pipeline step; see docs/GENRE-GUIDE-TEMPLATE.md.
 - **Phase 8 — Multi-book concurrency.** Replace the single global active-book
   pointer with per-context book binding (per project / per channel) so several
   books are in flight at once. *Verify:* two projects bound to different books

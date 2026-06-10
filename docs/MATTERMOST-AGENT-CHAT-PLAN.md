@@ -1,5 +1,7 @@
 # Mattermost Agent Chat — Design & Plan
 
+> **Status (2026-06-09):** Forward-looking plan, NOT implemented. Code references predate the god-class refactor — bridges now live in gateway/src/init/phase-10-heartbeat-bridges.ts. The standalone Chat app (Phase 6i, port 3848) is a separate browser UI and does not supersede this plan.
+
 **Date:** 2026-05-31
 **Status:** Design approved, not yet implemented (no code/infra changed yet)
 **Goal:** A self-hosted, Telegram-like chat **UI on neptune** where a human can watch and join the **BookClaw ⇄ OpenClaw** conversation.

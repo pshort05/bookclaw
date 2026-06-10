@@ -25,31 +25,30 @@ npx tsx gateway/src/index.ts
 You should see:
 
 ```
-  BookClaw v5.0.0
+  BookClaw V5.x.x
   ═══════════════════════════════════
   The Autonomous AI Writing Agent
   ...
   ✓ Skills: 25+ loaded
-  ✓ Goal engine: 8 templates + dynamic AI planning
+  ✓ Project engine: 8 templates + dynamic AI planning
   ═══════════════════════════════════
   BookClaw is ready to write
-  Dashboard: http://localhost:3847
+  Studio: http://localhost:3847
 ```
 
 ## Configure
 
-1. Open **http://localhost:3847** in your browser
-2. Go to the **Settings** tab
+1. Open **http://localhost:3847** in your browser — this opens the v6 studio (Book Board). A standalone Chat app is also available at **http://localhost:3848**.
+2. Go to **Settings** in the left rail
 3. Paste your **Gemini API key** and click Save
 4. The provider status should show "Gemini" as active
 
 ## Your First Task
 
-### Option A: Dashboard
-1. Go to the **Agent** tab
-2. Type: "Write me a short story about a robot who learns to paint"
-3. Click **Go**
-4. Watch the Activity Log tab as BookClaw plans and executes
+### Option A: Studio
+1. Use the **New-Book picker** to create a book, then open the **Write** workspace from the left rail
+2. Type your prompt in the chat: "Write me a short story about a robot who learns to paint"
+3. Watch the **Activity** view (left rail) as BookClaw plans and executes
 
 ### Option B: Telegram
 1. In Settings, paste your **Telegram Bot Token** and click Save
@@ -62,14 +61,16 @@ You should see:
 
 ### Option C: API
 ```bash
-curl -X POST http://localhost:3847/api/goals \
+curl -X POST http://localhost:3847/api/projects \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" \
   -d '{"title":"Robot Story","description":"Write a short story about a robot who learns to paint","planning":"dynamic"}'
 ```
+Replace `$BOOKCLAW_AUTH_TOKEN` with the token from your `.env` file (auto-generated on first run).
 
 ## View Results
 
-- **Dashboard** → Activity Log tab shows everything the agent did
+- **Studio** → Activity view (left rail) shows everything the agent did
 - **Files**: `workspace/projects/` contains all generated content
 - **Telegram**: Use `/files` to list, `/read [file]` to preview
 
