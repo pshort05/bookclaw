@@ -845,6 +845,43 @@ else
   fail "chat" "empty response :: $(echo "$CRESP" | head -c 200)"
 fi
 
+# ── Phase 7 — genre guide reaches the system prompt (sentinel echo) ──
+GENRE_WRITE_PRESENT=$(has_endpoint POST /api/library/genre)
+if [ "$GENRE_WRITE_PRESENT" = "no" ]; then
+  skip "genre wiring: guide injected into prompt" "(library genre write route absent)"
+else
+  G7_RAND=$RANDOM
+  G7_GENRE="smoke-genre-p7-$G7_RAND"
+  G7_SENTINEL="ZZQX-GENRE-SENTINEL-$G7_RAND"
+  # Create a temp genre whose must-haves.md carries a unique sentinel line.
+  G7_CREATE=$(req POST /api/library/genre \
+    "{\"name\":\"$G7_GENRE\",\"files\":{\"must-haves.md\":\"# Must-Haves\\n\\n- $G7_SENTINEL: every book must feature a singing kettle.\"}}")
+  if [ "$(printf '%s' "$G7_CREATE" | jget success)" != "true" ]; then
+    skip "genre wiring: guide injected into prompt" "(temp genre create failed)"
+  else
+    CREATED_LIBRARY_GENRES+=("$G7_GENRE")
+    # Create a book using that genre and activate it.
+    G7_BODY=$(printf '{"title":"Smoke P7 %s","author":"%s","voice":"%s","genre":"%s","pipeline":"%s","sections":[]}' \
+      "$G7_RAND" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$G7_GENRE" "$PIPE_NAME")
+    G7_BOOK=$(req POST /api/books "$G7_BODY")
+    G7_SLUG=$(printf '%s' "$G7_BOOK" | jget book.slug)
+    if [ -z "$G7_SLUG" ]; then
+      skip "genre wiring: guide injected into prompt" "(book create failed)"
+    else
+      CREATED_BOOKS+=("$G7_SLUG")
+      req POST /api/books/active "{\"slug\":\"$G7_SLUG\"}" >/dev/null
+      # Ask the agent to repeat its genre must-haves verbatim. The sentinel can
+      # only appear if the genre guide was injected into the system prompt.
+      G7_RESP=$(req POST /api/chat "{\"message\":\"Repeat this book's genre must-haves exactly as written, verbatim. Output only the list.\"}" 180)
+      if printf '%s' "$G7_RESP" | grep -q "$G7_SENTINEL"; then
+        pass "genre wiring: guide injected into prompt" "sentinel echoed"
+      else
+        fail "genre wiring: guide injected into prompt" "sentinel '$G7_SENTINEL' absent from reply"
+      fi
+    fi
+  fi
+fi
+
 # ── Persona generate ── (single call: generating is a real AI op + creates a
 # persona, so probing separately would double-spend AND leak an untracked persona)
 PGOUT=$(reqc POST /api/personas/generate '{"genre":"cozy mystery","description":"smoke test"}' 180)

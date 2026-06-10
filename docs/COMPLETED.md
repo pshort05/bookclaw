@@ -2,6 +2,10 @@
 
 Items moved here from [TODO.md](TODO.md) as they are finished. Newest first. Each entry is prefixed with its completion date (`YYYY-MM-DD`) and preserves the original TODO bullet text.
 
+## 2026-06-09
+
+- **Book-container Phase 7 — genre wiring.** The active book's genre guide is now injected into generation prompts alongside Author + Voice. New `BookService.getActiveGenreGuide()` composes `templates/genre/*.md` in canonical order (reader-expectations → tropes → themes → beats → must-haves → genre-killers → comps) under `## Genre Guide — <Title>` headers, threaded through the single `buildSystemPrompt` chokepoint (`gateway/src/index.ts`) — which every path (web chat, `/api/chat`, Telegram, Discord, and every pipeline/`goal-engine` step) funnels through, so the guide reaches interactive chat *and* automated book production. Genre-guide content schema expanded (research-backed): added `themes.md`, `must-haves.md`, `genre-killers.md`; expanded `reader-expectations.md` (tone/pacing/setting/archetypes/length) and `beats.md` (named obligatory scenes); `romantasy` fleshed out as the worked example; `docs/GENRE-GUIDE-TEMPLATE.md` documents the 7-file schema. Verified: `tests/unit/genre-guide.test.ts` (compose order / genre-less→null / fresh-read) + a deterministic sentinel-echo assertion in `tests/feature-smoke.sh`. Spec: `docs/superpowers/specs/2026-06-08-phase7-genre-wiring-design.md`; plan: `docs/superpowers/plans/2026-06-08-phase7-genre-wiring.md`. Broad genre-library content remains out of scope.
+
 ## 2026-06-08
 
 - **Date-time product version (`V5.MM.DD.HH.MM`).** `scripts/deploy.sh` stamps `BOOKCLAW_VERSION="V5.$(date +%m.%d.%H.%M)"` into `docker/.env` at build time → passed via `docker-compose.yml` → read by `gateway/src/version.ts` (`DISPLAY_VERSION`, with a boot-time fallback for local dev). Shown in the startup banner, `/api/status` (+ `/api/health`, fixing the stale `4.0.0`), and the UI footer. `package.json` stays semver `5.0.0` (npm/provenance). So every Mercury push shows a fresh version; a restart keeps the build's version. **Verified live on Mercury (`/api/status` → `V5.06.09.01.20`).**

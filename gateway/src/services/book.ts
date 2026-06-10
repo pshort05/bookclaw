@@ -376,6 +376,64 @@ export class BookService {
   }
 
   /**
+   * Composes the active book's genre guide (templates/genre/*.md) into a single
+   * string for prompt injection (Phase 7). Files are ordered canonically
+   * (reader-expectations → tropes → themes → beats → must-haves → genre-killers →
+   * comps), each under a "## Genre Guide — <Title>" header; any extra .md files
+   * follow in alphabetical order. Reads fresh on each call (cheap; always reflects
+   * the latest snapshot after a re-pull or active-book change). Returns null when
+   * there is no active book, no genre snapshot, or no non-empty genre files.
+   * NOTE: reads the single global active book — keep callers behind this accessor
+   * so Phase 8 can swap it to per-context without touching prompt assembly.
+   */
+  getActiveGenreGuide(): string | null {
+    const dir = this.activeBookDir();
+    if (!dir) return null;
+    const genreDir = join(dir, 'templates', 'genre');
+    if (!existsSync(genreDir)) return null;
+
+    const ORDER = ['reader-expectations', 'tropes', 'themes', 'beats', 'must-haves', 'genre-killers', 'comps'];
+    const TITLES: Record<string, string> = {
+      'reader-expectations': 'Reader Expectations',
+      'tropes': 'Tropes',
+      'themes': 'Themes',
+      'beats': 'Beats & Obligatory Scenes',
+      'must-haves': 'Must-Haves',
+      'genre-killers': 'Genre Killers',
+      'comps': 'Comparable Titles',
+    };
+
+    let names: string[];
+    try {
+      names = readdirSync(genreDir, { withFileTypes: true })
+        .filter((e) => e.isFile() && e.name.endsWith('.md'))
+        .map((e) => e.name);
+    } catch {
+      return null;
+    }
+    if (names.length === 0) return null;
+
+    const ordered = [
+      ...ORDER.filter((n) => names.includes(`${n}.md`)).map((n) => `${n}.md`),
+      ...names.filter((f) => !ORDER.includes(f.replace(/\.md$/, ''))).sort(),
+    ];
+
+    const parts: string[] = [];
+    for (const file of ordered) {
+      let body: string;
+      try {
+        body = readFileSync(join(genreDir, file), 'utf-8').trim();
+      } catch {
+        continue;
+      }
+      if (!body) continue;
+      const key = file.replace(/\.md$/, '');
+      parts.push(`## Genre Guide — ${TITLES[key] ?? key}\n\n${body}`);
+    }
+    return parts.length ? parts.join('\n\n') : null;
+  }
+
+  /**
    * First-run seed (book-container Phase 3a):
    *  - no books            → create a Default Book (built-in default Author +
    *                          default pipeline) and activate it.

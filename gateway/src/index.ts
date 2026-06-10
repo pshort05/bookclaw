@@ -564,6 +564,7 @@ class BookClawGateway {
     // ── Construct system prompt ──
     let systemPrompt = this.buildSystemPrompt({
       soul,
+      genreGuide: this.books?.getActiveGenreGuide() ?? undefined,
       memories,
       activeProject,
       skills,
@@ -810,6 +811,7 @@ class BookClawGateway {
 
   public buildSystemPrompt(context: {
     soul: string;
+    genreGuide?: string | null;
     memories: string;
     activeProject: string | null;
     skills: string[];
@@ -820,6 +822,12 @@ class BookClawGateway {
 
     prompt += '# Your Identity\n\n';
     prompt += context.soul + '\n\n';
+
+    if (context.genreGuide) {
+      prompt += '# Active Book — Genre Guide\n\n';
+      prompt += 'Write to this genre. Honor its conventions and reader promise, hit its obligatory scenes and must-haves, and avoid its genre-killers:\n\n';
+      prompt += context.genreGuide + '\n\n';
+    }
 
     // Channel-specific communication style
     if (context.channel?.startsWith('telegram:')) {
