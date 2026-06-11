@@ -49,14 +49,7 @@ cover at minimum:
 
 - [ ] **Asset Studio book-scope header shows the kind string as the asset name.** When editing a book's snapshot (book scope) in the Asset Studio, the entry header renders the kind (e.g. "genre") instead of the asset's actual name — needs the book manifest's `pulledFrom.<kind>.name` plumbed through to the editor header. Cosmetic; deferred from Phase 6.
 
-
-## Phase 9 (book-board UI) — studio/GUI polish (do alongside the next front-end phase)
-
-Minor studio-UI tweaks surfaced while running today's feature-smoke against cheap models. Batch them into the Phase 9 book-board front-end work.
-
-- [ ] **Activity monitor: show seconds in timestamps.** The activity feed timestamps render at minute resolution; add seconds (e.g. `HH:MM:SS`) so rapid back-to-back events during a run are distinguishable. Frontend-only — the activity events already carry full ISO timestamps; it's a display-format change in the studio Activity view.
-- [ ] **Activity monitor: single-space the rows.** Tighten the activity feed line spacing to single-space so more events are visible without scrolling (reduce per-row vertical padding/margins in the Activity component).
-- [ ] **Costs: show fractional cents to 4 decimals (`$0.0001`).** Cost figures currently round to whole cents, so per-call costs on cheap models (e.g. today's `gemma-3-4b-it`) display as `$0.00` and look free. Render costs with 4 decimal places (`$0.0001`) wherever per-call/run cost is shown, so cheap-model spend is realistic and visible. Display-format change; verify it doesn't break the totals/aggregate cost formatting.
+- [ ] **Dedup the pipeline-phase order constant.** `Board.tsx` (`PHASE_ORDER`) and `BookDrawer.tsx` (`PHASES`) both hardcode the identical `['planning','bible','production','revision','format','launch']`. Export one constant from `@bookclaw/shared` and import in both, so the board progress bar and the drawer timeline can't drift. Low-risk but touches BookDrawer's `as const`/literal-union typing — mind the `typeof PHASES[number]` cast at `BookDrawer.tsx:48`. Deferred from the Phase 9 code-review (2026-06-11).
 
 
 ## Investigations (under an hour each)

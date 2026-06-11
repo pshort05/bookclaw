@@ -526,10 +526,19 @@ Each phase is independently shippable and verifiable.
   post-implementation high-effort `/code-review` caught and fixed two prompt-composition
   leaks (the execute/auto-execute routes and the dynamic-pipeline creation branch).
   Spec/plan: `docs/superpowers/{specs,plans}/2026-06-10-phase8-multi-book-concurrency*`.
-- **Phase 9 — Book-board UI.** The studio's face (built on the Phase 6
-  front-end): a surface listing every book with its phase, status, next-action,
-  and progress, with drill-in. *Verify:* all books shown with live
-  phase / next-action; create / activate / drill-in flows work.
+- **Phase 9 — Book-board UI.** **(Implemented 2026-06-11.)** The studio's face: the
+  Book Board now shows, per book, the phase, status, suggested **next action**, a
+  **6-segment phase progress bar**, and a **live "writing · <step>" strip** when a
+  bound project is running (the rail's Generating/Idle counts went live too). Sourced
+  by enriching `GET /api/books` with `next` + `live` (one call) via a pure,
+  unit-tested `buildBookCards()` — `live` derives from active projects bound by the
+  Phase-8 `bookSlug`. Drill-in drawer (assets / phase timeline / set-active /
+  open-in-Write) unchanged. Shipped alongside three studio polish items: activity
+  timestamps `HH:MM:SS`, single-spaced activity rows, and 4-decimal cost precision
+  (`$0.0001`) on spend (studio + chat). *Verified:* 156 unit tests + live
+  feature-smoke 69/0/0 incl. the enriched-`/api/books` assertion; mockup
+  `dashboard/concept/phase9-book-board.html`. Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-11-phase9-book-board-ui*`.
 - **Phase 10 — Per-channel active book.** Telegram / web / API callers each
   select their own active book independently (extends the
   conversation-history-by-channel isolation). *Verify:* a Telegram command and a

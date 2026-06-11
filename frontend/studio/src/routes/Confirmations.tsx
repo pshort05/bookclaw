@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, useStore, usePendingConfirmations, Button } from '@bookclaw/shared';
+import { api, useStore, usePendingConfirmations, Button, money } from '@bookclaw/shared';
 import type { ConfirmationRequest } from '@bookclaw/shared';
 import styles from './Confirmations.module.css';
 
@@ -51,7 +51,7 @@ export function Confirmations() {
                 {c.platform} · {c.action}
               </span>
               {c.estimatedCost != null && (
-                <span className={styles.cost}>${c.estimatedCost.toFixed(2)}</span>
+                <span className={styles.cost}>{money(c.estimatedCost)}</span>
               )}
             </div>
             <p className={styles.desc}>{c.description}</p>

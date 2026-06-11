@@ -1,4 +1,4 @@
-import { useActiveBook, useCosts, useStore } from '@bookclaw/shared';
+import { useActiveBook, useCosts, useStore, money } from '@bookclaw/shared';
 import { useEffect } from 'react';
 import styles from '../App.module.css';
 
@@ -31,7 +31,7 @@ export function Stats() {
           <div className={styles.stat}>
             <span className={styles.statKey}>Spent today</span>
             <span className={`${styles.statVal} ${styles.statValGold}`}>
-              ${costs.daily.toFixed(2)}
+              {money(costs.daily)}
             </span>
           </div>
           <div className={styles.pbar}>

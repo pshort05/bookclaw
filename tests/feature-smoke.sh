@@ -292,6 +292,23 @@ else
     LISTED=$(req GET /api/books | grep -c "$BSLUG")
     [ "$LISTED" -ge 1 ] && pass "books list includes slug" || fail "books list includes slug"
 
+    # Phase 9: GET /api/books rows carry an enriched `next` action object.
+    BOOKS_LIST=$(req GET /api/books)
+    HAS_NEXT=$(printf '%s' "$BOOKS_LIST" | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    try{
+      const bs=(JSON.parse(s).books||[]);
+      // pass if there are no books (nothing to assert) or every book has a `next` key (object or null)
+      const ok = bs.length===0 || bs.every(b=>Object.prototype.hasOwnProperty.call(b,"next"));
+      console.log(ok?"yes":"no");
+    }catch(e){console.log("err")}
+  })')
+    if [ "$HAS_NEXT" = "yes" ]; then
+      pass "Phase 9: /api/books rows carry next-action" "enriched list shape"
+    else
+      fail "Phase 9: /api/books rows carry next-action" "next key missing ($HAS_NEXT)"
+    fi
+
     # GET /api/books/:slug/files — list a book's data/ outputs (Phase 6 follow-up).
     # A fresh book has an empty data/, so files is an array of length 0.
     if [ "$(has_endpoint GET "/api/books/$BSLUG/files")" = "no" ]; then

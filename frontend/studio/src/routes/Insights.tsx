@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, useStore, useCosts, useActivity, hhmm } from '@bookclaw/shared';
+import { api, useStore, useCosts, useActivity, hhmmss, money } from '@bookclaw/shared';
 import type { Status, ActivityEntry } from '@bookclaw/shared';
 import styles from './Insights.module.css';
 
@@ -50,7 +50,7 @@ export function Insights() {
         <div className={styles.card}>
           <div className={styles.cap}>
             <span>AI spend · today</span>
-            <b>${(costs?.daily ?? 0).toFixed(2)} / ${costs?.dailyLimit ?? 0}</b>
+            <b>{money(costs?.daily ?? 0)} / ${(costs?.dailyLimit ?? 0).toFixed(2)}</b>
           </div>
           <div className={styles.bar}>
             <i
@@ -62,7 +62,7 @@ export function Insights() {
         <div className={styles.card}>
           <div className={styles.cap}>
             <span>AI spend · month</span>
-            <b>${(costs?.monthly ?? 0).toFixed(2)} / ${costs?.monthlyLimit ?? 0}</b>
+            <b>{money(costs?.monthly ?? 0)} / ${(costs?.monthlyLimit ?? 0).toFixed(2)}</b>
           </div>
           <div className={styles.bar}>
             <i style={{ width: `${monthlyPct}%` }} />
@@ -84,7 +84,7 @@ export function Insights() {
       <div className={styles.feed}>
         {activity.slice(0, 8).map((e: ActivityEntry, i) => (
           <div key={`${e.timestamp}-${i}`} className={styles.ev}>
-            <span className={styles.ts}>{hhmm(e.timestamp)}</span>
+            <span className={styles.ts}>{hhmmss(e.timestamp)}</span>
             <span className={styles.bd}>{e.message}</span>
           </div>
         ))}

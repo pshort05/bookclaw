@@ -7,6 +7,12 @@
 /** BookStatus gate outcome for a book on open. */
 export type BookStatus = 'ok' | 'readonly' | 'quarantined';
 
+/** Live generation state for a book (book-container Phase 9) — present when a bound project is running. */
+export interface BookLive {
+  stepLabel: string;
+  progress: number;
+}
+
 /** Summary row returned by GET /api/books — lighter than the full manifest. */
 export interface BookSummary {
   slug: string;
@@ -18,6 +24,9 @@ export interface BookSummary {
   author?: string;
   voice?: string;
   genre?: string | null;
+  // Phase 9 board enrichment (GET /api/books). Optional so older callers/tests still typecheck.
+  next?: NextStep | null;
+  live?: BookLive | null;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useStore, useCosts, usePendingConfirmations, useBooks } from '@bookclaw/shared';
+import { useStore, useCosts, usePendingConfirmations, useBooks, money } from '@bookclaw/shared';
 import { useEffect } from 'react';
 import styles from './Rail.module.css';
 
@@ -7,6 +7,8 @@ export function Rail() {
   const costs = useCosts();
   const pending = usePendingConfirmations();
   const books = useBooks();
+  const generating = books.filter((b) => b.live).length;
+  const idle = books.length - generating;
   const loadCosts = useStore((s) => s.loadCosts);
   const loadConfirmations = useStore((s) => s.loadConfirmations);
   useEffect(() => {
@@ -157,16 +159,16 @@ export function Rail() {
       <div className={styles.status}>
         <div className={styles.row}>
           <span className={`${styles.dot} ${styles.dotGen}`}></span>
-          Generating <span className={styles.v}>2 books</span>
+          Generating <span className={styles.v}>{generating} {generating === 1 ? 'book' : 'books'}</span>
         </div>
         <div className={styles.row}>
           <span className={styles.dot}></span>
-          Idle <span className={styles.v}>3 books</span>
+          Idle <span className={styles.v}>{idle} {idle === 1 ? 'book' : 'books'}</span>
         </div>
         <div className={styles.budget}>
           <div className={styles.cap}>
             <span>AI spend · today</span>
-            <b>${(costs?.daily ?? 0).toFixed(2)} / ${costs?.dailyLimit ?? 0}</b>
+            <b>{money(costs?.daily ?? 0)} / ${(costs?.dailyLimit ?? 0).toFixed(2)}</b>
           </div>
           <div className={styles.bar}>
             <i style={{ width: `${costs && costs.dailyLimit > 0 ? Math.min(100, (costs.daily / costs.dailyLimit) * 100) : 0}%` }} />

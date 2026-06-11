@@ -255,3 +255,70 @@
   font-size: 12px;
   max-width: 24ch;
 }
+
+/* Phase 9 — live state */
+.card.live {
+  border-color: rgba(240, 145, 58, 0.28);
+  box-shadow: 0 0 60px -30px var(--glow);
+}
+.card.live::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--ember-grad);
+}
+.phase.gen i {
+  animation: pulse 1.3s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 var(--glow); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* Phase 9 — 6-segment phase progress */
+.prog { margin-top: 14px; }
+.progMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.progMeta b { font-family: 'IBM Plex Mono', monospace; color: var(--text); font-weight: 500; }
+.bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.bar i { height: 4px; border-radius: 3px; background: rgba(238, 229, 210, 0.16); }
+.bar i.lit { background: var(--ember-grad); }
+.bar i.cur { background: var(--ember); box-shadow: 0 0 10px -1px var(--glow); animation: breathe 2s infinite; }
+
+/* Phase 9 — live "writing…" strip */
+.livestrip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  background: rgba(240, 145, 58, 0.07);
+  border: 1px solid rgba(240, 145, 58, 0.2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  margin-top: 14px;
+}
+.pip { width: 6px; height: 6px; border-radius: 50%; background: var(--ember); animation: pulse 1.3s infinite; }
+
+/* Phase 9 — next-action footer */
+.next {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+.ndot { width: 5px; height: 5px; border-radius: 50%; background: var(--ember); flex: none; }
+.nlbl { font-size: 13px; color: var(--text); }
+.nhint { font-size: 12px; color: var(--faint); margin-left: auto; white-space: nowrap; }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useStore, useActivity, streamActivity, hhmm } from '@bookclaw/shared';
+import { useStore, useActivity, streamActivity, hhmmss, money } from '@bookclaw/shared';
 import type { ActivityEntry } from '@bookclaw/shared';
 import styles from './Activity.module.css';
 
@@ -72,14 +72,14 @@ export function Activity() {
       <div className={styles.feed}>
         {shown.map(({ e, c }, i) => (
           <div key={`${e.timestamp}-${i}`} className={i === 0 ? `${styles.ev} ${styles.now}` : styles.ev}>
-            <span className={styles.ts}>{hhmm(e.timestamp)}</span>
+            <span className={styles.ts}>{hhmmss(e.timestamp)}</span>
             <span className={styles.cat} style={{ ['--c' as string]: `var(${c.varName})` }}>
               <i /> {c.label}
             </span>
             <span className={styles.bd}>{e.message}</span>
             <span className={styles.mt}>
               {typeof e.metadata?.cost === 'number'
-                ? `$${(e.metadata.cost as number).toFixed(2)}`
+                ? money(e.metadata.cost as number)
                 : (e.metadata?.provider as string) ?? ''}
             </span>
           </div>

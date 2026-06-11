@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookClaw · Phase 9 — Book Board (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110b; --bg-2:#1b150e; --panel:#221b12; --panel-2:#2a2217; --panel-hi:#322817;
+  --line:rgba(238,229,210,.075); --line-2:rgba(238,229,210,.14);
+  --text:#efe7d4; --dim:#b4a98f; --faint:#7d7359;
+  --ember:#f0913a; --ember-hot:#ff6a39; --gold:#e8c46a;
+  --glow:rgba(240,145,58,.20); --ember-grad:linear-gradient(105deg,#ff6a39 0%,#f0913a 55%,#e8c46a 100%);
+  --ph-plan:#8fa6b4; --ph-world:#79b0a2; --ph-prod:#f0913a; --ph-rev:#d79f57; --ph-fmt:#99a6c6; --ph-launch:#8fbf7e;
+  --alert:#ff6a39; --r:14px; --r-s:9px; --rail:232px; --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',sans-serif;-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:var(--rail) 1fr;min-height:100vh}
+
+/* ── Rail ── */
+.rail{background:linear-gradient(180deg,var(--bg-2),var(--bg));border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:var(--ember-grad);display:grid;place-items:center;flex:none;box-shadow:0 0 18px -4px var(--glow)}
+.brand .mark svg{width:18px;height:18px}
+.brand .name{font-family:'Fraunces',serif;font-weight:400;font-size:19px;letter-spacing:-.02em}
+.brand .name b{font-weight:600}
+.brand .ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);letter-spacing:.04em;margin-top:1px}
+.nav .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:16px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-s);color:var(--dim);text-decoration:none;font-size:14px;cursor:pointer}
+.nav a svg{width:17px;height:17px;flex:none}
+.nav a:hover{background:var(--panel);color:var(--text)}
+.nav a.on{background:var(--panel-2);color:var(--text)}
+.nav a .count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint)}
+.nav a .badge{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;background:var(--alert);color:#1a0f08;border-radius:20px;padding:1px 7px;box-shadow:0 0 12px rgba(255,106,57,.4)}
+.nav a .ext{width:13px;height:13px;margin-left:auto;opacity:.45}
+.nav a:hover .ext{opacity:.8}
+.spacer{flex:1}
+.status{border-top:1px solid var(--line);padding-top:14px;margin-top:8px}
+.status .row{display:flex;align-items:center;gap:9px;padding:5px 10px;font-size:12px;color:var(--dim)}
+.status .row .v{margin-left:auto;font-family:'IBM Plex Mono',monospace;color:var(--text)}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--ph-launch);flex:none;animation:pulse 2.4s infinite}
+.status .dot.dotGen{background:var(--ember);animation:pulse 1.4s infinite}
+.budget{margin:9px 6px 4px}
+.budget .cap{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);margin-bottom:5px}
+.budget .cap b{color:var(--gold);font-weight:500}
+.budget .rbar{height:5px;border-radius:20px;background:rgba(238,229,210,.07);overflow:hidden}
+.budget .rbar i{display:block;height:100%;border-radius:20px;background:var(--ember-grad);box-shadow:0 0 10px var(--glow)}
+
+/* ── Main ── */
+.main{padding:30px 40px 60px;max-width:1180px}
+.crumb{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.h1{font-family:'Fraunces',serif;font-weight:430;font-size:32px;letter-spacing:-.02em;margin:0 0 4px}
+.sub{color:var(--dim);font-size:14px;margin-bottom:26px}
+
+/* ── Board grid ── */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+.card{position:relative;background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-radius:var(--r);padding:20px;cursor:pointer;transition:transform .22s var(--ease),border-color .22s,background .22s;overflow:hidden}
+.card:hover{transform:translateY(-3px);background:linear-gradient(180deg,var(--panel-2),var(--bg-2));box-shadow:0 24px 50px -24px rgba(0,0,0,.7)}
+.card.live{border-color:rgba(240,145,58,.28);box-shadow:0 0 60px -30px var(--glow)}
+.card.live::before{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:var(--ember-grad)}
+.ctop{display:flex;align-items:center;gap:8px;margin-bottom:13px}
+.phase{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ph);padding:4px 9px;border:1px solid color-mix(in srgb,var(--ph) 35%,transparent);border-radius:20px}
+.phase i{width:6px;height:6px;border-radius:50%;background:var(--ph)}
+.phase.gen i{animation:pulse 1.3s infinite}
+.flag{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ember-hot);background:rgba(255,106,57,.12);border-radius:20px;padding:3px 9px}
+.card h3{font-family:'Fraunces',serif;font-weight:420;font-size:24px;letter-spacing:-.02em;margin:0;line-height:1.12}
+.card .genre{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--dim);margin-top:3px}
+.byline{display:flex;align-items:center;gap:8px;margin:14px 0 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint)}
+.byline b{color:var(--dim);font-weight:500}
+.byline .v{width:3px;height:3px;border-radius:50%;background:var(--faint);opacity:.6}
+
+/* progress: 6 phase segments */
+.prog .meta{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--faint);margin-bottom:6px}
+.prog .meta b{font-family:'IBM Plex Mono',monospace;color:var(--text);font-weight:500}
+.prog .bar{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.prog .bar i{height:4px;border-radius:3px;background:rgba(238,229,210,.16)}
+.prog .bar i.lit{background:var(--ember-grad)}
+.prog .bar i.cur{background:var(--ember);box-shadow:0 0 10px -1px var(--glow);animation:breathe 2s infinite}
+
+/* next-action footer */
+.next{display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.next .dot{width:5px;height:5px;border-radius:50%;background:var(--ember)}
+.next .lbl{font-size:13px;color:var(--text)}
+.next .hint{font-size:12px;color:var(--faint);margin-left:auto}
+.live-strip{display:inline-flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);background:rgba(240,145,58,.07);border:1px solid rgba(240,145,58,.2);border-radius:20px;padding:5px 12px;margin-top:14px}
+.live-strip .pip{width:6px;height:6px;border-radius:50%;background:var(--ember);animation:pulse 1.3s infinite}
+
+.card.ghost{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;border:1px dashed var(--line-2);background:transparent;color:var(--faint);min-height:230px}
+.card.ghost:hover{border-color:rgba(240,145,58,.4);color:var(--ember);background:rgba(240,145,58,.03)}
+.card.ghost .plus{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:22px}
+.card.ghost h3{font-weight:380;font-size:19px;color:inherit}
+
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--glow)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* ── Drawer ── */
+.scrim{position:fixed;inset:0;background:rgba(8,6,3,.55);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:.25s}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:440px;max-width:92vw;background:linear-gradient(180deg,var(--bg-2),var(--bg));border-left:1px solid var(--line-2);transform:translateX(100%);transition:transform .3s var(--ease);overflow-y:auto;padding:28px 26px}
+.drawer.open{transform:none}
+.drawer .x{position:absolute;top:18px;right:18px;color:var(--faint);cursor:pointer;font-size:18px}
+.drawer h2{font-family:'Fraunces',serif;font-weight:430;font-size:26px;margin:0 0 2px}
+.drawer .dgenre{font-family:'Fraunces',serif;font-style:italic;color:var(--dim);font-size:14px;margin-bottom:18px}
+.assets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.asset{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:11px 12px}
+.asset .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.asset .nm{font-size:14px;color:var(--text);margin-top:3px}
+.asset .ds{font-size:11px;color:var(--faint);margin-top:2px;line-height:1.3}
+.sec-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
+.tl{display:flex;flex-direction:column;gap:2px;margin-bottom:22px}
+.tl .step{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-s);font-size:13px}
+.tl .step .m{width:7px;height:7px;border-radius:50%;background:rgba(238,229,210,.2)}
+.tl .step.done{color:var(--dim)} .tl .step.done .m{background:var(--ph-launch)}
+.tl .step.cur{color:var(--text);background:rgba(240,145,58,.06)} .tl .step.cur .m{background:var(--ember);box-shadow:0 0 9px var(--glow)}
+.tl .step .st{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.dnext{background:rgba(240,145,58,.06);border:1px solid rgba(240,145,58,.18);border-radius:var(--r-s);padding:13px 14px;margin-bottom:20px}
+.dnext .l{font-size:14px;color:var(--text);font-weight:500}
+.dnext .h{font-size:12px;color:var(--dim);margin-top:3px}
+.acts{display:flex;gap:10px}
+.btn{flex:1;text-align:center;padding:11px;border-radius:var(--r-s);font-size:13px;cursor:pointer;border:1px solid var(--line-2);background:var(--panel);color:var(--text)}
+.btn.primary{background:var(--ember-grad);color:#1a0f08;border:none;font-weight:600}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* ── Polish-items demo panel ── */
+.demo{margin-top:40px;border-top:1px solid var(--line);padding-top:24px}
+.demo h4{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);margin:0 0 4px}
+.demo .note{font-size:12px;color:var(--faint);margin-bottom:16px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.compare .col h5{font-size:12px;color:var(--dim);margin:0 0 8px;font-weight:500}
+.feed{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden}
+/* BEFORE: minute ts, loose rows */
+.feed.before .ev{display:flex;gap:16px;align-items:baseline;padding:11px 14px;border-bottom:1px solid var(--line)}
+/* AFTER: seconds ts, single-spaced tight rows */
+.feed.after .ev{display:flex;gap:12px;align-items:baseline;padding:4px 12px;border-bottom:1px solid var(--line)}
+.feed .ev:last-child{border-bottom:none}
+.feed .ts{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint);white-space:nowrap}
+.feed .cat{width:6px;height:6px;border-radius:50%;background:var(--ph-prod);flex-shrink:0;align-self:center}
+.feed .msg{font-size:13px;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed .cost{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold)}
+.costline{margin-top:14px;font-size:13px;color:var(--dim)}
+.costline .b{color:var(--ember-hot);text-decoration:line-through;font-family:'IBM Plex Mono',monospace}
+.costline .a{color:var(--gold);font-family:'IBM Plex Mono',monospace}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Rail -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="mark" title="BookClaw"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19c3-1 5-5 5-10 0 5 3 8 6 8M9 4c.5 3 2 5 4 6M14 3c.3 2.5 1.6 4.3 3.4 5.6" stroke="#1a0f08" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+      <div><div class="name">Book<b>Claw</b></div><div class="ver">V6 · studio</div></div>
+    </div>
+    <nav class="nav">
+      <div class="lbl">Studio</div>
+      <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Book Board <span class="count">6</span></a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 20l3-1 11-11-2-2L5 17l-1 3z"/><path d="M14 5l3 3"/></svg>Write</a>
+      <a href="http://localhost:3848/" target="_blank" rel="noopener" title="Open the Chat app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/></svg>Chat<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V6a2 2 0 012-2h5v15H6a2 2 0 00-2 2z"/><path d="M20 19V6a2 2 0 00-2-2h-5v15h5a2 2 0 012 2z"/></svg>Series <span class="count">2</span></a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>Activity</a>
+      <div class="lbl">Make</div>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v6l9 4 9-4V7"/></svg>Library</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/></svg>Insights</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.3 1a7 7 0 00-1.7-1l-.4-2.5H9.5L9 5.4a7 7 0 00-1.7 1l-2.3-1-2 3.4L5 11a7 7 0 000 2l-2 1.6 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.5h4.9l.4-2.5a7 7 0 001.7-1l2.3 1 2-3.4-2-1.6c.1-.3.1-.6.1-1z"/></svg>Settings</a>
+      <div class="lbl">Approvals</div>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v5c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Confirmations <span class="badge">1</span></a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="status">
+      <div class="row"><span class="dot dotGen"></span>Generating <span class="v">2 books</span></div>
+      <div class="row"><span class="dot"></span>Idle <span class="v">3 books</span></div>
+      <div class="budget">
+        <div class="cap"><span>AI spend · today</span><b>$0.0137 / $5.00</b></div>
+        <div class="rbar"><i style="width:14%"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="crumb">Studio / Book Board</div>
+    <h1 class="h1">Your books</h1>
+    <div class="sub">Six books in flight — each writing in its own voice and genre, concurrently.</div>
+
+    <div class="board" id="board"></div>
+
+    <!-- Polish-items demo -->
+    <section class="demo">
+      <h4>Phase 9 — the three GUI-polish items</h4>
+      <div class="note">Left = today. Right = proposed. Activity monitor and cost precision.</div>
+      <div class="compare">
+        <div class="col">
+          <h5>Activity — today (HH:MM, loose rows)</h5>
+          <div class="feed before">
+            <div class="ev"><span class="ts">14:32</span><span class="cat"></span><span class="msg">Lanterns for the Drowned · step complete: Draft ch.7</span><span class="cost">$0.00</span></div>
+            <div class="ev"><span class="ts">14:32</span><span class="cat"></span><span class="msg">A Crown of Emberglass · polish pass started</span></div>
+            <div class="ev"><span class="ts">14:32</span><span class="cat"></span><span class="msg">Lanterns for the Drowned · AI call · openrouter</span><span class="cost">$0.00</span></div>
+            <div class="ev"><span class="ts">14:31</span><span class="cat"></span><span class="msg">The Underburrow Library · book bible complete</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <h5>Activity — proposed (HH:MM:SS, single-spaced)</h5>
+          <div class="feed after">
+            <div class="ev"><span class="ts">14:32:09</span><span class="cat"></span><span class="msg">Lanterns for the Drowned · step complete: Draft ch.7</span><span class="cost">$0.0021</span></div>
+            <div class="ev"><span class="ts">14:32:04</span><span class="cat"></span><span class="msg">A Crown of Emberglass · polish pass started</span></div>
+            <div class="ev"><span class="ts">14:32:01</span><span class="cat"></span><span class="msg">Lanterns for the Drowned · AI call · openrouter</span><span class="cost">$0.0003</span></div>
+            <div class="ev"><span class="ts">14:31:58</span><span class="cat"></span><span class="msg">The Underburrow Library · book bible complete</span></div>
+            <div class="ev"><span class="ts">14:31:52</span><span class="cat"></span><span class="msg">The Underburrow Library · AI call · openrouter</span><span class="cost">$0.0002</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="costline">Cost precision: today <span class="b">$0.00</span> &nbsp;→&nbsp; proposed <span class="a">$0.0001</span> (4 decimals — a cheap-model call finally reads as non-zero).</div>
+    </section>
+  </main>
+</div>
+
+<!-- Drawer -->
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <span class="x" onclick="closeDrawer()">✕</span>
+  <div id="drawerBody"></div>
+</aside>
+
+<script>
+const PH = {Planning:'--ph-plan','World & Characters':'--ph-world',Production:'--ph-prod',Revision:'--ph-rev','Format & Compile':'--ph-fmt',Launch:'--ph-launch'};
+const PHASES = Object.keys(PH);
+
+// Realistic Phase-9 board data. progress = phases done; live/step from the bound project (Phase 8).
+const BOOKS = [
+  {slug:'lanterns-for-the-drowned', title:'Lanterns for the Drowned', genre:'Literary', author:'Marisol Vane', voice:'house', phase:'Production', live:true, step:'ch 7 / 20', next:{l:'Continue drafting',h:'7 of 20 chapters'}, status:'ok'},
+  {slug:'a-crown-of-emberglass', title:'A Crown of Emberglass', genre:'Romantasy', author:'Marisol Vane', voice:'house', phase:'Revision', live:false, next:{l:'Run a polish pass',h:'draft complete'}, status:'ok'},
+  {slug:'the-underburrow-library', title:'The Underburrow Library', genre:'Cozy', author:'Bartholomew Quill', voice:'warm', phase:'World & Characters', live:true, step:'bible 3/5', next:{l:'Build the bible',h:'characters & world'}, status:'ok'},
+  {slug:'tidewater-and-bone', title:'Tidewater and Bone', genre:'Literary', author:'Marisol Vane', voice:'house', phase:'Launch', live:false, next:{l:'Prepare the launch',h:'manuscript ready'}, status:'ok'},
+  {slug:'the-keeper-and-the-gull', title:'The Keeper and the Gull', genre:'Cozy', author:'Bartholomew Quill', voice:'warm', phase:'Planning', live:false, next:{l:'Plan the book',h:'refine the premise'}, status:'ok'},
+  {slug:'the-clockwork-orchard', title:'The Clockwork Orchard', genre:'Cozy', author:'Bartholomew Quill', voice:'warm', phase:'Format & Compile', live:false, next:{l:'Compile & export',h:'revised manuscript'}, status:'readonly'},
+];
+const ACTIVE = 'lanterns-for-the-drowned';
+
+function segs(phase){
+  const cur = PHASES.indexOf(phase);
+  let h='';
+  for(let i=0;i<6;i++){ const c = i<cur?'lit':(i===cur?'cur':''); h+=`<i class="${c}"></i>`; }
+  return h;
+}
+function card(b){
+  const ph = PH[b.phase];
+  const liveCls = b.live?' live':'';
+  const genCls = b.live?' gen':'';
+  const flag = b.status!=='ok'?`<span class="flag">${b.status}</span>`:'';
+  const strip = b.live?`<div class="live-strip"><span class="pip"></span>writing · ${b.step}</div>`:'';
+  return `<div class="card${liveCls}" data-id="${b.slug}">
+    <div class="ctop"><span class="phase${genCls}" style="--ph:var(${ph})"><i></i>${b.phase}</span>${flag}</div>
+    <h3>${b.title}</h3><div class="genre">${b.genre}</div>
+    <div class="byline"><b>${b.author}</b><span class="v"></span>${b.voice}${b.slug===ACTIVE?'<span class="v"></span><span style="color:var(--ember)">active</span>':''}</div>
+    <div class="prog"><div class="meta"><span>${b.phase}</span><b>${PHASES.indexOf(b.phase)}/6 phases</b></div><div class="bar">${segs(b.phase)}</div></div>
+    ${strip}
+    <div class="next"><span class="dot"></span><span class="lbl">${b.next.l}</span><span class="hint">${b.next.h}</span></div>
+  </div>`;
+}
+function render(){
+  const g = document.getElementById('board');
+  g.innerHTML = BOOKS.map(card).join('') +
+    `<div class="card ghost" onclick="alert('→ /new-book picker')"><div class="plus">+</div><h3>New book</h3><small>Pick an author, genre & pipeline</small></div>`;
+  g.querySelectorAll('.card[data-id]').forEach(el=>el.onclick=()=>openDrawer(el.dataset.id));
+}
+function openDrawer(slug){
+  const b = BOOKS.find(x=>x.slug===slug); if(!b) return;
+  const cur = PHASES.indexOf(b.phase);
+  const tl = PHASES.map((p,i)=>{
+    const cls = i<cur?'done':(i===cur?'cur':'');
+    const st = i<cur?'done':(i===cur?'current':'upcoming');
+    return `<div class="step ${cls}"><span class="m"></span>${p}<span class="st">${st}</span></div>`;
+  }).join('');
+  document.getElementById('drawerBody').innerHTML = `
+    <h2>${b.title}</h2><div class="dgenre">${b.genre}</div>
+    <p class="sec-lbl">Assets (snapshot)</p>
+    <div class="assets">
+      <div class="asset"><div class="k">Author</div><div class="nm">${b.author}</div><div class="ds">Identity, voice & personality</div></div>
+      <div class="asset"><div class="k">Voice</div><div class="nm">${b.voice}</div><div class="ds">Style guide & voice profile</div></div>
+      <div class="asset"><div class="k">Genre</div><div class="nm">${b.genre}</div><div class="ds">Tropes, beats, must-haves</div></div>
+      <div class="asset"><div class="k">Pipeline</div><div class="nm">novel-pipeline</div><div class="ds">6-phase production</div></div>
+    </div>
+    <div class="dnext"><div class="l">▸ ${b.next.l}</div><div class="h">${b.next.h}${b.live?' · currently '+b.step:''}</div></div>
+    <p class="sec-lbl">Phase timeline</p>
+    <div class="tl">${tl}</div>
+    <div class="acts">
+      <button class="btn primary" ${b.slug===ACTIVE?'disabled':''}>${b.slug===ACTIVE?'Active book':'Set as active'}</button>
+      <button class="btn">Open in Write</button>
+    </div>`;
+  document.getElementById('scrim').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer(){ document.getElementById('scrim').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); }
+render();
+</script>
+</body>
+</html>

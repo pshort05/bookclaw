@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import { uploadZip } from './_shared.js';
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
+import { buildBookCards } from '../../services/book-card.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -19,7 +20,16 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
   const NO_NAME_KINDS = new Set(['author', 'voice', 'genre', 'pipeline']);
 
   app.get('/api/books', (_req: Request, res: Response) => {
-    res.json({ books: services.books.list() });
+    // Phase 9: enrich each summary with its suggested next action + live state.
+    // live is derived from active projects bound to the book (Phase 8 bookSlug).
+    const engine = gateway.getProjectEngine?.();
+    const active = engine ? engine.listProjects('active') : [];
+    const cards = buildBookCards(
+      services.books.list(),
+      (slug: string) => services.books.nextStep(slug),
+      active,
+    );
+    res.json({ books: cards });
   });
 
   app.get('/api/books/active', async (_req: Request, res: Response) => {
