@@ -4,7 +4,7 @@ import { makeGatherChapters } from './_shared.js';
 /** Wave 2 (goals, series bible, craft critic, audiobook, style clone) and Wave 3 (autonomous career agent — all actions gated). */
 export function mountWave(app: Application, gateway: any, baseDir: string): void {
   const services = gateway.getServices();
-  const gatherChapters = makeGatherChapters(baseDir, () => services.books?.activeDataDir?.() ?? null);
+  const gatherChapters = makeGatherChapters(baseDir, (p) => services.books?.dataDirOf?.(p?.bookSlug) ?? services.books?.activeDataDir?.() ?? null);
 
   // ═══════════════════════════════════════════════════════════
   // Wave 2: Goals, Series Bible, Craft Critic, Audiobook, Style Clone

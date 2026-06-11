@@ -70,6 +70,7 @@ export interface Project {
   preferredProvider?: string; // Override AI provider: 'gemini' | 'claude' | 'openai' | 'deepseek' | 'ollama' | null (auto)
   pipelineId?: string;    // Parent pipeline ID (if part of a pipeline)
   pipelinePhase?: number; // Phase order within pipeline (1-6)
+  bookSlug?: string;      // the book this project writes into; captured at creation, immutable
 }
 
 export interface ProjectStep {
@@ -546,6 +547,7 @@ Description: ${description}`;
           createdAt: now,
           updatedAt: now,
           context: { ...context, planning: 'dynamic', planProvider: result.provider },
+          ...(context?.bookSlug ? { bookSlug: context.bookSlug } : {}),
         };
 
         this.projects.set(id, project);
@@ -633,7 +635,13 @@ Description: ${description}`;
         protagonistName: context?.protagonistName,
         antagonistName: context?.antagonistName,
       };
-      return this.createNovelPipeline(title, description, cfg);
+      const novel = this.createNovelPipeline(title, description, cfg);
+      // createNovelPipeline is code-generated and takes no context, so stamp the
+      // Phase 8 book binding here — otherwise the dynamic/novel branch would drop
+      // the bookSlug that callers thread via context (the static branch below keeps
+      // it), leaving the project unbound and routing to the global active book.
+      if (context?.bookSlug) novel.bookSlug = context.bookSlug;
+      return novel;
     }
 
     const id = `project-${this.nextId++}`;
@@ -664,6 +672,7 @@ Description: ${description}`;
       createdAt: now,
       updatedAt: now,
       context: context || {},
+      ...(context?.bookSlug ? { bookSlug: context.bookSlug } : {}),
     };
     this.projects.set(id, project);
     this.persistState();
@@ -732,6 +741,7 @@ Description: ${description}`;
       createdAt: now,
       updatedAt: now,
       context: context || {},
+      ...(context?.bookSlug ? { bookSlug: context.bookSlug } : {}),
     };
 
     this.projects.set(id, project);
@@ -1388,7 +1398,8 @@ Description: ${description}`;
     title: string,
     description: string,
     personaId?: string,
-    config?: NovelPipelineConfig
+    config?: NovelPipelineConfig,
+    bookSlug?: string
   ): { pipelineId: string; projects: Project[] } {
     const pipelineId = `pipeline-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
     const phases: Array<{ type: ProjectType; label: string; phaseNum: number }> = [
@@ -1406,12 +1417,15 @@ Description: ${description}`;
       if (phase.type === 'book-production') {
         // Book production uses the novel pipeline chapter-writing logic
         project = this.createBookProduction(phase.label, description, config);
+        // Phase 8: createBookProduction takes no context; stamp bookSlug directly.
+        if (bookSlug) project.bookSlug = bookSlug;
       } else {
         // Static phases build their multi-step pipeline from the library
         // (injected resolver — keeps the engine decoupled from LibraryService).
         // Fail-soft: if the resolver is unset or the pipeline is missing, the
         // helper falls back to the single-step custom project.
-        project = this.createProjectResolved(phase.type, phase.label, description, { pipelineTitle: title, ...config });
+        // Phase 8: thread bookSlug into context so createProjectResolved lifts it.
+        project = this.createProjectResolved(phase.type, phase.label, description, { pipelineTitle: title, ...config, ...(bookSlug ? { bookSlug } : {}) });
       }
       project.pipelineId = pipelineId;
       project.pipelinePhase = phase.phaseNum;

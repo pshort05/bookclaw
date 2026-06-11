@@ -513,11 +513,19 @@ Each phase is independently shippable and verifiable.
   its own genre" end-to-end. Genre was snapshot-but-unwired until here.
   *Verify:* genre content reaches the relevant pipeline steps; changing a book's
   genre changes output; genre re-pull works. BookService.getActiveGenreGuide() composes the active book's templates/genre/*.md (7-file schema) and buildSystemPrompt injects a '# Active Book — Genre Guide' block reaching chat and every pipeline step; see docs/GENRE-GUIDE-TEMPLATE.md.
-- **Phase 8 — Multi-book concurrency.** Replace the single global active-book
-  pointer with per-context book binding (per project / per channel) so several
-  books are in flight at once. *Verify:* two projects bound to different books
-  generate against their own Author / Voice / Pipeline with no cross-leakage;
-  `SoulService` composes per-book without a global mutable pointer.
+- **Phase 8 — Multi-book concurrency.** **(Implemented 2026-06-10.)** Replaced the
+  single global active-book pointer *as the generation driver* with an immutable
+  per-project book binding (`Project.bookSlug`, captured at creation). `BookService`
+  gained stateless `…Of(slug)` accessors (the `active…()` methods are now wrappers);
+  `SoulService.composeForBook()` composes a book's Author/Voice without mutating the
+  singleton; `handleMessage(…, bookSlug?)` composes soul+genre for the bound book;
+  project output routes via `dataDirOf(project.bookSlug) ?? activeDataDir() ?? legacy`.
+  Chat still follows the global pointer (per-channel selection is Phase 10). *Verified:*
+  148 unit tests + live feature-smoke 68/0/0 incl. the Tier-D proof (bind to A, flip
+  active→B, A still receives the output — binding beats the global pointer); a
+  post-implementation high-effort `/code-review` caught and fixed two prompt-composition
+  leaks (the execute/auto-execute routes and the dynamic-pipeline creation branch).
+  Spec/plan: `docs/superpowers/{specs,plans}/2026-06-10-phase8-multi-book-concurrency*`.
 - **Phase 9 — Book-board UI.** The studio's face (built on the Phase 6
   front-end): a surface listing every book with its phase, status, next-action,
   and progress, with drill-in. *Verify:* all books shown with live

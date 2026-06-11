@@ -279,7 +279,7 @@ else
     const [title,author,voice,pipeline,sectionsJson]=process.argv.slice(1);
     let sections=[];try{sections=JSON.parse(sectionsJson)}catch(e){}
     console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections}));' \
-    "Smoke Book $RAND" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$PIPE_NAME" "${SECTION_NAMES:-[]}")
+    "Tidewater and Bone" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$PIPE_NAME" "${SECTION_NAMES:-[]}")
   BRESP=$(req POST /api/books "$BODY")
   BSUCCESS=$(echo "$BRESP" | jget success)
   BSLUG=$(echo "$BRESP" | jget book.slug)
@@ -861,8 +861,8 @@ else
   else
     CREATED_LIBRARY_GENRES+=("$G7_GENRE")
     # Create a book using that genre and activate it.
-    G7_BODY=$(printf '{"title":"Smoke P7 %s","author":"%s","voice":"%s","genre":"%s","pipeline":"%s","sections":[]}' \
-      "$G7_RAND" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$G7_GENRE" "$PIPE_NAME")
+    G7_BODY=$(printf '{"title":"A Crown of Emberglass","author":"%s","voice":"%s","genre":"%s","pipeline":"%s","sections":[]}' \
+      "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$G7_GENRE" "$PIPE_NAME")
     G7_BOOK=$(req POST /api/books "$G7_BODY")
     G7_SLUG=$(printf '%s' "$G7_BOOK" | jget book.slug)
     if [ -z "$G7_SLUG" ]; then
@@ -902,7 +902,7 @@ else
 fi
 
 # ── Per-step model override (free: no AI executed) ──
-MINI=$(req POST /api/pipeline/create '{"title":"Smoke Model Override","description":"Throwaway tiny pipeline for per-step model override check.","config":{"targetChapters":1,"targetWordsPerChapter":300,"genre":"cozy"}}')
+MINI=$(req POST /api/pipeline/create '{"title":"The Clockwork Orchard","description":"An old clockmaker accepts one final, impossible commission.","config":{"targetChapters":1,"targetWordsPerChapter":300,"genre":"cozy"}}')
 # Record ALL phase project ids for teardown.
 for pid in $(echo "$MINI" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).phases||[]).forEach(p=>console.log(p.id))}catch(e){}})'); do
   CREATED_PROJECTS+=("$pid")
@@ -944,7 +944,7 @@ echo ""
 echo "### Tier C — novel pipeline + craft suite (cheap)"
 
 PIPE=$(req POST /api/pipeline/create \
-  "$(printf '{"title":"Smoke Novel %s","description":"Throwaway test novel: a lighthouse keeper befriends a talking gull. Cozy, very short.","config":{"targetChapters":%s,"targetWordsPerChapter":%s,"genre":"cozy","tone":"warm"}}' "$RANDOM" "$CHAPTERS" "$WORDS")")
+  "$(printf '{"title":"The Keeper and the Gull","description":"A solitary lighthouse keeper strikes up an unlikely friendship with a talking gull. Cozy, very short.","config":{"targetChapters":%s,"targetWordsPerChapter":%s,"genre":"cozy","tone":"warm"}}' "$CHAPTERS" "$WORDS")")
 
 # Map phase type → project id, recording all ids for teardown.
 PROD_ID=""
@@ -1026,12 +1026,14 @@ fi
 
 # ═══════════════════════════════════════════════════════════
 echo ""
-echo "### Tier D — multi-book isolation (sequential; Phase-8 concurrency precursor)"
-# NOTE: TRUE simultaneous two-book generation is Phase 8 (per-context binding) and
-# is not yet supported. This section proves per-book isolation under the current
-# single global active-book pointer — it is the precursor to the Phase-8 concurrency
-# acceptance test. Steps: distinct manifests, active re-point, and one optional
-# tiny generation to confirm output doesn't leak across books.
+echo "### Tier D — multi-book concurrency (Phase 8: per-project book binding)"
+# Phase 8 binds each project to a book at creation (Project.bookSlug) and routes
+# generation/output from that binding, NOT from the global active-book pointer. The
+# decisive acceptance test (the "output isolated" assertion below): create a project
+# while Book A is active (so it binds to A), FLIP the global active book to B, then
+# execute — and assert A still receives the output. Under the pre-Phase-8 code that
+# flip would have leaked A's output into B; the binding now makes the run immune to
+# active-pointer changes. Steps: distinct manifests, active re-point, bound generation.
 
 # Guard: require the books group and at least 2 resolvable pipelines.
 _TD_BOOKS_PRESENT=$(has_endpoint GET /api/books)
@@ -1103,7 +1105,7 @@ else
     TD_BODY_A=$(node -e '
       const [title,author,voice,pipeline]=process.argv.slice(1);
       console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));
-    ' "Smoke Book A $TD_RAND" "$_TD_DEFAULT_AUTHOR" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE1")
+    ' "The Lamplighter's Daughter" "$_TD_DEFAULT_AUTHOR" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE1")
     TD_RESP_A=$(req POST /api/books "$TD_BODY_A")
     ASLUG=$(printf '%s' "$TD_RESP_A" | jget book.slug)
     if [ -n "$ASLUG" ]; then
@@ -1114,7 +1116,7 @@ else
     TD_BODY_B=$(node -e '
       const [title,author,voice,pipeline]=process.argv.slice(1);
       console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));
-    ' "Smoke Book B $TD_RAND" "$TD_AUTHOR_B" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE2")
+    ' "Lanterns for the Drowned" "$TD_AUTHOR_B" "${_TD_DEFAULT_VOICE:-default}" "$_TD_PIPE2")
     TD_RESP_B=$(req POST /api/books "$TD_BODY_B")
     BSLUG_D=$(printf '%s' "$TD_RESP_B" | jget book.slug)
     if [ -n "$BSLUG_D" ]; then
@@ -1199,7 +1201,7 @@ else
         code POST /api/books/active "{\"slug\":\"$ASLUG\"}" >/dev/null
         # Kick a tiny generation against A using the per-step model override mini-pipeline.
         TD_MINI=$(req POST /api/pipeline/create \
-          "{\"title\":\"Smoke TD A $TD_RAND\",\"description\":\"Tier-D isolation test novel: a mole builds a library underground.\",\"config\":{\"targetChapters\":1,\"targetWordsPerChapter\":300,\"genre\":\"cozy\"}}")
+          "{\"title\":\"The Underburrow Library\",\"description\":\"A mole builds a grand library beneath the meadow, one borrowed book at a time.\",\"config\":{\"targetChapters\":1,\"targetWordsPerChapter\":300,\"genre\":\"cozy\"}}")
         for pid in $(printf '%s' "$TD_MINI" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).phases||[]).forEach(p=>console.log(p.id))}catch(e){}})'); do
           CREATED_PROJECTS+=("$pid")
         done
@@ -1228,7 +1230,20 @@ else
         if [ -z "$TD_MINI_PROD" ]; then
           skip "Tier D: output isolated to active book" "(mini pipeline create returned no production phase)"
         else
-          # Auto-execute the pipeline phases for Book A.
+          # ── Phase 8 proof: the projects were created while A was active, so they
+          # are bound to A (Project.bookSlug=A). FLIP the global active book to B
+          # BEFORE executing. If binding (not the global pointer) drives routing,
+          # A's output still lands in A and B stays empty. Pre-Phase-8 this flip
+          # would have routed A's output into B (the active book) → a leak.
+          TD_FLIP_CODE=$(code POST /api/books/active "{\"slug\":\"$BSLUG_D\"}")
+          TD_ACTIVE_NOW=$(req GET /api/books/active | jget active.slug)
+          if [ "$TD_FLIP_CODE" != "200" ] || [ "$TD_ACTIVE_NOW" != "$BSLUG_D" ]; then
+            skip "Tier D: output isolated to active book" "(could not flip active→B for the concurrency proof: code=$TD_FLIP_CODE active=$TD_ACTIVE_NOW)"
+            TD_MINI_PROD=""   # disable the rest of this block
+          fi
+        fi
+        if [ -n "$TD_MINI_PROD" ]; then
+          # Auto-execute the A-bound pipeline phases while B is the active book.
           [ -n "$TD_MINI_PLAN" ]  && req POST "/api/projects/$TD_MINI_PLAN/auto-execute"  "" 600 >/dev/null
           [ -n "$TD_MINI_BIBLE" ] && req POST "/api/projects/$TD_MINI_BIBLE/auto-execute" "" 600 >/dev/null
           [ -n "$TD_MINI_PROD" ]  && req POST "/api/projects/$TD_MINI_PROD/auto-execute"  "" 1800 >/dev/null
@@ -1253,9 +1268,9 @@ else
             TD_NEXT_B=$(req GET "/api/books/$BSLUG_D/next")
             TD_HAS_OUT_B=$(printf '%s' "$TD_NEXT_B" | jget next.hasOutput)
             if [ "$TD_HAS_OUT_B" = "false" ] || [ -z "$TD_HAS_OUT_B" ]; then
-              pass "Tier D: output isolated to active book" "A hasOutput=true, B hasOutput=${TD_HAS_OUT_B:-false}"
+              pass "Tier D: output isolated to active book" "A(bound)=output, B(active during run)=empty — binding beat the global pointer"
             else
-              fail "Tier D: output isolated to active book" "A hasOutput=true but B hasOutput=$TD_HAS_OUT_B (leak?)"
+              fail "Tier D: output isolated to active book" "A-bound output leaked into active book B (hasOutput=$TD_HAS_OUT_B) — Phase-8 binding not honored"
             fi
           fi
         fi

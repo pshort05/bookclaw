@@ -69,14 +69,18 @@ export function addWaveDisclaimer(res: Response): void {
 /**
  * Build a gatherChapters(project) closed over baseDir (call sites stay unchanged).
  *
- * Phase 3: chapter step files now live in the ACTIVE BOOK's shared data/ dir
- * (named `${project.id}-step-N-...md`). Pass `activeDataDirResolver` so the
- * reader prefers that dir; it falls back to the legacy per-project
- * `workspace/projects/<slug>/` only when no book is active. The `${ws.id}-`
- * file-name prefix already scopes the on-disk read to this project's steps, so
- * sibling projects sharing the book dir never leak in.
+ * Phase 8: chapter step files live in the project's bound book data/ dir (named
+ * `${project.id}-step-N-...md`).  Pass `dataDirResolver` so the reader resolves
+ * the dir from the project's bookSlug first, then falls back to the global active
+ * book resolver, then to the legacy per-project `workspace/projects/<slug>/`.
+ * The `${ws.id}-` file-name prefix already scopes the on-disk read to this
+ * project's steps, so sibling projects sharing the book dir never leak in.
+ *
+ * @param dataDirResolver  Receives the project; returns the resolved data dir or
+ *   null.  For Phase 8 callers, pass
+ *   `(p) => services.books?.dataDirOf?.(p.bookSlug) ?? services.books?.activeDataDir?.() ?? null`.
  */
-export function makeGatherChapters(baseDir: string, activeDataDirResolver?: () => string | null) {
+export function makeGatherChapters(baseDir: string, dataDirResolver?: (project: any) => string | null) {
   return async function gatherChapters(project: any): Promise<Array<{ id: string; number: number; title: string; text: string }>> {
     const { join: j } = await import('path');
     const { readFile: rf } = await import('fs/promises');
@@ -84,7 +88,7 @@ export function makeGatherChapters(baseDir: string, activeDataDirResolver?: () =
 
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     let activeDataDir: string | null = null;
-    try { activeDataDir = activeDataDirResolver?.() ?? null; } catch { activeDataDir = null; }
+    try { activeDataDir = dataDirResolver?.(project) ?? null; } catch { activeDataDir = null; }
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
 
     const writingSteps = project.steps

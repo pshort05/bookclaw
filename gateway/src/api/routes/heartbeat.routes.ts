@@ -221,6 +221,7 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
     // Search for the file in workspace → active book data/ → projects → baseDir
     // Phase 3 read-path: generation outputs now land in the active book's data/
     // dir (fail-soft — null when no book is active).
+    // global auto-input uses the active book (no project context here)
     const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
     const searchPaths = [
       r(workspaceDir, inputFile),

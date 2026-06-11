@@ -424,12 +424,12 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readdir: rd, stat: st } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
-    // Phase 3: outputs live in the ACTIVE BOOK's shared data/ dir. Fall back to
-    // the legacy per-project dir only when no book is active. Because the book
+    // Phase 8: outputs live in the project's bound book data/ dir; fall back to
+    // the global active book, then the legacy per-project dir.  Because the book
     // dir is shared by every project in the book, scope the listing to THIS
     // project's files via the `${project.id}-` filename prefix (mirrors the
     // delete/restart guard) so sibling projects never show up here.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
 
@@ -472,11 +472,11 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { existsSync: ex } = await import('fs');
 
     const filename = String(req.params.filename);
-    // Phase 3: serve from the ACTIVE BOOK's shared data/ dir (legacy per-project
-    // dir when no book is active). In the shared dir, restrict downloads to THIS
-    // project's files (`${project.id}-` prefix) so one project can't pull a
-    // sibling's output.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    // Phase 8: serve from the project's bound book data/ dir; fall back to the
+    // global active book, then legacy per-project dir.  In the shared dir, restrict
+    // downloads to THIS project's files (`${project.id}-` prefix) so one project
+    // can't pull a sibling's output.
+    const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
     if (activeDataDir && !filename.startsWith(`${project.id}-`)) {
@@ -525,12 +525,11 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readFile: rf, writeFile: wf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
-    // Phase 3: read source / write docx in the ACTIVE BOOK's shared data/ dir
-    // (legacy per-project dir when no book is active). In the shared dir, only
-    // this project's files (`${project.id}-` prefix) are addressable; the
-    // generated docx inherits the prefix from the source name, so the returned
-    // download URL resolves under the same per-project scope.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    // Phase 8: read source / write docx in the project's bound book data/ dir;
+    // fall back to the global active book, then legacy per-project dir.  In the
+    // shared dir, only this project's files (`${project.id}-` prefix) are
+    // addressable; the generated docx inherits the prefix from the source name.
+    const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
     if (activeDataDir && !String(filename).startsWith(`${project.id}-`)) {
@@ -575,15 +574,15 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { readdir: rd, readFile: rf, writeFile: wf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
 
-    // Phase 3: compile from the ACTIVE BOOK's shared data/ dir (legacy
-    // per-project dir when no book is active). The shared dir holds every
+    // Phase 8: compile from the project's bound book data/ dir; fall back to the
+    // global active book, then legacy per-project dir.  The shared dir holds every
     // project's files, so the filename-pattern fallbacks and the universal
     // "remaining *.md" pass are scoped to THIS project via the `${project.id}-`
     // prefix; output files are written with that prefix too so they don't
     // collide and stay downloadable. Step files (read by exact `${s.id}-...`
     // name, where s.id already starts with `${project.id}-`) are inherently
     // scoped.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
     const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
     const outPrefix = activeDataDir ? `${project.id}-` : '';

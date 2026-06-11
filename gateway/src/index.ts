@@ -498,7 +498,8 @@ class BookClawGateway {
     extraContext?: string,
     overrideTaskType?: string,
     preferredProvider?: string,
-    overrideModel?: string
+    overrideModel?: string,
+    bookSlug?: string
   ): Promise<void> {
     // ── Security Check 1: Injection Detection ──
     const injectionResult = this.injectionDetector.scan(content);
@@ -539,7 +540,27 @@ class BookClawGateway {
     }
 
     // ── Build context ──
-    const soul = this.soul.getFullContext();
+    // Phase 8: when a bound bookSlug is provided (project-step path), compose
+    // Author/Voice/Genre from that book's files rather than the global active
+    // pointer.  Free chat (no bookSlug) is unchanged.
+    //
+    // The soul/genre fallbacks are intentionally ASYMMETRIC. Soul falls back to
+    // getFullContext() when the bound book has no readable Author snapshot —
+    // generation must never lose its voice (a blank persona is worse than the
+    // global one, and a well-formed book always has an Author). Genre has NO
+    // such fallback: a bound book with no genre guide must get NONE, because
+    // falling back to getActiveGenreGuide() would inject the *globally active*
+    // book's genre into this book's prompt — exactly the cross-leak Phase 8
+    // exists to prevent. Do not "fix" this into symmetry.
+    const soul = bookSlug
+      ? ((await this.soul.composeForBook(
+          this.books?.authorDirOf(bookSlug) ?? '',
+          this.books?.voiceDirOf(bookSlug) ?? null
+        )) || this.soul.getFullContext())
+      : this.soul.getFullContext();
+    const genreGuide = bookSlug
+      ? (this.books?.genreGuideOf(bookSlug) ?? undefined)
+      : (this.books?.getActiveGenreGuide() ?? undefined);
     const memories = await this.memory.getRelevant(content);
     const activeProject = await this.memory.getActiveProject();
     const skills = this.skills.matchSkills(content);
@@ -564,7 +585,7 @@ class BookClawGateway {
     // ── Construct system prompt ──
     let systemPrompt = this.buildSystemPrompt({
       soul,
-      genreGuide: this.books?.getActiveGenreGuide() ?? undefined,
+      genreGuide,
       memories,
       activeProject,
       skills,
@@ -1124,6 +1145,9 @@ class BookClawGateway {
         if (!args) return 'Usage: `/novel [your novel idea]`\nExample: `/novel a small-town romance about a baker and a firefighter`';
         try {
           const project = this.projectEngine.createNovelPipeline(args, `Write a complete novel: ${args}`);
+          // Phase 8: stamp the active book binding (createNovelPipeline takes no context).
+          const activeBookForNovel = this.books?.getActiveBook() ?? undefined;
+          if (activeBookForNovel) project.bookSlug = activeBookForNovel;
           this.activityLog.log({ type: 'project_created', source: 'dashboard', goalId: project.id, message: `Novel pipeline: "${args}" (${project.steps.length} steps)` });
           return `Novel pipeline created: **"${args}"** (${project.steps.length} steps)\n\nGo to **Projects** to start execution.`;
         } catch (err) {
@@ -1636,16 +1660,22 @@ class BookClawGateway {
         const inferredType = gateway.projectEngine.inferProjectType(description);
         let project;
 
+        // Phase 8: capture the active book at creation time so the project
+        // remains bound to it even if the active book changes later.
+        const activeBook = gateway.books?.getActiveBook() ?? undefined;
         if (inferredType === 'novel-pipeline') {
           project = gateway.projectEngine.createNovelPipeline(title, description, config);
+          // createNovelPipeline takes no context; stamp bookSlug directly.
+          if (activeBook) project.bookSlug = activeBook;
         } else {
           // Phase 3c: route non-novel creation through the ACTIVE BOOK's pipeline
           // when one is resolvable; otherwise fall back to the resolved library
           // pipeline for the inferred type (single-step only if unresolved).
           const activePipeline = gateway.books?.activePipeline?.();
+          const contextWithSlug = { ...(config || {}), bookSlug: activeBook };
           project = activePipeline
-            ? gateway.projectEngine.createProjectFromPipeline(activePipeline, title, description, config)
-            : gateway.projectEngine.createProjectResolved(gateway.projectEngine.inferProjectType(description), title, description, config);
+            ? gateway.projectEngine.createProjectFromPipeline(activePipeline, title, description, contextWithSlug)
+            : gateway.projectEngine.createProjectResolved(gateway.projectEngine.inferProjectType(description), title, description, contextWithSlug);
         }
 
         // Log project creation to activity
@@ -1749,7 +1779,8 @@ class BookClawGateway {
               projectContext,
               (activeStep as any).taskType || undefined,
               projectProvider,
-              stepModel
+              stepModel,
+              project.bookSlug
             ).catch(reject);
           });
 
@@ -1764,7 +1795,9 @@ class BookClawGateway {
                 (response) => { aiResponse = response; resolve(); },
                 projectContext,
                 'general',
-                projectProvider
+                projectProvider,
+                undefined,
+                project.bookSlug
               ).catch(reject);
             });
           }
@@ -1796,7 +1829,11 @@ class BookClawGateway {
                   `Continue writing from where you left off. You wrote ${wc} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize. Continue the actual prose.`,
                   'goal-engine',
                   (response) => { contResponse = response; resolve(); },
-                  projectContext
+                  projectContext,
+                  undefined,
+                  undefined,
+                  undefined,
+                  project.bookSlug
                 ).catch(reject);
               });
               if (contResponse.length > 100) {
@@ -1818,9 +1855,11 @@ class BookClawGateway {
         const wordCount = aiResponse.split(/\s+/).length;
 
         // Save full output to workspace file
-        // Phase 3c: route output to the active book's data/ (fall back to legacy
-        // flat projects/ dir only when no book is active).
-        const projectDir = gateway.books?.activeDataDir?.() ??
+        // Phase 8: route output to the project's bound book data/ dir; fall back
+        // to the global active book, then to the legacy flat projects/ dir.
+        const bookDataDir = gateway.books?.dataDirOf?.(project.bookSlug ?? null) ??
+          gateway.books?.activeDataDir?.() ?? null;
+        const projectDir = bookDataDir ??
           join(workspaceDir, 'projects', project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
         let savedFileName = '';
         try {
@@ -1920,7 +1959,7 @@ class BookClawGateway {
               // prefix manuscript files with the project id so sibling projects
               // don't overwrite each other (and delete/restart, which filter by
               // `${project.id}-`, can find them). Legacy per-project dir → plain name.
-              const manuscriptPrefix = gateway.books?.activeDataDir?.() ? `${project.id}-` : '';
+              const manuscriptPrefix = bookDataDir ? `${project.id}-` : '';
               await fs.writeFile(join(projectDir, `${manuscriptPrefix}manuscript.md`), manuscriptMd, 'utf-8');
 
               // Generate DOCX version
@@ -2120,6 +2159,7 @@ class BookClawGateway {
       async listFiles(subdir?: string): Promise<string[]> {
         // Phase 3 read-path: default to the active book's data/ dir (where outputs
         // now land); fall back to the legacy flat projects/ dir when no book is active.
+        // No project context here (Telegram /files is a global listing) — uses active book.
         const defaultDir = gateway.books?.activeDataDir?.() ?? join(workspaceDir, 'projects');
         const targetDir = subdir
           ? join(workspaceDir, subdir)
@@ -2159,6 +2199,7 @@ class BookClawGateway {
         let filePath = join(workspaceDir, cleanName);
         if (!existsSync(filePath)) {
           // Phase 3 read-path: prefer the active book's data/ dir; fall back to legacy projects/.
+          // No project context here (Telegram /read is a global lookup) — uses active book.
           const activeDataDir = gateway.books?.activeDataDir?.() ?? null;
           if (activeDataDir && existsSync(join(activeDataDir, cleanName))) {
             filePath = join(activeDataDir, cleanName);

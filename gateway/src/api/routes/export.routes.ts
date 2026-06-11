@@ -5,7 +5,7 @@ import { upload, makeGatherChapters } from './_shared.js';
 /** Export-side features: KDP blurb, Track Changes (DOCX roundtrip), external tool wrappers, cover typography, manuscript hub, beta reader + dialogue auditor. */
 export function mountExport(app: Application, gateway: any, baseDir: string): void {
   const services = gateway.getServices();
-  const gatherChapters = makeGatherChapters(baseDir, () => services.books?.activeDataDir?.() ?? null);
+  const gatherChapters = makeGatherChapters(baseDir, (p) => services.books?.dataDirOf?.(p?.bookSlug) ?? services.books?.activeDataDir?.() ?? null);
 
   // ═══════════════════════════════════════════════════════════
   // KDP Blurb Export

@@ -7,6 +7,31 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+interface SoulParts {
+  personality: string;
+  personalityOverride: string;
+  styleGuide: string;
+  voiceProfile: string;
+}
+
+/** Assemble the system-prompt string from four soul parts. Pure function; no I/O. */
+function assembleSoulContext(parts: SoulParts): string {
+  let context = '';
+  if (parts.personality) {
+    context += parts.personality + '\n\n';
+  }
+  if (parts.personalityOverride) {
+    context += parts.personalityOverride + '\n\n';
+  }
+  if (parts.styleGuide) {
+    context += '## Writing Style Guide\n\n' + parts.styleGuide + '\n\n';
+  }
+  if (parts.voiceProfile) {
+    context += '## Author Voice Profile\n\n' + parts.voiceProfile + '\n\n';
+  }
+  return context || 'You are BookClaw, a helpful writing assistant for authors.';
+}
+
 export class SoulService {
   private soulDir: string;
   private readonly initialSoulDir: string;
@@ -22,6 +47,37 @@ export class SoulService {
     this.initialSoulDir = soulDir;
   }
 
+  /**
+   * Read the four soul files from the given dirs into a SoulParts object.
+   * Operates purely on locals — no writes to any instance field.
+   */
+  private async composeFrom(authorDir: string, voiceDir: string | null): Promise<SoulParts> {
+    const parts: SoulParts = { personality: '', personalityOverride: '', styleGuide: '', voiceProfile: '' };
+
+    const soulPath = join(authorDir, 'SOUL.md');
+    if (existsSync(soulPath)) {
+      parts.personality = await readFile(soulPath, 'utf-8');
+    }
+
+    const personalityPath = join(authorDir, 'PERSONALITY.md');
+    if (existsSync(personalityPath)) {
+      parts.personalityOverride = await readFile(personalityPath, 'utf-8');
+    }
+
+    const styleBase = voiceDir ?? authorDir;
+    const stylePath = join(styleBase, 'STYLE-GUIDE.md');
+    if (existsSync(stylePath)) {
+      parts.styleGuide = await readFile(stylePath, 'utf-8');
+    }
+
+    const voicePath = join(styleBase, 'VOICE-PROFILE.md');
+    if (existsSync(voicePath)) {
+      parts.voiceProfile = await readFile(voicePath, 'utf-8');
+    }
+
+    return parts;
+  }
+
   async load(): Promise<void> {
     // Reset loaded fields first so a re-point (useBook) fully replaces the
     // prior author instead of leaking values for files the new dir omits.
@@ -31,33 +87,16 @@ export class SoulService {
     this.voiceProfile = '';
     this.name = 'BookClaw';
 
-    // Load personality
-    const soulPath = join(this.soulDir, 'SOUL.md');
-    if (existsSync(soulPath)) {
-      this.personality = await readFile(soulPath, 'utf-8');
-      // Extract name from first heading
+    const parts = await this.composeFrom(this.soulDir, this.voiceDir);
+    this.personality = parts.personality;
+    this.personalityOverride = parts.personalityOverride;
+    this.styleGuide = parts.styleGuide;
+    this.voiceProfile = parts.voiceProfile;
+
+    // Extract name from first heading of personality
+    if (this.personality) {
       const nameMatch = this.personality.match(/^#\s+(.+)/m);
       if (nameMatch) this.name = nameMatch[1].trim();
-    }
-
-    // Load optional personality override (e.g., snarky, formal, etc.)
-    // This file is user-created and NOT shipped with BookClaw
-    const personalityPath = join(this.soulDir, 'PERSONALITY.md');
-    if (existsSync(personalityPath)) {
-      this.personalityOverride = await readFile(personalityPath, 'utf-8');
-    }
-
-    // Style + voice come from the Voice snapshot (templates/voice/); fall back to
-    // the author dir when no separate voice dir is set (legacy/old-shape books).
-    const styleBase = this.voiceDir ?? this.soulDir;
-    const stylePath = join(styleBase, 'STYLE-GUIDE.md');
-    if (existsSync(stylePath)) {
-      this.styleGuide = await readFile(stylePath, 'utf-8');
-    }
-
-    const voicePath = join(styleBase, 'VOICE-PROFILE.md');
-    if (existsSync(voicePath)) {
-      this.voiceProfile = await readFile(voicePath, 'utf-8');
     }
   }
 
@@ -109,27 +148,38 @@ export class SoulService {
   }
 
   getFullContext(): string {
-    let context = '';
-
-    if (this.personality) {
-      context += this.personality + '\n\n';
-    }
-
     // Personality override comes right after soul — it modifies chat tone
     // without affecting writing output quality
-    if (this.personalityOverride) {
-      context += this.personalityOverride + '\n\n';
-    }
+    return assembleSoulContext({
+      personality: this.personality,
+      personalityOverride: this.personalityOverride,
+      styleGuide: this.styleGuide,
+      voiceProfile: this.voiceProfile,
+    });
+  }
 
-    if (this.styleGuide) {
-      context += '## Writing Style Guide\n\n' + this.styleGuide + '\n\n';
+  /**
+   * Stateless composition path: returns the same string shape as getFullContext()
+   * but reads from the given dirs rather than the singleton's current state.
+   * Does NOT mutate any instance field — safe to call concurrently with
+   * other books running against this singleton.
+   *
+   * Fail-soft: if authorDir is falsy/absent, or a read fails mid-run (permission,
+   * corruption), returns '' so the caller can fall back to getFullContext()
+   * instead of rejecting the in-flight step. Called per generation step at
+   * runtime, so a transient FS error must degrade, not crash the pipeline.
+   */
+  async composeForBook(authorDir: string, voiceDir: string | null): Promise<string> {
+    if (!authorDir || !existsSync(authorDir)) {
+      return '';
     }
-
-    if (this.voiceProfile) {
-      context += '## Author Voice Profile\n\n' + this.voiceProfile + '\n\n';
+    try {
+      const parts = await this.composeFrom(authorDir, voiceDir);
+      return assembleSoulContext(parts);
+    } catch (err) {
+      console.warn(`  ⚠ Soul: composeForBook failed to read "${authorDir}" — falling back to global Author: ${(err as Error)?.message || err}`);
+      return '';
     }
-
-    return context || 'You are BookClaw, a helpful writing assistant for authors.';
   }
 
   async updateVoiceProfile(analysis: string): Promise<void> {

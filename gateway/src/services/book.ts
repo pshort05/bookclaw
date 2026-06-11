@@ -307,22 +307,43 @@ export class BookService {
     return d ? join(d, '.baseline') : null;
   }
 
+  /** Absolute templates/author/ dir for a slug, or null if slug is null/invalid/unknown. */
+  authorDirOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const d = this.bookDir(slug);
+    if (!d || !existsSync(join(d, 'book.json'))) return null;
+    return join(d, 'templates', 'author');
+  }
+
+  /** Absolute templates/voice/ dir for a slug, or null if slug is null/invalid/unknown. */
+  voiceDirOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const d = this.bookDir(slug);
+    if (!d || !existsSync(join(d, 'book.json'))) return null;
+    return join(d, 'templates', 'voice');
+  }
+
+  /** Absolute data/ dir for a slug (where outputs land), or null if slug is null/invalid/unknown. */
+  dataDirOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const d = this.bookDir(slug);
+    if (!d || !existsSync(join(d, 'book.json'))) return null;
+    return join(d, 'data');
+  }
+
   /** Absolute templates/author/ dir of the active book, or null. */
   activeAuthorDir(): string | null {
-    const d = this.activeBookDir();
-    return d ? join(d, 'templates', 'author') : null;
+    return this.authorDirOf(this.activeBookSlug);
   }
 
   /** Absolute templates/voice/ dir of the active book, or null. */
   activeVoiceDir(): string | null {
-    const d = this.activeBookDir();
-    return d ? join(d, 'templates', 'voice') : null;
+    return this.voiceDirOf(this.activeBookSlug);
   }
 
   /** Absolute data/ dir of the active book (where outputs land), or null. */
   activeDataDir(): string | null {
-    const d = this.activeBookDir();
-    return d ? join(d, 'data') : null;
+    return this.dataDirOf(this.activeBookSlug);
   }
 
   /**
@@ -376,18 +397,17 @@ export class BookService {
   }
 
   /**
-   * Composes the active book's genre guide (templates/genre/*.md) into a single
-   * string for prompt injection (Phase 7). Files are ordered canonically
+   * Composes the genre guide for a given slug (templates/genre/*.md) into a single
+   * string for prompt injection (Phase 7/8). Files are ordered canonically
    * (reader-expectations → tropes → themes → beats → must-haves → genre-killers →
    * comps), each under a "## Genre Guide — <Title>" header; any extra .md files
    * follow in alphabetical order. Reads fresh on each call (cheap; always reflects
-   * the latest snapshot after a re-pull or active-book change). Returns null when
-   * there is no active book, no genre snapshot, or no non-empty genre files.
-   * NOTE: reads the single global active book — keep callers behind this accessor
-   * so Phase 8 can swap it to per-context without touching prompt assembly.
+   * the latest snapshot after a re-pull). Returns null when slug is null/invalid,
+   * no genre snapshot exists, or no non-empty genre files are present.
    */
-  getActiveGenreGuide(): string | null {
-    const dir = this.activeBookDir();
+  genreGuideOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const dir = this.bookDir(slug);
     if (!dir) return null;
     const genreDir = join(dir, 'templates', 'genre');
     if (!existsSync(genreDir)) return null;
@@ -431,6 +451,21 @@ export class BookService {
       parts.push(`## Genre Guide — ${TITLES[key] ?? key}\n\n${body}`);
     }
     return parts.length ? parts.join('\n\n') : null;
+  }
+
+  /**
+   * Composes the active book's genre guide (templates/genre/*.md) into a single
+   * string for prompt injection (Phase 7). Files are ordered canonically
+   * (reader-expectations → tropes → themes → beats → must-haves → genre-killers →
+   * comps), each under a "## Genre Guide — <Title>" header; any extra .md files
+   * follow in alphabetical order. Reads fresh on each call (cheap; always reflects
+   * the latest snapshot after a re-pull or active-book change). Returns null when
+   * there is no active book, no genre snapshot, or no non-empty genre files.
+   * NOTE: reads the single global active book — keep callers behind this accessor
+   * so Phase 8 can swap it to per-context without touching prompt assembly.
+   */
+  getActiveGenreGuide(): string | null {
+    return this.genreGuideOf(this.activeBookSlug);
   }
 
   /**
@@ -479,21 +514,31 @@ export class BookService {
   }
 
   /**
-   * Parse and return the active book's snapshotted pipeline definition
-   * (templates/pipeline.json → LibraryPipeline shape). Null if no active book
-   * or the file is missing/corrupt (fail-soft — the caller decides what to do).
+   * Parse and return the snapshotted pipeline definition for a given slug
+   * (templates/pipeline.json → LibraryPipeline shape). Null if slug is null/invalid,
+   * no book exists, or the file is missing/corrupt (fail-soft — caller decides).
    */
-  activePipeline(): import('./library-types.js').LibraryPipeline | null {
-    const d = this.activeBookDir();
+  pipelineOf(slug: string | null): import('./library-types.js').LibraryPipeline | null {
+    if (!slug) return null;
+    const d = this.bookDir(slug);
     if (!d) return null;
     const p = join(d, 'templates', 'pipeline.json');
     if (!existsSync(p)) return null;
     try {
       return JSON.parse(readFileSync(p, 'utf-8'));
     } catch (err) {
-      console.warn(`  ⚠ Books: could not parse active pipeline.json — ${(err as Error)?.message || err}`);
+      console.warn(`  ⚠ Books: could not parse pipeline.json for "${slug}" — ${(err as Error)?.message || err}`);
       return null;
     }
+  }
+
+  /**
+   * Parse and return the active book's snapshotted pipeline definition
+   * (templates/pipeline.json → LibraryPipeline shape). Null if no active book
+   * or the file is missing/corrupt (fail-soft — the caller decides what to do).
+   */
+  activePipeline(): import('./library-types.js').LibraryPipeline | null {
+    return this.pipelineOf(this.activeBookSlug);
   }
 
   // ── Phase 4: per-asset re-pull from the library ────────────────────────────

@@ -107,11 +107,18 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         if (Number.isFinite(n) && n > 0) resolvedConfig.targetWordsPerChapter = n;
       }
 
+      // Phase 8: capture the active book at creation time so the project
+      // remains bound to it even if the active book changes later.
+      const activeBook = services.books?.getActiveBook() ?? undefined;
+      const contextWithSlug = { ...(context || {}), bookSlug: activeBook };
+
       // Novel pipeline: use dedicated pipeline builder
       // Trust the explicitly-sent type; only infer from description if no type provided
       const inferredType = type || engine.inferProjectType(description);
       if (inferredType === 'novel-pipeline') {
         const project = engine.createNovelPipeline(title, description, resolvedConfig);
+        // createNovelPipeline takes no context; stamp bookSlug directly.
+        if (activeBook) project.bookSlug = activeBook;
         applyProjectOptions(project);
         return res.json({ project, planning: 'novel-pipeline' });
       }
@@ -119,6 +126,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // Book Production: uses dynamic chapter generation
       if (inferredType === 'book-production') {
         const project = engine.createBookProduction(title, description, resolvedConfig);
+        // createBookProduction takes no context; stamp bookSlug directly.
+        if (activeBook) project.bookSlug = activeBook;
         applyProjectOptions(project);
         return res.json({ project, planning: 'book-production' });
       }
@@ -127,7 +136,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       if (planning === 'dynamic') {
         const skillCatalog = services.skills.getSkillCatalog();
         const authorOSTools = services.authorOS?.getAvailableTools() || [];
-        const project = await engine.planProject(title, description, skillCatalog, authorOSTools, context);
+        const project = await engine.planProject(title, description, skillCatalog, authorOSTools, contextWithSlug);
         applyProjectOptions(project);
         return res.json({ project, planning: 'dynamic' });
       }
@@ -137,11 +146,11 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // create only if no active book / pipeline is resolvable.
       const activePipeline = services.books?.activePipeline?.();
       if (activePipeline) {
-        const project = engine.createProjectFromPipeline(activePipeline, title, description, context);
+        const project = engine.createProjectFromPipeline(activePipeline, title, description, contextWithSlug);
         applyProjectOptions(project);
         return res.json({ project, planning: 'book-pipeline', pipeline: activePipeline.name });
       }
-      const project = engine.createProject(inferredType, title, description, context);
+      const project = engine.createProject(inferredType, title, description, contextWithSlug);
       applyProjectOptions(project);
       return res.json({ project, planning: 'template' });
     } catch (err) {
@@ -165,7 +174,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     try {
       // NOTE (Phase 3c): the 6-phase macro-chain composes the built-in phase
       // sequence; per-book single-pipeline creation goes through /api/projects/create.
-      const result = engine.createPipeline(title, description, personaId, config);
+      // Phase 8: bind all child phase projects to the currently active book.
+      const pipelineActiveBook = services.books?.getActiveBook() ?? undefined;
+      const result = engine.createPipeline(title, description, personaId, config, pipelineActiveBook);
       res.json({
         pipelineId: result.pipelineId,
         phases: result.projects.map((p: any) => ({
@@ -356,7 +367,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         projectContext,
         activeStep.taskType || undefined,  // Use step's own taskType for routing
         stepProvider,                       // per-step override → project default → tier
-        stepModel                           // exact model id when the step pins one
+        stepModel,                          // exact model id when the step pins one
+        project.bookSlug                    // Phase 8: compose soul/genre from the project's bound book
       );
 
       // Retry once with 'general' routing if the response is too short
@@ -368,7 +380,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           'projects',
           (text: string) => { response = text; },
           projectContext,
-          'general'
+          'general',
+          undefined,
+          undefined,
+          project.bookSlug                  // Phase 8: keep the bound book on the retry path
         );
       }
 
@@ -434,7 +449,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { unlink } = await import('fs/promises');
         const { join: jp } = await import('path');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const projectDir = services.books?.activeDataDir?.() ?? jp(baseDir, 'workspace', 'projects', projectSlug);
+        const projectDir = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? jp(baseDir, 'workspace', 'projects', projectSlug);
         const filename = `${step.id}-${step.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
         await unlink(jp(projectDir, filename)).catch(() => {});
       } catch { /* non-fatal */ }
@@ -462,7 +477,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { readdirSync, existsSync: ex } = await import('fs');
         const { join: jp } = await import('path');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const activeDataDir = services.books?.activeDataDir?.() ?? null;
+        const activeDataDir = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
         const projectDir = activeDataDir ?? jp(baseDir, 'workspace', 'projects', projectSlug);
         if (ex(projectDir)) {
           // Only delete .md files, preserve manuscript / compiled-output / revised files
@@ -505,10 +520,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const { join } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
     const workspaceDir = join(baseDir, 'workspace');
-    // Phase 3c: outputs land under the ACTIVE BOOK's data/ dir. Fall back to the
-    // legacy flat workspace/projects/<slug>/ only if no book is active (keeps a
-    // headless run from silently dropping output). Resolved once per execution.
-    const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    // Phase 8: outputs land under the project's bound book data/ dir; fall back to
+    // the global active book, then the legacy flat projects/<slug>/ dir.
+    const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
     const outDirFor = (slug: string) =>
       activeDataDir ? activeDataDir : join(workspaceDir, 'projects', slug);
 
@@ -535,7 +549,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           projectContext,
           activeStep.taskType || undefined,  // Use step's own taskType for routing
           stepProvider,                       // per-step override → project default → tier
-          stepModel                           // exact model id when the step pins one
+          stepModel,                          // exact model id when the step pins one
+          currentProject.bookSlug             // Phase 8: compose soul/genre from the project's bound book
         );
 
         // Retry once with 'general' routing if the response is too short
@@ -548,7 +563,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             'project-engine',
             (text: string) => { response = text; },
             projectContext,
-            'general'  // Force free-tier routing (Gemini first)
+            'general',  // Force free-tier routing (Gemini first)
+            undefined,
+            undefined,
+            currentProject.bookSlug           // Phase 8: keep the bound book on the retry path
           );
         }
 
@@ -594,7 +612,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   projectContext,
                   activeStep.taskType || undefined,
                   stepProvider,  // keep the same pinned model across continuations
-                  stepModel
+                  stepModel,
+                  currentProject.bookSlug           // Phase 8: bound book on continuation
                 );
                 if (contResponse.length > 100) {
                   response = response + '\n\n' + contResponse;
@@ -663,7 +682,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   projectContext,
                   activeStep.taskType || undefined,
                   stepProvider,  // same pinned model on quality re-draft
-                  stepModel
+                  stepModel,
+                  currentProject.bookSlug           // Phase 8: bound book on quality re-draft
                 );
                 if (retryResponse && retryResponse.length > 500 &&
                     !retryResponse.startsWith('[AI provider failure]')) {
@@ -988,7 +1008,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { rm } = await import('fs/promises');
         const { existsSync: ex } = await import('fs');
         const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const activeDataDir = services.books?.activeDataDir?.() ?? null;
+        const activeDataDir = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
         const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
         if (ex(projectDir)) {
           const { readdir } = await import('fs/promises');
