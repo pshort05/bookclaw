@@ -34,11 +34,11 @@ export function ChatThread() {
     <div className={styles.wmid}>
       <div className={styles.thread}>
         {msgs.map((m, i) => (
-          <div key={i} className={styles.msg}>
+          <div key={i} className={`${styles.msg} ${m.who === 'me' ? styles.msgMe : ''}`}>
             <div className={`${styles.av} ${m.who === 'ai' ? styles.ai : styles.me}`}>{m.who === 'ai' ? 'BC' : 'P'}</div>
             <div className={styles.mbody}>
               <div className={styles.who}>{m.who === 'ai' ? 'BookClaw' : 'You'} · {m.t}</div>
-              <div className={styles.mtext}>{m.text}</div>
+              <div className={`${styles.mtext} ${m.who === 'ai' ? styles.aiText : ''}`}>{m.text}</div>
             </div>
           </div>
         ))}

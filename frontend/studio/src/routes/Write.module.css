@@ -108,6 +108,15 @@
   gap: 14px;
 }
 
+/* author (human) messages mirror to the opposite side from the AI */
+.msgMe {
+  flex-direction: row-reverse;
+}
+
+.msgMe .mbody {
+  text-align: right;
+}
+
 .av {
   width: 30px;
   height: 30px;
@@ -133,6 +142,7 @@
 }
 
 .mbody {
+  flex: 1;
   min-width: 0;
 }
 
@@ -147,8 +157,13 @@
 
 .mtext {
   font-size: 14.5px;
-  line-height: 1.65;
+  line-height: 1.35;
   color: var(--text);
+}
+
+/* AI replies sit a shade off the author's parchment — a quiet human-vs-AI cue */
+.aiText {
+  color: var(--dim);
 }
 
 .dimmed {

@@ -285,6 +285,20 @@
   gap: 14px;
 }
 
+/* author (human) messages mirror to the opposite side from the AI */
+.msgMe {
+  flex-direction: row-reverse;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.msgMe .body {
+  text-align: right;
+}
+
 .av {
   width: 32px;
   height: 32px;
@@ -316,8 +330,13 @@
 
 .bubble {
   font-size: 15px;
-  line-height: 1.62;
+  line-height: 1.35;
   color: var(--text);
+}
+
+/* AI replies sit a shade off the author's parchment — a quiet human-vs-AI cue */
+.bubbleAi {
+  color: var(--dim);
 }
 
 .bubbleSoft {

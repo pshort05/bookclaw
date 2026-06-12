@@ -87,9 +87,9 @@ export function ChatPane() {
         {messages.length === 0 && (
           <div className={styles.msg}>
             <div className={`${styles.av} ${styles.avAi}`}>BC</div>
-            <div>
+            <div className={styles.body}>
               <div className={styles.who}>BookClaw</div>
-              <div className={styles.bubble}>
+              <div className={`${styles.bubble} ${styles.bubbleAi}`}>
                 {activeBook
                   ? `Welcome back. Ready to work on ${activeBook.title}. What would you like to do?`
                   : 'Welcome to BookClaw. Select a book from the left, or start a new one to begin.'}
@@ -99,13 +99,13 @@ export function ChatPane() {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={styles.msg}>
+          <div key={i} className={`${styles.msg} ${msg.role === 'user' ? styles.msgMe : ''}`}>
             <div className={`${styles.av} ${msg.role === 'assistant' ? styles.avAi : styles.avMe}`}>
               {msg.role === 'assistant' ? 'BC' : 'You'}
             </div>
-            <div>
+            <div className={styles.body}>
               <div className={styles.who}>{msg.role === 'assistant' ? 'BookClaw' : 'You'}</div>
-              <div className={`${styles.bubble} ${msg.role === 'assistant' ? '' : ''}`}>
+              <div className={`${styles.bubble} ${msg.role === 'assistant' ? styles.bubbleAi : ''}`}>
                 {msg.content}
               </div>
             </div>
@@ -115,7 +115,7 @@ export function ChatPane() {
         {waiting && (
           <div className={styles.msg}>
             <div className={`${styles.av} ${styles.avAi}`}>BC</div>
-            <div>
+            <div className={styles.body}>
               <div className={styles.who}>BookClaw · thinking</div>
               <div className={styles.thinking}>
                 <span className={styles.dot1} />

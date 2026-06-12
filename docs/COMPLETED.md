@@ -8,6 +8,7 @@ Items moved here from [TODO.md](TODO.md) as they are finished. Newest first. Eac
   - **Activity monitor: show seconds in timestamps.** Activity (and Insights mini-feed) timestamps now render `HH:MM:SS` via a new shared `hhmmss()` helper, so rapid back-to-back events during a run are distinguishable.
   - **Activity monitor: single-space the rows.** Tightened the activity feed `.ev` row padding/gap so more events are visible without scrolling.
   - **Costs: show fractional cents to 4 decimals (`$0.0001`).** A new shared `money()` helper renders spend amounts at 4 decimals across the studio (Activity, Insights, Confirmations, Rail) and the Chat app (Stats), so cheap-model spend no longer reads as `$0.00`; budget **limits** stay whole-dollar (`$5.00`).
+  - **Chat: two-sided layout, single-spacing, AI text shade.** Both chat surfaces — the standalone Chat app (`frontend/chat/ChatPane.tsx` + `App.module.css`) and the studio Write thread (`frontend/studio/components/write/ChatThread.tsx` + `Write.module.css`) — now read like a conversation: message text is single-spaced (line-height `1.62`/`1.65` → `1.35`), the author's (human) messages mirror to the opposite side from the AI's via a `row-reverse` role-modifier (`.msgMe`) with right-aligned body, and AI replies are tinted a shade off the author's parchment (`--text` #efe7d4 → `--dim` #b4a98f) as an extra human-vs-AI cue. CSS + role-class only; `tsc` clean, 156 unit green, both frontends build.
 
 ## 2026-06-10
 
