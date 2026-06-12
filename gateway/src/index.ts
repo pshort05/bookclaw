@@ -540,26 +540,26 @@ class BookClawGateway {
     }
 
     // ── Build context ──
-    // Phase 8: when a bound bookSlug is provided (project-step path), compose
-    // Author/Voice/Genre from that book's files rather than the global active
-    // pointer.  Free chat (no bookSlug) is unchanged.
+    // Phase 8 + 10: composition pins to a specific book when EITHER a project-step
+    // binding (bookSlug) OR a per-channel override (a channel that ran /book) is
+    // present. Otherwise (web/default, or any channel without an override) the
+    // global path runs unchanged — getChannelBook() is null for those channels.
     //
     // The soul/genre fallbacks are intentionally ASYMMETRIC. Soul falls back to
-    // getFullContext() when the bound book has no readable Author snapshot —
-    // generation must never lose its voice (a blank persona is worse than the
-    // global one, and a well-formed book always has an Author). Genre has NO
-    // such fallback: a bound book with no genre guide must get NONE, because
-    // falling back to getActiveGenreGuide() would inject the *globally active*
-    // book's genre into this book's prompt — exactly the cross-leak Phase 8
-    // exists to prevent. Do not "fix" this into symmetry.
-    const soul = bookSlug
+    // getFullContext() when the pinned book has no readable Author snapshot —
+    // generation must never lose its voice. Genre has NO such fallback: a pinned
+    // book with no genre guide must get NONE, because falling back to
+    // getActiveGenreGuide() would inject the *globally active* book's genre —
+    // exactly the cross-leak Phases 8/10 exist to prevent. Do not "fix" into symmetry.
+    const overrideSlug = bookSlug ?? this.books?.getChannelBook(channel) ?? undefined;
+    const soul = overrideSlug
       ? ((await this.soul.composeForBook(
-          this.books?.authorDirOf(bookSlug) ?? '',
-          this.books?.voiceDirOf(bookSlug) ?? null
+          this.books?.authorDirOf(overrideSlug) ?? '',
+          this.books?.voiceDirOf(overrideSlug) ?? null
         )) || this.soul.getFullContext())
       : this.soul.getFullContext();
-    const genreGuide = bookSlug
-      ? (this.books?.genreGuideOf(bookSlug) ?? undefined)
+    const genreGuide = overrideSlug
+      ? (this.books?.genreGuideOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveGenreGuide() ?? undefined);
     const memories = await this.memory.getRelevant(content);
     const activeProject = await this.memory.getActiveProject();
@@ -1655,26 +1655,23 @@ class BookClawGateway {
        * The AI figures out the steps, skills, and tools needed.
        * Falls back to template-based planning if AI planning fails.
        */
-      async createProject(title: string, description: string, config?: Record<string, any>): Promise<{ id: string; steps: number }> {
-        // Detect novel-pipeline requests and use the dedicated pipeline builder
+      async createProject(title: string, description: string, config?: Record<string, any>, channel?: string): Promise<{ id: string; steps: number }> {
         const inferredType = gateway.projectEngine.inferProjectType(description);
         let project;
 
-        // Phase 8: capture the active book at creation time so the project
-        // remains bound to it even if the active book changes later.
-        const activeBook = gateway.books?.getActiveBook() ?? undefined;
+        // Phase 8 + 10: bind to the channel's resolved book (its per-channel
+        // override, else the global active book) at creation time, so the project
+        // stays bound even if the active book changes later.
+        const boundSlug = (channel ? gateway.books?.resolveBook(channel) : gateway.books?.getActiveBook()) ?? undefined;
         if (inferredType === 'novel-pipeline') {
           project = gateway.projectEngine.createNovelPipeline(title, description, config);
-          // createNovelPipeline takes no context; stamp bookSlug directly.
-          if (activeBook) project.bookSlug = activeBook;
+          if (boundSlug) project.bookSlug = boundSlug;
         } else {
-          // Phase 3c: route non-novel creation through the ACTIVE BOOK's pipeline
-          // when one is resolvable; otherwise fall back to the resolved library
-          // pipeline for the inferred type (single-step only if unresolved).
-          const activePipeline = gateway.books?.activePipeline?.();
-          const contextWithSlug = { ...(config || {}), bookSlug: activeBook };
-          project = activePipeline
-            ? gateway.projectEngine.createProjectFromPipeline(activePipeline, title, description, contextWithSlug)
+          // Route non-novel creation through the BOUND book's pipeline when resolvable.
+          const boundPipeline = gateway.books?.pipelineOf(boundSlug ?? null) ?? undefined;
+          const contextWithSlug = { ...(config || {}), bookSlug: boundSlug };
+          project = boundPipeline
+            ? gateway.projectEngine.createProjectFromPipeline(boundPipeline, title, description, contextWithSlug)
             : gateway.projectEngine.createProjectResolved(gateway.projectEngine.inferProjectType(description), title, description, contextWithSlug);
         }
 
@@ -2192,6 +2189,32 @@ class BookClawGateway {
 
         await listDir(targetDir);
         return files;
+      },
+
+      listBooks(channel: string) {
+        const books = (gateway.books?.list() ?? []).map((b) => ({ slug: b.slug, title: b.title }));
+        const currentSlug = gateway.books?.resolveBook(channel) ?? null;
+        const overridden = (gateway.books?.getChannelBook(channel) ?? null) !== null;
+        return { books, currentSlug, overridden };
+      },
+
+      async selectBook(channel: string, query: string) {
+        const all = (gateway.books?.list() ?? []).map((b) => ({ slug: b.slug, title: b.title }));
+        const q = query.trim();
+        const ql = q.toLowerCase();
+        let match = all.find((b) => b.slug === q) ?? all.find((b) => b.title.toLowerCase() === ql);
+        if (!match) {
+          const subs = all.filter((b) => b.title.toLowerCase().includes(ql) || b.slug.includes(ql));
+          if (subs.length === 1) match = subs[0];
+          else if (subs.length > 1) return { ok: false as const, error: 'multiple matches', candidates: subs };
+        }
+        if (!match) return { ok: false as const, error: 'not found' };
+        try {
+          await gateway.books!.setChannelBook(channel, match.slug);
+        } catch (e) {
+          return { ok: false as const, error: String((e as Error)?.message || e) };
+        }
+        return { ok: true as const, slug: match.slug, title: match.title };
       },
 
       async readFile(filename: string): Promise<{ content: string; error?: string }> {

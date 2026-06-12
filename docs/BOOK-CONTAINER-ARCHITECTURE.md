@@ -539,10 +539,17 @@ Each phase is independently shippable and verifiable.
   feature-smoke 69/0/0 incl. the enriched-`/api/books` assertion; mockup
   `dashboard/concept/phase9-book-board.html`. Spec/plan:
   `docs/superpowers/{specs,plans}/2026-06-11-phase9-book-board-ui*`.
-- **Phase 10 — Per-channel active book.** Telegram / web / API callers each
-  select their own active book independently (extends the
-  conversation-history-by-channel isolation). *Verify:* a Telegram command and a
-  web session target different books concurrently with no cross-contamination.
+- **(Implemented 2026-06-11.) Phase 10 — Per-channel active book.** Telegram /
+  web / API callers each select their own active book independently (extends the
+  conversation-history-by-channel isolation). Per-channel overrides are persisted
+  to `.config/channel-books.json`; resolution follows `resolveBook(channel) =
+  override ?? global`, so `handleMessage` composes soul/genre from whichever book
+  that channel has selected; the web studio continues to follow the global active-book
+  pointer unchanged. Telegram gains a `/book` command for per-chat selection, and
+  project creation (`/novel`, `/write`, `/project`) binds to the chat's resolved
+  book; API per-channel selection is deferred. *Verify:* a Telegram command and a
+  web session target different books concurrently with no cross-contamination. Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-11-phase10-per-channel-active-book*`.
 - **Phase 11 — Backup & recovery.** *(Was Phase 6 in the original plan; moved to
   the very end — a temporary host-level workaround covers backups in the interim,
   and the official release is gated on this final step.)* Local mirror snapshots

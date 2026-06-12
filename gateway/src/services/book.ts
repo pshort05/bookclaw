@@ -61,6 +61,11 @@ export class BookService {
   private appVersion: string;
   private activeBookSlug: string | null = null;
   private readonly activePtrPath: string;
+  // Phase 10: per-channel active-book overrides (channel → slug). Persisted so a
+  // Telegram chat's selection survives restarts; resolution falls back to the
+  // global pointer for any channel without an override (web/default included).
+  private channelBooks: Map<string, string> = new Map();
+  private readonly channelPtrPath: string;
 
   constructor(booksDir: string, library: LibraryService, appVersion: string) {
     this.booksDir = booksDir;
@@ -69,6 +74,7 @@ export class BookService {
     // The active-book pointer lives next to the books dir under .config so it
     // sits beside projects-state.json and the other workspace config.
     this.activePtrPath = join(dirname(this.booksDir), '.config', 'active-book.json');
+    this.channelPtrPath = join(dirname(this.booksDir), '.config', 'channel-books.json');
   }
 
   async initialize(): Promise<void> {
@@ -84,6 +90,26 @@ export class BookService {
       }
     } catch (err) {
       console.warn('  ⚠ Books: could not read active-book pointer — ignoring', err);
+    }
+    // Phase 10: restore per-channel overrides, pruning any whose book is gone
+    // (or whose slug is malformed). A non-object file is treated as empty and
+    // rewritten clean on the next persist.
+    try {
+      if (existsSync(this.channelPtrPath)) {
+        const raw = JSON.parse(readFileSync(this.channelPtrPath, 'utf-8'));
+        const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw as Record<string, unknown> : {};
+        let pruned = obj !== raw; // raw wasn't a plain object → rewrite it clean
+        for (const [ch, slug] of Object.entries(obj)) {
+          if (typeof slug === 'string' && this.isExistingBookSlug(slug)) {
+            this.channelBooks.set(ch, slug);
+          } else {
+            pruned = true;
+          }
+        }
+        if (pruned) await this.persistChannelBooks();
+      }
+    } catch (err) {
+      console.warn('  ⚠ Books: could not read channel-books overrides — ignoring', err);
     }
   }
 
@@ -282,6 +308,42 @@ export class BookService {
     this.activeBookSlug = slug;
     await mkdir(dirname(this.activePtrPath), { recursive: true });
     await writeFile(this.activePtrPath, JSON.stringify({ slug, at: new Date().toISOString() }, null, 2) + '\n', 'utf-8');
+  }
+
+  /** The raw per-channel override for a channel, or null (no fallback). */
+  getChannelBook(channel: string): string | null {
+    return this.channelBooks.get(channel) ?? null;
+  }
+
+  /** Resolve the effective book for a channel: its override, else the global active book. */
+  resolveBook(channel: string): string | null {
+    return this.channelBooks.get(channel) ?? this.activeBookSlug;
+  }
+
+  /** True if a slug is well-formed AND names a book that exists on disk. */
+  private isExistingBookSlug(slug: string): boolean {
+    return SLUG_RE.test(slug) && existsSync(join(this.booksDir, slug, 'book.json'));
+  }
+
+  /** Pin a channel to a book and persist. Rejects an unknown slug. */
+  async setChannelBook(channel: string, slug: string): Promise<void> {
+    if (!this.isExistingBookSlug(slug)) {
+      throw new Error(`Unknown book: ${slug}`);
+    }
+    this.channelBooks.set(channel, slug);
+    await this.persistChannelBooks();
+  }
+
+  /** Drop a channel's override (e.g. reset to default) and persist if it existed. */
+  async clearChannelBook(channel: string): Promise<void> {
+    if (this.channelBooks.delete(channel)) await this.persistChannelBooks();
+  }
+
+  /** Write the per-channel overrides to .config/channel-books.json. */
+  private async persistChannelBooks(): Promise<void> {
+    await mkdir(dirname(this.channelPtrPath), { recursive: true });
+    const obj = Object.fromEntries(this.channelBooks);
+    await writeFile(this.channelPtrPath, JSON.stringify(obj, null, 2) + '\n', 'utf-8');
   }
 
   /** Absolute dir of the active book, or null. */
@@ -506,6 +568,12 @@ export class BookService {
   async delete(slug: string): Promise<{ active: string | null }> {
     if (!SLUG_RE.test(slug)) throw new Error(`Invalid slug: ${slug}`);
     await rm(join(this.booksDir, slug), { recursive: true, force: true });
+    // Phase 10: drop any per-channel overrides pointing at the deleted book.
+    let overridesChanged = false;
+    for (const [ch, s] of this.channelBooks) {
+      if (s === slug) { this.channelBooks.delete(ch); overridesChanged = true; }
+    }
+    if (overridesChanged) await this.persistChannelBooks();
     if (this.activeBookSlug === slug) {
       this.activeBookSlug = null;
       await this.seedDefaultBook();

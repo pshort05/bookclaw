@@ -11,7 +11,12 @@ interface TelegramConfig {
 
 /** Handler for direct commands that interact with gateway services */
 interface CommandHandlers {
-  createProject: (title: string, description: string, config?: Record<string, any>) => Promise<{ id: string; steps: number }>;
+  createProject: (title: string, description: string, config?: Record<string, any>, channel?: string) => Promise<{ id: string; steps: number }>;
+  listBooks: (channel: string) => { books: Array<{ slug: string; title: string }>; currentSlug: string | null; overridden: boolean };
+  selectBook: (channel: string, query: string) => Promise<
+    | { ok: true; slug: string; title: string }
+    | { ok: false; error: string; candidates?: Array<{ slug: string; title: string }> }
+  >;
   startAndRunProject: (projectId: string) => Promise<{ completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }>;
   autoRunProject: (projectId: string, statusCallback: (msg: string) => Promise<void>) => Promise<void>;
   listProjects: () => Array<{ id: string; title: string; status: string; progress: string }>;
@@ -127,6 +132,7 @@ export class TelegramBridge {
         `/write [idea] — Quick writing task\n` +
         `/projects — List all projects\n` +
         `/status — Project status\n` +
+        `/book — Pick which book this chat writes into\n` +
         `/stop — Stop/pause active project\n` +
         `/research [topic] — Research a topic\n` +
         `/files — List output files (numbered)\n` +
@@ -149,7 +155,7 @@ export class TelegramBridge {
       }
       if (this.commandHandlers) {
         try {
-          const result = await this.commandHandlers.createProject(idea, `Write a complete novel: ${idea}`);
+          const result = await this.commandHandlers.createProject(idea, `Write a complete novel: ${idea}`, undefined, `telegram:${chatId}`);
           await this.sendMessage(chatId,
             `📖 Novel pipeline created: "${idea}"\n` +
             `${result.steps} steps (premise → bible → outline → chapters → revision → assembly)\n\n` +
@@ -177,7 +183,7 @@ export class TelegramBridge {
       if (this.commandHandlers) {
         await this.sendMessage(chatId, `📝 On it. Planning "${idea}"...\nI'll figure out the steps and run them automatically.`);
         try {
-          const project = await this.commandHandlers.createProject(idea, idea);
+          const project = await this.commandHandlers.createProject(idea, idea, undefined, `telegram:${chatId}`);
           await this.sendMessage(chatId, `✅ Planned ${project.steps} steps. Running autonomously...\nUse /stop to pause, /status to check progress.`);
 
           // Fire-and-forget: don't await so the poll loop can keep receiving /stop commands
@@ -225,7 +231,7 @@ export class TelegramBridge {
       if (this.commandHandlers) {
         try {
           await this.sendMessage(chatId, `🧠 Planning "${description}"...`);
-          const project = await this.commandHandlers.createProject(description, description);
+          const project = await this.commandHandlers.createProject(description, description, undefined, `telegram:${chatId}`);
           await this.sendMessage(chatId,
             `✅ Planned ${project.steps} steps. Running autonomously...\nUse /stop to pause, /status to check progress.`);
 
@@ -264,7 +270,42 @@ export class TelegramBridge {
       }
 
       if (!summary) summary = 'Nothing running. Use /project or /novel to start.\n';
-      await this.sendMessage(chatId, summary + `\n📊 Dashboard: http://localhost:3847`);
+      let bookLine = '';
+      if (this.commandHandlers) {
+        const { books, currentSlug, overridden } = this.commandHandlers.listBooks(`telegram:${chatId}`);
+        const cur = books.find((b) => b.slug === currentSlug);
+        if (cur) bookLine = `📖 Book: ${cur.title}${overridden ? '' : ' (default)'}\n`;
+      }
+      await this.sendMessage(chatId, bookLine + summary + `\n📊 Dashboard: http://localhost:3847`);
+      return;
+    }
+
+    // ── /book — list books, or pin this chat to a book ──
+    if (text === '/book' || text.startsWith('/book ')) {
+      if (!this.commandHandlers) return;
+      const channel = `telegram:${chatId}`;
+      const arg = text.replace(/^\/book\s*/, '').trim();
+      try {
+        if (!arg) {
+          const { books, currentSlug, overridden } = this.commandHandlers.listBooks(channel);
+          if (books.length === 0) { await this.sendMessage(chatId, 'No books yet. Create one in the studio.'); return; }
+          const list = books.map((b) => `${b.slug === currentSlug ? '📖' : '   '} ${b.title} — \`${b.slug}\``).join('\n');
+          const note = overridden ? '' : '\n\n_(following the global default — `/book <name>` to pin one to this chat)_';
+          await this.sendMessage(chatId, `*Books:*\n${list}${note}`);
+          return;
+        }
+        const result = await this.commandHandlers.selectBook(channel, arg);
+        if (result.ok) {
+          await this.sendMessage(chatId, `📖 This chat now writes into *${result.title}* (\`${result.slug}\`).`);
+        } else if (result.candidates && result.candidates.length) {
+          const cands = result.candidates.map((b) => `• ${b.title} — \`${b.slug}\``).join('\n');
+          await this.sendMessage(chatId, `Couldn't pick a book (${result.error}). Try one of:\n${cands}`);
+        } else {
+          await this.sendMessage(chatId, `No book matches "${arg}". Send /book to see them all.`);
+        }
+      } catch (e) {
+        await this.sendMessage(chatId, `❌ ${String(e)}`);
+      }
       return;
     }
 
