@@ -1,7 +1,27 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, Button } from '@bookclaw/shared';
 import type { Status } from '@bookclaw/shared';
 import styles from './Settings.module.css';
+
+type BackupSnapshot = { name: string; at: string; reason: string; scope: string; books: string[] };
+
+type BackupStatus = {
+  enabled: boolean;
+  lastRun: { at: string; ok: boolean; reason: string; error?: string } | null;
+  count: number;
+  snapshots: BackupSnapshot[];
+};
+
+type BackupConfig = {
+  enabled: boolean;
+  scope: 'standard' | 'full';
+  local: { keep: number };
+  cloud: { enabled: boolean; destinations: string[]; hook: string | null };
+  intervalHours: number;
+  onCompletion: boolean;
+  localPath: string;
+};
 
 const KEY_OPTIONS = [
   'gemini_api_key',
@@ -135,7 +155,293 @@ export function Settings() {
           onSave={(v) => saveLimit('costs.monthlyLimit', v)}
         />
       </div>
+
+      <BackupsCard />
     </div>
+  );
+}
+
+function BackupsCard() {
+  const [status, setStatus] = useState<BackupStatus | null>(null);
+  const [cfg, setCfg] = useState<BackupConfig | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
+  const [restoreFor, setRestoreFor] = useState<BackupSnapshot | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState(''); // '' = whole workspace
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [restored, setRestored] = useState<{ preSnapshot: string; restartRecommended: boolean } | null>(null);
+  const [destInput, setDestInput] = useState('');
+  const [hookInput, setHookInput] = useState('');
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const loadStatus = () =>
+    api<BackupStatus>('/api/backups')
+      .then(setStatus)
+      .catch(() => {});
+
+  const applyCfg = (c: BackupConfig) => {
+    setCfg(c);
+    setHookInput(c.cloud.hook ?? '');
+  };
+
+  const loadCfg = () =>
+    api<BackupConfig>('/api/backups/config')
+      .then(applyCfg)
+      .catch(() => {});
+
+  useEffect(() => {
+    loadStatus();
+    loadCfg();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveCfg = async (patch: Record<string, unknown>) => {
+    setMsg(null);
+    try {
+      const r = await api<{ config?: BackupConfig; pendingConfirmation?: string }>('/api/backups/config', {
+        method: 'PUT',
+        body: JSON.stringify(patch),
+      });
+      if (r.pendingConfirmation) {
+        setPendingId(r.pendingConfirmation);
+      } else if (r.config) {
+        applyCfg(r.config);
+      }
+    } catch (e) {
+      setMsg(`Couldn't save — ${String(e)}`);
+      await loadCfg();
+    }
+  };
+
+  const backupNow = async () => {
+    setBackingUp(true);
+    setMsg(null);
+    try {
+      await api('/api/backups', { method: 'POST' });
+      await loadStatus();
+    } catch (e) {
+      setMsg(`Backup failed — ${String(e)}`);
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
+  const doRestore = async () => {
+    if (!restoreFor) return;
+    setRestoreBusy(true);
+    setMsg(null);
+    setRestored(null);
+    try {
+      const r = await api<{ preSnapshot: string; restartRecommended: boolean }>(
+        `/api/backups/${encodeURIComponent(restoreFor.name)}/restore`,
+        { method: 'POST', body: JSON.stringify(restoreTarget ? { book: restoreTarget } : {}) },
+      );
+      setRestored({ preSnapshot: r.preSnapshot, restartRecommended: r.restartRecommended });
+      setRestoreFor(null);
+      await loadStatus();
+    } catch (e) {
+      setMsg(`Restore failed — ${String(e)}`);
+    } finally {
+      setRestoreBusy(false);
+    }
+  };
+
+  const finalize = async () => {
+    if (!pendingId) return;
+    setMsg(null);
+    try {
+      const r = await api<{ config: BackupConfig }>(
+        `/api/backups/config/confirm/${encodeURIComponent(pendingId)}`,
+        { method: 'POST' },
+      );
+      applyCfg(r.config);
+      setPendingId(null);
+      setMsg('Cloud backup change applied.');
+    } catch (e) {
+      setMsg(
+        String(e).includes('409')
+          ? 'Not approved yet — approve it on the Confirmations page first.'
+          : `Couldn't finalize — ${String(e)}`,
+      );
+    }
+  };
+
+  const addDest = () => {
+    const d = destInput.trim();
+    if (!d || !cfg) return;
+    setDestInput('');
+    saveCfg({ cloud: { destinations: [...cfg.cloud.destinations, d] } });
+  };
+
+  const removeDest = (d: string) => {
+    if (!cfg) return;
+    saveCfg({ cloud: { destinations: cfg.cloud.destinations.filter((x) => x !== d) } });
+  };
+
+  return (
+    <>
+      <div className={styles.sec}>Backups</div>
+      {cfg && !cfg.enabled && (
+        <div className={styles.warnBanner}>Backups are disabled — no point-in-time recovery.</div>
+      )}
+      <p className={styles.bkStatus}>
+        {status
+          ? status.lastRun
+            ? `Last backup ${new Date(status.lastRun.at).toLocaleString()} — ${
+                status.lastRun.ok ? 'ok' : `failed: ${status.lastRun.error ?? 'error'}`
+              } · ${status.count} snapshot${status.count === 1 ? '' : 's'}`
+            : `No backups yet · ${status.count} snapshot${status.count === 1 ? '' : 's'}`
+          : 'Backup status unavailable.'}
+      </p>
+      {cfg && (
+        <div className={styles.bkControls}>
+          <label className={styles.bkCheck}>
+            <input
+              type="checkbox"
+              checked={cfg.enabled}
+              onChange={(e) => saveCfg({ enabled: e.target.checked })}
+            />
+            Enabled
+          </label>
+          <LimitField
+            label="Keep"
+            value={cfg.local.keep}
+            onSave={(v) => saveCfg({ local: { keep: v } })}
+          />
+          <LimitField
+            label="Interval (h)"
+            value={cfg.intervalHours}
+            onSave={(v) => saveCfg({ intervalHours: v })}
+          />
+          <div className={styles.limit}>
+            <label>Scope</label>
+            <select value={cfg.scope} onChange={(e) => saveCfg({ scope: e.target.value })}>
+              <option value="standard">standard</option>
+              <option value="full">full</option>
+            </select>
+          </div>
+          <Button variant="primary" onClick={backupNow} disabled={backingUp}>
+            {backingUp ? 'Backing up…' : 'Back up now'}
+          </Button>
+        </div>
+      )}
+      {restored && (
+        <p className={styles.msg}>
+          Restored — pre-restore snapshot <code>{restored.preSnapshot}</code> was taken first.
+          {restored.restartRecommended && <strong> Restart recommended for a clean reload.</strong>}
+        </p>
+      )}
+      {status && status.snapshots.length === 0 && <p className={styles.dim}>No snapshots yet.</p>}
+      {status && status.snapshots.length > 0 && (
+        <div className={styles.keys}>
+          {status.snapshots.map((s) => (
+            <div key={s.name}>
+              <div className={styles.keyRow}>
+                <span>
+                  <code>{s.name}</code>
+                  <span className={styles.snapMeta}>
+                    {s.reason} · {s.books.length} book{s.books.length === 1 ? '' : 's'}
+                  </span>
+                </span>
+                <button
+                  className={styles.del}
+                  onClick={() => {
+                    setRestoreFor(restoreFor?.name === s.name ? null : s);
+                    setRestoreTarget('');
+                  }}
+                >
+                  Restore…
+                </button>
+              </div>
+              {restoreFor?.name === s.name && (
+                <div className={styles.restoreBox}>
+                  <select value={restoreTarget} onChange={(e) => setRestoreTarget(e.target.value)}>
+                    <option value="">Whole workspace</option>
+                    {restoreFor.books.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                  <Button variant="primary" onClick={doRestore} disabled={restoreBusy}>
+                    {restoreBusy ? 'Restoring…' : 'Restore'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setRestoreFor(null)} disabled={restoreBusy}>
+                    Cancel
+                  </Button>
+                  <p className={styles.dim}>
+                    A pre-restore snapshot is taken automatically.
+                    {restoreTarget === '' && ' Whole-workspace restore recommends a restart.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={styles.sec}>
+        Cloud backup <small>· zips pushed offsite after each snapshot; new destinations need approval</small>
+      </div>
+      {cfg && (
+        <>
+          <div className={styles.bkControls}>
+            <label className={styles.bkCheck}>
+              <input
+                type="checkbox"
+                checked={cfg.cloud.enabled}
+                onChange={(e) => saveCfg({ cloud: { enabled: e.target.checked } })}
+              />
+              Push to cloud destinations
+            </label>
+          </div>
+          <div className={styles.keys}>
+            {cfg.cloud.destinations.map((d) => (
+              <div key={d} className={styles.keyRow}>
+                <code>{d}</code>
+                <button className={styles.del} onClick={() => removeDest(d)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+            {cfg.cloud.destinations.length === 0 && <p className={styles.dim}>No destinations yet.</p>}
+          </div>
+          <div className={styles.cloudForm}>
+            <input
+              type="text"
+              placeholder="path or rclone:<remote>"
+              value={destInput}
+              onChange={(e) => setDestInput(e.target.value)}
+            />
+            <Button variant="secondary" onClick={addDest} disabled={!destInput.trim()}>
+              Add destination
+            </Button>
+          </div>
+          <div className={styles.cloudForm}>
+            <input
+              type="text"
+              placeholder="post-backup hook path (optional)"
+              value={hookInput}
+              onChange={(e) => setHookInput(e.target.value)}
+            />
+            <Button variant="secondary" onClick={() => saveCfg({ cloud: { hook: hookInput.trim() || null } })}>
+              Save hook
+            </Button>
+          </div>
+          {pendingId && (
+            <div className={styles.pending}>
+              <span>
+                Pending approval in <Link to="/confirmations">Confirmations</Link> (
+                <code>{pendingId}</code>) — approve there, then finalize.
+              </span>
+              <Button variant="secondary" onClick={finalize}>
+                Finalize
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+      {msg && <p className={styles.msg}>{msg}</p>}
+    </>
   );
 }
 

@@ -63,11 +63,13 @@ BOOKCLAW_VERSION="V5.$(date +%m.%d.%H.%M)"
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
 WORKSPACE_PATH="${BOOKCLAW_WORKSPACE_PATH:-$HOME/bookclaw-workspace}"
+BACKUP_PATH="${BOOKCLAW_BACKUP_PATH:-$HOME/bookclaw-backups}"
 cat > docker/.env << EOF
 BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY}
 BOOKCLAW_AUTH_TOKEN=${BOOKCLAW_AUTH_TOKEN}
 AUTHOR_OS_PATH=${AUTHOR_OS_PATH:-$HOME/author-os}
 BOOKCLAW_WORKSPACE_PATH=${WORKSPACE_PATH}
+BOOKCLAW_BACKUP_PATH=${BACKUP_PATH}
 BOOKCLAW_VERSION=${BOOKCLAW_VERSION}
 EOF
 echo "  ✓ Environment file created (version ${BOOKCLAW_VERSION})"
@@ -77,6 +79,12 @@ echo "  ✓ Environment file created (version ${BOOKCLAW_VERSION})"
 # Otherwise Docker auto-creates it as root and the app cannot write to it.
 mkdir -p "$WORKSPACE_PATH"
 echo "  ✓ Workspace dir ready: $WORKSPACE_PATH"
+
+# ── Ensure the host backup dir exists (bind-mount target) ──
+# Same reasoning as the workspace dir above. Non-fatal: a backup-dir problem
+# must not break the deploy (the app degrades to backups-unavailable).
+mkdir -p "$BACKUP_PATH" || echo "  ⚠ Could not create backup dir $BACKUP_PATH — backups may be unavailable"
+echo "  ✓ Backup dir ready: $BACKUP_PATH"
 
 # ── Build the image ──
 echo "  [2/4] Building BookClaw Docker image..."
@@ -88,12 +96,17 @@ echo "  ✓ Image built"
 # chown a host bind-mount the way it auto-owns a named volume, so a freshly
 # created host workspace dir stays owned by the deploying user and the app (a
 # different uid) can't write to it — the gateway would crash on its first mkdir
-# under /app/workspace. Chown the mounted workspace to the app user via a one-off
-# root container that reuses the service's mounts. Idempotent; cheap on re-runs.
-echo "  Aligning workspace ownership with the container user..."
+# under /app/workspace. Chown the mounted workspace and backup dirs to the app
+# user via a one-off root container that reuses the service's mounts.
+# Idempotent; cheap on re-runs.
+echo "  Aligning workspace + backup ownership with the container user..."
 docker compose -f docker/docker-compose.yml run --rm --user 0 --no-deps \
     --entrypoint chown bookclaw -R bookclaw:bookclaw /app/workspace
 echo "  ✓ Workspace ownership aligned"
+# Backups chown is tolerant — a failure must not break the deploy.
+docker compose -f docker/docker-compose.yml run --rm --user 0 --no-deps \
+    --entrypoint chown bookclaw -R bookclaw:bookclaw /app/backups \
+    || echo "  ⚠ backup dir ownership not aligned — backups may be unavailable"
 
 # ── Start services ──
 echo "  [3/4] Starting BookClaw..."

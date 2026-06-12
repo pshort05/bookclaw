@@ -550,7 +550,7 @@ Each phase is independently shippable and verifiable.
   book; API per-channel selection is deferred. *Verify:* a Telegram command and a
   web session target different books concurrently with no cross-contamination. Spec/plan:
   `docs/superpowers/{specs,plans}/2026-06-11-phase10-per-channel-active-book*`.
-- **Phase 11 — Backup & recovery.** *(Was Phase 6 in the original plan; moved to
+- **(Implemented 2026-06-12.) Phase 11 — Backup & recovery.** *(Was Phase 6 in the original plan; moved to
   the very end — a temporary host-level workaround covers backups in the interim,
   and the official release is gated on this final step.)* Local mirror snapshots
   (keep-N, default 10) + restore (whole-workspace and per-book); default-ON with
@@ -559,7 +559,14 @@ Each phase is independently shippable and verifiable.
   manual). *Verify:* a snapshot appears under the backup dir; the 11th prunes the
   oldest; a per-book restore round-trips a modified book; disabling logs the
   warning; a too-old restored book hits the version gate (read-only). **This is
-  the release gate.**
+  the release gate.** *Verified 2026-06-12:* all five criteria — 1/2/3/5 by unit
+  test (21 backup tests, 185 suite total), 4 by a local boot check, and 1/3 plus
+  the confirmation gate live on Mercury (feature-smoke **77/0/0** incl. the 8-check
+  backup section; per-book restore round-tripped against the real `/app/backups`
+  bind-mount). Standard scope grew to books/library/.config/soul/memory/documents/
+  projects/.bookclaw (non-regenerable-data rationale, owner-approved); `format`
+  config keys dropped as dead. Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-12-phase11-backup-recovery*`.
 - **Phase 12 — Library element share/import.** *(Post-release enhancement —
   lands after the Phase 11 release gate.)* Export an individual **library entry**
   (author / voice / genre / pipeline / section / skill) as a portable file, and

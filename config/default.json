@@ -50,6 +50,15 @@
     "monthlyLimit": 50,
     "alertAt": 0.8
   },
+  "backup": {
+    "enabled": true,
+    "localPath": "~/bookclaw-backups",
+    "scope": "standard",
+    "local": { "keep": 10 },
+    "cloud": { "enabled": false, "destinations": [], "hook": null },
+    "intervalHours": 24,
+    "onCompletion": true
+  },
   "bridges": {
     "telegram": {
       "enabled": false,

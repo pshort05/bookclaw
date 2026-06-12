@@ -15,6 +15,9 @@ services:
       # Persist workspace data on a host bind-mount (backup/share friendly;
       # default lives outside the repo). Override with BOOKCLAW_WORKSPACE_PATH.
       - ${BOOKCLAW_WORKSPACE_PATH:-/home/paul/bookclaw-workspace}:/app/workspace
+      # Persist backup snapshots on a host bind-mount (kept outside the
+      # workspace so restores can't clobber them). Override with BOOKCLAW_BACKUP_PATH.
+      - ${BOOKCLAW_BACKUP_PATH:-/home/paul/bookclaw-backups}:/app/backups
       # Persist vault (encrypted credentials)
       - bookclaw-vault:/app/config/.vault
       # Author OS tools (read-only mount for templates/references)
@@ -37,6 +40,8 @@ services:
       - BOOKCLAW_CHAT_PORT=${BOOKCLAW_CHAT_PORT:-}
       # Cross-origin browser origins (comma-separated). Required for LAN chat access.
       - BOOKCLAW_CORS_ORIGINS=${BOOKCLAW_CORS_ORIGINS:-}
+      # Backup root inside the container (the bind-mount above).
+      - BOOKCLAW_BACKUP_DIR=/app/backups
     # Security: Resource limits
     deploy:
       resources:

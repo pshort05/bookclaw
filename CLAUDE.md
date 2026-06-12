@@ -168,6 +168,8 @@ Everything user-generated lives under `workspace/` (entirely gitignored except t
 - `workspace/.bookclaw/workspace.json` — workspace schema marker (`schemaVersion`, `createdByApp`), stamped on first boot by `init/phase-01-config.ts` (`WORKSPACE_SCHEMA_VERSION`); a forthcoming per-book compatibility gate reads it — see [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md)
 - `workspace/audio/` — generated TTS files, auto-cleaned after 24h
 
+**Backups live OUTSIDE the workspace** (book-container Phase 11, the release gate): `BackupService` (`gateway/src/services/backup.ts`) writes default-ON mirror snapshots to `BOOKCLAW_BACKUP_DIR` ?? config `backup.localPath` (default `~/bookclaw-backups`; in Docker a second host bind-mount `BOOKCLAW_BACKUP_PATH` → `/app/backups`), keep-last-10 pruned. Restore (whole-workspace or per-book via `/api/backups`) always pre-snapshots first and never touches `.vault`/`.audit`; a restored too-old book hits the `schemaVersion` gate. Cloud push is opt-in (directory-drop / `rclone:` / hook), **confirmation-gated when adding a destination**, and BookClaw never deletes remote data. Disabling backups logs a loud `⚠` (same posture pattern as auth).
+
 In Docker, `workspace/` is a **host bind-mount** (`BOOKCLAW_WORKSPACE_PATH`, default `/home/paul/bookclaw-workspace`), not a named volume — so the working data is directly backup-able/shareable on the host (changed 2026-06-05; the encrypted vault is a separate volume, unaffected). `config/default.json` is the only versioned config; `config/user.json` overrides it and is gitignored.
 
 ### Bridges

@@ -204,3 +204,147 @@
   border-color: rgba(240, 145, 58, 0.45);
   box-shadow: 0 0 0 3px rgba(240, 145, 58, 0.08);
 }
+
+.limit select {
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: 0.18s;
+}
+
+.limit select:focus {
+  border-color: rgba(240, 145, 58, 0.45);
+  box-shadow: 0 0 0 3px rgba(240, 145, 58, 0.08);
+}
+
+/* Backups */
+.warnBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0 0 12px;
+  border-radius: var(--r-s);
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(100deg, rgba(255, 106, 57, 0.14), transparent);
+  border: 1px solid rgba(255, 106, 57, 0.4);
+  color: #ffb59a;
+}
+
+.bkStatus {
+  font-size: 13px;
+  color: var(--dim);
+  margin: 0 0 12px;
+}
+
+.bkControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.bkCheck {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 12px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.snapMeta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  margin-left: 10px;
+}
+
+.restoreBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: -2px 0 8px;
+  background: var(--bg-2);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-s);
+}
+
+.restoreBox select {
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.restoreBox p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.cloudForm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.cloudForm input[type='text'] {
+  flex: 1;
+  min-width: 220px;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: 0.18s;
+}
+
+.cloudForm input[type='text']:focus {
+  border-color: rgba(240, 145, 58, 0.45);
+  box-shadow: 0 0 0 3px rgba(240, 145, 58, 0.08);
+}
+
+.cloudForm input[type='text']::placeholder {
+  color: var(--faint);
+  font-style: italic;
+}
+
+.pending {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--dim);
+  margin: 8px 0;
+}
+
+.pending a {
+  color: var(--ember);
+}

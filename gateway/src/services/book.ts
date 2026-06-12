@@ -79,6 +79,11 @@ export class BookService {
 
   async initialize(): Promise<void> {
     await mkdir(this.booksDir, { recursive: true });
+    // Reset in-memory state first: initialize() is re-run after a backup restore,
+    // and a restore that removed/changed the pointer files must not leave stale
+    // bindings to books that no longer exist.
+    this.activeBookSlug = null;
+    this.channelBooks.clear();
     // Restore the active-book pointer (fail-soft: a missing/corrupt file just
     // means "no active book yet" — the boot seed will resolve one).
     try {

@@ -1,10 +1,13 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { homedir } from 'os';
 import { TTSService } from '../services/tts.js';
+import { BackupService, readBackupCfg } from '../services/backup.js';
 import { ImageGenService } from '../services/image-gen.js';
 import { PersonaService } from '../services/personas.js';
 import { ProjectEngine } from '../services/projects.js';
 import { ContextEngine } from '../services/context-engine.js';
 import { ROOT_DIR } from '../paths.js';
+import { appVersion, WORKSPACE_SCHEMA_VERSION } from './phase-01-config.js';
 import type { BookClawGateway } from '../index.js';
 
 /** Phases 6c–6f: TTS, image generation, personas, project engine, context engine. */
@@ -54,4 +57,26 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   gw.contextEngine = new ContextEngine(join(ROOT_DIR, 'workspace'));
   gw.projectEngine.setContextEngine(gw.contextEngine);
   console.log('  ✓ Context Engine: manuscript memory + continuity checking');
+
+  // ── Book-container Phase 11: Backup & recovery ──
+  try {
+    const rawRoot = process.env.BOOKCLAW_BACKUP_DIR || gw.config.get('backup.localPath', '~/bookclaw-backups');
+    const backupRoot = rawRoot.startsWith('~') ? join(homedir(), rawRoot.slice(1)) : resolve(rawRoot);
+    gw.backup = new BackupService(join(ROOT_DIR, 'workspace'), backupRoot,
+      () => readBackupCfg(gw.config),
+      { appVersion: await appVersion(), workspaceSchemaVersion: WORKSPACE_SCHEMA_VERSION });
+    if (gw.books) gw.backup.setBooks(gw.books);
+    await gw.backup.initialize();
+    // Hook registered unconditionally — the service checks the live enabled/onCompletion flags.
+    gw.projectEngine.onProjectCompleted(async () => { await gw.backup?.onCompletionSnapshot(); });
+    if (gw.backup.start()) {
+      const cfg = readBackupCfg(gw.config);
+      console.log(`  ✓ Backup: ON — keep ${cfg.keep}, every ${cfg.intervalHours}h, root ${backupRoot}`);
+    } else {
+      console.log('  ⚠ BACKUPS ARE DISABLED (backup.enabled=false) — no point-in-time recovery. Re-enable in Settings → Backups.');
+    }
+  } catch (e: any) {
+    console.log(`  ⚠ Backup service unavailable: ${e.message}`);
+    gw.backup = undefined;
+  }
 }

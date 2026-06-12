@@ -84,6 +84,7 @@ CREATED_SERIES=()
 CREATED_DOCS=()
 CREATED_LIBRARY_GENRES=()
 CREATED_LIBRARY_AUTHORS=()
+BK_ORIG_CFG=""   # original backup config (Phase 11) — restored verbatim by the EXIT trap
 
 pass(){ PASSES=$((PASSES+1)); echo "  [PASS] $1${2:+ :: $2}"; }
 fail(){ FAILS=$((FAILS+1));   echo "  [FAIL] $1${2:+ :: $2}"; }
@@ -203,6 +204,15 @@ restore(){
     curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/author/$aname" >/dev/null 2>&1 || true
     echo "  [cleanup] deleted library/author $aname"
   done
+
+  # Restore the original backup config captured at the start of the Phase 11
+  # section (verbatim PUT). Snapshots created by this run are intentionally
+  # LEFT on the target: keep-N pruning removes them automatically, so no
+  # snapshot cleanup is required here.
+  if [ -n "${BK_ORIG_CFG:-}" ]; then
+    curl -s --max-time 30 "${H[@]}" -X PUT -d "$BK_ORIG_CFG" "$BASE_URL/api/backups/config" >/dev/null 2>&1 || true
+    echo "  [restore] backup config restored"
+  fi
 
   local c1; c1=$(daily)
   echo ""
@@ -846,6 +856,181 @@ else
     skip "memory search" "(search index unavailable — 503)"
   else
     fail "memory search" "code=$MSRCODE"
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
+echo "### Tier A (Phase 11) — backup & restore (free, no AI)"
+# Snapshots created on the target by this section are deliberately left in
+# place: keep-N pruning removes them automatically, so no snapshot cleanup
+# is needed (the EXIT trap only restores the original backup config).
+
+BK_LIST_CODE=$(code GET /api/backups)
+if [ "$BK_LIST_CODE" = "404" ] || [ "$BK_LIST_CODE" = "503" ]; then
+  BK_WHY="(Phase 11 not deployed)"
+  [ "$BK_LIST_CODE" = "503" ] && BK_WHY="(backup service unavailable — 503)"
+  skip "backups list"                        "$BK_WHY"
+  skip "backup config keep round-trip"       "$BK_WHY"
+  skip "backup snapshot create + listed"     "$BK_WHY"
+  skip "backup per-book restore round-trip"  "$BK_WHY"
+  skip "backup restore unknown snapshot → 404" "$BK_WHY"
+  skip "backup cloud config gated (202)"     "$BK_WHY"
+  skip "backup gate confirmation listed"     "$BK_WHY"
+  skip "backup cloud config restored"        "$BK_WHY"
+else
+  # Capture the original config verbatim — the EXIT trap PUTs it back.
+  BK_ORIG_CFG=$(req GET /api/backups/config)
+
+  # ── 1. List: 200 with a snapshots[] array (doubles as the feature probe) ──
+  BK_LIST=$(req GET /api/backups)
+  BK_IS_ARR=$(printf '%s' "$BK_LIST" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(Array.isArray(JSON.parse(s).snapshots)?"yes":"no")}catch(e){console.log("no")}})')
+  if [ "$BK_LIST_CODE" = "200" ] && [ "$BK_IS_ARR" = "yes" ]; then
+    pass "backups list" "snapshots[] present"
+  else
+    fail "backups list" "code=$BK_LIST_CODE snapshots_array=$BK_IS_ARR"
+  fi
+
+  # ── 2. Config round-trip: local.keep 9 → back to 10 ──
+  # PUT body merges over the current config (validate() in backups.routes.ts),
+  # so a partial {"local":{"keep":N}} body is valid.
+  BK_PUT9_CODE=$(code PUT /api/backups/config '{"local":{"keep":9}}')
+  BK_KEEP9=$(req GET /api/backups/config | jget local.keep)
+  BK_PUT10_CODE=$(code PUT /api/backups/config '{"local":{"keep":10}}')
+  BK_KEEP10=$(req GET /api/backups/config | jget local.keep)
+  if [ "$BK_PUT9_CODE" = "200" ] && [ "$BK_KEEP9" = "9" ] \
+     && [ "$BK_PUT10_CODE" = "200" ] && [ "$BK_KEEP10" = "10" ]; then
+    pass "backup config keep round-trip" "keep 9→10"
+  else
+    fail "backup config keep round-trip" "put9=$BK_PUT9_CODE keep=$BK_KEEP9 put10=$BK_PUT10_CODE keep=$BK_KEEP10"
+  fi
+
+  # ── Resolve a book for the restore round-trip BEFORE snapshotting, so the
+  # snapshot below contains it. Reuse the Tier-A smoke book if it was created;
+  # otherwise create a throwaway (same pattern; trap deletes it).
+  BK_SLUG="${BSLUG:-}"
+  if [ -z "$BK_SLUG" ] && [ "$(has_endpoint GET /api/books)" != "no" ] \
+     && [ -n "${PIPE_NAME:-}" ] && [ -n "${AUTHOR_NAME:-}" ]; then
+    BK_BODY=$(node -e '
+      const [title,author,voice,pipeline]=process.argv.slice(1);
+      console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));' \
+      "The Salt-Glass Annals" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$PIPE_NAME")
+    BK_BRESP=$(req POST /api/books "$BK_BODY")
+    BK_SLUG=$(printf '%s' "$BK_BRESP" | jget book.slug)
+    [ -n "$BK_SLUG" ] && CREATED_BOOKS+=("$BK_SLUG")
+  fi
+
+  # ── 3. Back up now: 200 with snapshot.name, then listed ──
+  BK_SNAP_OUT=$(reqc POST /api/backups "" 300)
+  BK_SNAP_CODE=$(printf '%s' "$BK_SNAP_OUT" | tail -n1)
+  BK_SNAP_BODY=$(printf '%s' "$BK_SNAP_OUT" | sed '$d')
+  BK_SNAP_NAME=$(printf '%s' "$BK_SNAP_BODY" | jget snapshot.name)
+  if [ "$BK_SNAP_CODE" = "200" ] && [ -n "$BK_SNAP_NAME" ]; then
+    BK_LISTED=$(req GET /api/backups | grep -c "$BK_SNAP_NAME" || true)
+    if [ "$BK_LISTED" -ge 1 ]; then
+      pass "backup snapshot create + listed" "name=$BK_SNAP_NAME"
+    else
+      fail "backup snapshot create + listed" "name=$BK_SNAP_NAME not in list"
+    fi
+  else
+    fail "backup snapshot create + listed" "code=$BK_SNAP_CODE resp=$(printf '%s' "$BK_SNAP_BODY" | head -c 200)"
+    BK_SNAP_NAME=""
+  fi
+
+  # ── 4. Per-book restore round-trip ──
+  # The snapshot above holds the book's pristine templates. Write a sentinel
+  # into the author template via the existing book-template write API (per-book
+  # restore replaces the whole books/<slug>/ dir, templates included), restore,
+  # then assert the sentinel is gone.
+  if [ -z "$BK_SLUG" ]; then
+    skip "backup per-book restore round-trip" "(no book available)"
+  elif [ -z "$BK_SNAP_NAME" ]; then
+    skip "backup per-book restore round-trip" "(snapshot create failed)"
+  elif [ "$(has_endpoint GET /api/books/active/templates/author)" = "no" ]; then
+    skip "backup per-book restore round-trip" "(templates endpoint absent)"
+  else
+    code POST /api/books/active "{\"slug\":\"$BK_SLUG\"}" >/dev/null
+    BK_TPL=$(req GET /api/books/active/templates/author)
+    BK_FILE_KEY=$(printf '%s' "$BK_TPL" | node -e '
+      let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+        try{ const f=JSON.parse(s).files||{}; console.log(Object.keys(f)[0]||""); }
+        catch(e){ console.log(""); }
+      })')
+    if [ -z "$BK_FILE_KEY" ]; then
+      skip "backup per-book restore round-trip" "(no file in author template)"
+    else
+      BK_SENTINEL="BK-SENTINEL-$RANDOM"
+      BK_MOD_BODY=$(printf '%s' "$BK_TPL" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          const sent=process.argv[1];
+          try{
+            const f=JSON.parse(s).files||{};
+            const k=Object.keys(f)[0];
+            process.stdout.write(JSON.stringify({files:{[k]:(f[k]||"")+"\n\n"+sent+"\n"}}));
+          }catch(e){ process.stdout.write("{}"); }
+        })' "$BK_SENTINEL")
+      BK_MOD_CODE=$(code PUT /api/books/active/templates/author "$BK_MOD_BODY")
+      BK_MODDED=$(req GET /api/books/active/templates/author | grep -c "$BK_SENTINEL" || true)
+      BK_REST_RESP=$(req POST "/api/backups/$BK_SNAP_NAME/restore" "{\"book\":\"$BK_SLUG\"}" 300)
+      BK_PRE=$(printf '%s' "$BK_REST_RESP" | jget preSnapshot)
+      BK_AFTER=$(req GET /api/books/active/templates/author | grep -c "$BK_SENTINEL" || true)
+      if [ "$BK_MODDED" -ge 1 ] && [ -n "$BK_PRE" ] && [ "$BK_AFTER" -eq 0 ]; then
+        pass "backup per-book restore round-trip" "pre=$BK_PRE, sentinel reverted"
+      else
+        fail "backup per-book restore round-trip" "mod_code=$BK_MOD_CODE modded=$BK_MODDED pre=$BK_PRE after=$BK_AFTER resp=$(printf '%s' "$BK_REST_RESP" | head -c 200)"
+      fi
+    fi
+  fi
+
+  # ── 5. Restore of a nonexistent (but well-formed) snapshot id → 404 ──
+  BK_404_CODE=$(code POST /api/backups/2099-01-01T00-00-00/restore)
+  if [ "$BK_404_CODE" = "404" ]; then
+    pass "backup restore unknown snapshot → 404"
+  else
+    fail "backup restore unknown snapshot → 404" "got $BK_404_CODE"
+  fi
+
+  # ── 6. Confirmation gate: a NEW cloud destination must be held (202), not
+  # applied. Do NOT approve it — the 202 path never persists config. ──
+  BK_GATE_OUT=$(reqc PUT /api/backups/config '{"cloud":{"enabled":true,"destinations":["/tmp/bc-smoke-cloud"]}}')
+  BK_GATE_CODE=$(printf '%s' "$BK_GATE_OUT" | tail -n1)
+  BK_GATE_BODY=$(printf '%s' "$BK_GATE_OUT" | sed '$d')
+  BK_CONF_ID=$(printf '%s' "$BK_GATE_BODY" | jget pendingConfirmation)
+  if [ "$BK_GATE_CODE" = "202" ] && [ -n "$BK_CONF_ID" ]; then
+    pass "backup cloud config gated (202)" "pendingConfirmation=$BK_CONF_ID"
+  else
+    fail "backup cloud config gated (202)" "code=$BK_GATE_CODE resp=$(printf '%s' "$BK_GATE_BODY" | head -c 200)"
+  fi
+
+  # Best-effort: the held request appears in the confirmations list. Then
+  # REJECT it (never approve) so it doesn't dangle — rejecting never executes
+  # the gated action (same lifecycle cleanup as the gated-import checks).
+  if [ -z "$BK_CONF_ID" ]; then
+    skip "backup gate confirmation listed" "(gate not engaged)"
+  elif [ "$(has_endpoint GET /api/confirmations)" = "no" ]; then
+    skip "backup gate confirmation listed" "(confirmations API absent)"
+  else
+    BK_CONFLIST=$(req GET /api/confirmations)
+    if printf '%s' "$BK_CONFLIST" | grep -q "$BK_CONF_ID"; then
+      pass "backup gate confirmation listed" "id=$BK_CONF_ID (left unapproved)"
+    else
+      fail "backup gate confirmation listed" "id=$BK_CONF_ID not in list"
+    fi
+    code POST "/api/confirmations/$BK_CONF_ID/reject" >/dev/null 2>&1 || true
+    echo "  [cleanup] rejected backup gate confirmation $BK_CONF_ID"
+  fi
+
+  # PUT the original cloud config back (no new destinations → not gated → 200).
+  BK_CLOUD_ORIG=$(printf '%s' "$BK_ORIG_CFG" | jget cloud)
+  if [ -z "$BK_CLOUD_ORIG" ]; then
+    skip "backup cloud config restored" "(could not parse original cloud config)"
+  else
+    BK_CLOUD_PUT=$(code PUT /api/backups/config "{\"cloud\":$BK_CLOUD_ORIG}")
+    if [ "$BK_CLOUD_PUT" = "200" ]; then
+      pass "backup cloud config restored" "200, no gate"
+    else
+      fail "backup cloud config restored" "code=$BK_CLOUD_PUT"
+    fi
   fi
 fi
 
