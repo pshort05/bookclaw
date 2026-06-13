@@ -58,6 +58,20 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   gw.projectEngine.setContextEngine(gw.contextEngine);
   console.log('  ✓ Context Engine: manuscript memory + continuity checking');
 
+  // TODO #15: advance the bound book's manifest phase as its project's steps
+  // complete (the frontier phase = next step's phase, or the just-completed
+  // step's phase on the final step). Fail-soft; setPhase no-ops on unknown books.
+  gw.projectEngine.onStepCompleted(async (project: any, completedStep: any, next: any) => {
+    if (!gw.books || !project?.bookSlug) return;
+    const phase = next?.phase ?? completedStep?.phase;
+    if (!phase) return;
+    // Only persist phases that are board segments for this book — a sub-phase
+    // like book-production's 'polish' must not leave the book's phase list.
+    const phases = gw.books.phasesForBook(project.bookSlug);
+    if (phases.length && !phases.includes(phase)) return;
+    await gw.books.setPhase(project.bookSlug, phase);
+  });
+
   // ── Book-container Phase 11: Backup & recovery ──
   try {
     const rawRoot = process.env.BOOKCLAW_BACKUP_DIR || gw.config.get('backup.localPath', '~/bookclaw-backups');

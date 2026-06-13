@@ -34,3 +34,29 @@ export interface LibraryPipeline {
 }
 
 export const PIPELINE_SCHEMA_VERSION = 1;
+
+/**
+ * Phase sequence the dynamic `novel-pipeline` produces, in order. Mirrors the
+ * distinct `phase` values emitted by ProjectEngine.createNovelPipeline — the
+ * steps don't exist until a project is created, so the board can't derive them
+ * from the (empty-at-rest) pipeline.steps and uses this constant instead.
+ */
+export const NOVEL_PIPELINE_PHASES = ['premise', 'bible', 'outline', 'writing', 'revision', 'assembly'] as const;
+
+/**
+ * The pipeline's ordered, distinct phase list — what the board renders as
+ * progress segments (TODO #15). Dynamic novel-pipeline → NOVEL_PIPELINE_PHASES;
+ * a phase-tagged static pipeline → its distinct step phases in first-seen order;
+ * a no-phase pipeline → a single segment named after its lifecycle stage (the
+ * pipeline name minus a leading `book-`, e.g. `book-planning` → `planning`).
+ * Never returns an empty array.
+ */
+export function pipelinePhases(pipeline: LibraryPipeline): string[] {
+  if (pipeline.dynamic) return [...NOVEL_PIPELINE_PHASES];
+  const seen: string[] = [];
+  for (const step of pipeline.steps ?? []) {
+    if (step.phase && !seen.includes(step.phase)) seen.push(step.phase);
+  }
+  if (seen.length) return seen;
+  return [pipeline.name.replace(/^book-/, '') || pipeline.name];
+}

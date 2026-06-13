@@ -27,7 +27,8 @@ export interface BookManifest {
   schemaVersion: number;      // THE compatibility gate
   createdByApp: string;       // provenance only — never gates
   lastWrittenByApp: string;   // provenance only
-  phase: 'planning' | 'bible' | 'production' | 'revision' | 'format' | 'launch';
+  phase: string;              // current pipeline phase (advanced by ProjectEngine.onStepCompleted, TODO #15); 'planning' at creation
+
   createdAt: string;          // ISO
   pulledFrom: {
     author: PulledRef;

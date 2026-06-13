@@ -27,6 +27,8 @@ export interface BookSummary {
   // Phase 9 board enrichment (GET /api/books). Optional so older callers/tests still typecheck.
   next?: NextStep | null;
   live?: BookLive | null;
+  // TODO #15: the book's pipeline-derived phase segments for the board progress bar.
+  phases?: string[];
 }
 
 /**
@@ -95,6 +97,8 @@ export interface BookDetail {
     voice?: string;
     genre?: string;
   };
+  // TODO #15: pipeline-derived phase segments for the drawer timeline.
+  phases?: string[];
 }
 
 /** Full book.json manifest — returned by GET /api/books/:slug. */

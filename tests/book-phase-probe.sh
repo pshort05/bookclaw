@@ -8,7 +8,7 @@
 # Drives ONE book through a 4-step pipeline whose steps are tagged with the
 # four leading board phases (planning → bible → production → revision) and, after
 # each step, prints what GET /api/books reports for that book's row: its `phase`
-# (the board chip + 6-segment bar), `live` (the "writing…" strip), and `next`
+# (the board chip + per-pipeline phase bar), `live` (the "writing…" strip), and `next`
 # (the suggested-action pill). REPORT-ONLY — it never asserts and always exits 0.
 #
 # What you should see TODAY: the step's intended phase walks
@@ -76,7 +76,7 @@ code(){ # METHOD PATH [BODY] [MAXT] → HTTP status code
 # jget DOTTED.PATH (supports arr[idx]) — reads JSON from stdin, prints the value.
 jget(){ node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{let o=JSON.parse(s);for(const k of process.argv[1].split(".")){const m=k.match(/^(.+)\[(\d+)\]$/);o=m?o[m[1]][+m[2]]:o[k];if(o==null)break}console.log(o==null?"":typeof o==="object"?JSON.stringify(o):o)}catch(e){console.log("")}})' "$1"; }
 
-# Print the board row (phase / live / next) for a given slug, as the dashboard sees it.
+# Print the board row (phase / phases / live / next) for a given slug, as the dashboard sees it.
 board_row(){ # SLUG
   req GET /api/books | node -e '
     let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
@@ -85,7 +85,8 @@ board_row(){ # SLUG
         if(!b){console.log("(book not in /api/books list)");return;}
         const live=b.live?`live[${b.live.stepLabel} ${b.live.progress||0}%]`:"live[none]";
         const nxt=b.next?`next[${b.next.label}]`:"next[none]";
-        console.log(`phase=${b.phase}   ${live}   ${nxt}`);
+        const ph=b.phases||[];
+        console.log(`phase=${b.phase}   phases[${ph.length}: ${ph.join("/")}]   ${live}   ${nxt}`);
       }catch(e){console.log("(parse error)")}
     })' "$1"; }
 
@@ -218,6 +219,14 @@ if [ "${DISTINCT:-1}" -le 1 ]; then
   echo "          (book.json manifest 'phase' is written once at creation and never updated)."
 else
   echo "  RESULT: the board phase advanced across $DISTINCT distinct values — the data gap is fixed."
+fi
+# Board now renders N segments from the book's pipeline phases (TODO #15 steps 7-8),
+# not the legacy hardcoded 6. This 4-phase probe pipeline must report 4.
+PHASES_N=$(req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const b=(JSON.parse(s).books||[]).find(x=>x.slug===process.argv[1]);console.log(b&&b.phases?b.phases.length:"?")}catch(e){console.log("?")}})' "$SLUG")
+if [ "${PHASES_N:-0}" = "4" ]; then
+  echo "  Phase segments:         $PHASES_N — board renders the pipeline's N phases (not the legacy 6)."
+else
+  echo "  Phase segments:         ${PHASES_N:-?} — expected 4 for this 4-phase pipeline."
 fi
 echo "  ════════════════════════════════════════════════════"
 echo ""

@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore, useBooks } from '@bookclaw/shared';
+import { useStore, useBooks, LIFECYCLE_PHASES } from '@bookclaw/shared';
 import { BookDrawer } from '../components/BookDrawer.js';
 import styles from './Board.module.css';
 
 const PHASE_VAR: Record<string, string> = {
   planning: '--ph-plan', bible: '--ph-world', production: '--ph-prod',
   revision: '--ph-rev', format: '--ph-fmt', launch: '--ph-launch',
+  // novel-pipeline vocabulary → nearest lifecycle color (TODO #15 N-segment board).
+  premise: '--ph-plan', outline: '--ph-world', writing: '--ph-prod', assembly: '--ph-fmt',
 };
-
-// Canonical pipeline phase order (manifest phase keys) — drives the 6-segment progress bar.
-const PHASE_ORDER = ['planning', 'bible', 'production', 'revision', 'format', 'launch'];
 
 export function Board() {
   const books = useBooks();
@@ -55,7 +54,13 @@ export function Board() {
         <p className={styles.empty}>Couldn't load books — {error}</p>
       ) : (
         <div className={styles.grid}>
-          {shown.map((b) => (
+          {shown.map((b) => {
+            // Per-book pipeline phases (N segments); fall back to the lifecycle list
+            // when a book exposes none. cur = -1 (phase not in the list) renders no
+            // lit segment — guarded so "phase X of N" never shows phase 0.
+            const phases: readonly string[] = b.phases?.length ? b.phases : LIFECYCLE_PHASES;
+            const cur = phases.indexOf(b.phase);
+            return (
             <article key={b.slug} className={b.live ? `${styles.card} ${styles.live}` : styles.card} onClick={() => setOpenSlug(b.slug)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenSlug(b.slug); } }} role="button" tabIndex={0}>
               <span className={b.live ? `${styles.phase} ${styles.gen}` : styles.phase} style={{ ['--ph' as string]: `var(${PHASE_VAR[b.phase] ?? '--ph-plan'})` }}>
                 <i /> {b.phase}
@@ -67,12 +72,12 @@ export function Board() {
                 {b.voice && <><span className={styles.v} /> {b.voice}</>}
               </div>
               <div className={styles.prog}>
-                <div className={styles.progMeta}><span>{b.phase}</span><b>phase {Math.max(0, PHASE_ORDER.indexOf(b.phase)) + 1} of 6</b></div>
-                <div className={styles.bar}>
-                  {PHASE_ORDER.map((_, i) => {
-                    const cur = PHASE_ORDER.indexOf(b.phase);
+                <div className={styles.progMeta}><span>{b.phase}</span><b>phase {Math.max(0, cur) + 1} of {phases.length}</b></div>
+                {/* Inline grid override: .bar CSS hardcodes repeat(6); drive the column count from the pipeline's N phases. */}
+                <div className={styles.bar} style={{ gridTemplateColumns: `repeat(${phases.length}, 1fr)` }}>
+                  {phases.map((p, i) => {
                     const cls = i < cur ? styles.lit : i === cur ? styles.cur : '';
-                    return <i key={i} className={cls} />;
+                    return <i key={p} className={cls} />;
                   })}
                 </div>
               </div>
@@ -89,7 +94,8 @@ export function Board() {
                 {b.status !== 'ok' && <span className={styles.flag}>{b.status}</span>}
               </div>
             </article>
-          ))}
+            );
+          })}
 
           {/* New Book ghost card → minimal create form (full picker = 6g) */}
           <article className={`${styles.card} ${styles.ghost}`} onClick={() => navigate('/new-book')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/new-book'); } }} role="button" tabIndex={0}>

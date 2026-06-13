@@ -20,6 +20,7 @@ import {
   suggestedNextStep,
   type BookManifest, type BookSummary, type PulledRef, type NextStep,
 } from './book-types.js';
+import { pipelinePhases } from './library-types.js';
 
 export interface BookSelection {
   title: string;
@@ -646,6 +647,37 @@ export class BookService {
    */
   activePipeline(): import('./library-types.js').LibraryPipeline | null {
     return this.pipelineOf(this.activeBookSlug);
+  }
+
+  /**
+   * The book's ordered, distinct pipeline phases — the segments the board
+   * renders (TODO #15). Derived from the snapshotted templates/pipeline.json;
+   * returns [] when no pipeline resolves so the UI falls back to LIFECYCLE_PHASES.
+   */
+  phasesForBook(slug: string | null): string[] {
+    const p = this.pipelineOf(slug);
+    return p ? pipelinePhases(p) : [];
+  }
+
+  /**
+   * Persist the book's current pipeline phase to book.json (TODO #15 — the
+   * missing post-create writer of `phase`). Fail-soft: a no-op for an unknown
+   * book or unreadable manifest. Skips the write when the phase is unchanged.
+   */
+  async setPhase(slug: string, phase: string): Promise<void> {
+    const dir = this.bookDir(slug);
+    if (!dir || !existsSync(join(dir, 'book.json'))) return;
+    let m: BookManifest;
+    try {
+      m = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
+    } catch {
+      return; // corrupt manifest — don't clobber it
+    }
+    if (m.phase === phase) return;
+    m.phase = phase;
+    m.lastWrittenByApp = this.appVersion;
+    m.history.push({ at: new Date().toISOString(), event: 'phase', detail: phase });
+    await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
   }
 
   // ── Phase 4: per-asset re-pull from the library ────────────────────────────

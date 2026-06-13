@@ -28,6 +28,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       services.books.list(),
       (slug: string) => services.books.nextStep(slug),
       active,
+      (slug: string) => services.books.phasesForBook(slug),
     );
     res.json({ books: cards });
   });
@@ -98,7 +99,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       voice:  services.books.assetDescription(slug, 'voice'),
       genre:  services.books.assetDescription(slug, 'genre'),
     };
-    res.json({ book: result.manifest, status: result.status, descriptions });
+    res.json({ book: result.manifest, status: result.status, descriptions, phases: services.books.phasesForBook(slug) });
   });
 
   // Suggested next step for a specific book.

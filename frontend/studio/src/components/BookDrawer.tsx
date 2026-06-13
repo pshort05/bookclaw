@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, useStore, useActiveBook, type BookDetail, type NextStep } from '@bookclaw/shared';
+import { api, useStore, useActiveBook, LIFECYCLE_PHASES, type BookDetail, type NextStep } from '@bookclaw/shared';
 import { Button } from '@bookclaw/shared';
 import styles from './BookDrawer.module.css';
-
-const PHASES = ['planning', 'bible', 'production', 'revision', 'format', 'launch'] as const;
 
 export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
   const [data, setData] = useState<BookDetail | null>(null);
@@ -45,7 +43,9 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
   };
 
   const pf = data?.book.pulledFrom;
-  const curIdx = data ? PHASES.indexOf(data.book.phase as typeof PHASES[number]) : -1;
+  // The book's pipeline-derived phase segments (N); fall back to the lifecycle list.
+  const phases: readonly string[] = data?.phases?.length ? data.phases : LIFECYCLE_PHASES;
+  const curIdx = data ? phases.indexOf(data.book.phase) : -1;
   const isActive = activeBook?.slug === slug;
 
   return (
@@ -104,11 +104,11 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
               {/* Phase timeline — honest position derived from manifest.phase */}
               <div className={styles.sec}>Phase</div>
               <div className={styles.tline}>
-                {PHASES.map((p, i) => {
+                {phases.map((p, i) => {
                   const cls = i < curIdx ? styles.done : i === curIdx ? styles.cur : '';
                   return (
                     <div key={p} className={`${styles.tstep} ${cls}`}>
-                      <div className={styles.stem}><div className={styles.nub} />{i < PHASES.length - 1 && <div className={styles.ln} />}</div>
+                      <div className={styles.stem}><div className={styles.nub} />{i < phases.length - 1 && <div className={styles.ln} />}</div>
                       <div className={styles.tx}>
                         <b>{p}</b>
                         <div className={styles.meta}>{i < curIdx ? 'done' : i === curIdx ? 'current' : 'upcoming'}</div>

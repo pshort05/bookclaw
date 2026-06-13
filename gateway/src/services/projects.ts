@@ -809,6 +809,18 @@ Description: ${description}`;
     // (active steps can occur from race conditions in concurrent auto-execute)
     const next = project.steps.find(s => s.status === 'pending')
               || project.steps.find(s => s.status === 'active' && s.id !== stepId);
+
+    // Per-step hook (TODO #15): advance the bound book's manifest phase. Fired on
+    // every completion with (project, completedStep, next). Fire-and-forget so a
+    // slow/throwing hook never blocks step sequencing.
+    if (step) {
+      try {
+        for (const fn of this.stepCompletionHooks) {
+          Promise.resolve(fn(project, step, next ?? null)).catch(err => console.error('[step-completion-hook] error:', err));
+        }
+      } catch { /* hook crashes never block completeStep */ }
+    }
+
     if (next) {
       next.status = 'active';
       // Enrich the next prompt with results from completed steps
@@ -839,6 +851,14 @@ Description: ${description}`;
   /** Register a callback fired on project completion. */
   onProjectCompleted(fn: (project: Project) => void | Promise<void>): void {
     this.completionHooks.push(fn);
+  }
+
+  /** Callbacks invoked when any step completes (TODO #15 — book phase advance). */
+  private stepCompletionHooks: Array<(project: Project, completedStep: ProjectStep, next: ProjectStep | null) => void | Promise<void>> = [];
+
+  /** Register a callback fired on every step completion, with the next step (or null when the project just finished). */
+  onStepCompleted(fn: (project: Project, completedStep: ProjectStep, next: ProjectStep | null) => void | Promise<void>): void {
+    this.stepCompletionHooks.push(fn);
   }
 
   /**

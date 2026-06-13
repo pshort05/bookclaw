@@ -1,7 +1,20 @@
 # Book Board phase-progression fix (TODO #15)
 
-**Status:** design approved 2026-06-13, implementation NOT started. This doc is a
-self-contained handoff so a fresh session (on any system) can resume.
+**Status:** COMPLETE 2026-06-13. All steps (1–9, 11) implemented, reviewed (two fanned-out
+`/code-review`s), and DEPLOYED to Mercury (backend then frontend; both healthy). The probe
+confirms the board phase advances (bible→production→revision, was frozen at planning) AND
+renders 4 segments for the 4-phase probe pipeline (not the legacy 6). Moved to
+[COMPLETED.md](COMPLETED.md). This doc is retained as the design/implementation record.
+One low-severity follow-on was deferred (see TODO "schemaVersion gate at the data-output
+path"): `BookService.setPhase` writes the manifest without the `assertWritable` gate —
+unreachable while all books are schema v1; add the gate at the first v1→v2 bump.
+
+**Review fix (medium):** book-production emits a `polish` step phase that is not a member
+of a novel-pipeline book's `phasesForBook` → the live/persisted phase is now **clamped to
+the book's segment list** (in `buildBookCards` and the `onStepCompleted` hook), so a
+sub-phase keeps the chip on its containing segment and `card.phase` is always ∈ `card.phases`.
+The steps 7–8 `Board.tsx` rewrite should still guard `phases.indexOf(card.phase) === -1`
+defensively (for the no-pipeline `phases:[]` → `LIFECYCLE_PHASES` fallback case).
 
 Tracks `docs/TODO.md` item: *"Possible bug — books don't update in real time on
 the Book Board."* The investigation showed the item is really **three**
