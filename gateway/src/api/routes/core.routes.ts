@@ -1,5 +1,5 @@
 import { Application, Request, Response } from 'express';
-import { DISPLAY_VERSION } from '../../version.js';
+import { DISPLAY_VERSION, BREAKING_VERSION } from '../../version.js';
 import { asyncHandler } from './_shared.js';
 
 /**
@@ -14,6 +14,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     res.json({
       status: 'ok',
       version: DISPLAY_VERSION,
+      breakingVersion: BREAKING_VERSION,
       name: 'BookClaw',
       brand: 'Writing Secrets',
       uptime: process.uptime(),
@@ -49,6 +50,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   app.get('/api/status', (_req: Request, res: Response) => {
     res.json({
       version: DISPLAY_VERSION,
+      breakingVersion: BREAKING_VERSION,
       soul: services.soul.getName(),
       providers: services.aiRouter.getActiveProviders().map((p: any) => ({
         id: p.id, name: p.name, model: p.model, tier: p.tier,

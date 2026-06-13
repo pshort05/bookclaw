@@ -54,11 +54,12 @@ if [ -z "$BOOKCLAW_AUTH_TOKEN" ]; then
     fi
 fi
 
-# ── Compute the date-time display version (V5.MM.DD.HH.MM) ──
-# Stamped at deploy time so every push/build shows a fresh version; a plain
+# ── Compute the CalVer display version (V{yy.mm.dd}, e.g. V26.06.12) ──
+# Stamped at deploy time so every push/build shows the build date; a plain
 # container restart keeps this build's version. Local server time, to match the
-# operator's clock. Distinct from package.json's semver.
-BOOKCLAW_VERSION="V5.$(date +%m.%d.%H.%M)"
+# operator's clock. Distinct from package.json's semver and from
+# BREAKING_VERSION (the manually-bumped breaking-change gate in gateway/src/version.ts).
+BOOKCLAW_VERSION="V$(date +%y.%m.%d)"
 
 # ── Create .env for docker-compose ──
 echo "  [1/4] Creating environment file..."
