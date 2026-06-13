@@ -1,5 +1,8 @@
 import { Application, Request, Response } from 'express';
+import { uploadZip } from './_shared.js';
 import { LIBRARY_KINDS, type LibraryKind } from '../../services/library-types.js';
+import { ENTRY_NAME_RE } from '../../services/library.js';
+import type { ImportFinding } from '../../services/transfer-security.js';
 
 /**
  * Library API (book-container). Read: lists/serves the resolved built-in +
@@ -42,6 +45,90 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     const entry = services.library.get(kind, String(req.params.name));
     if (!entry) return res.status(404).json({ error: 'Template not found' });
     res.json({ entry });
+  });
+
+  // ── Phase 12: share / import ───────────────────────────────────────────────
+  // Export one resolved entry (built-ins too) as a .zip download. ?token=
+  // fallback works (native <a download>).
+  app.get('/api/library/:kind/:name/export', (req: Request, res: Response) => {
+    if (!services.libraryTransfer) return res.status(503).json({ error: 'Library transfer unavailable (see startup log)' });
+    const kind = String(req.params.kind);
+    if (!isKind(kind)) {
+      return res.status(400).json({ error: `Unknown kind. One of: ${LIBRARY_KINDS.join(', ')}` });
+    }
+    const name = String(req.params.name);
+    if (!ENTRY_NAME_RE.test(name)) return res.status(400).json({ error: `Invalid name: ${name}` });
+    try {
+      const buf = services.libraryTransfer.export(kind, name);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="library-${kind}-${name}.zip"`);
+      res.send(buf);
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      // Name was pre-validated above, so a "not found" here is a genuine miss → 404.
+      res.status(/not found/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
+  });
+
+  // Import a library-entry .zip. Clean → lands in the workspace overlay;
+  // flagged → ConfirmationGate; structural → 400. Registered BEFORE the
+  // write-path POST /api/library/:kind so "import" isn't captured as a kind.
+  app.post('/api/library/import', uploadZip.single('file'), async (req: Request, res: Response) => {
+    if (!services.libraryTransfer) return res.status(503).json({ error: 'Library transfer unavailable (see startup log)' });
+    const file = (req as unknown as { file?: { buffer: Buffer } }).file;
+    if (!file?.buffer) return res.status(400).json({ error: 'a .zip file upload (field "file") is required' });
+    try {
+      const staged = services.libraryTransfer.validateAndStage(file.buffer);
+      if (staged.structuralError) return res.status(400).json({ error: staged.structuralError });
+      const { kind, name } = staged.manifest;
+      try {
+        if (staged.findings.length === 0) {
+          const entry = await services.libraryTransfer.finalizeImport(staged.stagingId);
+          return res.json({ ok: true, entry });
+        }
+        // The gate runs payloadClaimsPreAuth over description+payload, so keep
+        // attacker-controlled strings (entry name, finding pattern text) OUT of
+        // both — a hostile name/pattern would otherwise make createRequest throw.
+        // The full findings still go back in the (unscanned) response body.
+        const conf = await services.confirmationGate.createRequest({
+          service: 'library-transfer',
+          action: 'import_library_entry',
+          platform: 'library',
+          riskLevel: 'high',
+          isReversible: true,
+          description: `${kind} import with ${staged.findings.length} finding(s)`,
+          payload: {
+            stagingId: staged.stagingId,
+            kind,
+            findings: staged.findings.map((f: ImportFinding) => ({ path: f.path, type: f.type, confidence: f.confidence })),
+          },
+        });
+        return res.status(202).json({ pendingConfirmation: conf.id, findings: staged.findings });
+      } catch (err) {
+        services.libraryTransfer.purgeStaging(staged.stagingId);
+        return res.status(500).json({ error: (err as Error)?.message || String(err) });
+      }
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
+  // Finalize a gated import AFTER the confirmation was approved in the dashboard.
+  app.post('/api/library/import/finalize', async (req: Request, res: Response) => {
+    if (!services.libraryTransfer) return res.status(503).json({ error: 'Library transfer unavailable (see startup log)' });
+    const id = typeof req.body?.confirmationId === 'string' ? req.body.confirmationId : '';
+    if (!id) return res.status(400).json({ error: 'confirmationId required' });
+    const { status, request } = services.confirmationGate.checkDecision(id);
+    if (!request || request.service !== 'library-transfer') return res.status(404).json({ error: 'no such import confirmation' });
+    if (status !== 'approved') return res.status(409).json({ error: `confirmation is ${status} (must be approved)` });
+    try {
+      const entry = await services.libraryTransfer.finalizeImport(String(request.payload?.stagingId));
+      res.json({ ok: true, entry });
+    } catch (err) {
+      const msg = (err as Error)?.message || String(err);
+      // One-shot finalize: a consumed/expired/unknown stagingId → 404, not 500.
+      res.status(/missing|consumed|expired|invalid stagingid/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
   });
 
   // ── Write path (Phase 4): workspace-overlay CRUD. Built-ins are read-only;

@@ -5,7 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import AdmZip from 'adm-zip';
@@ -216,8 +216,15 @@ test('sweepStaging removes orphan staging dirs not in the pending set', async ()
     const keep = join(root, 'workspace', '.import-staging', 'keep-me');
     mkdirSync(orphan, { recursive: true });
     mkdirSync(keep, { recursive: true });
+    // Age the orphan past the 15-min min-age guard so the sweep is eligible to purge it.
+    const old = Date.now() / 1000 - 3600;
+    utimesSync(orphan, old, old);
+    // A freshly created orphan (mtime now) is protected by the min-age guard.
+    const fresh = join(root, 'workspace', '.import-staging', 'fresh-orphan');
+    mkdirSync(fresh, { recursive: true });
     xfer.sweepStaging(new Set(['keep-me']));
     assert.ok(!existsSync(orphan), 'orphan purged');
     assert.ok(existsSync(keep), 'pending kept');
+    assert.ok(existsSync(fresh), 'fresh orphan protected by min-age guard');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

@@ -44,6 +44,13 @@
 .addnew:hover{border-color:var(--ember);color:var(--ember)}
 .addnew svg{width:14px;height:14px}
 .kdef{font-size:11.5px;color:var(--faint);line-height:1.5;margin:0 0 16px;padding-right:6px;border-left:2px solid rgba(121,176,162,.3);padding-left:10px}
+.imsg{font-size:12px;color:var(--dim);margin:0 0 12px}
+.ipending{border:1px solid rgba(240,145,58,.25);background:rgba(240,145,58,.05);border-radius:10px;padding:11px 13px;margin:0 0 12px;font-size:12px;color:var(--dim);display:flex;flex-direction:column;gap:7px}
+.ipending ul{margin:0;padding-left:18px}
+.ipending code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold)}
+.ipending a{color:var(--ember)}
+.ipending button{align-self:flex-start;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);font-weight:600;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+.ipending button:hover{border-color:rgba(240,145,58,.45);color:var(--ember)}
 .entry{padding:12px 13px;border-radius:10px;border:1px solid var(--line);background:var(--panel);margin-bottom:9px;cursor:pointer;transition:.15s}
 .entry:hover{border-color:var(--line-2);background:var(--panel-2)}
 .entry.on{border-color:rgba(240,145,58,.4);background:linear-gradient(180deg,rgba(240,145,58,.08),var(--panel))}

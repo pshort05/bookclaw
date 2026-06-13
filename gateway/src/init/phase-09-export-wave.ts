@@ -21,6 +21,7 @@ import { ReaderIntelService } from '../services/reader-intel.js';
 import { TranslationPipelineService } from '../services/translation-pipeline.js';
 import { WebsiteBuilderService } from '../services/website-builder.js';
 import { BookTransferService } from '../services/book-transfer.js';
+import { LibraryTransferService } from '../services/library-transfer.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -69,31 +70,39 @@ export async function initExportAndWaves(gw: BookClawGateway): Promise<void> {
     gw.injectionDetector,
     join(ROOT_DIR, 'workspace', '.import-staging'),
   );
+  // Phase 12: library entry share/import — same staging root, so its pending
+  // stagingIds must be protected by the (shared) orphan-purge sweep below.
+  gw.libraryTransfer = new LibraryTransferService(
+    gw.library,
+    gw.injectionDetector,
+    join(ROOT_DIR, 'workspace', '.import-staging'),
+    join(ROOT_DIR, 'workspace', 'library', 'skills'),
+    () => gw.skills.reload(),
+  );
   // Purge orphan import-staging dirs (expired/denied/crashed imports). Keep dirs
-  // referenced by a still-pending book-transfer confirmation.
-  const pendingImportIds = new Set(
-    gw.confirmationGate.list({ status: 'pending' })
-      .filter(r => r.service === 'book-transfer')
+  // referenced by a still-pending book-transfer OR library-transfer confirmation
+  // (both services stage under the same root).
+  const TRANSFER_SERVICES = new Set(['book-transfer', 'library-transfer']);
+  // Protect both non-terminal statuses: 'pending' (awaiting review) AND
+  // 'approved' (user OK'd but hasn't hit the two-step finalize yet) — otherwise
+  // the sweep would delete an approved import's staging before finalize.
+  const collectPendingStagingIds = (): Set<string> => new Set(
+    [...gw.confirmationGate.list({ status: 'pending' }), ...gw.confirmationGate.list({ status: 'approved' })]
+      .filter(r => TRANSFER_SERVICES.has(r.service))
       .map(r => String(r.payload?.stagingId))
       .filter(Boolean),
   );
-  gw.bookTransfer.sweepStaging(pendingImportIds);
+  gw.bookTransfer.sweepStaging(collectPendingStagingIds());
   // Re-sweep periodically so denied/expired imports don't accumulate between
   // restarts. unref() so this timer never keeps the process alive.
   const SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6h
   const sweepTimer = setInterval(() => {
     try {
-      const pending = new Set(
-        gw.confirmationGate.list({ status: 'pending' })
-          .filter(r => r.service === 'book-transfer')
-          .map(r => String(r.payload?.stagingId))
-          .filter(Boolean),
-      );
-      gw.bookTransfer.sweepStaging(pending);
+      gw.bookTransfer.sweepStaging(collectPendingStagingIds());
     } catch { /* sweep is best-effort */ }
   }, SWEEP_INTERVAL_MS);
   sweepTimer.unref?.();
-  console.log('  ✓ Book transfer (share/import) ready');
+  console.log('  ✓ Book transfer + library transfer (share/import) ready');
 
   gw.disclosures = new DisclosuresService();
 

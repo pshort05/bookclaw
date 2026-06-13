@@ -8,15 +8,16 @@
  * (zip-slip guarded), classifies the schema version, and scans every
  * prompt-bearing file with InjectionDetector before anything lands.
  */
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync, renameSync, cpSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync, renameSync, cpSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { randomUUID } from 'crypto';
 import AdmZip from 'adm-zip';
 import type { BookService } from './book.js';
 import type { InjectionDetector } from '../security/injection.js';
 import { classifyVersion, SLUG_RE, type BookManifest } from './book-types.js';
+import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
 
-export interface ImportFinding { path: string; type: string; confidence: number; pattern: string; }
+export type { ImportFinding } from './transfer-security.js';
 
 export interface StageResult {
   stagingId: string;
@@ -30,8 +31,6 @@ export interface StageResult {
 const WHITELIST_PREFIXES = ['book.json', 'templates/', 'data/'];
 /** Directory roots zipped on export and walked on scan — derived from the whitelist so they stay in sync. */
 const ZIP_DIRS = WHITELIST_PREFIXES.filter(p => p.endsWith('/')).map(p => p.replace(/\/$/, ''));
-/** Extensions whose content is scanned for injection (text only). */
-const SCAN_EXTS = ['.md', '.txt', '.json'];
 
 export class BookTransferService {
   constructor(
@@ -55,63 +54,12 @@ export class BookTransferService {
     return zip.toBuffer();
   }
 
-  /** Recursively collect scannable text files (relative paths) under a dir. */
-  private scannableFiles(baseDir: string): string[] {
-    const out: string[] = [];
-    const walk = (rel: string) => {
-      const abs = join(baseDir, rel);
-      if (!existsSync(abs)) return;
-      for (const e of readdirSync(abs, { withFileTypes: true })) {
-        if (e.isSymbolicLink()) continue;                          // never follow symlinks in staged/untrusted trees
-        const childRel = rel ? `${rel}/${e.name}` : e.name;
-        if (e.isDirectory()) walk(childRel);
-        else if (e.isFile() && SCAN_EXTS.some(x => e.name.toLowerCase().endsWith(x))) out.push(childRel);
-      }
-    };
-    for (const root of ZIP_DIRS) walk(root);
-    if (existsSync(join(baseDir, 'book.json'))) out.push('book.json');
-    return out;
-  }
-
-  // Detects raw HTML/script payloads that the prompt-injection detector doesn't cover.
-  // These could execute in the studio origin (which holds the auth token) via the
-  // markdown preview's dangerouslySetInnerHTML, even after DOMPurify — defense-in-depth.
-  private static HTML_RE = /<\s*(script|iframe|object|embed|svg)\b/i;
-  private static EVENT_RE = /\son\w+\s*=/i;
-
   /** Scan every prompt-bearing/text file under a staged book dir. */
   scan(baseDir: string): ImportFinding[] {
-    const findings: ImportFinding[] = [];
-    for (const rel of this.scannableFiles(baseDir)) {
-      let text = '';
-      try { text = readFileSync(join(baseDir, rel), 'utf-8'); } catch { continue; }
-      const r = this.injection.scan(text);
-      if (r.detected) {
-        findings.push({ path: rel, type: r.type || 'unknown', confidence: r.confidence || 0, pattern: r.pattern || '' });
-        continue; // already flagged — no need for the HTML check
-      }
-      if (BookTransferService.HTML_RE.test(text) || BookTransferService.EVENT_RE.test(text)) {
-        findings.push({ path: rel, type: 'html_payload', confidence: 0.9, pattern: 'html/event-handler tag' });
-      }
-    }
-    return findings;
+    return scanStagedText(baseDir, scannableFiles(baseDir, ZIP_DIRS, ['book.json']), this.injection);
   }
 
   // ── Import: validate + stage (the zip is UNTRUSTED) ─────────────────────────
-
-  /** True if a relative zip entry name is unsafe (traversal / absolute / off-whitelist / escapes stage). */
-  private isUnsafeEntry(name: string, stageDir: string): boolean {
-    if (!name || name.startsWith('/') || name.includes('\0')) return true;             // absolute / NUL
-    if (name.split('/').some(seg => seg === '..')) return true;                         // traversal
-    const onWhitelist = WHITELIST_PREFIXES.some(p => p.endsWith('/') ? name.startsWith(p) : name === p);
-    if (!onWhitelist) return true;   // off-whitelist (exact match for files like book.json; prefix for dirs)
-    const resolved = join(stageDir, name);
-    if (resolved !== stageDir && !resolved.startsWith(stageDir + '/')) return true;     // resolved escapes
-    // Defense-in-depth: restrict entry names to a safe character set (path
-    // segments of letters/digits/dot/dash/underscore, separated by '/').
-    if (!/^[A-Za-z0-9._/-]+$/.test(name)) return true;
-    return false;
-  }
 
   /** Extract an uploaded zip into an isolated staging dir, with per-entry guards. */
   validateAndStage(zip: Buffer): StageResult {
@@ -124,13 +72,15 @@ export class BookTransferService {
     };
     let entries;
     try { entries = new AdmZip(zip).getEntries(); } catch { return fail('not a valid zip'); }
+    const budgetError = checkZipBudget(entries);
+    if (budgetError) return fail(budgetError);
     for (const e of entries) {
       if (e.isDirectory) continue;
       const name = e.entryName;
       // Reject symlink-mode entries (adm-zip writes regular files, but be explicit).
       const attr = (e.header as unknown as { attr?: number })?.attr;
-      if (attr && (((attr >>> 16) & 0o170000) === 0o120000)) return fail(`symlink entry rejected: ${name}`);
-      if (this.isUnsafeEntry(name, stageDir)) return fail(`unsafe entry rejected: ${name}`);
+      if (isSymlinkEntry(attr)) return fail(`symlink entry rejected: ${name}`);
+      if (isUnsafeEntry(name, stageDir, WHITELIST_PREFIXES)) return fail(`unsafe entry rejected: ${name}`);
       const dest = join(stageDir, name);
       try {
         mkdirSync(dirname(dest), { recursive: true });
@@ -193,8 +143,14 @@ export class BookTransferService {
   /** Purge every staging dir whose id is NOT in the pending set (orphans). */
   sweepStaging(pendingIds: Set<string>): void {
     if (!existsSync(this.stagingDir)) return;
+    const MIN_AGE_MS = 15 * 60 * 1000; // never purge a dir younger than 15min: it may be mid-stage (validateAndStage→createRequest race).
+    const now = Date.now();
     for (const e of readdirSync(this.stagingDir, { withFileTypes: true })) {
-      if (e.isDirectory() && !pendingIds.has(e.name)) this.purgeStaging(e.name);
+      if (!e.isDirectory() || pendingIds.has(e.name)) continue;
+      try {
+        if (now - statSync(join(this.stagingDir, e.name)).mtimeMs < MIN_AGE_MS) continue;
+      } catch { continue; }
+      this.purgeStaging(e.name);
     }
   }
 }

@@ -30,7 +30,7 @@ export interface SkillCatalogEntry {
   source: SkillSource;
 }
 
-const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops'] as const;
+export const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops'] as const;
 
 export class SkillLoader {
   private skillsDir: string;

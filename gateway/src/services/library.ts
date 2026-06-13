@@ -54,7 +54,7 @@ const DIR_LAYOUT: Record<FileKind, string> = {
 // MD_FILE_RE is imported from book-types.ts (shared with books.routes.ts).
 // ENTRY_NAME_RE intentionally caps at 63 chars for library entry *creation*.
 // Book slugs use an uncapped variant because of the -<timestamp> uniqueness fallback.
-const ENTRY_NAME_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+export const ENTRY_NAME_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export interface LibraryWriteBody {
   files?: Record<string, string>; // author/voice/genre

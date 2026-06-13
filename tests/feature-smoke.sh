@@ -85,6 +85,9 @@ CREATED_DOCS=()
 CREATED_LIBRARY_GENRES=()
 CREATED_LIBRARY_AUTHORS=()
 BK_ORIG_CFG=""   # original backup config (Phase 11) — restored verbatim by the EXIT trap
+P12_TMPFILES=()       # Phase 12 temp zips — removed by the EXIT trap
+P12_OVERLAY_KIND=""   # Phase 12 imported overlay entry — trap-deleted if the run
+P12_OVERLAY_NAME=""   # dies between import and the in-section delete (idempotent)
 
 pass(){ PASSES=$((PASSES+1)); echo "  [PASS] $1${2:+ :: $2}"; }
 fail(){ FAILS=$((FAILS+1));   echo "  [FAIL] $1${2:+ :: $2}"; }
@@ -203,6 +206,17 @@ restore(){
     [ -z "$aname" ] && continue
     curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/author/$aname" >/dev/null 2>&1 || true
     echo "  [cleanup] deleted library/author $aname"
+  done
+
+  # Phase 12: if the run died between the entry import and the in-section
+  # delete, remove the overlay so the built-in is restored (404 = already gone).
+  if [ -n "${P12_OVERLAY_KIND:-}" ] && [ -n "${P12_OVERLAY_NAME:-}" ]; then
+    curl -s --max-time 30 "${H[@]}" -X DELETE "$BASE_URL/api/library/$P12_OVERLAY_KIND/$P12_OVERLAY_NAME" >/dev/null 2>&1 || true
+    echo "  [cleanup] deleted library/$P12_OVERLAY_KIND/$P12_OVERLAY_NAME overlay (Phase 12)"
+  fi
+  for f in "${P12_TMPFILES[@]:-}"; do
+    [ -z "$f" ] && continue
+    rm -f "$f" 2>/dev/null || true
   done
 
   # Restore the original backup config captured at the start of the Phase 11
@@ -1031,6 +1045,148 @@ else
     else
       fail "backup cloud config restored" "code=$BK_CLOUD_PUT"
     fi
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
+echo "### Tier A (Phase 12) — library entry share/import (free, no AI)"
+
+# Pick a built-in entry dynamically: first builtin genre, else first builtin
+# author. Exporting a built-in is free + read-only; importing it lands a
+# workspace overlay with the same name (deleted below + in the EXIT trap).
+p12_first_builtin(){
+  req GET "/api/library/$1" | node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+      try{const e=(JSON.parse(s).entries||[]).find(x=>x.source==="builtin");console.log(e?e.name:"")}catch(e){console.log("")}
+    })'
+}
+P12_KIND="genre"
+P12_NAME=$(p12_first_builtin genre)
+if [ -z "$P12_NAME" ]; then P12_KIND="author"; P12_NAME=$(p12_first_builtin author); fi
+
+# Feature probe: the export endpoint on the chosen built-in. 404 = Phase 12 not
+# on this build; 503 = transfer service unavailable. Either way SKIP the section.
+P12_PROBE_CODE=""
+[ -n "$P12_NAME" ] && P12_PROBE_CODE=$(code GET "/api/library/$P12_KIND/$P12_NAME/export")
+if [ -z "$P12_NAME" ] || [ "$P12_PROBE_CODE" = "404" ] || [ "$P12_PROBE_CODE" = "503" ]; then
+  P12_WHY="(Phase 12 not deployed)"
+  [ -z "$P12_NAME" ] && P12_WHY="(no builtin library entry resolved)"
+  [ "$P12_PROBE_CODE" = "503" ] && P12_WHY="(library transfer unavailable — 503)"
+  skip "library entry export"                    "$P12_WHY"
+  skip "library entry import (clean round-trip)" "$P12_WHY"
+  skip "imported entry source=workspace"         "$P12_WHY"
+  skip "library entry overlay delete reverts"    "$P12_WHY"
+  skip "gated entry import (HTML payload held)"  "$P12_WHY"
+  skip "gated entry confirmation listed"         "$P12_WHY"
+  skip "library import garbage zip → 400"        "$P12_WHY"
+else
+  # ── 1. Export the built-in entry → 200, non-trivial zip bytes ──
+  P12_EXP_ZIP=$(mktemp /tmp/smoke-libentry-XXXXXX.zip)
+  P12_TMPFILES+=("$P12_EXP_ZIP")
+  P12_EXP_CODE=$(curl -s --max-time 30 "${H[@]}" "$BASE_URL/api/library/$P12_KIND/$P12_NAME/export" -o "$P12_EXP_ZIP" -w '%{http_code}')
+  P12_EXP_SIZE=$(stat -c%s "$P12_EXP_ZIP" 2>/dev/null || echo 0)
+  P12_EXP_MAGIC=$(head -c2 "$P12_EXP_ZIP" 2>/dev/null || true)
+  if [ "$P12_EXP_CODE" = "200" ] && [ "$P12_EXP_SIZE" -gt 100 ] && [ "$P12_EXP_MAGIC" = "PK" ]; then
+    pass "library entry export" "$P12_KIND/$P12_NAME zip ${P12_EXP_SIZE}B"
+  else
+    fail "library entry export" "code=$P12_EXP_CODE size=$P12_EXP_SIZE magic=$P12_EXP_MAGIC"
+  fi
+
+  # ── 2. Import it back → 200 {ok:true}; entry becomes a workspace overlay ──
+  P12_IMP_RESP=$(curl -s --max-time 60 "${HAUTH[@]}" -F "file=@$P12_EXP_ZIP" "$BASE_URL/api/library/import")
+  P12_IMP_OK=$(printf '%s' "$P12_IMP_RESP" | jget ok)
+  if [ "$P12_IMP_OK" = "true" ]; then
+    # Register for the EXIT trap NOW, in case the run dies before the delete below.
+    P12_OVERLAY_KIND="$P12_KIND"; P12_OVERLAY_NAME="$P12_NAME"
+    pass "library entry import (clean round-trip)" "$P12_KIND/$P12_NAME"
+  else
+    fail "library entry import (clean round-trip)" "resp=$(printf '%s' "$P12_IMP_RESP" | head -c 200)"
+  fi
+  if [ "$P12_IMP_OK" != "true" ]; then
+    skip "imported entry source=workspace" "(import failed)"
+  else
+    P12_SRC=$(req GET "/api/library/$P12_KIND/$P12_NAME" | jget entry.source)
+    if [ "$P12_SRC" = "workspace" ]; then
+      pass "imported entry source=workspace"
+    else
+      fail "imported entry source=workspace" "source=$P12_SRC"
+    fi
+  fi
+
+  # ── 3. Delete the overlay → entry reverts to its built-in ──
+  if [ "$P12_IMP_OK" != "true" ]; then
+    skip "library entry overlay delete reverts" "(import failed)"
+  else
+    P12_DEL_CODE=$(code DELETE "/api/library/$P12_KIND/$P12_NAME")
+    P12_SRC_AFTER=$(req GET "/api/library/$P12_KIND/$P12_NAME" | jget entry.source)
+    if [ "$P12_DEL_CODE" = "200" ] && [ "$P12_SRC_AFTER" = "builtin" ]; then
+      pass "library entry overlay delete reverts" "source=builtin restored"
+      P12_OVERLAY_KIND=""; P12_OVERLAY_NAME=""   # cleaned here — trap no-ops
+    else
+      fail "library entry overlay delete reverts" "del=$P12_DEL_CODE source=$P12_SRC_AFTER"
+    fi
+  fi
+
+  # ── 4. Gated import: an HTML payload in the entry must be HELD (202), not
+  # applied. Build the zip in-shell (python3 zipfile, else the zip CLI) —
+  # manifest library-entry.json + files/<name>.md, the export format. Do NOT
+  # approve the held confirmation — reject it (same lifecycle cleanup as the
+  # Phase 5/11 gated checks).
+  P12_EVIL_ZIP=$(mktemp /tmp/smoke-libevil-XXXXXX.zip)
+  P12_TMPFILES+=("$P12_EVIL_ZIP")
+  rm -f "$P12_EVIL_ZIP"   # builders below create it fresh
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c '
+import json, sys, zipfile
+with zipfile.ZipFile(sys.argv[1], "w") as z:
+    z.writestr("library-entry.json", json.dumps({"formatVersion": 1, "kind": "section", "name": "smoke-evil-section"}))
+    z.writestr("files/smoke-evil-section.md", "<script>alert(1)</script>\n")
+' "$P12_EVIL_ZIP" 2>/dev/null || true
+  elif command -v zip >/dev/null 2>&1; then
+    P12_EVIL_DIR=$(mktemp -d /tmp/smoke-libevil-dir-XXXXXX)
+    printf '{"formatVersion":1,"kind":"section","name":"smoke-evil-section"}\n' > "$P12_EVIL_DIR/library-entry.json"
+    mkdir -p "$P12_EVIL_DIR/files"
+    printf '<script>alert(1)</script>\n' > "$P12_EVIL_DIR/files/smoke-evil-section.md"
+    (cd "$P12_EVIL_DIR" && zip -q "$P12_EVIL_ZIP" library-entry.json files/smoke-evil-section.md) 2>/dev/null || true
+    rm -rf "$P12_EVIL_DIR"
+  fi
+  if [ ! -s "$P12_EVIL_ZIP" ]; then
+    skip "gated entry import (HTML payload held)" "(no python3/zip on this host to build the test zip)"
+    skip "gated entry confirmation listed"        "(no python3/zip on this host to build the test zip)"
+  else
+    P12_GATE_OUT=$(curl -s -w '\n%{http_code}' --max-time 60 "${HAUTH[@]}" -F "file=@$P12_EVIL_ZIP" "$BASE_URL/api/library/import")
+    P12_GATE_CODE=$(printf '%s' "$P12_GATE_OUT" | tail -n1)
+    P12_GATE_BODY=$(printf '%s' "$P12_GATE_OUT" | sed '$d')
+    P12_CONF_ID=$(printf '%s' "$P12_GATE_BODY" | jget pendingConfirmation)
+    if [ "$P12_GATE_CODE" = "202" ] && [ -n "$P12_CONF_ID" ]; then
+      pass "gated entry import (HTML payload held)" "202 pendingConfirmation=$P12_CONF_ID"
+    else
+      fail "gated entry import (HTML payload held)" "code=$P12_GATE_CODE resp=$(printf '%s' "$P12_GATE_BODY" | head -c 200)"
+    fi
+    if [ -z "$P12_CONF_ID" ]; then
+      skip "gated entry confirmation listed" "(gate not engaged)"
+    else
+      P12_CONFLIST=$(req GET /api/confirmations)
+      if printf '%s' "$P12_CONFLIST" | grep -q "$P12_CONF_ID"; then
+        pass "gated entry confirmation listed" "id=$P12_CONF_ID (rejected, never approved)"
+      else
+        fail "gated entry confirmation listed" "id=$P12_CONF_ID not in list"
+      fi
+      code POST "/api/confirmations/$P12_CONF_ID/reject" >/dev/null 2>&1 || true
+      echo "  [cleanup] rejected library import confirmation $P12_CONF_ID"
+    fi
+  fi
+
+  # ── 5. Garbage bytes uploaded as a .zip → structural 400 ──
+  P12_GARBAGE=$(mktemp /tmp/smoke-libgarbage-XXXXXX.zip)
+  P12_TMPFILES+=("$P12_GARBAGE")
+  printf 'this is not a zip at all' > "$P12_GARBAGE"
+  P12_GARB_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "${HAUTH[@]}" -F "file=@$P12_GARBAGE" "$BASE_URL/api/library/import")
+  if [ "$P12_GARB_CODE" = "400" ]; then
+    pass "library import garbage zip → 400"
+  else
+    fail "library import garbage zip → 400" "got $P12_GARB_CODE"
   fi
 fi
 

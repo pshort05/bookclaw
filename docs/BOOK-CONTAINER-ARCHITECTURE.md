@@ -567,7 +567,7 @@ Each phase is independently shippable and verifiable.
   projects/.bookclaw (non-regenerable-data rationale, owner-approved); `format`
   config keys dropped as dead. Spec/plan:
   `docs/superpowers/{specs,plans}/2026-06-12-phase11-backup-recovery*`.
-- **Phase 12 — Library element share/import.** *(Post-release enhancement —
+- **(Implemented 2026-06-12.) Phase 12 — Library element share/import.** *(Post-release enhancement —
   lands after the Phase 11 release gate.)* Export an individual **library entry**
   (author / voice / genre / pipeline / section / skill) as a portable file, and
   import one into the workspace **library overlay** — the library-level analog of
@@ -578,7 +578,19 @@ Each phase is independently shippable and verifiable.
   a built-in by name). *Verify:* export an author/genre/pipeline and re-import it
   into the library (create-or-override by name, respecting the overlay-shadows
   semantics); a malicious imported element is gated; traversal/zip-slip blocked;
-  importing a skill lands it via the SkillLoader overlay path.
+  importing a skill lands it via the SkillLoader overlay path. *Verified
+  2026-06-12:* one `.zip`-per-entry format (`library-entry.json` + `files/`);
+  Phase 5's zip-security guards extracted into a shared `transfer-security.ts`
+  (used by both transfer services, zero behavior change) + a new
+  `LibraryTransferService`; `/api/library/:kind/:name/export` + `/api/library/import`
+  (+ gated finalize); Asset Studio export/import UI. 208 unit tests, **live
+  feature-smoke 84/0/0** on Mercury incl. the 7-check Phase-12 section (export →
+  import → `source:workspace` → overlay-delete reverts; HTML-payload import gated
+  202 + rejected; garbage zip → 400). Code-review (high, 7 finders) fixed 12
+  (zip-bomb cap, widened HTML denylist, shared skill-category const, synthetic-skill
+  export block, 503 guard, gate-payload minimization, approved-staging sweep
+  protection + race guard, persisted Finalize UI). Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-12-phase12-library-share-import*`.
 
 ## Out of scope (for this design)
 
