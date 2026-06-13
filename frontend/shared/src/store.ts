@@ -95,3 +95,6 @@ export const useActivity = () => useStore((s) => s.activity);
 
 /** Pending confirmation requests (the approvals queue). */
 export const usePendingConfirmations = () => useStore((s) => s.confirmations);
+
+/** Gateway status (version, providers, …), or undefined until loadStatus() resolves. */
+export const useStatus = () => useStore((s) => s.status);

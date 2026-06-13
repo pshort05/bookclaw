@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useStore, useCosts, usePendingConfirmations, useBooks, money } from '@bookclaw/shared';
+import { useStore, useCosts, usePendingConfirmations, useBooks, useStatus, money } from '@bookclaw/shared';
 import { useEffect } from 'react';
 import styles from './Rail.module.css';
 
@@ -7,14 +7,17 @@ export function Rail() {
   const costs = useCosts();
   const pending = usePendingConfirmations();
   const books = useBooks();
+  const status = useStatus();
   const generating = books.filter((b) => b.live).length;
   const idle = books.length - generating;
   const loadCosts = useStore((s) => s.loadCosts);
   const loadConfirmations = useStore((s) => s.loadConfirmations);
+  const loadStatus = useStore((s) => s.loadStatus);
   useEffect(() => {
     loadCosts().catch(() => {});
     loadConfirmations().catch(() => {});
-  }, [loadCosts, loadConfirmations]);
+    loadStatus().catch(() => {});
+  }, [loadCosts, loadConfirmations, loadStatus]);
 
   return (
     <aside className={styles.rail}>
@@ -27,7 +30,7 @@ export function Rail() {
         </span>
         <div>
           <div className={styles.name}>Book<b>Claw</b></div>
-          <div className={styles.ver}>V6 · studio</div>
+          <div className={styles.ver}>{status?.version ? `${status.version} · studio` : 'studio'}</div>
         </div>
       </div>
 
