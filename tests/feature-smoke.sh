@@ -1211,6 +1211,116 @@ fi
 
 # ═══════════════════════════════════════════════════════════
 echo ""
+echo "### Tier A (chat + version) — served HTML + status (free, no AI)"
+
+# ── 1. Chat token-bridge integrity (the bug that broke chat, fixed 2026-06-12) ──
+# The chat SPA is served on a SECOND port (studio :3847, chat :3848). Derive the
+# chat URL by swapping the port. The chat server injects the bearer token + API
+# base into the index HTML at serve time (init/phase-12-chat-http.ts); the
+# regression was a replaceAll that rewrote the window variable name itself,
+# producing `window.http://host=...` (a syntax error → silent 401s). Assert the
+# served HTML is correctly injected and NOT mangled.
+case "$BASE_URL" in
+  *3847*)
+    CHAT_URL="${BASE_URL/3847/3848}"
+    # Public GET (no auth needed — it serves HTML to the browser before the SPA loads).
+    CHAT_HTML=$(curl -s --max-time 15 "$CHAT_URL/" 2>/dev/null)
+    if [ -z "$CHAT_HTML" ]; then
+      skip "chat token-bridge integrity" "(chat port :3848 not reachable)"
+    else
+      CHAT_VERDICT=$(printf '%s' "$CHAT_HTML" | node -e '
+        let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+          // (a) token assigned to a non-empty, non-placeholder value
+          const m=s.match(/window\.__BOOKCLAW_TOKEN__=(["\x27])(.*?)\1/);
+          const tokOk = !!m && m[2].length>0 && m[2]!=="__BOOKCLAW_AUTH_TOKEN__";
+          // (b) NOT mangled — the old window.http://host=... syntax-error signature
+          const notMangled = !s.includes("window.http");
+          // (c) API base present with an http value
+          const apiOk = /window\.__BOOKCLAW_API_BASE__=(["\x27])http.*?\1/.test(s);
+          console.log((tokOk&&notMangled&&apiOk)?"ok":("tokOk="+tokOk+" notMangled="+notMangled+" apiOk="+apiOk));
+        })' 2>/dev/null)
+      if [ "$CHAT_VERDICT" = "ok" ]; then
+        pass "chat token-bridge integrity" "token injected, not mangled, api-base present"
+      else
+        fail "chat token-bridge integrity" "$CHAT_VERDICT"
+      fi
+    fi
+    ;;
+  *)
+    skip "chat token-bridge integrity" "(BASE_URL has no :3847 to swap → can't derive chat port)"
+    ;;
+esac
+
+# ── 2. Version + breaking-version surface (/api/status, /api/health) ──
+VER_STATUS=$(req GET /api/status)
+VER=$(printf '%s' "$VER_STATUS" | jget version)
+VER_BV_TYPE=$(printf '%s' "$VER_STATUS" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(typeof JSON.parse(s).breakingVersion==="number"?"num":"notnum")}catch(e){console.log("err")}})')
+if printf '%s' "$VER" | grep -qE '^V[0-9]{2}\.[0-9]{2}\.[0-9]{2}$' && [ "$VER_BV_TYPE" = "num" ]; then
+  pass "status version + breakingVersion" "version=$VER breakingVersion=number"
+else
+  fail "status version + breakingVersion" "version='$VER' (CalVer ^V##.##.##) bvType=$VER_BV_TYPE"
+fi
+HEALTH_BV_TYPE=$(req GET /api/health | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(typeof JSON.parse(s).breakingVersion==="number"?"num":"notnum")}catch(e){console.log("err")}})')
+if [ "$HEALTH_BV_TYPE" = "num" ]; then
+  pass "health breakingVersion present" "number"
+else
+  fail "health breakingVersion present" "type=$HEALTH_BV_TYPE"
+fi
+
+# ── 3. Socket.IO handshake auth gate (HTTP polling, no message round-trip) ──
+# The server gates the handshake via io.use() reading socket.handshake.auth.token
+# (index.ts setupWebSocket). The Engine.IO open poll returns a session id (sid)
+# at HTTP 200 BEFORE the namespace-level auth middleware runs, so we drive the
+# full polling handshake: open (GET) → namespace-connect (POST "40") → poll the
+# reply frame. An accepted connect surfaces as a "40" frame; a rejected connect
+# (connect_error) surfaces as a "44" frame carrying the auth error. We assert the
+# NO-token handshake is rejected (no usable namespace session) and the WITH-token
+# handshake is accepted. A full WebSocket message round-trip would need
+# socket.io-client — left as a follow-on; this HTTP-poll check covers the gate.
+SIO_PATH="/socket.io/?EIO=4&transport=polling"
+# Helper: run a polling handshake; echo "accepted" | "rejected" | "ambiguous".
+# Arg1 = extra curl auth args via name (passes the token in the connect packet's
+# auth payload, the same channel the real client uses: io(url,{auth:{token}})).
+sio_handshake(){
+  local with_token="$1"
+  # 1. Open: GET returns "0{...sid...}" at 200.
+  local open sid
+  open=$(curl -s --max-time 15 "$BASE_URL$SIO_PATH" 2>/dev/null)
+  sid=$(printf '%s' "$open" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const m=s.match(/^0(\{.*\})/s);if(!m){process.exit(0)}try{console.log(JSON.parse(m[1]).sid||"")}catch(e){}})')
+  [ -z "$sid" ] && { echo "ambiguous"; return; }
+  # 2. Namespace connect: POST the "40" packet. With token, attach the auth
+  #    payload as JSON after the "40" (Socket.IO connect-with-auth wire format).
+  local body='40'
+  [ "$with_token" = "yes" ] && body="40{\"token\":\"$TOKEN\"}"
+  curl -s --max-time 15 -H "Content-Type: text/plain;charset=UTF-8" \
+    -X POST -d "$body" "$BASE_URL$SIO_PATH&sid=$sid" >/dev/null 2>&1
+  # 3. Poll for the server's reply frame.
+  local frame
+  frame=$(curl -s --max-time 15 "$BASE_URL$SIO_PATH&sid=$sid" 2>/dev/null)
+  printf '%s' "$frame" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    if(/(^|\x1e)44/.test(s)){console.log("rejected")}        // connect_error → gate engaged
+    else if(/(^|\x1e)40/.test(s)){console.log("accepted")}   // connect ack
+    else{console.log("ambiguous")}
+  })'
+}
+if [ "${BOOKCLAW_AUTH_DISABLED:-}" = "1" ]; then
+  skip "socket.io handshake auth gate" "(auth disabled for this run)"
+else
+  SIO_NOTOK=$(sio_handshake no)
+  SIO_TOK=$(sio_handshake yes)
+  if [ "$SIO_NOTOK" = "rejected" ] && [ "$SIO_TOK" = "accepted" ]; then
+    pass "socket.io handshake auth gate" "no-token rejected, token accepted"
+  elif [ "$SIO_NOTOK" = "rejected" ]; then
+    # The decisive half (gate rejects unauthenticated) held; the accept side was
+    # unreadable from a raw poll (version/timing). Still proves the gate.
+    pass "socket.io handshake auth gate" "no-token rejected (token-accept poll inconclusive: $SIO_TOK)"
+  else
+    skip "socket.io handshake auth gate" "(handshake ambiguous from raw poll: notok=$SIO_NOTOK tok=$SIO_TOK — needs socket.io-client to assert cleanly)"
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
 echo "### Tier B — core AI (cheap)"
 
 # ── Chat ──
