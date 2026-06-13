@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { DISPLAY_VERSION } from '../../version.js';
+import { asyncHandler } from './_shared.js';
 
 /**
  * Core endpoints: health/liveness/readiness probes, status dashboard, chat API,
@@ -132,7 +133,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   });
 
   // ── Audit Log (last 50 entries) ──
-  app.get('/api/audit', async (_req: Request, res: Response) => {
+  app.get('/api/audit', asyncHandler(async (_req: Request, res: Response) => {
     const { readFile } = await import('fs/promises');
     const { existsSync } = await import('fs');
     const { join } = await import('path');
@@ -150,7 +151,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     }).filter(Boolean).slice(-50);
 
     res.json({ entries });
-  });
+  }));
 
   // ═══════════════════════════════════════════════════════════
   // Activity Log (universal agent action feed)

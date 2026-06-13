@@ -68,7 +68,10 @@ export async function initChatHttp(gw: BookClawGateway): Promise<void> {
       res.type('html').send(
         html
           .replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? '')
-          .replaceAll('__BOOKCLAW_API_BASE__', gatewayOrigin),
+          // Placeholder deliberately differs from the window.__BOOKCLAW_API_BASE__
+          // variable name — replaceAll on the variable's own name rewrote the
+          // assignment target and syntax-errored the whole token-bridge script.
+          .replaceAll('__BOOKCLAW_API_BASE_URL__', gatewayOrigin),
       );
     } catch { if (!res.headersSent) res.status(500).send('Chat UI not built'); }
   };

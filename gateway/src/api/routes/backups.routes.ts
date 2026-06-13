@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { readBackupCfg, SNAPSHOT_RE } from '../../services/backup.js';
+import { requireApprovedConfirmation } from './_shared.js';
 
 /**
  * Backup & recovery API (book-container Phase 11). List/run snapshots, restore
@@ -133,12 +134,13 @@ export function mountBackups(app: Application, gateway: any, _baseDir: string): 
     const id = String(req.params.id);
     const cloud = pendingCloud.get(id);
     if (!cloud) return res.status(404).json({ error: 'Unknown or expired pending change (re-submit the config change)' });
-    const { status, request } = services.confirmationGate.checkDecision(id);
-    if (!request || request.service !== 'backup') return res.status(404).json({ error: 'no such backup confirmation' });
-    if (status !== 'approved') return res.status(409).json({ error: `confirmation is ${status} (must be approved)` });
+    const gate = requireApprovedConfirmation(services.confirmationGate, { id, expectedService: 'backup' });
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
     try {
       await persist({ ...readCfg(), cloud });
       pendingCloud.delete(id);
+      // Transition the confirmation off 'approved' so a replay is rejected at the gate.
+      await services.confirmationGate.recordOutcome(id, { success: true, message: 'Cloud backup destination enabled', executedAt: new Date().toISOString() });
       services.backup?.restart();
       res.json({ ok: true, config: readCfg() });
     } catch (e: any) {

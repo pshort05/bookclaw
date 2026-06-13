@@ -54,7 +54,18 @@ export interface BookSummary {
   genre?: string | null;
 }
 
-/** Classify a stored schemaVersion against this app's supported range. */
+/**
+ * Classify a stored schemaVersion against this app's supported range.
+ *
+ * Enforcement (book-container Phase 3 → tightened 2026-06-12): the gate is now
+ * ENFORCED on per-book TEMPLATE writes — BookService.writeTemplate and .repull
+ * throw via assertWritable when status is not `ok`, so a quarantined/readonly
+ * book is never rewritten in an incompatible app's shape. Enforcement at the
+ * engine's data-output path (BookService.dataDirOf) remains DEFERRED to the
+ * first v1→v2 schema bump (it's cross-cutting; see the note there). Today
+ * BOOK_MIN_SUPPORTED === BOOK_SCHEMA_VERSION === 1, so every book is `ok` and
+ * both the badge and the new throws are unreachable until that bump.
+ */
 export function classifyVersion(v: number): BookStatus {
   if (v < BOOK_MIN_SUPPORTED) return 'quarantined'; // too old for this app
   if (v > BOOK_SCHEMA_VERSION) return 'readonly';    // written by a newer app

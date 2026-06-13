@@ -269,7 +269,7 @@ export class VideoResearchService {
   }
 
   /** Whisper API transcription. Downloads audio-only, transcribes, deletes audio. */
-  private async transcribeViaWhisper(url: string, workDir: string): Promise<{ transcript: string; cost: number; error?: string }> {
+  private async transcribeViaWhisper(sanitizedUrl: string, workDir: string): Promise<{ transcript: string; cost: number; error?: string }> {
     if (!this.vault) return { transcript: '', cost: 0, error: 'Vault unavailable' };
     const apiKey = await this.vault.get('openai_api_key');
     if (!apiKey) return { transcript: '', cost: 0, error: 'No OpenAI key for Whisper' };
@@ -277,7 +277,8 @@ export class VideoResearchService {
     const audioPath = join(workDir, 'audio.mp3');
     try {
       // Audio-only download. yt-dlp + ffmpeg handle the conversion.
-      const dlCmd = `yt-dlp --no-playlist -x --audio-format mp3 --audio-quality 5 -o ${this.shellQuote(audioPath)} ${this.shellQuote(url)}`;
+      // The URL arrives already sanitized from extract(); quote it consistently.
+      const dlCmd = `yt-dlp --no-playlist -x --audio-format mp3 --audio-quality 5 -o ${this.shellQuote(audioPath)} ${this.shellQuote(sanitizedUrl)}`;
       await execAsync(dlCmd, { timeout: 300000, maxBuffer: 20 * 1024 * 1024 });
       if (!existsSync(audioPath)) {
         return { transcript: '', cost: 0, error: 'Audio download produced no file' };

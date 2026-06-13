@@ -22,6 +22,15 @@ export function Board() {
 
   useEffect(() => { loadBooks().catch((e) => setError(String(e))); }, [loadBooks]);
 
+  // While any book is generating, the live "writing…" strip + Rail counts go stale
+  // on a one-shot load — poll until nothing is live, clearing on unmount.
+  const anyLive = books.some((b) => b.live);
+  useEffect(() => {
+    if (!anyLive) return;
+    const id = setInterval(() => { loadBooks().catch(() => {}); }, 4000);
+    return () => clearInterval(id);
+  }, [anyLive, loadBooks]);
+
   // Filters: All + "Needs you" (gate status != ok) + one chip per distinct phase present.
   const chips = useMemo(() => ['All', 'Needs you', ...Array.from(new Set(books.map((b) => b.phase)))], [books]);
   const shown = useMemo(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@bookclaw/shared';
 import type { LibraryKind, LibraryPipeline, LibraryPipelineStep } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
@@ -23,6 +23,11 @@ export function PipelineEditor({ scope, kind, name }: Props) {
   const [pipeline, setPipeline] = useState<LibraryPipeline | null>(null);
   const [description, setDescription] = useState('');
   const [openSteps, setOpenSteps] = useState<Set<number>>(new Set());
+  // Stable per-step React keys, parallel to pipeline.steps and remapped on every
+  // structural edit — array index alone mis-associates focus/open-state on reorder.
+  const [stepIds, setStepIds] = useState<string[]>([]);
+  const nextId = useRef(0);
+  const mkId = () => `step-${nextId.current++}`;
   const [skills, setSkills] = useState<string[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,6 +50,7 @@ export function PipelineEditor({ scope, kind, name }: Props) {
           return;
         }
         setPipeline(pl);
+        setStepIds(pl.steps.map(() => mkId()));
         setDescription(entry.description ?? pl?.description ?? '');
         setSource(entry.source ?? '');
       })
@@ -67,12 +73,14 @@ export function PipelineEditor({ scope, kind, name }: Props) {
   function addStep() {
     if (!pipeline) return;
     setPipeline({ ...pipeline, steps: [...pipeline.steps, BLANK_STEP()] });
+    setStepIds((prev) => [...prev, mkId()]);
     mark();
   }
 
   function removeStep(i: number) {
     if (!pipeline) return;
     setPipeline({ ...pipeline, steps: pipeline.steps.filter((_, idx) => idx !== i) });
+    setStepIds((prev) => prev.filter((_, idx) => idx !== i));
     setOpenSteps((prev) => { const n = new Set<number>(); prev.forEach((v) => { if (v < i) n.add(v); else if (v > i) n.add(v - 1); }); return n; });
     mark();
   }
@@ -84,6 +92,7 @@ export function PipelineEditor({ scope, kind, name }: Props) {
     const steps = [...pipeline.steps];
     [steps[i], steps[j]] = [steps[j], steps[i]];
     setPipeline({ ...pipeline, steps });
+    setStepIds((prev) => { const n = [...prev]; [n[i], n[j]] = [n[j], n[i]]; return n; });
     setOpenSteps((prev) => {
       const n = new Set<number>();
       prev.forEach((v) => {
@@ -182,7 +191,7 @@ export function PipelineEditor({ scope, kind, name }: Props) {
           {pipeline.steps.map((step, i) => {
             const isOpen = openSteps.has(i);
             return (
-              <div key={i} className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
+              <div key={stepIds[i] ?? i} className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
                 <div className={styles.srow} onClick={() => toggleStep(i)}>
                   <span className={styles.snum}>{i + 1}</span>
                   <span className={styles.sname}>{step.label}</span>

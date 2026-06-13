@@ -258,23 +258,30 @@ function BackupsCard() {
       setMsg('Cloud backup change applied.');
     } catch (e) {
       setMsg(
-        String(e).includes('409')
+        (e as { status?: number })?.status === 409
           ? 'Not approved yet — approve it on the Confirmations page first.'
           : `Couldn't finalize — ${String(e)}`,
       );
     }
   };
 
+  // Send the FULL cloud object on every cloud change so a server shallow-merge
+  // can't clobber the untouched cloud fields (enabled / hook / destinations).
+  const saveCloud = (patch: Partial<BackupConfig['cloud']>) => {
+    if (!cfg) return;
+    saveCfg({ cloud: { ...cfg.cloud, ...patch } });
+  };
+
   const addDest = () => {
     const d = destInput.trim();
     if (!d || !cfg) return;
     setDestInput('');
-    saveCfg({ cloud: { destinations: [...cfg.cloud.destinations, d] } });
+    saveCloud({ destinations: [...cfg.cloud.destinations, d] });
   };
 
   const removeDest = (d: string) => {
     if (!cfg) return;
-    saveCfg({ cloud: { destinations: cfg.cloud.destinations.filter((x) => x !== d) } });
+    saveCloud({ destinations: cfg.cloud.destinations.filter((x) => x !== d) });
   };
 
   return (
@@ -389,7 +396,7 @@ function BackupsCard() {
               <input
                 type="checkbox"
                 checked={cfg.cloud.enabled}
-                onChange={(e) => saveCfg({ cloud: { enabled: e.target.checked } })}
+                onChange={(e) => saveCloud({ enabled: e.target.checked })}
               />
               Push to cloud destinations
             </label>
@@ -423,7 +430,7 @@ function BackupsCard() {
               value={hookInput}
               onChange={(e) => setHookInput(e.target.value)}
             />
-            <Button variant="secondary" onClick={() => saveCfg({ cloud: { hook: hookInput.trim() || null } })}>
+            <Button variant="secondary" onClick={() => saveCloud({ hook: hookInput.trim() || null })}>
               Save hook
             </Button>
           </div>

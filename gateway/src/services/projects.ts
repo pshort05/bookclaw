@@ -327,12 +327,12 @@ export class ProjectEngine {
     };
 
     // ── Phase: Premise (2 steps) ──
-    addStep('Develop premise', 'premise', 'general',
+    addStep('Develop premise', 'premise', 'book_bible',
       `Develop this story concept into a complete premise for "${title}":${premiseBlock}\n\n${description}\n\nCreate:\n- A refined logline (1-2 sentences)\n- The central What-If question\n- Protagonist's want vs need\n- The core conflict\n- Stakes: personal, professional, and global\n- Theme statement\n- 3 comparable titles\n\nWrite a thorough, detailed response. Do not abbreviate.`,
       { skill: 'premise' }
     );
 
-    addStep('Refine premise', 'premise', 'general',
+    addStep('Refine premise', 'premise', 'book_bible',
       `Refine the "${title}" premise further. Using everything from the initial premise, add:\n- The antagonist's motivation and logic\n- The ticking clock: what specific deadline creates urgency?\n- 3 possible plot twists (one at midpoint, one at 75%, one final revelation)\n- The emotional core: what personal loss or wound drives the protagonist?\n\nWrite a thorough, detailed response.`,
       { skill: 'premise' }
     );

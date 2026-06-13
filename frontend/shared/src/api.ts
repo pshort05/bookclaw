@@ -21,6 +21,10 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.headers || {}),
     },
   });
-  if (!res.ok) throw new Error(`${res.status} ${path}`);
+  if (!res.ok) {
+    const err = new Error(`${res.status} ${path}`);
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
+  }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
 }

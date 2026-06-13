@@ -5,9 +5,11 @@
      and API base into the placeholders below at serve time (gateway/src/init/phase-12-chat-http.ts),
      and @bookclaw/shared (api.ts/socket.ts) reads them from window globals. Copy
      this <script> verbatim into any other app entry; changing the global names yields silent 401s.
-     (Keep this comment free of the placeholder literals so the serve-time replace doesn't
-     copy the token into the comment.) -->
-<script>window.__BOOKCLAW_TOKEN__='__BOOKCLAW_AUTH_TOKEN__';window.__BOOKCLAW_API_BASE__='__BOOKCLAW_API_BASE__';</script>
+     Each PLACEHOLDER name must differ from its window VARIABLE name — replaceAll would
+     otherwise rewrite the variable too and syntax-error the whole script (the bug that
+     broke chat until 2026-06-12). (Keep this comment free of the placeholder literals
+     so the serve-time replace doesn't copy the token into the comment.) -->
+<script>window.__BOOKCLAW_TOKEN__='__BOOKCLAW_AUTH_TOKEN__';window.__BOOKCLAW_API_BASE__='__BOOKCLAW_API_BASE_URL__';</script>
 </head><body><div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 </body></html>

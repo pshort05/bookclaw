@@ -1,6 +1,13 @@
 /**
  * BookClaw Injection Detector
- * Detects common prompt injection patterns
+ * Detects common prompt injection patterns.
+ *
+ * ADVISORY defense-in-depth ONLY. This static-regex scanner is trivially
+ * evadable (obfuscation, line-splitting, unicode, base64) and prone to false
+ * positives, so it must never be the authoritative control. The authoritative
+ * control for irreversible/external actions is the ConfirmationGate (see
+ * docs/SECURITY.md). Do not increase reliance on this detector or add patterns
+ * to gate behaviour on it.
  */
 
 interface ScanResult {
@@ -15,7 +22,9 @@ export class InjectionDetector {
     // Direct injection attempts
     { regex: /ignore\s+(all\s+)?previous\s+instructions/i, type: 'direct_override', confidence: 0.95 },
     { regex: /ignore\s+(all\s+)?prior\s+(instructions|prompts|rules)/i, type: 'direct_override', confidence: 0.95 },
-    { regex: /you\s+are\s+now\s+(in\s+)?/i, type: 'role_hijack', confidence: 0.85 },
+    // Role-assignment only ("you are now a/an/the <role>" or "you are now in <mode>"),
+    // not any innocuous "you are now …" prose (e.g. "you are now reading chapter two").
+    { regex: /you\s+are\s+now\s+(in\s+|(a|an|the)\s+)\w+/i, type: 'role_hijack', confidence: 0.85 },
     { regex: /forget\s+(everything|all|your)\s+(you|instructions|rules)/i, type: 'memory_wipe', confidence: 0.9 },
     { regex: /new\s+instructions?\s*:/i, type: 'instruction_inject', confidence: 0.8 },
     { regex: /system\s*:\s*you\s+are/i, type: 'system_prompt_inject', confidence: 0.95 },

@@ -86,6 +86,7 @@ import type { BackupService } from './services/backup.js';
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
+import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from './util/wordcount.js';
 import { initConfig } from './init/phase-01-config.js';
 import { initSecurity } from './init/phase-02-security.js';
 import { initSoulMemory } from './init/phase-03-soul-memory.js';
@@ -116,6 +117,17 @@ function extractToken(req: express.Request): string {
   const queryToken = typeof req.query.token === 'string' ? req.query.token.trim() : '';
   return headerToken || queryToken;
 }
+
+// Process-level crash safety net. Express 4 does not forward async-handler
+// rejections to its error middleware, and Node 22 terminates the process on an
+// unhandled rejection — which would kill all in-flight projects. Log loudly but
+// do NOT exit, so a stray rejection no longer takes the gateway down.
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
 
 // ═══════════════════════════════════════════════════════════
 // BookClaw Gateway
@@ -476,11 +488,15 @@ class BookClawGateway {
 
       socket.on('message', async (data: { content: string }) => {
         try {
-          await this.handleMessage(data.content, 'webchat', (response) => {
+          // Key the conversation channel per socket so concurrent web clients
+          // don't share one server-side history (history resets on reconnect,
+          // which is acceptable — better than cross-client context leakage).
+          await this.handleMessage(data.content, `webchat:${socket.id}`, (response) => {
             socket.emit('response', { content: response });
           });
         } catch (error) {
-          socket.emit('error', { message: 'An error occurred processing your message' });
+          // 'error' is reserved on the Socket.IO client; use a custom event name.
+          socket.emit('chat_error', { message: 'An error occurred processing your message' });
           this.audit.log('error', 'message_processing_failed', { error: String(error) });
         }
       });
@@ -556,6 +572,12 @@ class BookClawGateway {
     // getActiveGenreGuide() would inject the *globally active* book's genre —
     // exactly the cross-leak Phases 8/10 exist to prevent. Do not "fix" into symmetry.
     const overrideSlug = bookSlug ?? this.books?.getChannelBook(channel) ?? undefined;
+    if (overrideSlug && !(this.books?.authorDirOf(overrideSlug))) {
+      // A bound book whose Author snapshot can't be resolved (deleted/quarantined)
+      // silently falls back to the global author voice below. Log it so the
+      // wrong-voice fallback is visible rather than silent.
+      console.log(`  ⚠ Unresolvable bookSlug "${overrideSlug}" — falling back to global author voice`);
+    }
     const soul = overrideSlug
       ? ((await this.soul.composeForBook(
           this.books?.authorDirOf(overrideSlug) ?? '',
@@ -730,6 +752,27 @@ class BookClawGateway {
               timestamp: new Date(),
             });
           }
+          // Record fallback spend too — otherwise a run that fails over to a paid
+          // provider records zero cost and the budget gate is silently defeated.
+          this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost);
+          this.heartbeat.recordActivity('message', { channel });
+          this.activityLog.log({
+            type: 'chat_message',
+            source: channel.startsWith('telegram:') ? 'telegram' : channel === 'api' ? 'api' : 'dashboard',
+            message: `AI responded via ${fallback.id} (fallback)`,
+            metadata: {
+              provider: fallback.id,
+              tokens: response.tokensUsed,
+              cost: response.estimatedCost,
+              wordCount: response.text.split(/\s+/).length,
+            },
+          });
+          this.audit.log('message', 'responded', {
+            channel,
+            provider: fallback.id,
+            tokens: response.tokensUsed,
+            cost: response.estimatedCost,
+          });
           respond(response.text);
         } catch (fallbackErr) {
           const fbText = (fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)).substring(0, 250);
@@ -1799,7 +1842,7 @@ class BookClawGateway {
                 projectContext,
                 'general',
                 projectProvider,
-                undefined,
+                stepModel,                  // preserve the step's pinned model on retry
                 project.bookSlug
               ).catch(reject);
             });
@@ -1816,12 +1859,29 @@ class BookClawGateway {
           return { error: `AI error: ${String(err)}` };
         }
 
+        // Detect the [AI provider failure] sentinel from handleMessage when both
+        // primary and fallback errored. Fail the step with the real reason rather
+        // than writing the error string into the chapter file and advancing
+        // (mirrors the dashboard auto-execute guard).
+        if (aiResponse && aiResponse.startsWith('[AI provider failure]')) {
+          const detail = aiResponse.replace(/^\[AI provider failure\]\s*/, '').substring(0, 500);
+          gateway.projectEngine.failStep(projectId, activeStep.id, detail);
+          gateway.activityLog.log({
+            type: 'step_failed',
+            source: 'telegram',
+            goalId: projectId,
+            stepLabel: activeStep.label,
+            message: `Step failed: ${activeStep.label} — AI provider failure`,
+          });
+          return { error: `AI provider failure — ${detail}` };
+        }
+
         // Word count continuation for novel-pipeline writing steps
         const wcTarget = (activeStep as any).wordCountTarget;
         if (wcTarget && wcTarget > 0) {
-          let wc = aiResponse.split(/\s+/).length;
+          let wc = countWords(aiResponse);
           let continuations = 0;
-          while (wc < wcTarget && continuations < 3) {
+          while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {
             continuations++;
             const remaining = wcTarget - wc;
             console.log(`  [novel-pipeline] Chapter word count: ${wc}/${wcTarget} — requesting continuation #${continuations} (~${remaining} more words)`);
@@ -1840,8 +1900,8 @@ class BookClawGateway {
                 ).catch(reject);
               });
               if (contResponse.length > 100) {
-                aiResponse = aiResponse + '\n\n' + contResponse;
-                wc = aiResponse.split(/\s+/).length;
+                aiResponse = appendContinuation(aiResponse, contResponse);
+                wc = countWords(aiResponse);
               } else {
                 break; // Too short, stop trying
               }
@@ -1850,12 +1910,12 @@ class BookClawGateway {
             }
           }
           if (continuations > 0) {
-            console.log(`  [novel-pipeline] Final word count after ${continuations} continuation(s): ${aiResponse.split(/\s+/).length}`);
+            console.log(`  [novel-pipeline] Final word count after ${continuations} continuation(s): ${countWords(aiResponse)}`);
           }
         }
 
         // Calculate word count from FULL response (not truncated)
-        const wordCount = aiResponse.split(/\s+/).length;
+        const wordCount = countWords(aiResponse);
 
         // Save full output to workspace file
         // Phase 8: route output to the project's bound book data/ dir; fall back

@@ -184,17 +184,17 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
       setImportMsg(r.entry ? `Imported ${r.entry.kind} "${r.entry.name}".` : 'Imported.');
       load();
     } catch (e) {
-      const s = String(e);
-      if (s.includes('404')) {
+      const status = (e as { status?: number })?.status;
+      if (status === 404) {
         // Expired / already consumed — the held import is dead; drop the Finalize affordance.
         setImportPending(null);
         clearPendingImport();
         setImportMsg('Expired — re-import the file.');
-      } else if (s.includes('409')) {
+      } else if (status === 409) {
         // Not approved yet — keep the pending state so the user can finalize after approving.
         setImportMsg('Not approved yet — approve it on the Confirmations page first.');
       } else {
-        setImportMsg(`Couldn't finalize — ${s}`);
+        setImportMsg(`Couldn't finalize — ${String(e)}`);
       }
     }
   }

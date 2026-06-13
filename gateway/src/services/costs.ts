@@ -72,11 +72,13 @@ export class CostTracker {
     this.checkReset();
     let cost = estimatedCost;
     if (cost === undefined || cost === null || isNaN(cost)) {
-      // Fallback estimation (matches router defaults). Used only if the router
-      // didn't provide a cost (older call-sites).
+      // Fallback estimation. Used only if the router didn't provide a cost
+      // (older call-sites). Per-1k blended rates kept roughly in line with
+      // router.ts's per-provider input/output rates; this path is a coarse
+      // safety net, not the source of truth.
       const costPer1k: Record<string, number> = {
         ollama: 0, gemini: 0, deepseek: 0.0003,
-        claude: 0.009, openai: 0.006, together: 0.0002,
+        claude: 0.009, openai: 0.006, openrouter: 0.006,
       };
       cost = (tokens / 1000) * (costPer1k[provider] || 0);
     }

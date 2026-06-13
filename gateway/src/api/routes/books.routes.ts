@@ -1,5 +1,5 @@
 import { Application, Request, Response } from 'express';
-import { uploadZip } from './_shared.js';
+import { uploadZip, requireApprovedConfirmation } from './_shared.js';
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
@@ -209,6 +209,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
   // Export a book as a .zip download. ?token= fallback works (native <a download>).
   app.get('/api/books/:slug/export', (req: Request, res: Response) => {
     const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
     try {
       const buf = services.bookTransfer.export(slug);
       res.setHeader('Content-Type', 'application/zip');
@@ -258,12 +259,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
   // Finalize a gated import AFTER the confirmation was approved in the dashboard.
   app.post('/api/books/import/finalize', async (req: Request, res: Response) => {
     const id = typeof req.body?.confirmationId === 'string' ? req.body.confirmationId : '';
-    if (!id) return res.status(400).json({ error: 'confirmationId required' });
-    const { status, request } = services.confirmationGate.checkDecision(id);
-    if (!request || request.service !== 'book-transfer') return res.status(404).json({ error: 'no such import confirmation' });
-    if (status !== 'approved') return res.status(409).json({ error: `confirmation is ${status} (must be approved)` });
+    const gate = requireApprovedConfirmation(services.confirmationGate, { id, expectedService: 'book-transfer' });
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
     try {
-      const mf = await services.bookTransfer.finalizeImport(String(request.payload?.stagingId));
+      const mf = await services.bookTransfer.finalizeImport(String(gate.request.payload?.stagingId));
+      // Transition the confirmation off 'approved' so a replay is rejected at the gate.
+      await services.confirmationGate.recordOutcome(id, { success: true, message: `Imported ${mf.slug}`, executedAt: new Date().toISOString() });
       res.json({ imported: mf.slug });
     } catch (err) {
       res.status(500).json({ error: (err as Error)?.message || String(err) });

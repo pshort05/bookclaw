@@ -57,10 +57,45 @@ export class ResearchGate {
     await writeFile(this.allowlistPath, JSON.stringify(data, null, 2), 'utf-8');
   }
 
+  /**
+   * Reject hostnames that are IP literals in private/loopback/link-local ranges,
+   * so an allowlisted-but-internal target can't be used to reach the LAN
+   * (SSRF hardening). Returns true only for clearly-private literals; anything
+   * that isn't a recognized IP literal (i.e. a normal DNS name) returns false.
+   */
+  private isPrivateIpLiteral(hostname: string): boolean {
+    // IPv6 literals arrive bracket-stripped from URL.hostname; normalize.
+    const host = hostname.toLowerCase();
+
+    // IPv4 dotted-quad
+    const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (v4) {
+      const [a, b] = [Number(v4[1]), Number(v4[2])];
+      if (a === 10) return true;                          // 10/8
+      if (a === 127) return true;                         // 127/8 loopback
+      if (a === 172 && b >= 16 && b <= 31) return true;   // 172.16/12
+      if (a === 192 && b === 168) return true;            // 192.168/16
+      if (a === 169 && b === 254) return true;            // 169.254/16 link-local
+      return false;
+    }
+
+    // IPv6 literals
+    if (host === '::1') return true;                       // loopback
+    if (host.startsWith('fc') || host.startsWith('fd')) return true; // fc00::/7 ULA
+    if (host.startsWith('fe8') || host.startsWith('fe9') ||
+        host.startsWith('fea') || host.startsWith('feb')) return true; // fe80::/10 link-local
+
+    return false;
+  }
+
   isAllowed(url: string): boolean {
     try {
       const parsed = new URL(url);
       const domain = parsed.hostname.replace(/^www\./, '');
+
+      // SSRF guard: never allow IP literals that point at internal ranges,
+      // even if the allowlist would otherwise match.
+      if (this.isPrivateIpLiteral(parsed.hostname)) return false;
 
       // Check exact match and wildcard
       if (this.allowedDomains.has(domain)) return true;

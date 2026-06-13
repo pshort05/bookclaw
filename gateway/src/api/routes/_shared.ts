@@ -7,7 +7,50 @@
  */
 import path from 'path';
 import multer from 'multer';
-import type { Response } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+
+/**
+ * Wrap an async Express handler so a rejected promise is routed to next(err)
+ * (and thence the error middleware) instead of becoming an unhandled rejection.
+ * Express 4 does NOT await/await-catch async handlers itself, and Node 22
+ * terminates the process on an unhandled rejection — so any unguarded `await`
+ * that rejects inside a route would otherwise crash the whole gateway. Apply
+ * this to mutating async handlers that don't already have a try/catch.
+ */
+export function asyncHandler(
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
+): RequestHandler {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
+/**
+ * Shared preamble for confirmation-gated "finalize" handlers. Looks up the
+ * confirmation by id, verifies it belongs to the expected service, and requires
+ * it to be in the `approved` state. Returns a discriminated result so callers
+ * keep their own finalize action while sharing the (previously hand-rolled,
+ * drifted) lookup/validation logic and consistent 404/409 mappings.
+ *
+ *   const gate = requireApprovedConfirmation(services.confirmationGate, { id, expectedService: 'book-transfer' });
+ *   if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+ *   // ... finalize using gate.request.payload ...
+ */
+export function requireApprovedConfirmation(
+  confirmationGate: any,
+  opts: { id: string; expectedService: string },
+):
+  | { ok: true; request: any }
+  | { ok: false; status: number; error: string } {
+  const { id, expectedService } = opts;
+  if (!id) return { ok: false, status: 400, error: 'confirmationId required' };
+  const { status, request } = confirmationGate.checkDecision(id);
+  if (!request || request.service !== expectedService) {
+    return { ok: false, status: 404, error: 'no such confirmation' };
+  }
+  if (status !== 'approved') {
+    return { ok: false, status: 409, error: `confirmation is ${status} (must be approved)` };
+  }
+  return { ok: true, request };
+}
 
 /** Verify resolved path stays within the allowed base directory. */
 export function safePath(base: string, userInput: string): string | null {

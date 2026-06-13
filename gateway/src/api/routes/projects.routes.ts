@@ -1,6 +1,12 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
+import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from '../../util/wordcount.js';
+
+// Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
+// Telegram, or a double-click) from processing the same step → duplicated
+// chapters + double cost. Module-level so it's shared across all requests.
+const autoExecuteInFlight = new Set<string>();
 
 /**
  * Project Engine endpoints: templates, project + pipeline creation, start/
@@ -508,6 +514,14 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(404).json({ error: 'Project not found' });
     }
 
+    // Concurrency guard: only one runner per project. Without it, the dashboard
+    // + Telegram (or a double-click) both process the same active step →
+    // duplicated/overwritten chapter files + double cost.
+    if (autoExecuteInFlight.has(project.id)) {
+      return res.status(409).json({ error: 'Project is already auto-executing' });
+    }
+    autoExecuteInFlight.add(project.id);
+
     if (project.status === 'pending') {
       engine.startProject(req.params.id);
     } else if (project.status === 'paused') {
@@ -526,6 +540,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const outDirFor = (slug: string) =>
       activeDataDir ? activeDataDir : join(workspaceDir, 'projects', slug);
 
+    try {
     while (true) {
       const currentProject = engine.getProject(req.params.id);
       if (!currentProject) break;
@@ -564,8 +579,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             (text: string) => { response = text; },
             projectContext,
             'general',  // Force free-tier routing (Gemini first)
-            undefined,
-            undefined,
+            stepProvider,  // preserve the step's pinned provider on retry (if set)
+            stepModel,     // preserve the step's pinned model on retry (if set)
             currentProject.bookSlug           // Phase 8: keep the bound book on the retry path
           );
         }
@@ -594,9 +609,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const wcTarget = (activeStep as any).wordCountTarget ||
             (isRevisionApply ? Math.floor((currentProject.context?.documentWordCount || 0) * 0.9) : 0);
           if (wcTarget && wcTarget > 0) {
-            let wc = response.split(/\s+/).length;
+            let wc = countWords(response);
             let continuations = 0;
-            while (wc < wcTarget && continuations < 6) {
+            while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {
               continuations++;
               const remaining = wcTarget - wc;
               console.log(`  [${isRevisionApply ? 'revision-apply' : 'writing'}] Response word count: ${wc}/${wcTarget} — requesting continuation #${continuations} (~${remaining} more words)`);
@@ -616,8 +631,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   currentProject.bookSlug           // Phase 8: bound book on continuation
                 );
                 if (contResponse.length > 100) {
-                  response = response + '\n\n' + contResponse;
-                  wc = response.split(/\s+/).length;
+                  response = appendContinuation(response, contResponse);
+                  wc = countWords(response);
                 } else {
                   break;
                 }
@@ -626,7 +641,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
               }
             }
             if (continuations > 0) {
-              console.log(`  [${isRevisionApply ? 'revision-apply' : 'writing'}] Final word count after ${continuations} continuation(s): ${response.split(/\s+/).length}`);
+              console.log(`  [${isRevisionApply ? 'revision-apply' : 'writing'}] Final word count after ${continuations} continuation(s): ${countWords(response)}`);
             }
           }
         }
@@ -712,7 +727,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           console.warn('  [judge] evaluation hook failed:', (judgeErr as Error)?.message || judgeErr);
         }
 
-        const wordCount = response.split(/\s+/).length;
+        const wordCount = countWords(response);
 
         // Save to file
         try {
@@ -879,6 +894,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       results,
       project: engine.getProject(req.params.id),
     });
+    } finally {
+      autoExecuteInFlight.delete(project.id);
+    }
   });
 
   app.post('/api/projects/:id/skip/:stepId', (req: Request, res: Response) => {

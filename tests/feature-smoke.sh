@@ -11,12 +11,14 @@
 # pacing, structure, beta reader, plot promises, style clone), then compile.
 #
 # Cost containment:
-#   - Forces OpenRouter-only on the cheap `gemma-3-4b-it` model by DISABLING
-#     Ollama for the run (so a broken step surfaces as a failure rather than
-#     silently falling back to free local AI). An EXIT trap re-enables Ollama
-#     no matter how the script ends (Ctrl-C / error included).
+#   - Forces OpenRouter-only on a cheap model (default `google/gemini-2.5-flash`,
+#     overridable via SMOKE_OR_MODEL) by DISABLING Ollama for the run (so a
+#     broken step surfaces as a failure rather than silently falling back to
+#     free local AI). The run pins the OpenRouter model at setup and restores
+#     the prior model + re-enables Ollama in an EXIT trap, no matter how the
+#     script ends (Ctrl-C / error included).
 #   - Pipeline is kept tiny: CHAPTERS=1, WORDS=300. Spend is a few cents on
-#     gemma. The free Tier-A checks (library/books) cost nothing.
+#     Gemini 2.5 Flash. The free Tier-A checks (library/books) cost nothing.
 #
 # Graceful feature detection:
 #   - Endpoints that 404 on the target build are reported as SKIP, not FAIL,
@@ -43,8 +45,9 @@
 #   CONTAINER            docker container for token lookup (default bookclaw)
 #   CHAPTERS / WORDS     pipeline size                (default 1 / 300)
 #
-# Requires a RUNNING gateway with an OpenRouter API key in the vault and the
-# OpenRouter model set to a cheap model (e.g. google/gemma-3-4b-it).
+# Requires a RUNNING gateway with an OpenRouter API key in the vault. The run
+# pins the OpenRouter model itself (SMOKE_OR_MODEL, default google/gemini-2.5-flash)
+# and restores the prior model on exit.
 # ═══════════════════════════════════════════════════════════
 set -uo pipefail
 
@@ -52,6 +55,11 @@ BASE_URL="${BASE_URL:-http://localhost:3847}"
 CONTAINER="${CONTAINER:-bookclaw}"
 CHAPTERS="${CHAPTERS:-1}"
 WORDS="${WORDS:-300}"
+# OpenRouter model the run pins for every executing step (overridable). Switched
+# from google/gemma-3-4b-it to Gemini 2.5 Flash on 2026-06-12 — more capable on
+# the craft suite, still cheap. The prior model is captured at setup and
+# restored by the EXIT trap.
+SMOKE_OR_MODEL="${SMOKE_OR_MODEL:-google/gemini-2.5-flash}"
 
 # ── Resolve the bearer token: env → container env → container .env ──
 TOKEN="${BOOKCLAW_AUTH_TOKEN:-}"
@@ -84,6 +92,7 @@ CREATED_SERIES=()
 CREATED_DOCS=()
 CREATED_LIBRARY_GENRES=()
 CREATED_LIBRARY_AUTHORS=()
+OR_ORIG_MODEL=""  # OpenRouter model before the run pinned SMOKE_OR_MODEL — restored by the EXIT trap
 BK_ORIG_CFG=""   # original backup config (Phase 11) — restored verbatim by the EXIT trap
 P12_TMPFILES=()       # Phase 12 temp zips — removed by the EXIT trap
 P12_OVERLAY_KIND=""   # Phase 12 imported overlay entry — trap-deleted if the run
@@ -166,6 +175,10 @@ restore(){
   echo "### Teardown"
   curl -s --max-time 30 "${H[@]}" -X POST -d '{"path":"ai.ollama.enabled","value":true}' "$BASE_URL/api/config/update" >/dev/null 2>&1
   echo "  [restore] Ollama re-enabled"
+  if [ -n "${OR_ORIG_MODEL:-}" ]; then
+    curl -s --max-time 30 "${H[@]}" -X POST -d "{\"path\":\"ai.openrouter.model\",\"value\":\"$OR_ORIG_MODEL\"}" "$BASE_URL/api/config/update" >/dev/null 2>&1 || true
+    echo "  [restore] OpenRouter model restored to $OR_ORIG_MODEL"
+  fi
 
   for pid in "${CREATED_PROJECTS[@]:-}"; do
     [ -z "$pid" ] && continue
@@ -236,8 +249,14 @@ restore(){
 trap restore EXIT
 
 # ═══════════════════════════════════════════════════════════
-echo "### 0. Setup — disable Ollama (OpenRouter-only)"
+echo "### 0. Setup — disable Ollama (OpenRouter-only) + pin the OpenRouter model"
 curl -s --max-time 30 "${H[@]}" -X POST -d '{"path":"ai.ollama.enabled","value":false}' "$BASE_URL/api/config/update" >/dev/null
+# Capture the current OpenRouter model so the trap can restore it, then pin
+# SMOKE_OR_MODEL (default Gemini 2.5 Flash) for every executing step this run.
+OR_ORIG_MODEL=$(curl -s --max-time 25 "${H[@]}" -X POST "$BASE_URL/api/providers/refresh" \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const p=(JSON.parse(s).providers||[]).find(x=>x.id==="openrouter");console.log(p&&p.model?p.model:"")}catch(e){console.log("")}})')
+curl -s --max-time 30 "${H[@]}" -X POST -d "{\"path\":\"ai.openrouter.model\",\"value\":\"$SMOKE_OR_MODEL\"}" "$BASE_URL/api/config/update" >/dev/null
+echo "openrouter model: ${OR_ORIG_MODEL:-?} -> $SMOKE_OR_MODEL"
 echo "providers: $(provs)"
 C0=$(daily); echo "cost start: \$$C0"
 
@@ -1273,7 +1292,7 @@ else
   if [ -z "$STEP0" ]; then
     fail "per-step model override" "no step[0].id on first phase"
   else
-    OVCODE=$(code POST "/api/projects/$MINI_FIRST/steps/$STEP0/model" '{"provider":"openrouter","model":"google/gemma-3-4b-it"}')
+    OVCODE=$(code POST "/api/projects/$MINI_FIRST/steps/$STEP0/model" "{\"provider\":\"openrouter\",\"model\":\"$SMOKE_OR_MODEL\"}")
     if [ "$OVCODE" = "404" ]; then
       skip "per-step model override" "(not on this build)"
     elif [ "$OVCODE" = "200" ]; then

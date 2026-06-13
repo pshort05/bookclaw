@@ -21,6 +21,10 @@ export function ChatPane() {
   const [waiting, setWaiting] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const activeBook = useActiveBook();
+  // Mirror `waiting` into a ref so the once-only subscription can drop a stale
+  // reply that arrives after a reconnect (it belongs to no live turn).
+  const waitingRef = useRef(false);
+  waitingRef.current = waiting;
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -42,7 +46,12 @@ export function ChatPane() {
       },
       onDisconnect: () => {
         setWaiting(false);
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'Disconnected — reconnecting…' }]);
       },
+      onNotice: (msg) => {
+        setMessages((prev) => [...prev, { role: 'assistant', content: msg }]);
+      },
+      isWaiting: () => waitingRef.current,
     });
     return unsub;
   }, []);

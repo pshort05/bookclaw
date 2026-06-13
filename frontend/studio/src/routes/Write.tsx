@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, useStore, useActiveBook, type BookManifest, type Project } from '@bookclaw/shared';
+import { api, useStore, useActiveBook, useBooksLoaded, type BookManifest, type Project } from '@bookclaw/shared';
 import { OutlinePane } from '../components/write/OutlinePane.js';
 import { ChatThread } from '../components/write/ChatThread.js';
 import { PipelineRail } from '../components/write/PipelineRail.js';
@@ -9,6 +9,7 @@ import styles from './Write.module.css';
 export function Write() {
   const { slug: paramSlug } = useParams();
   const active = useActiveBook();
+  const booksLoaded = useBooksLoaded();
   const loadBooks = useStore((s) => s.loadBooks);
   const [book, setBook] = useState<BookManifest | null>(null);
   // No book↔project link yet (Phase 8); the rail shows the book's pipeline plan
@@ -20,6 +21,10 @@ export function Write() {
 
   // Stable callback so PipelineRail's poll effect doesn't re-fire on re-renders.
   const handleProjectChange = useCallback((p: Project) => { setProject(p); }, []);
+
+  // Deep-linking /write (no :slug) needs the store's first fetch to resolve before
+  // we can tell "no active book" apart from "not fetched yet" — kick it off if idle.
+  useEffect(() => { if (!booksLoaded) loadBooks().catch(() => {}); }, [booksLoaded, loadBooks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +53,8 @@ export function Write() {
   }, [slug, paramSlug, active?.slug, loadBooks]);
 
   if (!slug) {
+    // Don't flash "No active book" before the first books fetch resolves.
+    if (!booksLoaded) return <div className={styles.empty}>Loading…</div>;
     return (
       <div className={styles.empty}>
         No active book. <Link to="/">Open one from the Board.</Link>

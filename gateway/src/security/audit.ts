@@ -3,7 +3,8 @@
  * Tamper-resistant logging of all agent actions
  */
 
-import { appendFile, mkdir } from 'fs/promises';
+import { appendFile, mkdir, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { createHash } from 'crypto';
 
@@ -17,6 +18,21 @@ export class AuditLog {
 
   async initialize(): Promise<void> {
     await mkdir(this.logDir, { recursive: true });
+    // Continue the hash chain across restarts: seed lastHash from the hash field
+    // of the last line of today's log, so cross-restart tampering remains
+    // detectable (otherwise lastHash resets to '0' each boot and breaks the
+    // chain). Fail-soft — a missing/corrupt/empty file leaves the '0' genesis.
+    try {
+      const logFile = join(this.logDir, `${new Date().toISOString().split('T')[0]}.jsonl`);
+      if (existsSync(logFile)) {
+        const lines = (await readFile(logFile, 'utf-8')).trimEnd().split('\n');
+        const last = lines[lines.length - 1];
+        if (last) {
+          const hash = JSON.parse(last)?.hash;
+          if (typeof hash === 'string' && hash) this.lastHash = hash;
+        }
+      }
+    } catch { /* fail-soft: keep the '0' genesis hash */ }
   }
 
   async log(category: string, action: string, data: Record<string, any>): Promise<void> {

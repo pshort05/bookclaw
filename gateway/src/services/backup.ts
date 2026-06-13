@@ -22,9 +22,23 @@ export const SNAPSHOT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(-\d{3})?$/;
 const STANDARD_TOPS = ['books', 'library', '.config', 'soul', 'memory', 'documents', 'projects', '.bookclaw'];
 /** Excluded from "full" scope (regenerable/partial-write hazards). Standard scope is allowlist-based, so these only matter for full. */
 const FULL_SKIP = (name: string) => name.startsWith('.tmp');
-/** File-level exclusions in any scope (live SQLite dbs incl. WAL/SHM sidecars, tmp files). */
-const FILE_SKIP = (name: string) =>
-  name.includes('.sqlite') || name.endsWith('.db') || name.endsWith('-wal') || name.endsWith('-shm') || name.startsWith('.tmp');
+/**
+ * File-level exclusions in any scope. Takes the FULL source path so the live
+ * memory-index SQLite db (incl. WAL/SHM sidecars) is anchored to memory/ rather
+ * than a global `.sqlite`/`.db` basename substring — a user file named e.g.
+ * `notes.db` elsewhere must not be silently dropped from backups. .tmp* names
+ * (partial writes) are skipped anywhere.
+ */
+const FILE_SKIP = (srcPath: string): boolean => {
+  const name = basename(srcPath);
+  if (name.startsWith('.tmp')) return true;
+  // Anchor the memory-index exclusion to the memory/ subtree.
+  const inMemory = srcPath.includes(`${sep}memory${sep}`);
+  if (inMemory && (name.includes('.sqlite') || name.endsWith('.db') || name.endsWith('-wal') || name.endsWith('-shm'))) {
+    return true;
+  }
+  return false;
+};
 
 export interface BackupCfg {
   enabled: boolean;
@@ -136,7 +150,7 @@ export class BackupService {
     for (const top of tops) {
       await cp(join(this.workspaceDir, top), join(tmp, top), {
         recursive: true,
-        filter: (src) => !FILE_SKIP(basename(src)),
+        filter: (src) => !FILE_SKIP(src),
       });
     }
     const books = this.booksInDir(tmp);
@@ -247,12 +261,19 @@ export class BackupService {
     // not sit between validation and restore — prune runs after the copy below.
     const pre = await this.createSnapshot('pre-restore', new Date(), targetScope === 'full' ? 'full' : undefined);
     if (opts.book) {
+      // Capture whether we're reverting the live active book BEFORE re-init: the
+      // SoulService singleton isn't owned here, so a restore that touches the
+      // active book leaves free chat writing in the just-reverted voice until the
+      // operator restarts. We have no soul handle to reload in place, so flag a
+      // restart instead. Pipeline steps are unaffected (they read fresh via
+      // composeForBook); only the cached active-book Author is stale.
+      const wasActive = this.books?.getActiveBook() === opts.book;
       const live = join(this.workspaceDir, 'books', opts.book);
       await rm(live, { recursive: true, force: true });
       await cp(join(snapDir, 'books', opts.book), live, { recursive: true });
       await this.books?.initialize();
       await this.prune();
-      return { preSnapshot: pre.name, restartRecommended: false };
+      return { preSnapshot: pre.name, restartRecommended: wasActive };
     }
     for (const top of readdirSync(snapDir)) {
       if (top === 'snapshot.json' || top === '.vault' || top === '.audit') continue;

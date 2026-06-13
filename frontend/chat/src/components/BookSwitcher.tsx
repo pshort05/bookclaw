@@ -1,9 +1,10 @@
-import { useBooks, useActiveBook, useStore, api } from '@bookclaw/shared';
+import { useBooks, useActiveBook, useBooksLoaded, useStore, api } from '@bookclaw/shared';
 import styles from '../App.module.css';
 
 export function BookSwitcher() {
   const books = useBooks();
   const activeBook = useActiveBook();
+  const booksLoaded = useBooksLoaded();
   const loadBooks = useStore((s) => s.loadBooks);
 
   async function setActive(slug: string) {
@@ -21,7 +22,8 @@ export function BookSwitcher() {
       <>
         <div className={styles.lbl}>Your books</div>
         <div style={{ padding: '8px 12px', fontSize: '12.5px', color: 'var(--faint)' }}>
-          No books yet. Start one with the button above.
+          {/* Don't show the empty-state copy before the first fetch resolves. */}
+          {booksLoaded ? 'No books yet. Start one with the button above.' : 'Loading…'}
         </div>
       </>
     );

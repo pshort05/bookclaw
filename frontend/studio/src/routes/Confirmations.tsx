@@ -14,13 +14,16 @@ export function Confirmations() {
   }, [loadConfirmations]);
 
   const decide = async (id: string, decision: 'approve' | 'reject') => {
+    let body: string | undefined;
+    if (decision === 'reject') {
+      const reason = prompt('Reason (optional)?');
+      // Cancel (null) aborts the reject; an empty string is a valid "no reason".
+      if (reason === null) return;
+      body = JSON.stringify({ reason });
+    }
     setErr(null);
     setBusy(id);
     try {
-      const body =
-        decision === 'reject'
-          ? JSON.stringify({ reason: prompt('Reason (optional)?') || '' })
-          : undefined;
       await api(`/api/confirmations/${encodeURIComponent(id)}/${decision}`, {
         method: 'POST',
         body,

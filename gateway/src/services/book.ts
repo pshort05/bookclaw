@@ -11,7 +11,7 @@
  * are not snapshotted yet (Phase 3/4). Reads/writes stay under booksDir.
  */
 import { readFile, writeFile, mkdir, rm, cp } from 'fs/promises';
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
@@ -139,7 +139,11 @@ export class BookService {
       return { name, content: s.content };
     });
 
-    const slug = this.uniqueSlug(slugify(title));
+    // Claim the slug by atomically creating its dir (the dir-claim is the lock
+    // against a concurrent same-title create — see claimSlug). booksDir must
+    // exist first; initialize() makes it, but guard for a direct create() too.
+    mkdirSync(this.booksDir, { recursive: true });
+    const slug = this.claimSlug(slugify(title));
     const dir = join(this.booksDir, slug);
     const now = new Date().toISOString();
 
@@ -288,6 +292,27 @@ export class BookService {
     return `${base}-${Date.now()}`;
   }
 
+  /**
+   * Atomically claim a fresh slug by CREATING its dir non-recursively: mkdir
+   * without recursive throws EEXIST on collision, so the dir-claim is the lock —
+   * two concurrent same-title creates can't pick the same slug and clobber
+   * (the loser retries the next candidate). Returns the claimed slug; the
+   * now-existing dir is reused by create()'s later recursive mkdirs.
+   */
+  private claimSlug(base: string): string {
+    const candidates = [base, ...Array.from({ length: 998 }, (_, i) => `${base}-${i + 2}`), `${base}-${Date.now()}`];
+    for (const cand of candidates) {
+      try {
+        mkdirSync(join(this.booksDir, cand)); // non-recursive: throws EEXIST if taken
+        return cand;
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException)?.code === 'EEXIST') continue;
+        throw err;
+      }
+    }
+    throw new Error(`Could not allocate a unique slug for "${base}"`);
+  }
+
   /** Allocate a fresh, collision-free slug from a title (public wrapper over uniqueSlug). */
   allocateSlug(title: string): string {
     return this.uniqueSlug(slugify(title));
@@ -390,7 +415,16 @@ export class BookService {
     return join(d, 'templates', 'voice');
   }
 
-  /** Absolute data/ dir for a slug (where outputs land), or null if slug is null/invalid/unknown. */
+  /**
+   * Absolute data/ dir for a slug (where outputs land), or null if slug is
+   * null/invalid/unknown.
+   * NOTE (schemaVersion gate, Phase-3 deferral): this does NOT enforce the
+   * version gate. Template writes are gated (writeTemplate/repull throw on a
+   * non-`ok` book via assertWritable), but the engine's data-output path is
+   * cross-cutting — gating it would affect many callers — so enforcement here is
+   * deferred to the first v1→v2 schema bump (today every book is `ok`, so the
+   * gate is unreachable regardless). See classifyVersion in book-types.ts.
+   */
   dataDirOf(slug: string | null): string | null {
     if (!slug) return null;
     const d = this.bookDir(slug);
@@ -709,6 +743,21 @@ export class BookService {
   }
 
   /**
+   * Enforce the schemaVersion gate on a per-book WRITE path. Throws when the
+   * book's classified status is not `ok` (a too-old book is `quarantined`, a
+   * too-new one `readonly`) so we never rewrite a book in an incompatible app's
+   * shape. Today BOOK_MIN_SUPPORTED === BOOK_SCHEMA_VERSION === 1, so non-`ok`
+   * is unreachable and this is a no-op — it becomes load-bearing at the first
+   * v1→v2 schema bump. See classifyVersion in book-types.ts.
+   */
+  private async assertWritable(slug: string): Promise<void> {
+    const opened = await this.open(slug);
+    if (opened && opened.status !== 'ok') {
+      throw new Error(`book ${slug} is ${opened.status}; refusing to write`);
+    }
+  }
+
+  /**
    * Re-pull one asset. With a baseline + a text kind: 3-way merge per file,
    * write merged into templates/, advance baseline to the library version.
    * Pipeline + no-baseline fall back to opts.resolution (take-library | keep-book).
@@ -721,6 +770,7 @@ export class BookService {
   ): Promise<RepullResult> {
     const base = this.bookDir(slug);
     if (!base) throw new Error(`Invalid slug: ${slug}`);
+    await this.assertWritable(slug); // schemaVersion gate (no-op today; see assertWritable)
     const lib = this.libraryFiles(kind, name);
     if (!lib) throw new Error(`Library no longer has ${kind}/${name}`);
     const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
@@ -760,6 +810,16 @@ export class BookService {
       const b = baseline[f] ?? '';
       const m = (book ?? {})[f] ?? '';
       const t = lib[f] ?? '';
+      // Library-side removal (file known to baseline/book but absent from the
+      // library now). Feeding t='' to diff3 auto-resolves to a silent deletion
+      // with hadConflicts:false — a clean book would lose e.g. PERSONALITY.md on
+      // re-pull. Treat it as a conflict: KEEP the book's content (or the baseline
+      // if the book lacks it) and flag the conflict so the caller surfaces it.
+      if (!(f in lib)) {
+        const kept = m || b;
+        if (kept) { mergedFiles[f] = kept; hadConflicts = true; }
+        continue;
+      }
       const { merged, hadConflicts: c } = mergeText(b, m, t);
       mergedFiles[f] = merged;
       if (c) hadConflicts = true;
@@ -835,6 +895,7 @@ export class BookService {
   async writeTemplate(slug: string, kind: RepullAsset['kind'], name: string | undefined, body: { files?: Record<string, string>; content?: string; description?: string }): Promise<{ wired: boolean }> {
     const tdir = this.templatesDir(slug);
     if (!tdir) throw new Error('invalid: no active/valid book');
+    await this.assertWritable(slug); // schemaVersion gate (no-op today; see assertWritable)
     const wired = WIRED_KINDS.has(kind);
     if (kind === 'pipeline') {
       const raw = String(body.content ?? '');

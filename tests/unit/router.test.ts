@@ -128,11 +128,14 @@ test('over budget, selectProvider skips paid providers in favor of a free one', 
   assert.equal(router.selectProvider('final_edit').id, 'gemini');
 });
 
-test('over budget with only paid providers, the absolute fallback still returns one', async () => {
-  // Only claude present; the tier loop skips it (paid + over budget), but the
-  // final "any available" fallback returns it rather than failing the request.
+test('over budget with only paid providers, selectProvider fails closed (matches getFallbackProvider)', async () => {
+  // Only claude present (paid). Over budget, the tier loop skips it and the
+  // absolute fallback no longer returns a paid provider — it throws rather than
+  // silently burning budget, mirroring getFallbackProvider's fail-closed return.
+  // (Code-review 2026-06-12, finding F17: the absolute fallback must honor the
+  // budget cap instead of bypassing it.)
   const router = await makeRouter({ keys: ['anthropic_api_key'], overBudget: true });
-  assert.equal(router.selectProvider('final_edit').id, 'claude');
+  assert.throws(() => router.selectProvider('final_edit'), /No AI providers available/);
 });
 
 test('selectProvider throws when no providers are available', async () => {

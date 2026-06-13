@@ -354,12 +354,20 @@ export class AIRouter {
       }
     }
 
-    // Absolute fallback
-    const any = Array.from(this.providers.values()).find(p => p.available);
-    if (!any) {
-      throw new Error('No AI providers available. Please configure at least Ollama (free) or an API key.');
+    // Absolute fallback — no tier-preferred provider matched. Mirror the budget
+    // discipline of the tier loop and getFallbackProvider: prefer a free
+    // provider, and only return a paid one when nothing free is available AND we
+    // are not over budget (fail closed rather than silently burning budget).
+    const available = Array.from(this.providers.values()).filter(p => p.available);
+    const free = available.find(p => p.tier === 'free');
+    if (free) {
+      return free;
     }
-    return any;
+    const paid = available.find(p => !this.costs.isOverBudget());
+    if (paid) {
+      return paid;
+    }
+    throw new Error('No AI providers available. Please configure at least Ollama (free) or an API key.');
   }
 
   /**
@@ -401,11 +409,15 @@ export class AIRouter {
       : baseProvider;
 
     // ── Prompt cache tracking ──
+    // Key by provider + system-prompt hash so concurrent books (each with a
+    // different soul/style system prompt) don't evict each other from a single
+    // per-provider slot. The hit/miss/savedTokens counters below are plain
+    // fields and are therefore approximate under concurrent calls (stats only).
     const promptHash = this.hashPrompt(request.system);
-    const cacheKey = `${provider.id}:system`;
+    const cacheKey = `${provider.id}:${promptHash}`;
     const cached = this.promptCache.get(cacheKey);
 
-    if (cached && cached.hash === promptHash) {
+    if (cached) {
       this.cacheHits++;
       // Estimate saved tokens: rough system prompt token count (chars / 4)
       this.savedTokens += Math.ceil(request.system.length / 4);

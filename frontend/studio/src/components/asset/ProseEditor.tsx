@@ -49,7 +49,7 @@ export function ProseEditor({ scope, kind, name }: Props) {
   const isReadOnly = kind === 'skill';
   const fileNames = Object.keys(files);
   const currentContent = files[selectedFile] ?? '';
-  const preview = selectedFile ? DOMPurify.sanitize(marked.parse(currentContent) as string) : '';
+  const preview = selectedFile ? DOMPurify.sanitize(marked.parse(currentContent, { async: false }) as string) : '';
 
   function handleContentChange(value: string) {
     setFiles((prev) => ({ ...prev, [selectedFile]: value }));

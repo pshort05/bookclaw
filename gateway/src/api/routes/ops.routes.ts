@@ -1,4 +1,5 @@
 import { Application, Request, Response } from 'express';
+import { asyncHandler } from './_shared.js';
 
 /** Lessons API, Preferences API, and Orchestrator (script manager) API. */
 export function mountOps(app: Application, gateway: any, baseDir: string): void {
@@ -14,7 +15,7 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
     res.json({ lessons: lessons.getAll() });
   });
 
-  app.post('/api/lessons', async (req: Request, res: Response) => {
+  app.post('/api/lessons', asyncHandler(async (req: Request, res: Response) => {
     const lessons = services.lessons;
     if (!lessons) return res.status(503).json({ error: 'Lesson store not available' });
 
@@ -30,9 +31,9 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
       goalId,
     });
     res.json({ lesson: result });
-  });
+  }));
 
-  app.post('/api/lessons/:id/adjust', async (req: Request, res: Response) => {
+  app.post('/api/lessons/:id/adjust', asyncHandler(async (req: Request, res: Response) => {
     const lessons = services.lessons;
     if (!lessons) return res.status(503).json({ error: 'Lesson store not available' });
 
@@ -40,14 +41,14 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
     const result = await lessons.adjustConfidence(req.params.id, delta);
     if (!result) return res.status(404).json({ error: 'Lesson not found' });
     res.json({ lesson: result });
-  });
+  }));
 
-  app.delete('/api/lessons', async (_req: Request, res: Response) => {
+  app.delete('/api/lessons', asyncHandler(async (_req: Request, res: Response) => {
     const lessons = services.lessons;
     if (!lessons) return res.status(503).json({ error: 'Lesson store not available' });
     await lessons.reset();
     res.json({ success: true });
-  });
+  }));
 
   // ═══════════════════════════════════════════════════════════
   // Preferences API (from Sneakers)
@@ -59,7 +60,7 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
     res.json(prefs.getAllWithMetadata());
   });
 
-  app.post('/api/preferences', async (req: Request, res: Response) => {
+  app.post('/api/preferences', asyncHandler(async (req: Request, res: Response) => {
     const prefs = services.preferences;
     if (!prefs) return res.status(503).json({ error: 'Preference store not available' });
 
@@ -68,23 +69,23 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
 
     await prefs.set(key, value, source || 'explicit');
     res.json({ success: true, preferences: prefs.getAll() });
-  });
+  }));
 
-  app.delete('/api/preferences/:key', async (req: Request, res: Response) => {
+  app.delete('/api/preferences/:key', asyncHandler(async (req: Request, res: Response) => {
     const prefs = services.preferences;
     if (!prefs) return res.status(503).json({ error: 'Preference store not available' });
 
     const removed = await prefs.remove(req.params.key);
     if (!removed) return res.status(404).json({ error: 'Preference not found' });
     res.json({ success: true });
-  });
+  }));
 
-  app.delete('/api/preferences', async (_req: Request, res: Response) => {
+  app.delete('/api/preferences', asyncHandler(async (_req: Request, res: Response) => {
     const prefs = services.preferences;
     if (!prefs) return res.status(503).json({ error: 'Preference store not available' });
     await prefs.reset();
     res.json({ success: true });
-  });
+  }));
 
   // ═══════════════════════════════════════════════════════════
   // Orchestrator API (from Sneakers)
@@ -128,23 +129,23 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
     res.json({ status });
   });
 
-  app.post('/api/orchestrator/scripts/:id/stop', async (req: Request, res: Response) => {
+  app.post('/api/orchestrator/scripts/:id/stop', asyncHandler(async (req: Request, res: Response) => {
     const orch = services.orchestrator;
     if (!orch) return res.status(503).json({ error: 'Orchestrator not available' });
 
     const status = await orch.stopScript(req.params.id);
     if (!status) return res.status(404).json({ error: 'Script not found' });
     res.json({ status });
-  });
+  }));
 
-  app.post('/api/orchestrator/scripts/:id/restart', async (req: Request, res: Response) => {
+  app.post('/api/orchestrator/scripts/:id/restart', asyncHandler(async (req: Request, res: Response) => {
     const orch = services.orchestrator;
     if (!orch) return res.status(503).json({ error: 'Orchestrator not available' });
 
     const status = await orch.restartScript(req.params.id);
     if (!status) return res.status(404).json({ error: 'Script not found' });
     res.json({ status });
-  });
+  }));
 
   app.get('/api/orchestrator/scripts/:id/logs', (req: Request, res: Response) => {
     const orch = services.orchestrator;
@@ -155,13 +156,13 @@ export function mountOps(app: Application, gateway: any, baseDir: string): void 
     res.json({ logs });
   });
 
-  app.delete('/api/orchestrator/scripts/:id', async (req: Request, res: Response) => {
+  app.delete('/api/orchestrator/scripts/:id', asyncHandler(async (req: Request, res: Response) => {
     const orch = services.orchestrator;
     if (!orch) return res.status(503).json({ error: 'Orchestrator not available' });
 
     const removed = await orch.removeScript(req.params.id);
     if (!removed) return res.status(404).json({ error: 'Script not found' });
     res.json({ success: true });
-  });
+  }));
 
 }

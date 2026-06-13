@@ -1,5 +1,5 @@
 import { Application, Request, Response } from 'express';
-import { uploadZip } from './_shared.js';
+import { uploadZip, requireApprovedConfirmation } from './_shared.js';
 import { LIBRARY_KINDS, type LibraryKind } from '../../services/library-types.js';
 import { ENTRY_NAME_RE } from '../../services/library.js';
 import type { ImportFinding } from '../../services/transfer-security.js';
@@ -117,12 +117,12 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
   app.post('/api/library/import/finalize', async (req: Request, res: Response) => {
     if (!services.libraryTransfer) return res.status(503).json({ error: 'Library transfer unavailable (see startup log)' });
     const id = typeof req.body?.confirmationId === 'string' ? req.body.confirmationId : '';
-    if (!id) return res.status(400).json({ error: 'confirmationId required' });
-    const { status, request } = services.confirmationGate.checkDecision(id);
-    if (!request || request.service !== 'library-transfer') return res.status(404).json({ error: 'no such import confirmation' });
-    if (status !== 'approved') return res.status(409).json({ error: `confirmation is ${status} (must be approved)` });
+    const gate = requireApprovedConfirmation(services.confirmationGate, { id, expectedService: 'library-transfer' });
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
     try {
-      const entry = await services.libraryTransfer.finalizeImport(String(request.payload?.stagingId));
+      const entry = await services.libraryTransfer.finalizeImport(String(gate.request.payload?.stagingId));
+      // Transition the confirmation off 'approved' so a replay is rejected at the gate.
+      await services.confirmationGate.recordOutcome(id, { success: true, message: `Imported ${entry?.kind ?? 'entry'}`, executedAt: new Date().toISOString() });
       res.json({ ok: true, entry });
     } catch (err) {
       const msg = (err as Error)?.message || String(err);
