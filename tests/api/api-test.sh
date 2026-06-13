@@ -25,10 +25,29 @@
 
 set -uo pipefail
 
-HOST=127.0.0.1
-PORT=3847
-BASE="http://${HOST}:${PORT}"
+# Target selection:
+#   • Default: boot a hermetic local gateway on 127.0.0.1:${PORT} (PORT override-
+#     able so it can run on a free port when 3847 is occupied locally).
+#   • External: set BASE_URL (e.g. http://192.168.1.32:3847) to run the read-only
+#     contract checks against an ALREADY-RUNNING gateway such as Mercury — no
+#     local boot. The bearer token then comes from $BOOKCLAW_AUTH_TOKEN, or is
+#     read from the docker container named by $CONTAINER (default 'bookclaw').
+#     Every check here is read-only / validation-only, so it is safe to point at
+#     a live deployment.
+EXTERNAL=0; [ -n "${BASE_URL:-}" ] && EXTERNAL=1
+HOST="${HOST:-127.0.0.1}"
+PORT="${PORT:-3847}"
+BASE="${BASE_URL:-http://${HOST}:${PORT}}"
+CONTAINER="${CONTAINER:-bookclaw}"
 TEST_TOKEN="api-test-token-0123456789abcdef"
+if [ "$EXTERNAL" -eq 1 ]; then
+  TEST_TOKEN="${BOOKCLAW_AUTH_TOKEN:-}"
+  [ -z "$TEST_TOKEN" ] && TEST_TOKEN="$(docker exec "$CONTAINER" printenv BOOKCLAW_AUTH_TOKEN 2>/dev/null | tr -d '\r')"
+  if [ -z "$TEST_TOKEN" ]; then
+    echo "ERROR: BASE_URL is set but no token found — provide BOOKCLAW_AUTH_TOKEN, or make 'docker exec $CONTAINER' reachable." >&2
+    exit 2
+  fi
+fi
 # tests/api/ → repo root is two levels up.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -73,7 +92,7 @@ body_lacks() {
 
 start_server() {
   : > "$SERVER_LOG"
-  env BOOKCLAW_BIND="$HOST" BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" \
+  env BOOKCLAW_BIND="$HOST" BOOKCLAW_PORT="$PORT" BOOKCLAW_CHAT_PORT="$((PORT + 1))" BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" \
     node --import tsx "$ROOT_DIR/gateway/src/index.ts" > "$SERVER_LOG" 2>&1 &
   SERVER_PID=$!
   local i
@@ -108,14 +127,24 @@ trap cleanup EXIT
 # ════════════════════════════════════════════════════════════
 log "BookClaw API test"
 
-# Preflight: the port must be free so we test our own process.
-if curl -s -o /dev/null --max-time 2 "$BASE/" 2>/dev/null; then
-  log "ERROR: something is already listening on ${BASE} — stop it before running this test."
-  exit 2
+if [ "$EXTERNAL" -eq 1 ]; then
+  log "Target: ${BASE} (external — not booting a local gateway)"
+  if ! curl -s -o /dev/null --max-time 5 "${AUTH[@]}" "$BASE/api/status" 2>/dev/null \
+       && ! curl -s -o /dev/null --max-time 5 "$BASE/" 2>/dev/null; then
+    log "ERROR: external target ${BASE} is not reachable."
+    exit 2
+  fi
+  pass "external gateway reachable at ${BASE}"
+else
+  # Preflight: the port must be free so we test our own process (set PORT to a
+  # free port, or BASE_URL to target an existing gateway, if 3847 is occupied).
+  if curl -s -o /dev/null --max-time 2 "$BASE/" 2>/dev/null; then
+    log "ERROR: something is already listening on ${BASE} — stop it, set PORT to a free port, or set BASE_URL to target it."
+    exit 2
+  fi
+  start_server || exit 1
+  pass "server started and serves ${BASE}/"
 fi
-
-start_server || exit 1
-pass "server started and serves ${BASE}/"
 
 # ── /api/status ──
 log ""

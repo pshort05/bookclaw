@@ -20,8 +20,13 @@
 
 set -uo pipefail
 
-HOST=127.0.0.1
-PORT=3847
+# This suite boots its OWN gateway with various startup env (auth on/off, CORS,
+# IP allowlist), so it is inherently LOCAL — it cannot target a remote gateway
+# like Mercury (that would need control of the remote's startup env). PORT is
+# overridable so it can boot on a free port when the default 3847 is occupied
+# locally, e.g. `PORT=3947 tests/smoke-test.sh`.
+HOST="${HOST:-127.0.0.1}"
+PORT="${PORT:-3847}"
 BASE="http://${HOST}:${PORT}"
 TEST_TOKEN="smoke-test-token-0123456789abcdef"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -70,7 +75,7 @@ rheader() {
 # start_server <extra-env=val...> : launch the gateway and wait until it serves
 start_server() {
   : > "$SERVER_LOG"
-  env BOOKCLAW_BIND="$HOST" "$@" \
+  env BOOKCLAW_BIND="$HOST" BOOKCLAW_PORT="$PORT" BOOKCLAW_CHAT_PORT="$((PORT + 1))" "$@" \
     node --import tsx "$ROOT_DIR/gateway/src/index.ts" > "$SERVER_LOG" 2>&1 &
   SERVER_PID=$!
   local i
