@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Button } from '@bookclaw/shared';
 import type { Status } from '@bookclaw/shared';
+import { DeleteBooksModal } from '../components/DeleteBooksModal.js';
 import styles from './Settings.module.css';
 
 type BackupSnapshot = { name: string; at: string; reason: string; scope: string; books: string[] };
@@ -38,6 +39,7 @@ export function Settings() {
   const [keyVal, setKeyVal] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [costs, setCosts] = useState<{ dailyLimit?: number; monthlyLimit?: number }>({});
+  const [showDelete, setShowDelete] = useState(false);
 
   const loadKeys = () =>
     api<{ keys: string[] }>('/api/vault/keys')
@@ -157,6 +159,19 @@ export function Settings() {
       </div>
 
       <BackupsCard />
+
+      <div className={styles.sec}>Danger zone</div>
+      <div className={styles.danger}>
+        <div>
+          <strong>Delete books from disk</strong>
+          <p className={styles.dim}>
+            Permanently remove book folders from <code>workspace/books/</code> — for cleanup or after a finished book is pulled elsewhere.
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => setShowDelete(true)}>Delete books…</Button>
+      </div>
+
+      {showDelete && <DeleteBooksModal onClose={() => setShowDelete(false)} />}
     </div>
   );
 }

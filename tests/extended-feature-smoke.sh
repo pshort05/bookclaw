@@ -1786,6 +1786,12 @@ echo "### Tier E — variable-length pipeline phases (free, no AI; TODO #15 N-se
 # each book's board row (GET /api/books) reports exactly that many phase
 # segments (BookService.phasesForBook, derived from the snapshotted pipeline —
 # correct the moment the book is created, so no AI/step execution is needed).
+#
+# Unlike every other section, these three books are LEFT ON THE BOARD for visual
+# inspection, so you can see the 1-, 2-, and 3-segment phase bars side by side.
+# A prior run's demo books are removed first, so re-runs end with exactly three.
+# Their throwaway overlay pipelines ARE torn down by the EXIT trap — the books
+# keep their own snapshot, so the phase counts survive the pipeline deletion.
 # Phase ADVANCEMENT across steps is covered separately by tests/book-phase-probe.sh.
 
 if [ "$(has_endpoint GET /api/books)" = "no" ]; then
@@ -1794,8 +1800,22 @@ elif [ -z "${AUTHOR_NAME:-}" ]; then
   skip "Tier E: variable phase counts" "(could not resolve author from library)"
 else
   ERAND=$RANDOM
-  # Short, distinct phase names — leading lifecycle phases so the board colors them.
+  # Genre-flavored demo titles whose number wordplay matches the phase count:
+  #   1 phase → "The One That Got Away" (romance)
+  #   2 phases → "Two Times Too Many"   (crime/thriller; two + too)
+  #   3 phases → "The Third Daughter"   (fantasy)
+  E_TITLES=("The One That Got Away" "Two Times Too Many" "The Third Daughter")
+  E_TITLES_JSON=$(node -e 'console.log(JSON.stringify(process.argv.slice(1)))' "${E_TITLES[@]}")
+  # Idempotency: remove prior demo books (match by TITLE — robust to slug
+  # suffixing) so the board ends with exactly the three created below.
+  for old in $(req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const want=new Set(JSON.parse(process.argv[1]));(JSON.parse(s).books||[]).filter(b=>want.has(b.title)).map(b=>b.slug).forEach(x=>console.log(x))}catch(e){}})' "$E_TITLES_JSON"); do
+    code DELETE "/api/books/$old" >/dev/null
+    echo "  [pre-clean] removed prior demo book $old"
+  done
+  # Short, distinct phase names — leading lifecycle phases so the board colors them
+  # AND so the freshly-created book's default phase ('planning') is a real segment.
   E_PHASES_ALL=(planning bible production)
+  E_LEFT_BOOKS=()
   for n in 1 2 3; do
     EPIPE="xfsmoke-ph$n-$ERAND"
     # Build an N-step pipeline, each step tagged with a distinct short phase.
@@ -1819,15 +1839,16 @@ else
     fi
     CREATED_LIBRARY_PIPELINES+=("$EPIPE")
 
-    # Create a book bound to the N-phase pipeline (snapshots it; no AI).
-    EBOOK_BODY=$(node -e 'console.log(JSON.stringify({title:`XF Phase ${process.argv[1]} ${process.argv[2]}`,author:process.argv[3],voice:process.argv[4],genre:null,pipeline:process.argv[5],sections:[]}))' "$n" "$ERAND" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$EPIPE")
+    # Create a book bound to the N-phase pipeline (snapshots it; no AI). LEFT on the
+    # board for inspection — deliberately NOT added to CREATED_BOOKS (no teardown).
+    EBOOK_BODY=$(node -e 'console.log(JSON.stringify({title:process.argv[1],author:process.argv[2],voice:process.argv[3],genre:null,pipeline:process.argv[4],sections:[]}))' "${E_TITLES[$((n-1))]}" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$EPIPE")
     EBRESP=$(req POST /api/books "$EBOOK_BODY")
     EBSLUG=$(printf '%s' "$EBRESP" | jget book.slug)
     if [ -z "$EBSLUG" ]; then
       fail "Tier E: $n-phase book create" "resp=$(printf '%s' "$EBRESP" | head -c 160)"
       continue
     fi
-    CREATED_BOOKS+=("$EBSLUG")
+    E_LEFT_BOOKS+=("$EBSLUG")
 
     # Assert the board row reports exactly N phase segments.
     EGOT=$(req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const b=(JSON.parse(s).books||[]).find(x=>x.slug===process.argv[1]);console.log(b&&Array.isArray(b.phases)?b.phases.length:"?")}catch(e){console.log("?")}})' "$EBSLUG")
@@ -1837,7 +1858,13 @@ else
       fail "Tier E: book with $n phase(s)" "expected $n, got $EGOT (slug=$EBSLUG)"
     fi
   done
+  if [ "${#E_LEFT_BOOKS[@]}" -gt 0 ]; then
+    echo "  Left on the Book Board for inspection (1-, 2-, 3-segment phase bars):"
+    for b in "${E_LEFT_BOOKS[@]}"; do echo "    $b"; done
+    echo "  Remove them with: for s in ${E_LEFT_BOOKS[*]}; do curl -s -X DELETE -H \"Authorization: Bearer \$TOKEN\" \"\$BASE_URL/api/books/\$s\"; done"
+  fi
 fi
 
-# Tier E teardown is the EXIT trap (books + overlay pipelines). exit code = number of FAILed features.
+# The three Tier E demo books are intentionally LEFT on the board (their overlay
+# pipelines are torn down by the EXIT trap). exit code = number of FAILed features.
 exit "$FAILS"
