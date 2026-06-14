@@ -140,13 +140,32 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const body = req.body || {};
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     if (!title) return res.status(400).json({ error: 'title (string) is required' });
-    if (typeof body.author !== 'string' || !body.author) return res.status(400).json({ error: 'author (string) is required' });
-    if (typeof body.voice !== 'string' || !body.voice) return res.status(400).json({ error: 'voice (string) is required' });
-    if (typeof body.pipeline !== 'string' || !body.pipeline) return res.status(400).json({ error: 'pipeline (string) is required' });
-    const genre = (typeof body.genre === 'string' && body.genre) ? body.genre : null;
+
+    let author = typeof body.author === 'string' ? body.author : '';
+    let voice = typeof body.voice === 'string' ? body.voice : '';
+    let pipeline = typeof body.pipeline === 'string' ? body.pipeline : '';
+    let genre = (typeof body.genre === 'string' && body.genre) ? body.genre : null;
     const sections = Array.isArray(body.sections) ? body.sections.filter((s: unknown) => typeof s === 'string') : [];
+
+    // Series Phase A: when created in a series, inherit author/voice/genre (+pipeline
+    // if the series sets one) from the series' refs; record provenance + membership.
+    let seriesProvenance: { id: string; title: string } | undefined;
+    if (typeof body.series === 'string' && body.series) {
+      const series = services.seriesBible?.getSeries?.(body.series);
+      if (!series) return res.status(400).json({ error: 'unknown series' });
+      author = series.pulledFrom.author?.name || author;
+      voice = series.pulledFrom.voice?.name || voice;
+      genre = series.pulledFrom.genre?.name ?? genre;
+      pipeline = series.pulledFrom.pipeline?.name || pipeline;
+      seriesProvenance = { id: series.id, title: series.title };
+    }
+
+    if (!author) return res.status(400).json({ error: 'author (string) is required' });
+    if (!voice) return res.status(400).json({ error: 'voice (string) is required' });
+    if (!pipeline) return res.status(400).json({ error: 'pipeline (string) is required' });
     try {
-      const manifest = await services.books.create({ title, author: body.author, voice: body.voice, genre, pipeline: body.pipeline, sections });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}) });
+      if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       res.json({ success: true, book: manifest });
     } catch (err) {
       const msg = (err as Error)?.message || String(err);

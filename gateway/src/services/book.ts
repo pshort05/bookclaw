@@ -29,6 +29,7 @@ export interface BookSelection {
   genre: string | null;
   pipeline: string;
   sections: string[];
+  series?: { id: string; title: string };   // Series Phase A provenance, when created in a series
 }
 
 export type RepullStatus =
@@ -227,6 +228,7 @@ export class BookService {
         pipeline: ref(sel.pipeline, pipeline.source, pipeline.pipeline.schemaVersion),
         sections: sectionEntries.map((s) => s.name),
         skills: snappedSkills,
+        ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
       },
       history: [{ at: now, event: 'created' }],
     };
@@ -647,6 +649,51 @@ export class BookService {
    */
   activePipeline(): import('./library-types.js').LibraryPipeline | null {
     return this.pipelineOf(this.activeBookSlug);
+  }
+
+  /**
+   * Overwrite a book's author/voice/genre[/pipeline] snapshot from a series' refs
+   * (Series Phase A "pull series assets into book"). Re-snapshots both templates/
+   * and .baseline/ (so a later library re-pull diffs against the new asset) and
+   * updates the manifest pulledFrom names. Gated by assertWritable; a ref absent
+   * from the library is skipped fail-soft.
+   */
+  async applySeriesAssets(
+    slug: string,
+    refs: { author?: PulledRef | null; voice?: PulledRef | null; genre?: PulledRef | null; pipeline?: PulledRef | null },
+  ): Promise<void> {
+    await this.assertWritable(slug);
+    const dir = this.bookDir(slug);
+    if (!dir) return;
+    const opened = await this.open(slug);
+    if (!opened) return;
+    const m = opened.manifest;
+    const applied: string[] = [];
+    for (const kind of ['author', 'voice', 'genre', 'pipeline'] as const) {
+      const ref = refs[kind];
+      if (!ref || !ref.name) continue;
+      const files = this.libraryFiles(kind, ref.name);
+      if (!files) { console.warn(`  ⚠ Series pull: ${kind}/${ref.name} not in library — skipping`); continue; }
+      for (const root of ['templates', '.baseline'] as const) {
+        const rel = this.assetRel(kind, ref.name);
+        const target = rel ? join(dir, root, rel) : join(dir, root);
+        if (rel) { try { await rm(target, { recursive: true, force: true }); } catch { /* fresh */ } }
+        await mkdir(target, { recursive: true });
+        for (const [libName, content] of Object.entries(files)) {
+          await writeFile(join(target, this.assetFileName(kind, libName, ref.name)), content, 'utf-8');
+        }
+      }
+      const version = kind === 'pipeline' ? this.library.get('pipeline', ref.name)?.pipeline?.schemaVersion : undefined;
+      const newRef: PulledRef = { name: ref.name, source: ref.source, ...(version != null ? { version } : {}) };
+      if (kind === 'author') m.pulledFrom.author = newRef;
+      else if (kind === 'voice') m.pulledFrom.voice = newRef;
+      else if (kind === 'genre') m.pulledFrom.genre = newRef;
+      else if (kind === 'pipeline') m.pulledFrom.pipeline = newRef;
+      applied.push(`${kind}/${ref.name}`);
+    }
+    m.lastWrittenByApp = this.appVersion;
+    m.history.push({ at: new Date().toISOString(), event: 'series-pull', detail: applied.join(',') });
+    await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
   }
 
   /**

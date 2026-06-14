@@ -37,6 +37,7 @@ export interface BookManifest {
     pipeline: PulledRef;
     sections: string[];       // section names snapshotted
     skills?: string[];        // pipeline-referenced skill names snapshotted (frozen record)
+    series?: { id: string; title: string };  // Series Phase A — set when created in a series
   };
   history: Array<{ at: string; event: string; detail?: string }>;
 }

@@ -49,12 +49,26 @@ export interface SeriesContradiction {
   suggestion: string;
 }
 
+/** A library asset the series shares with its books (mirrors PulledRef). */
+export interface SeriesRef {
+  name: string;
+  source: 'builtin' | 'workspace' | 'synthetic';
+}
+
 export interface Series {
   id: string;
   title: string;
   description: string;
-  projectIds: string[];
-  readingOrder: string[];       // project IDs in intended reading order
+  // Shared library assets books inherit at create-time (Series Phase A).
+  pulledFrom: {
+    author?: SeriesRef;
+    voice?: SeriesRef;
+    genre?: SeriesRef | null;
+    pipeline?: SeriesRef | null;
+  };
+  bookSlugs: string[];          // member books (book-centric membership)
+  readingOrder: string[];       // member book slugs in intended reading order
+  projectIds?: string[];        // legacy (pre-Phase-A) — kept for report back-compat
   createdAt: string;
   updatedAt: string;
 }
@@ -73,30 +87,105 @@ export interface SeriesBibleReport {
   };
 }
 
+/** One asset where a book's snapshot name differs from the series' current ref. */
+export interface SeriesDivergence {
+  kind: 'author' | 'voice' | 'genre' | 'pipeline';
+  series: string;   // the series' ref name
+  book: string;     // the book's snapshot name ('' if absent)
+}
+
+/**
+ * Compare a book's snapshot refs to the series' refs by NAME. Kinds the series
+ * doesn't set (absent or null) are ignored. Pure (Series Phase A).
+ */
+export function seriesDivergence(
+  refs: Series['pulledFrom'],
+  book: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; pipeline?: { name: string } | null },
+): SeriesDivergence[] {
+  const out: SeriesDivergence[] = [];
+  for (const kind of ['author', 'voice', 'genre', 'pipeline'] as const) {
+    const ref = refs[kind];
+    if (!ref || !ref.name) continue;             // series doesn't set this kind
+    const bookName = book[kind]?.name ?? '';
+    if (bookName !== ref.name) out.push({ kind, series: ref.name, book: bookName });
+  }
+  return out;
+}
+
 // ═══════════════════════════════════════════════════════════
 // Service
 // ═══════════════════════════════════════════════════════════
 
 export class SeriesBibleService {
   private series: Map<string, Series> = new Map();
-  private filePath: string;
+  private seriesRoot: string;   // workspace/series
+  private legacyFlat: string;   // workspace/series.json (pre-Phase-A)
 
   constructor(workspaceDir: string) {
-    this.filePath = join(workspaceDir, 'series.json');
+    this.seriesRoot = join(workspaceDir, 'series');
+    this.legacyFlat = join(workspaceDir, 'series.json');
+  }
+
+  private seriesDir(id: string): string { return join(this.seriesRoot, id); }
+
+  /** Fill defaults + self-correct a stored/legacy series into the Phase-A shape. */
+  private normalize(s: any): Series {
+    const bookSlugs: string[] = Array.isArray(s?.bookSlugs) ? s.bookSlugs : [];
+    const now = new Date().toISOString();
+    return {
+      id: String(s.id),
+      title: s?.title || '',
+      description: s?.description || '',
+      pulledFrom: s?.pulledFrom && typeof s.pulledFrom === 'object' ? s.pulledFrom : {},
+      bookSlugs,
+      // readingOrder is book-centric now: keep only entries that are member books
+      // (a migrated legacy series has project-id readingOrder + no books → []).
+      readingOrder: (Array.isArray(s?.readingOrder) ? s.readingOrder : []).filter((x: string) => bookSlugs.includes(x)),
+      ...(Array.isArray(s?.projectIds) ? { projectIds: s.projectIds } : {}),
+      createdAt: s?.createdAt || now,
+      updatedAt: s?.updatedAt || s?.createdAt || now,
+    };
   }
 
   async initialize(): Promise<void> {
-    const dir = join(this.filePath, '..');
-    await mkdir(dir, { recursive: true });
-    if (!existsSync(this.filePath)) return;
+    // Fail-soft (CLAUDE.md): a series-store problem must never crash boot — degrade
+    // to no series rather than throwing out of the awaited init chain.
     try {
-      const raw = await readFile(this.filePath, 'utf-8');
-      const parsed = JSON.parse(raw);
-      const series = Array.isArray(parsed.series) ? parsed.series : [];
-      for (const s of series) this.series.set(s.id, s);
-    } catch {
-      // Corrupted — start fresh.
+      await mkdir(this.seriesRoot, { recursive: true });
+      await this.migrateFlat();
+      const { readdir } = await import('fs/promises');
+      for (const entry of await readdir(this.seriesRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const mf = join(this.seriesDir(entry.name), 'series.json');
+        if (!existsSync(mf)) continue;
+        try {
+          const s = JSON.parse(await readFile(mf, 'utf-8'));
+          if (s?.id) this.series.set(s.id, this.normalize(s));
+        } catch { /* skip one corrupt series */ }
+      }
+    } catch (err) {
+      console.warn('  ⚠ Series: initialize failed — continuing with no series', err);
     }
+  }
+
+  /** One-time fail-soft migration of the flat workspace/series.json into per-dir manifests. */
+  private async migrateFlat(): Promise<void> {
+    if (!existsSync(this.legacyFlat)) return;
+    try {
+      const parsed = JSON.parse(await readFile(this.legacyFlat, 'utf-8'));
+      const arr = Array.isArray(parsed.series) ? parsed.series : [];
+      for (const s of arr) {
+        if (!s?.id) continue;
+        // Idempotent across a partial-failure window: never overwrite an
+        // already-migrated (possibly since-edited) per-dir manifest.
+        if (existsSync(join(this.seriesDir(s.id), 'series.json'))) continue;
+        await this.persist(this.normalize(s));
+      }
+    } catch { /* corrupt legacy file — drop it, start clean */ }
+    try {
+      const { rename } = await import('fs/promises');
+      await rename(this.legacyFlat, this.legacyFlat + '.migrated');
+    } catch { /* best-effort */ }
   }
 
   // ── CRUD ──
@@ -104,8 +193,8 @@ export class SeriesBibleService {
   async createSeries(input: {
     title: string;
     description?: string;
-    projectIds?: string[];
-    readingOrder?: string[];
+    refs?: Series['pulledFrom'];
+    projectIds?: string[];      // legacy input tolerated; not used by Phase-A callers
   }): Promise<Series> {
     const id = `series-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const now = new Date().toISOString();
@@ -113,47 +202,60 @@ export class SeriesBibleService {
       id,
       title: input.title,
       description: input.description || '',
-      projectIds: input.projectIds || [],
-      readingOrder: input.readingOrder || input.projectIds || [],
+      pulledFrom: input.refs || {},
+      bookSlugs: [],
+      readingOrder: [],
+      ...(input.projectIds ? { projectIds: input.projectIds } : {}),
       createdAt: now,
       updatedAt: now,
     };
     this.series.set(id, series);
-    await this.persist();
+    await this.persist(series);
     return series;
   }
 
-  async addProject(seriesId: string, projectId: string): Promise<Series | null> {
+  /** Set the shared library asset refs books inherit at create-time (Phase A). */
+  async setRefs(seriesId: string, refs: Partial<Series['pulledFrom']>): Promise<Series | null> {
     const series = this.series.get(seriesId);
     if (!series) return null;
-    if (!series.projectIds.includes(projectId)) {
-      series.projectIds.push(projectId);
-      if (!series.readingOrder.includes(projectId)) {
-        series.readingOrder.push(projectId);
-      }
+    series.pulledFrom = { ...series.pulledFrom, ...refs };
+    series.updatedAt = new Date().toISOString();
+    await this.persist(series);
+    return series;
+  }
+
+  /** Add a member book (idempotent) → membership + reading order. */
+  async addBook(seriesId: string, slug: string): Promise<Series | null> {
+    const series = this.series.get(seriesId);
+    if (!series) return null;
+    if (!series.bookSlugs.includes(slug)) {
+      series.bookSlugs.push(slug);
+      if (!series.readingOrder.includes(slug)) series.readingOrder.push(slug);
       series.updatedAt = new Date().toISOString();
-      await this.persist();
+      await this.persist(series);
     }
     return series;
   }
 
-  async removeProject(seriesId: string, projectId: string): Promise<Series | null> {
+  /** Remove a member book from membership + reading order. */
+  async removeBook(seriesId: string, slug: string): Promise<Series | null> {
     const series = this.series.get(seriesId);
     if (!series) return null;
-    series.projectIds = series.projectIds.filter(id => id !== projectId);
-    series.readingOrder = series.readingOrder.filter(id => id !== projectId);
+    if (!series.bookSlugs.includes(slug)) return series;   // no-op: don't churn updatedAt/disk
+    series.bookSlugs = series.bookSlugs.filter(s => s !== slug);
+    series.readingOrder = series.readingOrder.filter(s => s !== slug);
     series.updatedAt = new Date().toISOString();
-    await this.persist();
+    await this.persist(series);
     return series;
   }
 
+  /** Set the reading order; keeps only member-book slugs. */
   async setReadingOrder(seriesId: string, order: string[]): Promise<Series | null> {
     const series = this.series.get(seriesId);
     if (!series) return null;
-    // Only keep IDs that are actually in the series.
-    series.readingOrder = order.filter(id => series.projectIds.includes(id));
+    series.readingOrder = order.filter(slug => series.bookSlugs.includes(slug));
     series.updatedAt = new Date().toISOString();
-    await this.persist();
+    await this.persist(series);
     return series;
   }
 
@@ -168,7 +270,12 @@ export class SeriesBibleService {
 
   async deleteSeries(seriesId: string): Promise<boolean> {
     const existed = this.series.delete(seriesId);
-    if (existed) await this.persist();
+    if (existed) {
+      try {
+        const { rm } = await import('fs/promises');
+        await rm(this.seriesDir(seriesId), { recursive: true, force: true });
+      } catch { /* best-effort */ }
+    }
     return existed;
   }
 
@@ -181,6 +288,7 @@ export class SeriesBibleService {
     seriesId: string,
     contextEngine: ContextEngine,
     projectTitleResolver: (projectId: string) => string | undefined,
+    projectsForBook?: (slug: string) => string[],
   ): Promise<SeriesBibleReport | null> {
     const series = this.series.get(seriesId);
     if (!series) return null;
@@ -191,10 +299,16 @@ export class SeriesBibleService {
     let totalWords = 0;
     let totalChapters = 0;
 
-    // Preserve reading order.
-    const orderedProjectIds = series.readingOrder.length > 0
-      ? series.readingOrder
-      : series.projectIds;
+    // Book-centric (Phase A): resolve member books (in reading order) → their bound
+    // project ids. Fall back to a migrated series' legacy projectIds when present.
+    const bookOrder = series.readingOrder.length > 0 ? series.readingOrder : series.bookSlugs;
+    const orderedProjectIds: string[] = [];
+    if (projectsForBook) {
+      for (const slug of bookOrder) orderedProjectIds.push(...projectsForBook(slug));
+    }
+    if (orderedProjectIds.length === 0 && series.projectIds?.length) {
+      orderedProjectIds.push(...series.projectIds);
+    }
 
     for (const projectId of orderedProjectIds) {
       const bookTitle = projectTitleResolver(projectId) || projectId;
@@ -354,15 +468,16 @@ export class SeriesBibleService {
 
   // ── Persistence ──
 
-  private async persist(): Promise<void> {
+  private async persist(series: Series): Promise<void> {
     try {
-      await mkdir(join(this.filePath, '..'), { recursive: true });
-      const tmp = this.filePath + '.tmp';
-      await writeFile(tmp, JSON.stringify({ series: Array.from(this.series.values()) }, null, 2));
+      const dir = this.seriesDir(series.id);
+      await mkdir(dir, { recursive: true });
+      const tmp = join(dir, 'series.json.tmp');
+      await writeFile(tmp, JSON.stringify(series, null, 2));
       const { rename } = await import('fs/promises');
-      await rename(tmp, this.filePath);
+      await rename(tmp, join(dir, 'series.json'));
     } catch (err) {
-      console.error('  ✗ Failed to persist series bible:', err);
+      console.error('  ✗ Failed to persist series:', err);
     }
   }
 }

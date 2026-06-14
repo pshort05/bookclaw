@@ -20,6 +20,7 @@ import { mountMedia } from './routes/media.routes.js';
 import { mountOps } from './routes/ops.routes.js';
 import { mountExport } from './routes/export.routes.js';
 import { mountWave } from './routes/wave.routes.js';
+import { mountSeries } from './routes/series.routes.js';
 import { mountKnowledge } from './routes/knowledge.routes.js';
 import { mountWebsite } from './routes/website.routes.js';
 import { mountAuthoring } from './routes/authoring.routes.js';
@@ -56,6 +57,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountExport(app, gateway, baseDir);
   // Wave 2 + Wave 3 (gated career agent) — see ./routes/wave.routes.ts
   mountWave(app, gateway, baseDir);
+  mountSeries(app, gateway, baseDir);
   // Search, user-model, cron, auto-skill, judge, voices, research, structures, promises — see ./routes/knowledge.routes.ts
   mountKnowledge(app, gateway, baseDir);
   // Website site registry — see ./routes/website.routes.ts

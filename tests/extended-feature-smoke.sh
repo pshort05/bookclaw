@@ -1781,6 +1781,57 @@ fi
 
 # ═══════════════════════════════════════════════════════════
 echo ""
+echo "### Tier G — series (free, no AI): container + inheritance + membership"
+# Create a series, set its shared author/voice/genre refs, create a book IN the
+# series, and assert the book snapshotted the series' assets + provenance, was
+# added to membership, and reports zero divergence. Cleans the series inline; the
+# book is removed by the EXIT trap (tracked in CREATED_BOOKS).
+if [ "$(has_endpoint GET /api/series)" = "no" ]; then
+  skip "Tier G: series" "(series not on this build)"
+elif [ -z "${AUTHOR_NAME:-}" ] || [ -z "${PIPE_NAME:-}" ]; then
+  skip "Tier G: series" "(could not resolve author/pipeline from library)"
+else
+  GENRE_NAME=$(req GET "/api/library?kind=genre" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const e=(JSON.parse(s).entries||[])[0];console.log(e&&e.name?e.name:"")}catch(e){console.log("")}})')
+  # Idempotent pre-clean of prior smoke series (match by title).
+  for sid in $(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).series||[]).filter(x=>String(x.title).startsWith("Smoke Saga")).forEach(x=>console.log(x.id))}catch(e){}})'); do
+    code DELETE "/api/series/$sid" >/dev/null
+  done
+  SRESP=$(req POST /api/series "{\"title\":\"Smoke Saga $RANDOM\"}")
+  SID=$(printf '%s' "$SRESP" | jget series.id)
+  if [ -z "$SID" ]; then
+    fail "Tier G: series create" "resp=$(printf '%s' "$SRESP" | head -c 160)"
+  else
+    pass "Tier G: series create" "id=$SID"
+    GREFS=$(node -e 'console.log(JSON.stringify({author:process.argv[1],voice:process.argv[2],genre:process.argv[3]||null}))' "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$GENRE_NAME")
+    GRC=$(code PUT "/api/series/$SID/refs" "$GREFS")
+    [ "$GRC" = "200" ] && pass "Tier G: set series refs" || fail "Tier G: set series refs" "code=$GRC"
+
+    GBRESP=$(req POST /api/books "{\"title\":\"Saga Book $RANDOM\",\"series\":\"$SID\",\"pipeline\":\"$PIPE_NAME\"}")
+    GBSLUG=$(printf '%s' "$GBRESP" | jget book.slug)
+    if [ -z "$GBSLUG" ]; then
+      fail "Tier G: create book in series" "resp=$(printf '%s' "$GBRESP" | head -c 160)"
+    else
+      CREATED_BOOKS+=("$GBSLUG")
+      pass "Tier G: create book in series" "slug=$GBSLUG"
+      BGET=$(req GET "/api/books/$GBSLUG")
+      BA=$(printf '%s' "$BGET" | jget book.pulledFrom.author.name)
+      BSER=$(printf '%s' "$BGET" | jget book.pulledFrom.series.id)
+      if [ "$BA" = "$AUTHOR_NAME" ] && [ "$BSER" = "$SID" ]; then
+        pass "Tier G: book inherited series assets + provenance" "author=$BA series=$BSER"
+      else
+        fail "Tier G: book inherited series assets + provenance" "author=$BA (want $AUTHOR_NAME) series=$BSER (want $SID)"
+      fi
+      MEMBER=$(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const x=(JSON.parse(s).series||[]).find(y=>y.id===process.argv[1]);console.log(x&&(x.bookSlugs||[]).includes(process.argv[2])?"yes":"no")}catch(e){console.log("no")}})' "$SID" "$GBSLUG")
+      [ "$MEMBER" = "yes" ] && pass "Tier G: book added to series membership" || fail "Tier G: book added to series membership"
+      [ "$(code GET "/api/series/$SID/report")" = "200" ] && pass "Tier G: series report 200" || fail "Tier G: series report 200"
+      DIV=$(req GET "/api/series/$SID/divergence/$GBSLUG" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log((JSON.parse(s).divergence||[]).length)}catch(e){console.log("?")}})')
+      [ "$DIV" = "0" ] && pass "Tier G: zero divergence after create-in-series" || fail "Tier G: zero divergence" "count=$DIV"
+    fi
+    code DELETE "/api/series/$SID" >/dev/null
+  fi
+fi
+
+echo ""
 echo "### Tier F — file explorer (free, no AI): document CRUD + book-file read"
 # Exercises the file-explorer read endpoints. Documents: upload → list → preview
 # content (GET /api/documents/:f) → download (?download=1) → delete. Book outputs:
