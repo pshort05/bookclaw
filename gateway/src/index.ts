@@ -45,6 +45,7 @@ import { PersonaService } from './services/personas.js';
 import { ContextEngine } from './services/context-engine.js';
 import { MemorySearchService } from './services/memory-search.js';
 import { UserModelService } from './services/user-model.js';
+import { runExecutableSkillStep } from './services/skill-runner.js';
 import { CronSchedulerService } from './services/cron-scheduler.js';
 import { AutoSkillService } from './services/auto-skill.js';
 import { WritingJudgeService } from './services/writing-judge.js';
@@ -1824,39 +1825,52 @@ class BookClawGateway {
         const stepOverride = (activeStep as any).modelOverride;
         const projectProvider = stepOverride?.provider || (project as any).preferredProvider || undefined;
         const stepModel = stepOverride?.model || undefined;
+        let wasExecutable = false;
         try {
-          await new Promise<void>((resolve, reject) => {
-            gateway.handleMessage(
-              stepUserMessage,
-              'goal-engine',
-              (response) => {
-                aiResponse = response;
-                resolve();
-              },
-              projectContext,
-              (activeStep as any).taskType || undefined,
-              projectProvider,
-              stepModel,
-              project.bookSlug
-            ).catch(reject);
-          });
-
-          // Retry once with 'general' routing if response is too short
-          if (!aiResponse || aiResponse.length < 50) {
-            console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
-            aiResponse = '';
+          // Multi-step skills: an executable skill's OpenRouter phase chain IS the
+          // generation (skip the normal single call + short-retry). null → passive skill.
+          const execOut = await runExecutableSkillStep(
+            { skills: gateway.skills, aiRouter: gateway.aiRouter, costs: gateway.costs },
+            (activeStep as any).skill,
+            stepUserMessage,
+          );
+          wasExecutable = execOut !== null;
+          if (execOut !== null) {
+            aiResponse = execOut;
+          } else {
             await new Promise<void>((resolve, reject) => {
               gateway.handleMessage(
                 stepUserMessage,
                 'goal-engine',
-                (response) => { aiResponse = response; resolve(); },
+                (response) => {
+                  aiResponse = response;
+                  resolve();
+                },
                 projectContext,
-                'general',
+                (activeStep as any).taskType || undefined,
                 projectProvider,
-                stepModel,                  // preserve the step's pinned model on retry
+                stepModel,
                 project.bookSlug
               ).catch(reject);
             });
+
+            // Retry once with 'general' routing if response is too short
+            if (!aiResponse || aiResponse.length < 50) {
+              console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
+              aiResponse = '';
+              await new Promise<void>((resolve, reject) => {
+                gateway.handleMessage(
+                  stepUserMessage,
+                  'goal-engine',
+                  (response) => { aiResponse = response; resolve(); },
+                  projectContext,
+                  'general',
+                  projectProvider,
+                  stepModel,                  // preserve the step's pinned model on retry
+                  project.bookSlug
+                ).catch(reject);
+              });
+            }
           }
         } catch (err) {
           gateway.projectEngine.failStep(projectId, activeStep.id, String(err));
@@ -1889,7 +1903,7 @@ class BookClawGateway {
 
         // Word count continuation for novel-pipeline writing steps
         const wcTarget = (activeStep as any).wordCountTarget;
-        if (wcTarget && wcTarget > 0) {
+        if (wcTarget && wcTarget > 0 && !wasExecutable) {   // executable skills own their full output — no continuation
           let wc = countWords(aiResponse);
           let continuations = 0;
           while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {

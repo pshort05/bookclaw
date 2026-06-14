@@ -19,7 +19,7 @@ import type { InjectionDetector } from '../security/injection.js';
 import { LIBRARY_KINDS, type LibraryKind } from './library-types.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
-import { SKILL_CATEGORIES } from '../skills/loader.js';
+import { SKILL_CATEGORIES, parseSteps } from '../skills/loader.js';
 
 export const ENTRY_FORMAT_VERSION = 1;
 
@@ -85,6 +85,10 @@ export class LibraryTransferService {
     } else if (kind === 'skill') {
       // category is NOT in LibraryService's skill read surface — omitted; the importer defaults.
       zip.addFile('files/SKILL.md', Buffer.from(entry.content ?? '', 'utf-8'));
+      // Executable skills (multi-step) carry a sibling steps.json so they round-trip.
+      if (entry.steps && entry.steps.length) {
+        zip.addFile('files/steps.json', Buffer.from(JSON.stringify({ retries: entry.retries ?? 0, steps: entry.steps }, null, 2) + '\n', 'utf-8'));
+      }
     } else {
       // author / voice / genre: the entry's .md files
       const files = entry.files ?? {};
@@ -166,8 +170,14 @@ export class LibraryTransferService {
       return null;
     }
     if (kind === 'skill') {
-      if (names.length !== 1 || names[0] !== 'SKILL.md') return 'skill requires exactly files/SKILL.md';
+      // SKILL.md is required; steps.json (executable skills) is the only allowed extra.
+      if (!names.includes('SKILL.md')) return 'skill requires files/SKILL.md';
+      const extras = names.filter(n => n !== 'SKILL.md');
+      if (extras.some(n => n !== 'steps.json')) return 'skill allows only files/SKILL.md and files/steps.json';
       if (!FRONTMATTER_RE.test(readFileSync(join(filesDir, 'SKILL.md'), 'utf-8'))) return 'SKILL.md is missing YAML frontmatter';
+      if (names.includes('steps.json') && !parseSteps(readFileSync(join(filesDir, 'steps.json'), 'utf-8'))) {
+        return 'invalid steps.json: each phase needs a non-empty model + prompt';
+      }
       return null;
     }
     // author / voice / genre: ≥1 .md file, every filename valid
@@ -205,6 +215,13 @@ export class LibraryTransferService {
       const destDir = join(this.workspaceSkillsDir, category, name);
       mkdirSync(destDir, { recursive: true });
       writeFileSync(join(destDir, 'SKILL.md'), content, 'utf-8');
+      // Executable skills: re-validate the staged steps.json and write it through
+      // normalized (parseSteps re-runs the loader's own validation — defense in depth).
+      const stepsPath = join(filesDir, 'steps.json');
+      if (existsSync(stepsPath)) {
+        const parsed = parseSteps(readFileSync(stepsPath, 'utf-8'));
+        if (parsed) writeFileSync(join(destDir, 'steps.json'), JSON.stringify({ retries: parsed.retries, steps: parsed.steps }, null, 2) + '\n', 'utf-8');
+      }
       await this.reloadSkills?.();
     } else {
       const body: LibraryWriteBody = {};

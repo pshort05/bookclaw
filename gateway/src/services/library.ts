@@ -15,6 +15,7 @@ import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryKind, LibrarySource, LibraryPipeline } from './library-types.js';
+import type { SkillStep } from '../skills/loader.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 
 /** Lightweight catalog row for list(). */
@@ -30,12 +31,14 @@ export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>; // author/genre: filename -> content
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
+  steps?: SkillStep[];            // skill: executable phases (steps.json)
+  retries?: number;               // skill: per-phase retry budget
 }
 
 /** Minimal surface of SkillLoader that LibraryService consumes. */
 interface SkillCatalogLike {
   getSkillCatalog(): Array<{ name: string; description: string; source: LibrarySource }>;
-  getSkillByName(name: string): { content: string; description: string; source: LibrarySource } | undefined;
+  getSkillByName(name: string): { content: string; description: string; source: LibrarySource; steps?: SkillStep[]; retries?: number } | undefined;
 }
 
 /** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
@@ -276,7 +279,10 @@ export class LibraryService {
   get(kind: LibraryKind, name: string): LibraryEntryFull | undefined {
     if (kind === 'skill') {
       const s = this.skills.getSkillByName(name);
-      return s ? { kind: 'skill', name, source: s.source, description: s.description, content: s.content } : undefined;
+      return s ? {
+        kind: 'skill', name, source: s.source, description: s.description, content: s.content,
+        ...(s.steps && s.steps.length ? { steps: s.steps, retries: s.retries ?? 0 } : {}),
+      } : undefined;
     }
     return this.entries.get(kind)?.get(name);
   }

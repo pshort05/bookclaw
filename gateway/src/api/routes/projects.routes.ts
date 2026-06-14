@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
 import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from '../../util/wordcount.js';
+import { runExecutableSkillStep } from '../../services/skill-runner.js';
 
 // Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
 // Telegram, or a double-click) from processing the same step → duplicated
@@ -366,31 +367,38 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const { provider: stepProvider, model: stepModel } = stepRouting(project, activeStep);
       let response = '';
 
-      await gateway.handleMessage(
-        userMessage,
-        'projects',
-        (text: string) => { response = text; },
-        projectContext,
-        activeStep.taskType || undefined,  // Use step's own taskType for routing
-        stepProvider,                       // per-step override → project default → tier
-        stepModel,                          // exact model id when the step pins one
-        project.bookSlug                    // Phase 8: compose soul/genre from the project's bound book
-      );
-
-      // Retry once with 'general' routing if the response is too short
-      if (!response || response.length < 50) {
-        console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
-        response = '';
+      // Multi-step skills: an executable skill's OpenRouter phase chain IS the
+      // generation (skip the normal single call + short-retry). null → passive skill.
+      const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage);
+      if (execOut !== null) {
+        response = execOut;
+      } else {
         await gateway.handleMessage(
           userMessage,
           'projects',
           (text: string) => { response = text; },
           projectContext,
-          'general',
-          undefined,
-          undefined,
-          project.bookSlug                  // Phase 8: keep the bound book on the retry path
+          activeStep.taskType || undefined,  // Use step's own taskType for routing
+          stepProvider,                       // per-step override → project default → tier
+          stepModel,                          // exact model id when the step pins one
+          project.bookSlug                    // Phase 8: compose soul/genre from the project's bound book
         );
+
+        // Retry once with 'general' routing if the response is too short
+        if (!response || response.length < 50) {
+          console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
+          response = '';
+          await gateway.handleMessage(
+            userMessage,
+            'projects',
+            (text: string) => { response = text; },
+            projectContext,
+            'general',
+            undefined,
+            undefined,
+            project.bookSlug                  // Phase 8: keep the bound book on the retry path
+          );
+        }
       }
 
       // Detect the [AI provider failure] sentinel from handleMessage when both
@@ -406,7 +414,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           project: engine.getProject(project.id),
         });
       }
-      if (!response || response.length < 50) {
+      if ((!response || response.length < 50) && execOut === null) {
         const reason = `AI returned an unusably short response (${response?.length ?? 0} chars). ` +
           `This usually means the chosen provider hit a safety filter, ran out of context, or the model is misconfigured. ` +
           `Try a different provider in Settings, shorten the project description, or split the task.`;
@@ -557,32 +565,39 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { provider: stepProvider, model: stepModel } = stepRouting(currentProject, activeStep);
         let response = '';
 
-        await gateway.handleMessage(
-          userMessage,
-          'project-engine',
-          (text: string) => { response = text; },
-          projectContext,
-          activeStep.taskType || undefined,  // Use step's own taskType for routing
-          stepProvider,                       // per-step override → project default → tier
-          stepModel,                          // exact model id when the step pins one
-          currentProject.bookSlug             // Phase 8: compose soul/genre from the project's bound book
-        );
-
-        // Retry once with 'general' routing if the response is too short
-        // This catches cases where a premium/mid provider fails but free providers work fine
-        if (!response || response.length < 50) {
-          console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
-          response = '';
+        // Multi-step skills: an executable skill's OpenRouter phase chain IS the
+        // generation (skip the normal single call + short-retry). null → passive skill.
+        const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage);
+        if (execOut !== null) {
+          response = execOut;
+        } else {
           await gateway.handleMessage(
             userMessage,
             'project-engine',
             (text: string) => { response = text; },
             projectContext,
-            'general',  // Force free-tier routing (Gemini first)
-            stepProvider,  // preserve the step's pinned provider on retry (if set)
-            stepModel,     // preserve the step's pinned model on retry (if set)
-            currentProject.bookSlug           // Phase 8: keep the bound book on the retry path
+            activeStep.taskType || undefined,  // Use step's own taskType for routing
+            stepProvider,                       // per-step override → project default → tier
+            stepModel,                          // exact model id when the step pins one
+            currentProject.bookSlug             // Phase 8: compose soul/genre from the project's bound book
           );
+
+          // Retry once with 'general' routing if the response is too short
+          // This catches cases where a premium/mid provider fails but free providers work fine
+          if (!response || response.length < 50) {
+            console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
+            response = '';
+            await gateway.handleMessage(
+              userMessage,
+              'project-engine',
+              (text: string) => { response = text; },
+              projectContext,
+              'general',  // Force free-tier routing (Gemini first)
+              stepProvider,  // preserve the step's pinned provider on retry (if set)
+              stepModel,     // preserve the step's pinned model on retry (if set)
+              currentProject.bookSlug           // Phase 8: keep the bound book on the retry path
+            );
+          }
         }
 
         if (response && response.startsWith('[AI provider failure]')) {
@@ -591,7 +606,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           results.push({ step: activeStep.label, success: false, error: detail });
           break;
         }
-        if (!response || response.length < 50) {
+        if ((!response || response.length < 50) && execOut === null) {
           const reason = `AI returned an unusably short response (${response?.length ?? 0} chars). ` +
             `Cause is usually a safety filter trip, context overflow, or misconfigured provider. ` +
             `Switch providers in Settings or shorten the project description.`;
@@ -608,7 +623,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const isRevisionApply = stepNeedsFullManuscript(activeStep);
           const wcTarget = (activeStep as any).wordCountTarget ||
             (isRevisionApply ? Math.floor((currentProject.context?.documentWordCount || 0) * 0.9) : 0);
-          if (wcTarget && wcTarget > 0) {
+          if (wcTarget && wcTarget > 0 && execOut === null) {   // executable skills own their full output — no continuation
             let wc = countWords(response);
             let continuations = 0;
             while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {
@@ -664,7 +679,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           // actionable signal. Off by default — opt-in per project.
           const dualJudgeEnabled = currentProject.context?.dualJudge === true;
 
-          if (judge && isQualityCandidate && qualityLoopEnabled && response.length > 500) {
+          if (judge && isQualityCandidate && qualityLoopEnabled && response.length > 500 && execOut === null) {
             let attempt = 0;
             let bestResponse = response;
             let bestScore = -1;

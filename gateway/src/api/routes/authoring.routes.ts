@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { join } from 'path';
 import { readFile, writeFile, mkdir, rm } from 'fs/promises';
+import { parseSteps } from '../../skills/loader.js';
 import { existsSync } from 'fs';
 import { safePath } from './_shared.js';
 
@@ -95,7 +96,7 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
     if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(name)) {
       return res.status(400).json({ error: 'Invalid skill name (lowercase letters, digits, hyphens)' });
     }
-    const { category, content } = req.body || {};
+    const { category, content, steps, retries } = req.body || {};
     if (!SKILL_CATEGORIES.includes(category)) {
       return res.status(400).json({ error: `category must be one of: ${SKILL_CATEGORIES.join(', ')}` });
     }
@@ -105,13 +106,29 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
     if (!/\bdescription\s*:/.test(content) || !/\btriggers\s*:/.test(content)) {
       return res.status(400).json({ error: 'frontmatter must include description and triggers' });
     }
+    // Multi-step skills: optional `steps` (+ `retries`) → steps.json (executable).
+    // Validate up-front (before writing) via the same parser the loader uses.
+    let stepsParsed: { steps: unknown[]; retries: number } | null = null;
+    if (steps !== undefined && steps !== null) {
+      if (!Array.isArray(steps)) return res.status(400).json({ error: 'steps must be an array' });
+      if (steps.length > 0) {
+        stepsParsed = parseSteps(JSON.stringify({ steps, retries }));
+        if (!stepsParsed) return res.status(400).json({ error: 'invalid steps: each phase needs a non-empty model + prompt' });
+      }
+    }
     const dir = safePath(wsSkillsDir, join(category, name));
     if (!dir) return res.status(403).json({ error: 'Path traversal blocked' });
     try {
       await mkdir(dir, { recursive: true });
       await writeFile(join(dir, 'SKILL.md'), content, 'utf-8');
+      if (stepsParsed) {
+        await writeFile(join(dir, 'steps.json'), JSON.stringify({ retries: stepsParsed.retries, steps: stepsParsed.steps }, null, 2) + '\n', 'utf-8');
+      } else if (steps !== undefined) {
+        // Explicitly cleared → revert to a passive skill.
+        try { await rm(join(dir, 'steps.json'), { force: true }); } catch { /* none */ }
+      }
       await services.skills.reload();
-      res.json({ success: true, name, category, source: 'workspace' });
+      res.json({ success: true, name, category, source: 'workspace', executable: !!stepsParsed });
     } catch (error) {
       res.status(500).json({ error: 'Failed to save skill: ' + String(error) });
     }

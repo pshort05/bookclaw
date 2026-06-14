@@ -11,6 +11,14 @@ import { PermissionManager } from '../security/permissions.js';
 /** Where a loaded skill came from: shipped (read-only), user workspace overlay, or runtime-generated. */
 export type SkillSource = 'builtin' | 'workspace' | 'synthetic';
 
+/** One phase of an executable (multi-step) skill — its own OpenRouter model + settings. */
+export interface SkillStep {
+  name?: string;
+  model: string;          // OpenRouter model id
+  temperature?: number;
+  prompt: string;         // template: {{input}} {{previous}} {{guidance}}
+}
+
 export interface Skill {
   name: string;
   description: string;
@@ -19,6 +27,30 @@ export interface Skill {
   permissions: string[];
   content: string;
   source: SkillSource;
+  // Multi-step skills Phase A: present (≥1) → executable; absent → passive.
+  steps?: SkillStep[];
+  retries?: number;       // 0–4, per failing phase
+}
+
+/** Parse + validate a skill's sibling steps.json. Returns null when absent/invalid (→ passive). */
+export function parseSteps(raw: string): { steps: SkillStep[]; retries: number } | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); } catch { return null; }
+  const p = parsed as { steps?: unknown; retries?: unknown };
+  if (!Array.isArray(p.steps) || p.steps.length === 0) return null;
+  const steps: SkillStep[] = [];
+  for (const s of p.steps as unknown[]) {
+    const st = s as { name?: unknown; model?: unknown; temperature?: unknown; prompt?: unknown };
+    if (typeof st.model !== 'string' || !st.model.trim() || typeof st.prompt !== 'string' || !st.prompt.trim()) return null;
+    steps.push({
+      ...(typeof st.name === 'string' ? { name: st.name } : {}),
+      model: st.model,
+      ...(typeof st.temperature === 'number' ? { temperature: st.temperature } : {}),
+      prompt: st.prompt,
+    });
+  }
+  const retries = Math.max(0, Math.min(4, typeof p.retries === 'number' ? Math.floor(p.retries) : 0));
+  return { steps, retries };
 }
 
 export interface SkillCatalogEntry {
@@ -79,6 +111,15 @@ export class SkillLoader {
               const content = await readFile(skillPath, 'utf-8');
               const skill = this.parseSkill(content, entry.name, category, source);
               if (skill) {
+                // Multi-step skills: a sibling steps.json makes the skill executable (fail-soft).
+                const stepsPath = join(categoryDir, entry.name, 'steps.json');
+                if (existsSync(stepsPath)) {
+                  try {
+                    const parsed = parseSteps(await readFile(stepsPath, 'utf-8'));
+                    if (parsed) { skill.steps = parsed.steps; skill.retries = parsed.retries; }
+                    else console.log(`  ⚠ Skill "${skill.name}": invalid steps.json — treating as passive`);
+                  } catch { console.log(`  ⚠ Skill "${skill.name}": could not read steps.json — treating as passive`); }
+                }
                 this.skills.set(skill.name, skill);
                 if (category === 'premium') {
                   console.log(`  ★ Premium skill loaded: ${skill.name}`);

@@ -15,13 +15,19 @@ import { LibraryTransferService, ENTRY_FORMAT_VERSION, type EntryManifest } from
 import { MAX_ZIP_ENTRIES } from '../../gateway/src/services/transfer-security.js';
 
 const STUB_SKILL_CONTENT = '---\ndescription: d\n---\nbody';
+const STUB_STEPS = [
+  { name: 'detect', model: 'google/gemini-2.0-flash-001', temperature: 0.2, prompt: 'find AI tells in {{input}}' },
+  { model: 'google/gemini-pro-1.5', prompt: 'humanize {{input}} using {{previous}}' },
+];
 const fakeSkills = {
   getSkillCatalog: () => [
     { name: 'demo', description: 'd', source: 'builtin' as const },
+    { name: 'multi', description: 'm', source: 'builtin' as const },
     { name: 'synth', description: 's', source: 'synthetic' as const },
   ],
   getSkillByName: (n: string) =>
     n === 'demo' ? { content: STUB_SKILL_CONTENT, description: 'd', source: 'builtin' as const }
+    : n === 'multi' ? { content: STUB_SKILL_CONTENT, description: 'm', source: 'builtin' as const, steps: STUB_STEPS, retries: 3 }
     : n === 'synth' ? { content: STUB_SKILL_CONTENT, description: 's', source: 'synthetic' as const }
     : undefined,
 };
@@ -108,6 +114,58 @@ test('export(skill) → files/SKILL.md (category omitted: not exposed via Librar
     assert.equal(mf.kind, 'skill');
     assert.equal(mf.category, undefined);
     assert.equal(files['files/SKILL.md'], STUB_SKILL_CONTENT);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('export(executable skill) → files/steps.json ({ retries, steps })', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer } = await setup(root);
+    const files = zipMap(xfer.export('skill', 'multi'));
+    assert.equal(files['files/SKILL.md'], STUB_SKILL_CONTENT);
+    const steps = JSON.parse(files['files/steps.json']);
+    assert.equal(steps.retries, 3);
+    assert.equal(steps.steps.length, 2);
+    assert.equal(steps.steps[0].model, 'google/gemini-2.0-flash-001');
+    assert.equal(steps.steps[1].prompt, 'humanize {{input}} using {{previous}}');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('export(passive skill) → no files/steps.json', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer } = await setup(root);
+    const files = zipMap(xfer.export('skill', 'demo'));
+    assert.equal(files['files/steps.json'], undefined);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('round-trip executable skill: SKILL.md + steps.json land in the overlay', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer, wsSkillsDir } = await setup(root, async () => {});
+    const staged = xfer.validateAndStage(xfer.export('skill', 'multi'));
+    assert.equal(staged.structuralError, undefined);
+    await xfer.finalizeImport(staged.stagingId);
+    const dir = join(wsSkillsDir, 'author', 'multi');
+    assert.ok(existsSync(join(dir, 'SKILL.md')), 'SKILL.md written');
+    const steps = JSON.parse(readFileSync(join(dir, 'steps.json'), 'utf-8'));
+    assert.equal(steps.retries, 3);
+    assert.equal(steps.steps.length, 2);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('validateAndStage rejects a malformed steps.json in a skill bundle', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer, stagingDir } = await setup(root);
+    const r = xfer.validateAndStage(makeZip({
+      'library-entry.json': manifestJson({ kind: 'skill', name: 'demo' }),
+      'files/SKILL.md': '---\ndescription: d\ntriggers: x\n---\nbody',
+      'files/steps.json': '{"steps":[{"model":"","prompt":""}]}',
+    }));
+    assert.ok(r.structuralError, 'invalid steps.json must be rejected');
+    assert.ok(!existsSync(join(stagingDir, r.stagingId)), 'staging purged');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
