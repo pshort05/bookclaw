@@ -1806,6 +1806,11 @@ else
     GRC=$(code PUT "/api/series/$SID/refs" "$GREFS")
     [ "$GRC" = "200" ] && pass "Tier G: set series refs" || fail "Tier G: set series refs" "code=$GRC"
 
+    # Phase B: set series world-building (sentinel verified on the snapshotted book).
+    WB_SENTINEL="Captain Vane of the Smoke Fleet $RANDOM"
+    GWBC=$(code PUT "/api/series/$SID/worldbuilding" "$(node -e 'console.log(JSON.stringify({characters:process.argv[1]}))' "$WB_SENTINEL")")
+    [ "$GWBC" = "200" ] && pass "Tier G: set series world-building" || fail "Tier G: set series world-building" "code=$GWBC"
+
     GBRESP=$(req POST /api/books "{\"title\":\"Saga Book $RANDOM\",\"series\":\"$SID\",\"pipeline\":\"$PIPE_NAME\"}")
     GBSLUG=$(printf '%s' "$GBRESP" | jget book.slug)
     if [ -z "$GBSLUG" ]; then
@@ -1821,6 +1826,9 @@ else
       else
         fail "Tier G: book inherited series assets + provenance" "author=$BA (want $AUTHOR_NAME) series=$BSER (want $SID)"
       fi
+      # Phase B: the series world-building was snapshotted into the book + reaches the composed prompt string.
+      BWB=$(req GET "/api/books/$GBSLUG/worldbuilding" | jget worldbuilding)
+      printf '%s' "$BWB" | grep -q "$WB_SENTINEL" && pass "Tier G: book snapshotted series world-building" || fail "Tier G: book snapshotted series world-building" "got=$(printf '%s' "$BWB" | head -c 80)"
       MEMBER=$(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const x=(JSON.parse(s).series||[]).find(y=>y.id===process.argv[1]);console.log(x&&(x.bookSlugs||[]).includes(process.argv[2])?"yes":"no")}catch(e){console.log("no")}})' "$SID" "$GBSLUG")
       [ "$MEMBER" = "yes" ] && pass "Tier G: book added to series membership" || fail "Tier G: book added to series membership"
       [ "$(code GET "/api/series/$SID/report")" = "200" ] && pass "Tier G: series report 200" || fail "Tier G: series report 200"

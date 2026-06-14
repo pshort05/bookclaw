@@ -75,7 +75,7 @@ export function classifyVersion(v: number): BookStatus {
 }
 
 /** Snapshot kinds that currently DRIVE generation (author+voice via SoulService, pipeline via the engine). genre/sections/skills are stored records, not yet injected. */
-export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline']);
+export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline', 'worldbuilding']);
 
 /** A single .md filename (no path separators) allowed inside a multi-file template entry. */
 export const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;

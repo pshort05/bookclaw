@@ -587,6 +587,9 @@ class BookClawGateway {
     const genreGuide = overrideSlug
       ? (this.books?.genreGuideOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveGenreGuide() ?? undefined);
+    const worldGuide = overrideSlug
+      ? (this.books?.worldbuildingOf(overrideSlug) ?? undefined)
+      : (this.books?.getActiveWorldbuilding() ?? undefined);
     const memories = await this.memory.getRelevant(content);
     const activeProject = await this.memory.getActiveProject();
     const skills = this.skills.matchSkills(content);
@@ -612,6 +615,7 @@ class BookClawGateway {
     let systemPrompt = this.buildSystemPrompt({
       soul,
       genreGuide,
+      worldGuide,
       memories,
       activeProject,
       skills,
@@ -880,6 +884,7 @@ class BookClawGateway {
   public buildSystemPrompt(context: {
     soul: string;
     genreGuide?: string | null;
+    worldGuide?: string | null;
     memories: string;
     activeProject: string | null;
     skills: string[];
@@ -895,6 +900,12 @@ class BookClawGateway {
       prompt += '# Active Book — Genre Guide\n\n';
       prompt += 'Write to this genre. Honor its conventions and reader promise, hit its obligatory scenes and must-haves, and avoid its genre-killers:\n\n';
       prompt += context.genreGuide + '\n\n';
+    }
+
+    if (context.worldGuide) {
+      prompt += '# Active Book — World-Building\n\n';
+      prompt += 'Treat the following as canon for this book — keep characters, places, and lore consistent with it:\n\n';
+      prompt += context.worldGuide + '\n\n';
     }
 
     // Channel-specific communication style

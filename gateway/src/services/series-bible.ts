@@ -12,7 +12,7 @@
  * background character's eye color from book 2.
  */
 
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import type { EntityEntry, ContextEngine } from './context-engine.js';
@@ -257,6 +257,41 @@ export class SeriesBibleService {
     series.updatedAt = new Date().toISOString();
     await this.persist(series);
     return series;
+  }
+
+  // ── World-building (Series Phase B): characters/places/lore.md under the series dir ──
+
+  private worldbuildingDir(id: string): string { return join(this.seriesDir(id), 'worldbuilding'); }
+
+  /** Read the series' world-building files; absent files read as ''. */
+  async getWorldbuilding(id: string): Promise<{ characters: string; places: string; lore: string }> {
+    const dir = this.worldbuildingDir(id);
+    const out = { characters: '', places: '', lore: '' };
+    for (const k of ['characters', 'places', 'lore'] as const) {
+      const p = join(dir, `${k}.md`);
+      if (existsSync(p)) { try { out[k] = await readFile(p, 'utf-8'); } catch { /* leave '' */ } }
+    }
+    return out;
+  }
+
+  /**
+   * Write the provided world-building files (undefined keys are left untouched).
+   * An empty/whitespace-only value CLEARS that file (delete) so only non-empty
+   * files persist on disk — matching the spec + the book-side compose semantics.
+   */
+  async setWorldbuilding(id: string, files: { characters?: string; places?: string; lore?: string }): Promise<void> {
+    const dir = this.worldbuildingDir(id);
+    await mkdir(dir, { recursive: true });
+    const { rename } = await import('fs/promises');
+    for (const k of ['characters', 'places', 'lore'] as const) {
+      const v = files[k];
+      if (typeof v !== 'string') continue;            // omitted → leave as-is
+      const dest = join(dir, `${k}.md`);
+      if (v.trim() === '') { try { await rm(dest, { force: true }); } catch { /* already gone */ } continue; }
+      const tmp = join(dir, `${k}.md.tmp`);
+      await writeFile(tmp, v);
+      await rename(tmp, dest);
+    }
   }
 
   getSeries(seriesId: string): Series | undefined {

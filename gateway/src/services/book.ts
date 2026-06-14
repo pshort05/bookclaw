@@ -30,6 +30,7 @@ export interface BookSelection {
   pipeline: string;
   sections: string[];
   series?: { id: string; title: string };   // Series Phase A provenance, when created in a series
+  worldbuilding?: { characters?: string; places?: string; lore?: string };  // Series Phase B — snapshotted into templates/worldbuilding/
 }
 
 export type RepullStatus =
@@ -200,6 +201,16 @@ export class BookService {
         if (typeof sectionEntry?.description === 'string') {
           await writeFile(join(dir, 'templates', 'sections', `${s.name}.meta.json`), JSON.stringify({ description: sectionEntry.description }), 'utf-8');
         }
+      }
+    }
+    // Series Phase B: snapshot the series' world-building (non-empty files only),
+    // BEFORE the .baseline cp below so the baseline captures it too.
+    if (sel.worldbuilding) {
+      const wb = sel.worldbuilding;
+      const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof wb[k] === 'string' && wb[k]!.length > 0);
+      if (entries.length) {
+        await mkdir(join(dir, 'templates', 'worldbuilding'), { recursive: true });
+        for (const k of entries) await writeFile(join(dir, 'templates', 'worldbuilding', `${k}.md`), wb[k]!, 'utf-8');
       }
     }
     await mkdir(join(dir, 'data'), { recursive: true });
@@ -573,6 +584,49 @@ export class BookService {
   }
 
   /**
+   * Composes a book's world-building snapshot (templates/worldbuilding/*.md) into a
+   * single string for prompt injection (Series Phase B). Ordered characters →
+   * places → lore, each under a "## World-Building — <Title>" header; extra .md
+   * files follow alphabetically. Reads fresh each call. Null when slug is
+   * null/invalid, no snapshot exists, or no non-empty files are present.
+   */
+  worldbuildingOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const dir = this.bookDir(slug);
+    if (!dir) return null;
+    const wbDir = join(dir, 'templates', 'worldbuilding');
+    if (!existsSync(wbDir)) return null;
+
+    const ORDER = ['characters', 'places', 'lore'];
+    const TITLES: Record<string, string> = { characters: 'Characters', places: 'Places', lore: 'Lore' };
+    let names: string[];
+    try {
+      names = readdirSync(wbDir, { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.md')).map((e) => e.name);
+    } catch {
+      return null;
+    }
+    if (names.length === 0) return null;
+    const ordered = [
+      ...ORDER.filter((n) => names.includes(`${n}.md`)).map((n) => `${n}.md`),
+      ...names.filter((f) => !ORDER.includes(f.replace(/\.md$/, ''))).sort(),
+    ];
+    const parts: string[] = [];
+    for (const file of ordered) {
+      let body: string;
+      try { body = readFileSync(join(wbDir, file), 'utf-8').trim(); } catch { continue; }
+      if (!body) continue;
+      const key = file.replace(/\.md$/, '');
+      parts.push(`## World-Building — ${TITLES[key] ?? key}\n\n${body}`);
+    }
+    return parts.length ? parts.join('\n\n') : null;
+  }
+
+  /** The active book's composed world-building (Series Phase B). */
+  getActiveWorldbuilding(): string | null {
+    return this.worldbuildingOf(this.activeBookSlug);
+  }
+
+  /**
    * First-run seed (book-container Phase 3a):
    *  - no books            → create a Default Book (built-in default Author +
    *                          default pipeline) and activate it.
@@ -661,6 +715,7 @@ export class BookService {
   async applySeriesAssets(
     slug: string,
     refs: { author?: PulledRef | null; voice?: PulledRef | null; genre?: PulledRef | null; pipeline?: PulledRef | null },
+    worldbuilding?: { characters?: string; places?: string; lore?: string },
   ): Promise<void> {
     await this.assertWritable(slug);
     const dir = this.bookDir(slug);
@@ -690,6 +745,19 @@ export class BookService {
       else if (kind === 'genre') m.pulledFrom.genre = newRef;
       else if (kind === 'pipeline') m.pulledFrom.pipeline = newRef;
       applied.push(`${kind}/${ref.name}`);
+    }
+    // Series Phase B: resync world-building (rm+rewrite templates/ + .baseline/).
+    if (worldbuilding) {
+      const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof worldbuilding[k] === 'string' && worldbuilding[k]!.length > 0);
+      for (const root of ['templates', '.baseline'] as const) {
+        const wbDir = join(dir, root, 'worldbuilding');
+        try { await rm(wbDir, { recursive: true, force: true }); } catch { /* fresh */ }
+        if (entries.length) {
+          await mkdir(wbDir, { recursive: true });
+          for (const k of entries) await writeFile(join(wbDir, `${k}.md`), worldbuilding[k]!, 'utf-8');
+        }
+      }
+      if (entries.length) applied.push('worldbuilding');   // history reflects real content, not empty resyncs
     }
     m.lastWrittenByApp = this.appVersion;
     m.history.push({ at: new Date().toISOString(), event: 'series-pull', detail: applied.join(',') });

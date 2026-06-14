@@ -88,6 +88,10 @@ SID=$(req POST /api/series "{\"title\":\"$SERIES_TITLE\"}" | jget series.id)
 if [ -z "$SID" ]; then echo "  ✗ series create failed"; exit 1; fi
 GREFS=$(node -e 'console.log(JSON.stringify({author:process.argv[1],voice:process.argv[2],genre:process.argv[3]||null}))' "$AUTHOR" "$VOICE" "$GENRE")
 [ "$(code PUT "/api/series/$SID/refs" "$GREFS")" = "200" ] && pass "series created + refs set" "id=$SID" || fail "series created + refs set"
+# Phase B: series world-building, inherited by the two member books below.
+WB_SENTINEL="The Hollow Crown of Ys — lore marker"
+[ "$(code PUT "/api/series/$SID/worldbuilding" "$(node -e 'console.log(JSON.stringify({lore:process.argv[1]}))' "$WB_SENTINEL")")" = "200" ] \
+  && pass "series world-building set" || fail "series world-building set"
 
 # ── Two books IN the series (author/voice/genre inherited; pipeline supplied) ──
 mkbook_series(){ req POST /api/books "$(node -e 'console.log(JSON.stringify({title:process.argv[1],series:process.argv[2],pipeline:process.argv[3]}))' "$1" "$SID" "$PIPE")" | jget book.slug; }
@@ -119,6 +123,19 @@ HASC=$(printf '%s' "$MEMBERS" | node -e 'let s="";process.stdin.on("data",d=>s+=
   || fail "series membership" "count=$MCOUNT hasStandalone=$HASC members=$MEMBERS"
 
 [ "$(code GET "/api/series/$SID/report")" = "200" ] && pass "series report 200" || fail "series report"
+
+# Phase B: both series books inherited the world-building; the standalone did not.
+wb_of(){ req GET "/api/books/$1/worldbuilding" | jget worldbuilding; }
+if printf '%s' "$(wb_of "$SLUG_A")" | grep -q "$WB_SENTINEL" && printf '%s' "$(wb_of "$SLUG_B")" | grep -q "$WB_SENTINEL"; then
+  pass "both series books inherited series world-building"
+else
+  fail "both series books inherited series world-building"
+fi
+if printf '%s' "$(wb_of "$SLUG_C")" | grep -q "$WB_SENTINEL"; then
+  fail "standalone book has NO series world-building"
+else
+  pass "standalone book has NO series world-building"
+fi
 
 echo ""
 echo "  ════════════════════════════════════════════════════"

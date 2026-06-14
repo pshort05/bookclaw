@@ -103,6 +103,14 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({ book: result.manifest, status: result.status, descriptions, phases: services.books.phasesForBook(slug) });
   });
 
+  // Composed world-building snapshot for a book (Series Phase B) — the same
+  // string injected into prompts. { worldbuilding: string|null }.
+  app.get('/api/books/:slug/worldbuilding', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    res.json({ worldbuilding: services.books.worldbuildingOf(slug) });
+  });
+
   // Suggested next step for a specific book.
   app.get('/api/books/:slug/next', (req: Request, res: Response) => {
     const slug = String(req.params.slug);
@@ -150,6 +158,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // Series Phase A: when created in a series, inherit author/voice/genre (+pipeline
     // if the series sets one) from the series' refs; record provenance + membership.
     let seriesProvenance: { id: string; title: string } | undefined;
+    let seriesWorldbuilding: { characters: string; places: string; lore: string } | undefined;
     if (typeof body.series === 'string' && body.series) {
       const series = services.seriesBible?.getSeries?.(body.series);
       if (!series) return res.status(400).json({ error: 'unknown series' });
@@ -158,13 +167,15 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       genre = series.pulledFrom.genre?.name ?? genre;
       pipeline = series.pulledFrom.pipeline?.name || pipeline;
       seriesProvenance = { id: series.id, title: series.title };
+      // Series Phase B: snapshot the series' world-building into the new book.
+      seriesWorldbuilding = await services.seriesBible?.getWorldbuilding?.(series.id);
     }
 
     if (!author) return res.status(400).json({ error: 'author (string) is required' });
     if (!voice) return res.status(400).json({ error: 'voice (string) is required' });
     if (!pipeline) return res.status(400).json({ error: 'pipeline (string) is required' });
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       res.json({ success: true, book: manifest });
     } catch (err) {

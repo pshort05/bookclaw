@@ -52,6 +52,26 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     res.json({ series });
   });
 
+  // Series Phase B: world-building (characters/places/lore.md) the series shares.
+  app.get('/api/series/:id/worldbuilding', async (req: Request, res: Response) => {
+    const sb = services.seriesBible;
+    if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
+    if (!sb.getSeries(req.params.id)) return res.status(404).json({ error: 'Series not found' });
+    res.json(await sb.getWorldbuilding(req.params.id));
+  });
+
+  app.put('/api/series/:id/worldbuilding', async (req: Request, res: Response) => {
+    const sb = services.seriesBible;
+    if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
+    if (!sb.getSeries(req.params.id)) return res.status(404).json({ error: 'Series not found' });
+    const files: { characters?: string; places?: string; lore?: string } = {};
+    for (const k of ['characters', 'places', 'lore'] as const) {
+      if (typeof req.body?.[k] === 'string') files[k] = req.body[k];
+    }
+    await sb.setWorldbuilding(req.params.id, files);
+    res.json(await sb.getWorldbuilding(req.params.id));
+  });
+
   app.post('/api/series/:id/add-book', async (req: Request, res: Response) => {
     const sb = services.seriesBible;
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
@@ -138,7 +158,8 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
       return res.status(400).json({ error: 'confirmation does not match this series/book' });
     }
     try {
-      await services.books.applySeriesAssets(slug, series.pulledFrom);
+      const wb = await sb.getWorldbuilding(req.params.id);
+      await services.books.applySeriesAssets(slug, series.pulledFrom, wb);
       await services.confirmationGate.recordOutcome(confId, { success: true, message: `Pulled series assets into ${slug}`, executedAt: new Date().toISOString() });
       res.json({ pulled: slug });
     } catch (err) {
