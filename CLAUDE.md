@@ -10,6 +10,8 @@ A Node.js/TypeScript writing-agent gateway. One process runs an Express + Socket
 
 There is **no unit-test suite** (the only automated test is a startup + auth **smoke test**, `tests/smoke-test.sh` — see [Testing](#testing)), no compile step in dev (TypeScript runs through `tsx`), and a **`commit_message` + `./push.sh`** workflow — per the parent `/home/paul/data/dev/CLAUDE.md`, Claude writes the commit message to a `commit_message` file in the repo root and does **not** `git commit`/`git push` directly; the maintainer runs `./push.sh` (which `git add .` + commits with that message + pushes, then deletes `commit_message`). The maintainer is the **sole contributor, so work happens directly on `main`** — no feature branches.
 
+**Auto-deploy trigger:** touching the repo-root **`build_now`** file (then pushing) signals a watcher on the **Mercury** host to pull and run `scripts/deploy.sh` automatically — i.e. updating `build_now` kicks off a Docker rebuild + redeploy on Mercury, rather than running the deploy by hand inside the VM. Real-money smokes can then run from any LAN box against `http://192.168.1.32:3847` (see [Testing](#testing)).
+
 ## Feature tracking workflow
 
 All features for this project are tracked in two files:

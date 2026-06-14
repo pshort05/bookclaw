@@ -59,7 +59,7 @@ COSTS=$(req GET /api/costs)
 [ "$(printf '%s' "$COSTS" | jget byBook)" != "" ] && pass "GET /api/costs exposes byBook" || fail "costs.byBook missing"
 
 # ── 1. One-step overlay pipeline (short, cheap) ──
-PIPE_DOC=$(node -e 'console.log(JSON.stringify({schemaVersion:1,name:process.argv[1],label:"Spend Smoke",description:"d",steps:[{label:"Tiny",taskType:"general",phase:"planning",promptTemplate:"Reply with exactly one short sentence naming a color."}]}))' "$PIPE")
+PIPE_DOC=$(node -e 'console.log(JSON.stringify({schemaVersion:1,name:process.argv[1],label:"Spend Smoke",description:"d",steps:[{label:"Tiny",taskType:"general",phase:"planning",promptTemplate:"In three or four complete sentences, describe the color blue and how it makes people feel. Write at least sixty words."}]}))' "$PIPE")
 PCODE=$(code POST /api/library/pipeline "$(node -e 'console.log(JSON.stringify({name:process.argv[1],content:process.argv[2],description:"spend smoke"}))' "$PIPE" "$PIPE_DOC")")
 { [ "$PCODE" = "200" ] || [ "$PCODE" = "409" ]; } && pass "overlay pipeline provisioned" "($PCODE)" || fail "overlay pipeline" "code=$PCODE"
 
