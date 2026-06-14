@@ -24,6 +24,7 @@ export interface BookSummary {
   author?: string;
   voice?: string;
   genre?: string | null;
+  series?: string;   // series title (Series Phase C) — shown in the board card byline
   // Phase 9 board enrichment (GET /api/books). Optional so older callers/tests still typecheck.
   next?: NextStep | null;
   live?: BookLive | null;

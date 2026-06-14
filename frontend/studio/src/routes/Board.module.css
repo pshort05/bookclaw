@@ -205,6 +205,16 @@
   border-radius: 50%;
   background: var(--faint);
   opacity: .6;
+  flex: none;
+}
+
+/* Series name shares the byline row — truncate so the card height never grows. */
+.byline .series {
+  color: var(--gold);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ghost "new book" card */

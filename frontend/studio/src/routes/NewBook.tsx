@@ -16,6 +16,27 @@ export function NewBook() {
   const [pipelineSkills, setPipelineSkills] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  type SeriesOpt = { id: string; title: string; pulledFrom: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; pipeline?: { name: string } | null } };
+  const [seriesList, setSeriesList] = useState<SeriesOpt[]>([]);
+  const [seriesId, setSeriesId] = useState('');
+
+  useEffect(() => {
+    api<{ series: SeriesOpt[] }>('/api/series').then((r) => setSeriesList(r.series ?? [])).catch(() => {});
+  }, []);
+
+  // Choosing a series reflects its shared assets into the pickers (server is
+  // authoritative — it inherits author/voice/genre + world-building from the series).
+  const chooseSeries = (id: string) => {
+    setSeriesId(id);
+    const s = seriesList.find((x) => x.id === id);
+    if (s) setSel((prev) => ({
+      ...prev,
+      author: s.pulledFrom.author?.name ?? prev.author,
+      voice: s.pulledFrom.voice?.name ?? prev.voice,
+      genre: s.pulledFrom.genre?.name ?? prev.genre,
+      pipeline: s.pulledFrom.pipeline?.name ?? prev.pipeline,
+    }));
+  };
 
   useEffect(() => {
     Promise.all((['author', 'voice', 'genre', 'pipeline', 'section'] as LibraryKind[]).map((k) =>
@@ -42,9 +63,13 @@ export function NewBook() {
     return () => { cancelled = true; };
   }, [sel.pipeline]);
 
-  // genre is deselectable (optional); all other single-kinds must stay selected once picked
-  const pickSingle = (kind: LibraryKind, name: string) =>
+  // genre is deselectable (optional); all other single-kinds must stay selected once picked.
+  // When a series is chosen, author/voice/genre come FROM the series (server-authoritative),
+  // so those pickers are locked to keep the preview honest.
+  const pickSingle = (kind: LibraryKind, name: string) => {
+    if (seriesId && (kind === 'author' || kind === 'voice' || kind === 'genre')) return;
     setSel((s) => ({ ...s, [kind]: s[kind] === name && kind === 'genre' ? '' : name }));
+  };
 
   const toggleSection = (name: string) =>
     setSections((xs) => xs.includes(name) ? xs.filter((n) => n !== name) : [...xs, name]);
@@ -56,6 +81,7 @@ export function NewBook() {
     try {
       await api<{ book: BookManifest }>('/api/books', { method: 'POST', body: JSON.stringify({
         title: title.trim(), author: sel.author, voice: sel.voice, genre: sel.genre || null, pipeline: sel.pipeline, sections,
+        ...(seriesId ? { series: seriesId } : {}),
       }) });
       await loadBooks();
       navigate('/');
@@ -65,6 +91,7 @@ export function NewBook() {
   const pick = (kind: LibraryKind) => {
     const g = GLOSSARY[kind];
     const entries = opts[kind] ?? [];
+    const locked = !!seriesId && (kind === 'author' || kind === 'voice' || kind === 'genre');
     return (
       <section className={styles.pick} key={kind}>
         <div className={styles.ph}>
@@ -72,11 +99,12 @@ export function NewBook() {
             {g.canon}
             {kind === 'genre' && <span className={styles.pickone}> · optional</span>}
             {kind === 'section' && <span className={styles.pickone}> · choose any</span>}
+            {locked && <span className={styles.pickone}> · from series</span>}
           </h3>
           <span className={styles.canon}>term · {g.canon}</span>
         </div>
         <div className={styles.def}>{g.def}</div>
-        <div className={styles.grid2}>
+        <div className={locked ? `${styles.grid2} ${styles.locked}` : styles.grid2}>
           {entries.map((e) => (
             <OptionCard
               key={e.name}
@@ -104,6 +132,15 @@ export function NewBook() {
             <div className={styles.fl}>Title</div>
             <input className={styles.tin} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="The Dragon's Heir" />
           </div>
+          {seriesList.length > 0 && (
+            <div className={styles.idblock}>
+              <div className={styles.fl}>Series <span className={styles.pickone}>· optional — inherits author, voice, genre &amp; world-building</span></div>
+              <select className={styles.tin} value={seriesId} onChange={(e) => chooseSeries(e.target.value)}>
+                <option value="">— none (standalone) —</option>
+                {seriesList.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+              </select>
+            </div>
+          )}
           {pick('author')}
           {pick('voice')}
           {pick('genre')}

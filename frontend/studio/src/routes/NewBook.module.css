@@ -124,6 +124,12 @@
   gap: 11px;
 }
 
+/* Locked when a series supplies this asset — non-interactive + dimmed. */
+.locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* option cards */
 .optcard {
   display: flex;

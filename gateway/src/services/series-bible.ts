@@ -214,6 +214,17 @@ export class SeriesBibleService {
     return series;
   }
 
+  /** Patch a series' title/description (Series Phase C edit). */
+  async update(seriesId: string, patch: { title?: string; description?: string }): Promise<Series | null> {
+    const series = this.series.get(seriesId);
+    if (!series) return null;
+    if (typeof patch.title === 'string' && patch.title.trim()) series.title = patch.title.trim();
+    if (typeof patch.description === 'string') series.description = patch.description;
+    series.updatedAt = new Date().toISOString();
+    await this.persist(series);
+    return series;
+  }
+
   /** Set the shared library asset refs books inherit at create-time (Phase A). */
   async setRefs(seriesId: string, refs: Partial<Series['pulledFrom']>): Promise<Series | null> {
     const series = this.series.get(seriesId);

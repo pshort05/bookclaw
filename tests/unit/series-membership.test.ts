@@ -42,6 +42,16 @@ test('addBook is idempotent and tracks reading order; removeBook clears both', a
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('update patches title/description and persists; unknown id → null', async () => {
+  const { root, svc, id } = await svcWithSeries();
+  try {
+    const r = await svc.update(id, { title: 'Renamed Saga', description: 'A new blurb' });
+    assert.equal(r?.title, 'Renamed Saga');
+    assert.equal(svc.getSeries(id)!.description, 'A new blurb');
+    assert.equal(await svc.update('does-not-exist', { title: 'x' }), null);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('setReadingOrder keeps only member-book slugs', async () => {
   const { root, svc, id } = await svcWithSeries();
   try {

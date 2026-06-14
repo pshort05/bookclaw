@@ -37,6 +37,17 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     res.json({ series });
   });
 
+  app.put('/api/series/:id', async (req: Request, res: Response) => {
+    const sb = services.seriesBible;
+    if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
+    const patch: { title?: string; description?: string } = {};
+    if (typeof req.body?.title === 'string') patch.title = req.body.title;
+    if (typeof req.body?.description === 'string') patch.description = req.body.description;
+    const series = await sb.update(req.params.id, patch);
+    if (!series) return res.status(404).json({ error: 'Series not found' });
+    res.json({ series });
+  });
+
   app.put('/api/series/:id/refs', async (req: Request, res: Response) => {
     const sb = services.seriesBible;
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });

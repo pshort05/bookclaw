@@ -266,6 +266,7 @@ export class BookService {
           author: m.pulledFrom?.author?.name,
           voice: m.pulledFrom?.voice?.name,
           genre: m.pulledFrom?.genre?.name ?? null,
+          series: m.pulledFrom?.series?.title ?? undefined,
         });
       } catch (err) {
         console.warn(`  ⚠ Books: could not read ${e.name}/book.json — skipping`, err);

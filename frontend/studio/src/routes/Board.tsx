@@ -70,6 +70,7 @@ export function Board() {
               <div className={styles.byline}>
                 <b>{b.author ?? '—'}</b>
                 {b.voice && <><span className={styles.v} /> {b.voice}</>}
+                {b.series && <><span className={styles.v} /> <span className={styles.series} title={b.series}>◈ {b.series}</span></>}
               </div>
               <div className={styles.prog}>
                 <div className={styles.progMeta}><span>{b.phase}</span><b>phase {Math.max(0, cur) + 1} of {phases.length}</b></div>

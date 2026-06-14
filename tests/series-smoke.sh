@@ -57,7 +57,7 @@ clean(){
   for slug in $(req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const w=new Set(JSON.parse(process.argv[1]));(JSON.parse(s).books||[]).filter(b=>w.has(b.title)).forEach(b=>console.log(b.slug))}catch(e){}})' "$TITLES_JSON"); do
     code DELETE "/api/books/$slug" >/dev/null && echo "  [clean] book $slug"
   done
-  for sid in $(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).series||[]).filter(x=>x.title===process.argv[1]).forEach(x=>console.log(x.id))}catch(e){}})' "$SERIES_TITLE"); do
+  for sid in $(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).series||[]).filter(x=>String(x.title).startsWith("Smoke Series")).forEach(x=>console.log(x.id))}catch(e){}})'); do
     code DELETE "/api/series/$sid" >/dev/null && echo "  [clean] series $sid"
   done
 }
@@ -112,6 +112,20 @@ auth_of(){ req GET "/api/books/$1" | jget book.pulledFrom.author.name; }
 
 [ "$(auth_of "$SLUG_A")" = "$AUTHOR" ] \
   && pass "series book inherited the series author" "author=$AUTHOR" || fail "series book inherited the series author" "got $(auth_of "$SLUG_A")"
+
+# Phase C: the board card (GET /api/books) carries the series title; standalone has none.
+card_series(){ req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const b=(JSON.parse(s).books||[]).find(x=>x.slug===process.argv[1]);console.log(b&&b.series?b.series:"")}catch(e){console.log("")}})' "$1"; }
+if [ "$(card_series "$SLUG_A")" = "$SERIES_TITLE" ] && [ "$(card_series "$SLUG_B")" = "$SERIES_TITLE" ] && [ -z "$(card_series "$SLUG_C")" ]; then
+  pass "board card carries series name (series books only)"
+else
+  fail "board card carries series name" "A=$(card_series "$SLUG_A") B=$(card_series "$SLUG_B") C=$(card_series "$SLUG_C")"
+fi
+
+# Phase C: PUT /api/series/:id renames the series (reflected in the list).
+RENAMED="Smoke Series — Renamed $RANDOM"
+code PUT "/api/series/$SID" "$(node -e 'console.log(JSON.stringify({title:process.argv[1]}))' "$RENAMED")" >/dev/null
+NOW=$(req GET /api/series | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const x=(JSON.parse(s).series||[]).find(y=>y.id===process.argv[1]);console.log(x?x.title:"")}catch(e){console.log("")}})' "$SID")
+[ "$NOW" = "$RENAMED" ] && pass "series rename (PUT /api/series/:id)" || fail "series rename" "got '$NOW'"
 
 if [ -z "$(ser_of "$SLUG_C")" ]; then pass "standalone book has NO series provenance"; else fail "standalone book has NO series provenance" "got $(ser_of "$SLUG_C")"; fi
 

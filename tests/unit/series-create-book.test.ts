@@ -40,6 +40,17 @@ test('create records pulledFrom.series provenance', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('list() surfaces the series title for board cards (Phase C)', async () => {
+  const { root, svc } = await setup();
+  try {
+    await svc.create({ title: 'In Series', author: 'default', voice: 'default', genre: 'romantasy', pipeline: 'novel-pipeline', sections: [], series: { id: 's1', title: 'The Saga' } });
+    await svc.create({ title: 'Standalone', author: 'default', voice: 'default', genre: 'romantasy', pipeline: 'novel-pipeline', sections: [] });
+    const list = svc.list();
+    assert.equal(list.find((b) => b.title === 'In Series')?.series, 'The Saga');
+    assert.equal(list.find((b) => b.title === 'Standalone')?.series, undefined);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('applySeriesAssets re-snapshots author+genre and updates the manifest refs', async () => {
   const { root, svc } = await setup();
   try {

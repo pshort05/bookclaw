@@ -84,14 +84,17 @@ export function Rail() {
           </svg>
         </a>
 
-        {/* Series — placeholder */}
-        <a href="#" className={styles.navLink}>
+        {/* Series — live route */}
+        <NavLink
+          to="/series"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19V6a2 2 0 012-2h5v15H6a2 2 0 00-2 2z"/>
             <path d="M20 19V6a2 2 0 00-2-2h-5v15h5a2 2 0 012 2z"/>
           </svg>
-          Series <span className={styles.count}>2</span>
-        </a>
+          Series
+        </NavLink>
 
         {/* Activity — live route */}
         <NavLink
