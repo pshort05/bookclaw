@@ -579,6 +579,11 @@ class BookClawGateway {
       // wrong-voice fallback is visible rather than silent.
       console.log(`  ⚠ Unresolvable bookSlug "${overrideSlug}" — falling back to global author voice`);
     }
+    // Attribute spend only when the book actually resolves; an unresolvable/deleted
+    // book's spend goes to 'unattributed' (reachable + resettable in the UI) instead
+    // of a stranded orphan byBook bucket. Genre/world still key off overrideSlug — do
+    // NOT collapse these into one slug or the cross-leak guard above is defeated.
+    const costSlug = overrideSlug && this.books?.authorDirOf(overrideSlug) ? overrideSlug : undefined;
     const soul = overrideSlug
       ? ((await this.soul.composeForBook(
           this.books?.authorDirOf(overrideSlug) ?? '',
@@ -700,7 +705,7 @@ class BookClawGateway {
         // Trigger consolidation if threshold reached. Fire-and-forget.
         this.userModel?.maybeConsolidate().catch(() => {});
       } catch { /* observation failures should never block messaging */ }
-      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost);
+      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost, costSlug);
       this.heartbeat.recordActivity('message', { channel });
 
       // Log to activity
@@ -759,7 +764,7 @@ class BookClawGateway {
           }
           // Record fallback spend too — otherwise a run that fails over to a paid
           // provider records zero cost and the budget gate is silently defeated.
-          this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost);
+          this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost, costSlug);
           this.heartbeat.recordActivity('message', { channel });
           this.activityLog.log({
             type: 'chat_message',
@@ -1833,6 +1838,7 @@ class BookClawGateway {
             { skills: gateway.skills, aiRouter: gateway.aiRouter, costs: gateway.costs },
             (activeStep as any).skill,
             stepUserMessage,
+            (project as any).bookSlug,
           );
           wasExecutable = execOut !== null;
           if (execOut !== null) {

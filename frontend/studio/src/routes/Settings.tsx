@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, Button } from '@bookclaw/shared';
 import type { Status } from '@bookclaw/shared';
 import { DeleteBooksModal } from '../components/DeleteBooksModal.js';
+import { ResetSpendModal } from '../components/ResetSpendModal.js';
 import styles from './Settings.module.css';
 
 type BackupSnapshot = { name: string; at: string; reason: string; scope: string; books: string[] };
@@ -40,6 +41,7 @@ export function Settings() {
   const [msg, setMsg] = useState<string | null>(null);
   const [costs, setCosts] = useState<{ dailyLimit?: number; monthlyLimit?: number }>({});
   const [showDelete, setShowDelete] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   const loadKeys = () =>
     api<{ keys: string[] }>('/api/vault/keys')
@@ -171,7 +173,18 @@ export function Settings() {
         <Button variant="secondary" onClick={() => setShowDelete(true)}>Delete books…</Button>
       </div>
 
+      <div className={styles.danger}>
+        <div>
+          <strong>Reset total spend</strong>
+          <p className={styles.dim}>
+            Reset the lifetime spend total and, optionally, individual book totals. Requires typing a confirmation phrase.
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => setShowReset(true)}>Reset total spend…</Button>
+      </div>
+
       {showDelete && <DeleteBooksModal onClose={() => setShowDelete(false)} />}
+      {showReset && <ResetSpendModal onClose={() => setShowReset(false)} />}
     </div>
   );
 }

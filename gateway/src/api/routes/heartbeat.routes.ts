@@ -395,7 +395,7 @@ ${sourceCode.substring(0, 15000)}
     const { join: j, resolve: r } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
 
-    const skillsBase = j(baseDir, 'skills');
+    const skillsBase = j(baseDir, 'workspace', 'library', 'skills');
     const fullPath = safePath(skillsBase, skillPath.replace(/^skills[/\\]?/, ''));
     if (!fullPath) {
       return res.status(403).json({ error: 'Path traversal blocked' });

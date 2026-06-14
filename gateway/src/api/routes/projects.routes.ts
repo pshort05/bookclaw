@@ -369,7 +369,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
       // Multi-step skills: an executable skill's OpenRouter phase chain IS the
       // generation (skip the normal single call + short-retry). null → passive skill.
-      const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage);
+      const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, project.bookSlug);
       if (execOut !== null) {
         response = execOut;
       } else {
@@ -567,7 +567,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
         // Multi-step skills: an executable skill's OpenRouter phase chain IS the
         // generation (skip the normal single call + short-retry). null → passive skill.
-        const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage);
+        const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, currentProject.bookSlug);
         if (execOut !== null) {
           response = execOut;
         } else {

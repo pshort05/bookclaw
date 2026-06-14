@@ -33,6 +33,7 @@ workspace/.bookclaw/
 workspace/skills/
 workspace/library/
 workspace/books/
+workspace/costs.json
 *.log
 .DS_Store
 nul

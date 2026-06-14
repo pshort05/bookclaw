@@ -190,6 +190,10 @@ export function Rail() {
           <div className={styles.bar}>
             <i style={{ width: `${costs && costs.dailyLimit > 0 ? Math.min(100, (costs.daily / costs.dailyLimit) * 100) : 0}%` }} />
           </div>
+          <div className={styles.cap}>
+            <span>AI spend · lifetime</span>
+            <b>{money(costs?.total ?? 0)}</b>
+          </div>
         </div>
       </div>
     </aside>

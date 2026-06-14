@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, Button, type LibraryKind } from '@bookclaw/shared';
 import styles from './SkillEditor.module.css';
 
-interface Props { scope: string; kind: LibraryKind; name: string }
+interface Props { scope: string; kind: LibraryKind; name: string; displayName?: string }
 // `_id` is a client-only stable React key for the reorderable list — never sent to the server.
 interface Phase { _id: string; name?: string; model: string; temperature?: number; prompt: string }
 type WireStep = Omit<Phase, '_id'>;
@@ -25,7 +25,7 @@ const blankPhase = (): Phase => ({ _id: newId(), model: '', prompt: '' });
  * Saves via PUT /api/skills/:name (Phase A write API). Skills were previously
  * read-only in the studio; this is the first real skill editor.
  */
-export function SkillEditor({ name }: Props) {
+export function SkillEditor({ name, displayName }: Props) {
   const [category, setCategory] = useState<SkillData['category']>('author');
   const [content, setContent] = useState('');
   const [phases, setPhases] = useState<Phase[]>([]);
@@ -85,7 +85,7 @@ export function SkillEditor({ name }: Props) {
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <h2>{name}</h2>
+        <h2>{displayName ?? name}</h2>
         <span className={styles.src}>{source || '—'}</span>
         <Button variant="primary" onClick={save} disabled={!canSave}>{saving ? 'Saving…' : 'Save'}</Button>
       </div>

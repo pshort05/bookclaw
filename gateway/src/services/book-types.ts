@@ -54,6 +54,7 @@ export interface BookSummary {
   author?: string;
   voice?: string;
   genre?: string | null;
+  pipeline?: string;
   series?: string;          // series title (Series Phase C) — for the board card byline
 }
 

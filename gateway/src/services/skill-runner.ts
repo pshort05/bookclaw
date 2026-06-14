@@ -41,17 +41,18 @@ export async function runExecutableSkillStep(
   deps: {
     skills?: { getSkillByName(n: string): { steps?: SkillStep[]; retries?: number; content?: string } | undefined };
     aiRouter: { complete(req: SkillCompletionRequest): Promise<{ text: string; tokensUsed?: number; estimatedCost?: number }> };
-    costs?: { record(provider: string, tokens: number, estimatedCost?: number): void };
+    costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void };
   },
   skillName: string | undefined,
   input: string,
+  bookSlug?: string,
 ): Promise<string | null> {
   if (!skillName) return null;
   const skill = deps.skills?.getSkillByName?.(skillName);
   if (!skill?.steps?.length) return null;
   const complete: SkillCompleteFn = async (req) => {
     const res = await deps.aiRouter.complete(req);
-    try { deps.costs?.record('openrouter', res.tokensUsed ?? 0, res.estimatedCost); } catch { /* non-fatal */ }
+    try { deps.costs?.record('openrouter', res.tokensUsed ?? 0, res.estimatedCost, bookSlug); } catch { /* non-fatal */ }
     return res;
   };
   try {

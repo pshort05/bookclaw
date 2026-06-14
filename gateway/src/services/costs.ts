@@ -18,6 +18,8 @@ interface CostConfig {
 interface PersistedState {
   dailySpend: number;
   monthlySpend: number;
+  totalSpend: number;
+  byBook: Record<string, number>;
   lastResetDay: string;
   lastResetMonth: string;
 }
@@ -28,6 +30,8 @@ export class CostTracker {
   private alertAt: number;
   private dailySpend = 0;
   private monthlySpend = 0;
+  private totalSpend = 0;
+  private byBook: Record<string, number> = {};
   private lastResetDay: string;
   private lastResetMonth: string;
   private persistPath?: string;
@@ -55,6 +59,8 @@ export class CostTracker {
       const state: PersistedState = JSON.parse(raw);
       this.dailySpend = state.dailySpend || 0;
       this.monthlySpend = state.monthlySpend || 0;
+      this.totalSpend = state.totalSpend || 0;
+      this.byBook = state.byBook || {};
       this.lastResetDay = state.lastResetDay || this.lastResetDay;
       this.lastResetMonth = state.lastResetMonth || this.lastResetMonth;
       this.checkReset();
@@ -68,7 +74,7 @@ export class CostTracker {
    * router-supplied `estimatedCost` so we don't disagree with the per-provider
    * pricing table in router.ts.
    */
-  record(provider: string, tokens: number, estimatedCost?: number): void {
+  record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void {
     this.checkReset();
     let cost = estimatedCost;
     if (cost === undefined || cost === null || isNaN(cost)) {
@@ -84,6 +90,9 @@ export class CostTracker {
     }
     this.dailySpend += cost;
     this.monthlySpend += cost;
+    this.totalSpend += cost;
+    const key = bookSlug ?? 'unattributed';
+    this.byBook[key] = (this.byBook[key] ?? 0) + cost;
     this.schedulePersist();
   }
 
@@ -98,14 +107,21 @@ export class CostTracker {
            this.monthlySpend >= this.monthlyLimit * this.alertAt;
   }
 
-  getStatus(): { daily: number; monthly: number; overBudget: boolean; dailyLimit: number; monthlyLimit: number } {
+  getStatus(): { daily: number; monthly: number; total: number; overBudget: boolean; dailyLimit: number; monthlyLimit: number; byBook: Record<string, number> } {
     this.checkReset();
+    // Round the lifetime/per-book figures to 4 decimals to match the money()
+    // renderer's $0.0001 resolution — 2dp would floor cheap-model spend to $0.00
+    // and hide it in the Rail lifetime line and the BookDrawer per-book row.
+    const byBook: Record<string, number> = {};
+    for (const [k, v] of Object.entries(this.byBook)) byBook[k] = Math.round(v * 1e4) / 1e4;
     return {
       daily: Math.round(this.dailySpend * 100) / 100,
       monthly: Math.round(this.monthlySpend * 100) / 100,
+      total: Math.round(this.totalSpend * 1e4) / 1e4,
       overBudget: this.isOverBudget(),
       dailyLimit: this.dailyLimit,
       monthlyLimit: this.monthlyLimit,
+      byBook,
     };
   }
 
@@ -115,6 +131,14 @@ export class CostTracker {
     this.monthlySpend = 0;
     this.lastResetDay = new Date().toISOString().split('T')[0];
     this.lastResetMonth = new Date().toISOString().substring(0, 7);
+    await this.persist();
+  }
+
+  /** Danger-zone reset: zero the lifetime total and selectively chosen book buckets. */
+  async resetLifetime(opts: { books?: string[]; unattributed?: boolean }): Promise<void> {
+    this.totalSpend = 0;
+    for (const slug of opts.books ?? []) delete this.byBook[slug];
+    if (opts.unattributed) delete this.byBook['unattributed'];
     await this.persist();
   }
 
@@ -150,6 +174,8 @@ export class CostTracker {
     const state: PersistedState = {
       dailySpend: this.dailySpend,
       monthlySpend: this.monthlySpend,
+      totalSpend: this.totalSpend,
+      byBook: this.byBook,
       lastResetDay: this.lastResetDay,
       lastResetMonth: this.lastResetMonth,
     };

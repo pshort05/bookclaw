@@ -11,11 +11,12 @@ interface Props {
   scope: Scope;
   kind: LibraryKind;
   name: string;
+  displayName?: string;
 }
 
 const SINGLE_FILE_KINDS: LibraryKind[] = ['section'];
 
-export function ProseEditor({ scope, kind, name }: Props) {
+export function ProseEditor({ scope, kind, name, displayName }: Props) {
   const [files, setFiles] = useState<Record<string, string>>({});
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -107,7 +108,7 @@ export function ProseEditor({ scope, kind, name }: Props) {
     <>
       <div className={styles.edhead}>
         <div>
-          <h2>{name}</h2>
+          <h2>{displayName ?? name}</h2>
           <div className={styles.meta}>
             <span className={`${styles.src} ${srcBadgeClass}`}>{srcLabel}</span>
             · {kind}

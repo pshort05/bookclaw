@@ -13,13 +13,14 @@ interface Props {
   scope: Scope;
   kind: LibraryKind;
   name: string;
+  displayName?: string;
 }
 
 const BLANK_STEP = (): LibraryPipelineStep => ({
   label: 'New step', taskType: 'creative_writing', promptTemplate: '', skill: undefined,
 });
 
-export function PipelineEditor({ scope, kind, name }: Props) {
+export function PipelineEditor({ scope, kind, name, displayName }: Props) {
   const [pipeline, setPipeline] = useState<LibraryPipeline | null>(null);
   const [description, setDescription] = useState('');
   const [openSteps, setOpenSteps] = useState<Set<number>>(new Set());
@@ -139,7 +140,7 @@ export function PipelineEditor({ scope, kind, name }: Props) {
     <>
       <div className={styles.edhead}>
         <div>
-          <h2>{name}</h2>
+          <h2>{displayName ?? name}</h2>
           <div className={styles.meta}>
             <span className={`${styles.src} ${srcBadgeClass}`}>{srcLabel}</span>
             · Pipeline · {pipeline.steps.length} steps

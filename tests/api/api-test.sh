@@ -249,6 +249,50 @@ bc_code="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{}' -X POST
   && pass "create without title -> 400" \
   || fail "create without title should be 400 (got $bc_code)"
 
+# ── Costs: lifetime-total reset (Track A) ──
+# POST /api/costs/reset-total with an empty body resets only the lifetime total
+# (no per-book buckets touched) and returns the fresh status with total == 0.
+log ""
+log "costs (reset-total)"
+RT="$(curl -s --max-time 8 "${AUTH[@]}" -H 'Content-Type: application/json' -d '{}' -X POST "$BASE/api/costs/reset-total")"
+case "$RT" in
+  *'"total":0'*) pass "reset-total -> total 0" ;;
+  *)             fail "reset-total total not 0: $RT" ;;
+esac
+case "$RT" in
+  *'"byBook"'*) pass "reset-total returns byBook shape" ;;
+  *)            fail "reset-total missing byBook: $RT" ;;
+esac
+
+# ── AI-generated skill writer lands in the workspace overlay (covers Track B) ──
+# POST /api/tools/ingest/save writes the skill under the workspace library
+# overlay; it must then appear in GET /api/skills tagged source:workspace.
+# Clean up with DELETE so the dev workspace isn't modified across runs.
+# (This passes only once Track B's overlay repoint is merged.)
+log ""
+log "ingest/save overlay round-trip (Track B)"
+# JSON string with escaped newlines (\n) — the server writes this verbatim as
+# the SKILL.md, so the frontmatter parses (description + triggers present).
+SAVE_BODY='{"skillMd":"---\ndescription: api-test probe skill\ntriggers: []\n---\n# Probe\n","skillPath":"skills/ops/api-test-probe/SKILL.md"}'
+curl -s --max-time 8 "${AUTH[@]}" -H 'Content-Type: application/json' -d "$SAVE_BODY" -X POST "$BASE/api/tools/ingest/save" >/dev/null
+CAT="$(body "/api/skills")"
+# The probe skill must be present AND tagged source:workspace. The catalog is a
+# flat list of objects; match the name and the workspace source in the body.
+case "$CAT" in
+  *'"name":"api-test-probe"'*) NAME_OK=1 ;;
+  *)                           NAME_OK=0 ;;
+esac
+case "$CAT" in
+  *'api-test-probe'*'"source":"workspace"'*|*'"source":"workspace"'*'api-test-probe'*) SRC_OK=1 ;;
+  *) SRC_OK=0 ;;
+esac
+if [ "$NAME_OK" = 1 ] && [ "$SRC_OK" = 1 ]; then
+  pass "ingest/save lands in workspace overlay"
+else
+  fail "ingest/save skill not in workspace overlay (name=$NAME_OK src=$SRC_OK)"
+fi
+curl -s --max-time 8 "${AUTH[@]}" -X DELETE "$BASE/api/skills/api-test-probe" >/dev/null
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

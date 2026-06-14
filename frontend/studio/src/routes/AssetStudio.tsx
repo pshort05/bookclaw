@@ -42,6 +42,14 @@ export function AssetStudio() {
   const bookTitle = activeBook?.title ?? 'Active book';
   const noBook = !activeBook;
 
+  // In book scope, single-snapshot kinds carry their snapshotted asset name on the
+  // active book's flat fields (author/voice/genre/pipeline, from GET /api/books). Show
+  // that real name in the editor header instead of the bare kind string.
+  const snapshotNames: Record<string, string | null | undefined> = activeBook
+    ? { author: activeBook.author, voice: activeBook.voice, genre: activeBook.genre, pipeline: activeBook.pipeline }
+    : {};
+  const bookDisplayName = scope === 'book' ? (snapshotNames[kind] ?? undefined) : undefined;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {/* Topbar */}
@@ -113,11 +121,11 @@ export function AssetStudio() {
         <div className={styles.editor}>
           {selectedName ? (
             kind === 'pipeline' ? (
-              <PipelineEditor key={editorKey} scope={scope} kind={kind} name={selectedName} />
+              <PipelineEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             ) : kind === 'skill' ? (
-              <SkillEditor key={editorKey} scope={scope} kind={kind} name={selectedName} />
+              <SkillEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             ) : (
-              <ProseEditor key={editorKey} scope={scope} kind={kind} name={selectedName} />
+              <ProseEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             )
           ) : (
             <div style={{ color: 'var(--faint)', fontSize: 13, paddingTop: 40 }}>

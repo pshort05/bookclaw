@@ -24,6 +24,7 @@ export interface BookSummary {
   author?: string;
   voice?: string;
   genre?: string | null;
+  pipeline?: string;
   series?: string;   // series title (Series Phase C) — shown in the board card byline
   // Phase 9 board enrichment (GET /api/books). Optional so older callers/tests still typecheck.
   next?: NextStep | null;
@@ -50,9 +51,11 @@ export interface Status {
 export interface Costs {
   daily: number;
   monthly: number;
+  total: number;
   overBudget: boolean;
   dailyLimit: number;
   monthlyLimit: number;
+  byBook: Record<string, number>;
 }
 
 /** Activity feed — mirrors gateway/src/services/activity-log.ts (ActivityEntry). */

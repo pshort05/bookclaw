@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, useStore, useActiveBook, LIFECYCLE_PHASES, type BookDetail, type NextStep } from '@bookclaw/shared';
+import { api, useStore, useActiveBook, useCosts, money, LIFECYCLE_PHASES, type BookDetail, type NextStep } from '@bookclaw/shared';
 import { Button } from '@bookclaw/shared';
 import styles from './BookDrawer.module.css';
 
@@ -10,6 +10,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
   const activeBook = useActiveBook();
+  const costs = useCosts();
   const loadBooks = useStore((s) => s.loadBooks);
   const navigate = useNavigate();
 
@@ -87,6 +88,10 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                 <div className={styles.asset}>
                   <div className={styles.l}>Pipeline</div>
                   <div className={styles.v}>{pf?.pipeline?.name ?? '—'}</div>
+                </div>
+                <div className={styles.asset}>
+                  <div className={styles.l}>Spend</div>
+                  <div className={styles.v}>{money(costs?.byBook?.[slug] ?? 0)}</div>
                 </div>
               </div>
 
