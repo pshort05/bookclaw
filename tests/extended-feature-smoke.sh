@@ -1781,6 +1781,49 @@ fi
 
 # ═══════════════════════════════════════════════════════════
 echo ""
+echo "### Tier F — file explorer (free, no AI): document CRUD + book-file read"
+# Exercises the file-explorer read endpoints. Documents: upload → list → preview
+# content (GET /api/documents/:f) → download (?download=1) → delete. Book outputs:
+# find any book with data/ files and read one (GET /api/books/:slug/files/:f).
+if [ "$(has_endpoint GET /api/documents)" = "no" ]; then
+  skip "Tier F: file explorer" "(documents not on this build)"
+else
+  FDOC="/tmp/smoke-fx-$$.md"
+  printf '# Smoke FX\n\nThe quick brown fox jumps.\n' > "$FDOC"
+  FUP=$(curl -s --max-time 30 "${HAUTH[@]}" -F "file=@$FDOC" "$BASE_URL/api/documents/upload")
+  FNAME=$(printf '%s' "$FUP" | jget filename)
+  rm -f "$FDOC"
+  if [ -z "$FNAME" ]; then
+    fail "Tier F: document upload" "resp=$(printf '%s' "$FUP" | head -c 160)"
+  else
+    pass "Tier F: document upload" "filename=$FNAME"
+    [ "$(req GET /api/documents | grep -c "$FNAME")" -ge 1 ] && pass "Tier F: document listed" || fail "Tier F: document listed"
+    # Preview: the new GET endpoint returns the file body as text.
+    printf '%s' "$(req GET "/api/documents/$FNAME")" | grep -q "quick brown fox" \
+      && pass "Tier F: document preview content" || fail "Tier F: document preview content"
+    FDLC=$(code GET "/api/documents/$FNAME?download=1")
+    [ "$FDLC" = "200" ] && pass "Tier F: document download" || fail "Tier F: document download" "code=$FDLC"
+    FMISS=$(code GET "/api/documents/no-such-file-$$.md")
+    [ "$FMISS" = "404" ] && pass "Tier F: missing document → 404" || fail "Tier F: missing document → 404" "code=$FMISS"
+    FDEL=$(code DELETE "/api/documents/$FNAME")
+    [ "$FDEL" = "200" ] && pass "Tier F: document delete" || fail "Tier F: document delete" "code=$FDEL"
+  fi
+
+  # Book-file read: find a book that has data/ outputs, then GET one file's content.
+  FXSLUG=""; FXFILE=""
+  for slug in $(req GET /api/books | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).books||[]).forEach(b=>console.log(b.slug))}catch(e){}})'); do
+    ff=$(req GET "/api/books/$slug/files" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const f=(JSON.parse(s).files||[])[0];console.log(f&&f.name?f.name:"")}catch(e){console.log("")}})')
+    if [ -n "$ff" ]; then FXSLUG="$slug"; FXFILE="$ff"; break; fi
+  done
+  if [ -z "$FXSLUG" ]; then
+    skip "Tier F: book-file read" "(no book has data/ outputs yet)"
+  else
+    FXC=$(code GET "/api/books/$FXSLUG/files/$FXFILE")
+    [ "$FXC" = "200" ] && pass "Tier F: book-file read" "slug=$FXSLUG file=$FXFILE" || fail "Tier F: book-file read" "code=$FXC"
+  fi
+fi
+
+echo ""
 echo "### Tier E — variable-length pipeline phases (free, no AI; TODO #15 N-segment board)"
 # Create three books whose pipelines have 1, 2, and 3 short phases, then assert
 # each book's board row (GET /api/books) reports exactly that many phase

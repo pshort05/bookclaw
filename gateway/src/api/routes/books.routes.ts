@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
-import { uploadZip, requireApprovedConfirmation } from './_shared.js';
+import { existsSync } from 'fs';
+import { uploadZip, requireApprovedConfirmation, safePath, serveFile } from './_shared.js';
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
@@ -119,6 +120,20 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const files = services.books.listFiles(slug);
     if (files === null) return res.status(404).json({ error: 'Book not found' });
     res.json({ files });
+  });
+
+  // Serve one of a book's data/ output files — file explorer preview + download
+  // (?download=1 forces an attachment). Read-only; SLUG_RE + safePath guarded.
+  app.get('/api/books/:slug/files/:filename', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir) return res.status(404).json({ error: 'Book not found' });
+    const filename = String(req.params.filename);
+    const filePath = safePath(dataDir, filename);
+    if (!filePath) return res.status(403).json({ error: 'Path traversal blocked' });
+    if (!existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+    void serveFile(res, filePath, filename, !!req.query.download);
   });
 
   app.post('/api/books', async (req: Request, res: Response) => {

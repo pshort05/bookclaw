@@ -12,6 +12,7 @@ import { Write } from './routes/Write.js';
 import { Insights } from './routes/Insights.js';
 import { Settings } from './routes/Settings.js';
 import { Confirmations } from './routes/Confirmations.js';
+import { Files } from './routes/Files.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="activity" element={<Activity />} />
           <Route path="new-book" element={<NewBook />} />
           <Route path="library" element={<AssetStudio />} />
+          <Route path="files" element={<Files />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />
           <Route path="insights" element={<Insights />} />

@@ -60,6 +60,29 @@ export function safePath(base: string, userInput: string): string | null {
   return resolved;
 }
 
+/**
+ * Stream a stored file to the client with XSS-safe headers (file-explorer read
+ * endpoints). A user-supplied file is NEVER served with an active MIME type on
+ * the app origin: inert previewable text (md/txt/json/…) goes out as
+ * `text/plain; charset=utf-8` inline; everything else (and any `download`) is
+ * forced to `application/octet-stream` + `Content-Disposition: attachment`.
+ * `X-Content-Type-Options: nosniff` is always set so the browser can't sniff a
+ * payload up to an active type. Caller must validate the path first (safePath).
+ */
+export async function serveFile(res: Response, filePath: string, filename: string, download = false): Promise<void> {
+  const { createReadStream } = await import('fs');
+  const { isPreviewableText } = await import('../../services/file-preview.js');
+  const safeName = filename.replace(/[\r\n"]/g, '');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (!download && isPreviewableText(filename)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  } else {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+  }
+  createReadStream(filePath).pipe(res);
+}
+
 /** Shared multer instance: 50MB limit, .txt/.md/.docx only, in-memory storage. */
 export const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max (up from 10MB for novel uploads)

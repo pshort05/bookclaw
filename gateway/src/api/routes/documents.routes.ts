@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import multer from 'multer';
-import { safePath, upload } from './_shared.js';
+import { safePath, upload, serveFile } from './_shared.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { generateEpubBuffer } from '../../services/epub-export.js';
 
@@ -153,6 +153,22 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       library: true,
       preview: textContent.substring(0, 200),
     });
+  });
+
+  // Serve a document's bytes — the file explorer reads text files for preview and
+  // links here for download (?download=1 forces an attachment). Same auth/IP
+  // perimeter as the rest of /api/*; native <a download> uses the ?token= fallback.
+  app.get('/api/documents/:filename', async (req: Request, res: Response) => {
+    const { join: j } = await import('path');
+    const { existsSync: ex } = await import('fs');
+
+    const filename = String(req.params.filename);
+    const docsDir = j(baseDir, 'workspace', 'documents');
+    const filePath = safePath(docsDir, filename);
+    if (!filePath) return res.status(403).json({ error: 'Path traversal blocked' });
+    if (!ex(filePath)) return res.status(404).json({ error: 'Document not found' });
+
+    await serveFile(res, filePath, filename, !!req.query.download);
   });
 
   // Delete a document from the library

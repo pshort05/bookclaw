@@ -118,6 +118,17 @@ export function Rail() {
           Library
         </NavLink>
 
+        {/* Files — document + book-output explorer */}
+        <NavLink
+          to="/files"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 5a2 2 0 012-2h4l2 3h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>
+          </svg>
+          Files
+        </NavLink>
+
         {/* Insights — live route */}
         <NavLink
           to="/insights"
