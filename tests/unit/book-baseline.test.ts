@@ -44,7 +44,7 @@ test('create() captures a .baseline mirror of templates/', async () => {
     const bookDir = join(root, 'workspace', 'books', book.slug);
     assert.ok(existsSync(join(bookDir, '.baseline', 'author', 'SOUL.md')));
     assert.ok(existsSync(join(bookDir, '.baseline', 'voice', 'STYLE-GUIDE.md')));
-    assert.ok(existsSync(join(bookDir, '.baseline', 'pipeline.json')));
+    assert.ok(existsSync(join(bookDir, '.baseline', 'pipeline', 'novel-pipeline.json'))); // v2 per-name layout
     assert.equal(
       readFileSync(join(bookDir, '.baseline', 'author', 'SOUL.md'), 'utf-8'),
       readFileSync(join(bookDir, 'templates', 'author', 'SOUL.md'), 'utf-8'),

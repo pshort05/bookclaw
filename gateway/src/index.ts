@@ -596,6 +596,9 @@ class BookClawGateway {
     const worldGuide = overrideSlug
       ? (this.books?.worldbuildingOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveWorldbuilding() ?? undefined);
+    const sectionsGuide = overrideSlug
+      ? (this.books?.sectionsOf(overrideSlug) ?? undefined)
+      : (this.books?.getActiveSections() ?? undefined);
     const memories = await this.memory.getRelevant(content);
     const activeProject = await this.memory.getActiveProject();
     const skills = this.skills.matchSkills(content);
@@ -622,6 +625,7 @@ class BookClawGateway {
       soul,
       genreGuide,
       worldGuide,
+      sectionsGuide,
       memories,
       activeProject,
       skills,
@@ -891,6 +895,7 @@ class BookClawGateway {
     soul: string;
     genreGuide?: string | null;
     worldGuide?: string | null;
+    sectionsGuide?: string | null;
     memories: string;
     activeProject: string | null;
     skills: string[];
@@ -912,6 +917,12 @@ class BookClawGateway {
       prompt += '# Active Book — World-Building\n\n';
       prompt += 'Treat the following as canon for this book — keep characters, places, and lore consistent with it:\n\n';
       prompt += context.worldGuide + '\n\n';
+    }
+
+    if (context.sectionsGuide) {
+      prompt += '# Active Book — Sections\n\n';
+      prompt += 'Author-curated reference for this book (recurring elements, style notes). Honor it:\n\n';
+      prompt += context.sectionsGuide + '\n\n';
     }
 
     // Channel-specific communication style
@@ -1781,12 +1792,19 @@ class BookClawGateway {
         // Build project context and inject the relevant skill if specified
         let projectContext = await gateway.projectEngine.buildProjectContext(project, activeStep);
 
-        // If the step references a specific skill, inject its full content
+        // If the step references a specific skill, inject its full content.
+        // Prefer the book's FROZEN snapshot (copy-on-create isolation) when the
+        // project is bound to a book; fall back to the mutable global SkillLoader.
         const stepSkill = (activeStep as any).skill;
         if (stepSkill) {
-          const skillData = gateway.skills.getSkillByName(stepSkill);
-          if (skillData) {
-            projectContext += `\n\n# Skill: ${skillData.name}\n\n${skillData.content}`;
+          const snapshot = project.bookSlug ? gateway.books?.skillContentOf(project.bookSlug, stepSkill) : null;
+          if (snapshot) {
+            projectContext += `\n\n# Skill: ${stepSkill}\n\n${snapshot}`;
+          } else {
+            const skillData = gateway.skills.getSkillByName(stepSkill);
+            if (skillData) {
+              projectContext += `\n\n# Skill: ${skillData.name}\n\n${skillData.content}`;
+            }
           }
         }
 

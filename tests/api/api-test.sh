@@ -235,6 +235,9 @@ body_has   "/api/library/pipeline" 'book-planning' "library/pipeline lists book-
 body_has   "/api/library/pipeline/book-planning" '"steps"' "library entry returns its steps"
 has_status "/api/library/nope" "400" "library unknown kind -> 400"
 has_status "/api/library/pipeline/no-such" "404" "library unknown name -> 404"
+# Config-not-code pipelines: the `sequence` kind + the built-in `novel` preset.
+body_has   "/api/library?kind=sequence" '"novel"' "library lists the novel sequence"
+body_has   "/api/library/sequence/novel" 'book-production' "sequence/novel lists its pipelines"
 
 # ── Books: read + create API (book-container Phase 2) ──
 # Hermetic: only the missing-title 400 path is exercised, so no book is written
@@ -248,6 +251,15 @@ bc_code="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{}' -X POST
 [ "$bc_code" = "400" ] \
   && pass "create without title -> 400" \
   || fail "create without title should be 400 (got $bc_code)"
+# Create from the `novel` sequence preset → the manifest carries a multi-name
+# pipelineSequence (only there, not in pulledFrom). Clean up the created book.
+SEQ_CREATE="$(curl -s --max-time 12 "${AUTH[@]}" -H 'Content-Type: application/json' -d '{"title":"API Seq Probe","author":"default","voice":"default","sequence":"novel"}' -X POST "$BASE/api/books")"
+case "$SEQ_CREATE" in
+  *'"pipelineSequence"'*book-production*) pass "book create from sequence carries pipelineSequence" ;;
+  *) fail "book create from sequence missing pipelineSequence: $(printf '%s' "$SEQ_CREATE" | head -c 160)" ;;
+esac
+SEQ_SLUG="$(printf '%s' "$SEQ_CREATE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log(j?.book?.slug||j?.slug||"")}catch(e){console.log("")}})' 2>/dev/null || true)"
+[ -n "$SEQ_SLUG" ] && curl -s --max-time 8 "${AUTH[@]}" -X DELETE "$BASE/api/books/$SEQ_SLUG" >/dev/null 2>&1 || true
 
 # ── Costs: lifetime-total reset (Track A) ──
 # POST /api/costs/reset-total with an empty body resets only the lifetime total

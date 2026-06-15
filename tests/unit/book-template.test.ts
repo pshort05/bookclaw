@@ -71,7 +71,7 @@ test('writeTemplate(section,name) then readTemplate(section,name) and readTempla
     const byName = svc.readTemplate(book.slug, 'section', 'epilogue');
     assert.ok(byName, 'readTemplate(section, name) returns non-null');
     assert.ok(byName!.content?.includes('# Epilogue'));
-    assert.equal(byName!.wired, false); // section is not wired
+    assert.equal(byName!.wired, true); // section is now wired (config-not-code: sectionsOf into the prompt)
     // List without name
     const list = svc.readTemplate(book.slug, 'section');
     assert.ok(Array.isArray(list!.entries), 'entries is an array');

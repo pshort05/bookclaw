@@ -11,7 +11,7 @@ import styles from '../../routes/AssetStudio.module.css';
 // Plural display labels for the list header (local to this component).
 const KIND_LABELS: Record<LibraryKind, string> = {
   author: 'Authors', voice: 'Voices', genre: 'Genres',
-  pipeline: 'Pipelines', section: 'Sections', skill: 'Skills',
+  pipeline: 'Pipelines', sequence: 'Sequences', section: 'Sections', skill: 'Skills',
 };
 
 // Composed view used within this component (label + canon + def).
@@ -19,9 +19,10 @@ const KIND_DEFS: Record<LibraryKind, { label: string; canon: string; def: string
   (Object.keys(GLOSSARY) as LibraryKind[]).map((k) => [k, { label: KIND_LABELS[k], ...GLOSSARY[k] }]),
 ) as Record<LibraryKind, { label: string; canon: string; def: string }>;
 
-const WRITABLE_KINDS: LibraryKind[] = ['author', 'voice', 'genre', 'pipeline', 'section'];
+const WRITABLE_KINDS: LibraryKind[] = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section'];
 
 const STARTER_PIPELINE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-pipeline', label: 'New Pipeline', description: '', steps: [] }, null, 2);
+const STARTER_SEQUENCE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-sequence', label: 'New Sequence', description: '', pipelines: [] }, null, 2);
 
 interface Props {
   scope: Scope;
@@ -107,6 +108,8 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
     try {
       if (kind === 'pipeline') {
         await createLibraryEntry(kind, name, { content: STARTER_PIPELINE_JSON });
+      } else if (kind === 'sequence') {
+        await createLibraryEntry(kind, name, { content: STARTER_SEQUENCE_JSON });
       } else if (kind === 'section') {
         await createLibraryEntry(kind, name, { content: `# ${name}\n` });
       } else {

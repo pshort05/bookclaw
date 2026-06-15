@@ -2,7 +2,36 @@
   "schemaVersion": 1,
   "name": "book-production",
   "label": "Book Production",
-  "description": "Write chapters sequentially with full context injection — write, self-review, and compile",
-  "dynamic": true,
-  "steps": []
+  "description": "Write the manuscript one chapter at a time (Write + Polish per chapter), then compile a completion report. Chapter count comes from the book's targetChapters.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Write Chapter {{n}}",
+          "skill": "write",
+          "taskType": "creative_writing",
+          "phase": "writing",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Write Chapter {{n}} of \"{{title}}\".\n\nInstructions:\n- Follow the outline beats and book bible for this chapter\n- You MUST write at least {{wordsPerChapter}} words of actual prose narrative\n- Open with a hook — no throat-clearing\n- End with a reason to turn the page\n- Include sensory details and internal tension\n- Write the COMPLETE chapter as actual prose, not a summary\n\n{{description}}"
+        },
+        {
+          "label": "Polish Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "polish",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You just wrote Chapter {{n}} of \"{{title}}\" (in your context above).\n\nProduce a REVISED, POLISHED version of THE ENTIRE chapter. Apply these fixes as you rewrite:\n- Tighten pacing; cut throat-clearing\n- Strengthen weak verbs; remove unnecessary -ly adverbs\n- Replace filter words (saw, heard, felt, noticed, realized) with direct sensory experience\n- Cut repetition and redundancy\n- Sharpen dialogue; remove \"as you know Bob\" exposition\n- Maintain the chapter's plot beats and emotional arc — don't change the story, just the prose quality\n- Ensure word count is at least {{wordsPerChapter}}\n\nCRITICAL OUTPUT RULES:\n1. Output the COMPLETE polished chapter as prose. No commentary. No \"here's the revised version:\" preamble.\n2. Do NOT output a list of changes or a critique.\n3. Do NOT shorten the chapter. The polished version should be the same length or longer.\n4. Start directly with the chapter content (or \"# Chapter {{n}}: ...\" heading)."
+        }
+      ]
+    },
+    {
+      "label": "Compile manuscript",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Generate a completion report for \"{{title}}\". Total chapters: {{chapterCount}}. Target: ~{{wordsPerChapter}} words per chapter. Assess strengths, areas for improvement, and next steps."
+    }
+  ]
 }

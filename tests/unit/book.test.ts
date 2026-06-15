@@ -55,14 +55,15 @@ test('BookService.create snapshots selected templates and writes a manifest', as
     assert.equal(created.slug, 'the-dragon-s-heir');
     const dir = join(booksDir, created.slug);
     const manifest = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
-    assert.equal(manifest.schemaVersion, 1);
+    assert.equal(manifest.schemaVersion, BOOK_SCHEMA_VERSION); // v2: created with the current schema
+    assert.deepEqual(manifest.pipelineSequence, ['novel-pipeline']);
     assert.equal(manifest.title, "The Dragon's Heir");
     assert.equal(manifest.pulledFrom.author.name, 'default');
     assert.equal(manifest.pulledFrom.pipeline.name, 'novel-pipeline');
     assert.deepEqual(manifest.pulledFrom.sections, ['front-matter', 'back-matter']);
     assert.ok(readFileSync(join(dir, 'templates/author/SOUL.md'), 'utf-8').includes('default soul'));
     assert.ok(readFileSync(join(dir, 'templates/genre/tropes.md'), 'utf-8').includes('romantasy tropes'));
-    assert.ok(existsSync(join(dir, 'templates/pipeline.json')));
+    assert.ok(existsSync(join(dir, 'templates/pipeline/novel-pipeline.json'))); // v2 per-name snapshot layout
     assert.ok(readFileSync(join(dir, 'templates/sections/front-matter.md'), 'utf-8').includes('FRONT'));
     assert.ok(existsSync(join(dir, 'data')));
   } finally { rmSync(root, { recursive: true, force: true }); }

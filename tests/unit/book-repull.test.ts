@@ -98,7 +98,7 @@ test('pipeline take-library rewrites templates + advances baseline', async () =>
     assert.equal((await svc.repullStatus(book.slug)).find(a => a.kind === 'pipeline')!.status, 'library-updated');
     const r = await svc.repull(book.slug, 'pipeline', 'novel-pipeline', { resolution: 'take-library' });
     assert.equal(r.hadConflicts, false);
-    const tpl = JSON.parse(readFileSync(join(root, 'workspace', 'books', book.slug, 'templates', 'pipeline.json'), 'utf-8'));
+    const tpl = JSON.parse(readFileSync(join(root, 'workspace', 'books', book.slug, 'templates', 'pipeline', 'novel-pipeline.json'), 'utf-8'));
     assert.equal(tpl.steps.length, 1);
     // baseline advanced → now in-sync
     assert.equal((await svc.repullStatus(book.slug)).find(a => a.kind === 'pipeline')!.status, 'in-sync');

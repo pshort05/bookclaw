@@ -171,11 +171,38 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       seriesWorldbuilding = await services.seriesBible?.getWorldbuilding?.(series.id);
     }
 
+    // Config-not-code pipelines (Task 13): resolve the ordered pipeline names the
+    // book will run. Explicit pipelineSequence wins; else a named sequence preset;
+    // else fall back to the single `pipeline` field (current behavior).
+    const pipelineSequenceBody = Array.isArray(body.pipelineSequence)
+      ? body.pipelineSequence.filter((p: unknown) => typeof p === 'string' && (p as string).trim().length > 0)
+      : [];
+    const sequenceName = (typeof body.sequence === 'string' && body.sequence) ? body.sequence : '';
+    let resolvedNames: string[] = [];
+    if (pipelineSequenceBody.length > 0) {
+      resolvedNames = pipelineSequenceBody;
+    } else if (sequenceName) {
+      const seq = services.library.get('sequence', sequenceName)?.sequence?.pipelines;
+      if (!Array.isArray(seq) || seq.length === 0) return res.status(400).json({ error: `unknown sequence: ${sequenceName}` });
+      resolvedNames = seq;
+    } else if (pipeline) {
+      resolvedNames = [pipeline];
+    }
+
     if (!author) return res.status(400).json({ error: 'author (string) is required' });
     if (!voice) return res.status(400).json({ error: 'voice (string) is required' });
-    if (!pipeline) return res.status(400).json({ error: 'pipeline (string) is required' });
+    if (resolvedNames.length === 0) return res.status(400).json({ error: 'pipeline (string) is required' });
+
+    // Validate every resolved name maps to a known pipeline; report the unknowns.
+    const resolvedPipelines = resolvedNames.map((n) => ({ name: n, pipeline: services.library.get('pipeline', n)?.pipeline }));
+    const unknown = resolvedPipelines.filter((p) => !p.pipeline).map((p) => p.name);
+    if (unknown.length > 0) return res.status(400).json({ error: `unknown pipeline(s): ${unknown.join(', ')}` });
+
+    // Keep the single `pipeline` field set to the FIRST name for back-compat.
+    pipeline = resolvedNames[0];
+    const pipelines = resolvedPipelines.map((p) => ({ name: p.name, pipeline: p.pipeline! }));
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       res.json({ success: true, book: manifest });
     } catch (err) {

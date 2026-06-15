@@ -379,6 +379,68 @@
   box-shadow: 0 0 0 #9c5a1e;
 }
 
+.seqrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  margin-bottom: 6px;
+  background: var(--panel);
+}
+.seqnum {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--faint);
+  min-width: 16px;
+}
+.seqname {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+}
+.seqctrl {
+  display: flex;
+  gap: 6px;
+}
+.seqctrl button {
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--dim);
+  border-radius: 7px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.seqctrl button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.seqadd {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.seqadd select {
+  flex: 1;
+}
+.seqadd button {
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 0 14px;
+  cursor: pointer;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+}
+.seqadd button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 980px) {
   .wrap { grid-template-columns: 1fr; }
   .summary { position: static; }

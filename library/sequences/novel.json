@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "novel",
+  "label": "Novel",
+  "description": "Full novel: planning -> bible -> production -> deep revision -> format -> launch",
+  "pipelines": ["book-planning", "book-bible", "book-production", "deep-revision", "format-export", "book-launch"]
+}

@@ -16,11 +16,11 @@ import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
-  BOOK_SCHEMA_VERSION, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
+  BOOK_SCHEMA_VERSION, BOOK_MIN_SUPPORTED, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
   suggestedNextStep,
   type BookManifest, type BookSummary, type PulledRef, type NextStep,
 } from './book-types.js';
-import { pipelinePhases } from './library-types.js';
+import { pipelinePhases, type LibraryPipeline } from './library-types.js';
 
 export interface BookSelection {
   title: string;
@@ -28,6 +28,14 @@ export interface BookSelection {
   voice: string;
   genre: string | null;
   pipeline: string;
+  /**
+   * v2: the ordered list of resolved pipelines the book runs. When present each
+   * is snapshotted to templates/pipeline/<name>.json and manifest.pipelineSequence
+   * is set to these names (in order); the union of their referenced skills is
+   * snapshotted. When absent, the single `pipeline` is used (also written to the
+   * new per-name layout with pipelineSequence:[name]).
+   */
+  pipelines?: Array<{ name: string; pipeline: LibraryPipeline }>;
   sections: string[];
   series?: { id: string; title: string };   // Series Phase A provenance, when created in a series
   worldbuilding?: { characters?: string; places?: string; lore?: string };  // Series Phase B — snapshotted into templates/worldbuilding/
@@ -131,6 +139,16 @@ export class BookService {
     if (!voice || !voice.files) throw new Error(`Unknown voice template: ${sel.voice}`);
     const pipeline = this.library.get('pipeline', sel.pipeline);
     if (!pipeline || !pipeline.pipeline) throw new Error(`Unknown pipeline template: ${sel.pipeline}`);
+    // Resolve the ordered pipeline sequence: caller-supplied list (v2) or the
+    // single `pipeline` selection (back-compat — still written to the new layout).
+    const orderedPipelines: Array<{ name: string; pipeline: LibraryPipeline; source: PulledRef['source'] }> =
+      (sel.pipelines && sel.pipelines.length)
+        ? sel.pipelines.map((p) => {
+            const e = this.library.get('pipeline', p.name);
+            return { name: p.name, pipeline: p.pipeline, source: (e?.source ?? pipeline.source) };
+          })
+        : [{ name: sel.pipeline, pipeline: pipeline.pipeline, source: pipeline.source }];
+    const pipelineSequence = orderedPipelines.map((p) => p.name);
     let genre: LibraryEntryFull | null = null;
     if (sel.genre) {
       genre = this.library.get('genre', sel.genre) ?? null;
@@ -173,14 +191,18 @@ export class BookService {
         await writeFile(join(dir, 'templates', 'genre', 'meta.json'), JSON.stringify({ description: genre.description }), 'utf-8');
       }
     }
-    await writeFile(join(dir, 'templates', 'pipeline.json'), JSON.stringify(pipeline.pipeline, null, 2) + '\n', 'utf-8');
-    // Frozen skills record: snapshot the SKILL.md of each skill the chosen
-    // pipeline's steps reference. SkillLoader matching stays global (not driven
-    // by this snapshot); a missing skill is skipped fail-soft.
+    // v2 snapshot layout: one templates/pipeline/<name>.json per sequence entry.
+    await mkdir(join(dir, 'templates', 'pipeline'), { recursive: true });
+    for (const p of orderedPipelines) {
+      await writeFile(join(dir, 'templates', 'pipeline', `${p.name}.json`), JSON.stringify(p.pipeline, null, 2) + '\n', 'utf-8');
+    }
+    // Frozen skills record: snapshot the SKILL.md of each skill referenced across
+    // ALL sequence pipelines' steps (union). SkillLoader matching stays global
+    // (not driven by this snapshot); a missing skill is skipped fail-soft.
     const skillNames = Array.from(new Set(
-      (pipeline.pipeline.steps || [])
+      orderedPipelines.flatMap((p) => (p.pipeline.steps || [])
         .map((s) => s.skill)
-        .filter((n): n is string => typeof n === 'string' && n.length > 0),
+        .filter((n): n is string => typeof n === 'string' && n.length > 0)),
     ));
     const snappedSkills: string[] = [];
     for (const name of skillNames) {
@@ -231,12 +253,13 @@ export class BookService {
       createdByApp: this.appVersion,
       lastWrittenByApp: this.appVersion,
       phase: 'planning',
+      pipelineSequence,
       createdAt: now,
       pulledFrom: {
         author: ref(sel.author, author.source),
         voice: ref(sel.voice, voice.source),
         genre: genre ? ref(sel.genre as string, genre.source) : null,
-        pipeline: ref(sel.pipeline, pipeline.source, pipeline.pipeline.schemaVersion),
+        pipeline: ref(orderedPipelines[0].name, orderedPipelines[0].source, orderedPipelines[0].pipeline.schemaVersion),
         sections: sectionEntries.map((s) => s.name),
         skills: snappedSkills,
         ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
@@ -287,9 +310,45 @@ export class BookService {
     if (!existsSync(mf)) return undefined;
     try {
       const manifest = JSON.parse(await readFile(mf, 'utf-8')) as BookManifest;
+      await this.migrateBookToV2(join(this.booksDir, slug), manifest);
       return { manifest, status: classifyVersion(manifest.schemaVersion ?? 0) };
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * Lazy v1 -> v2 migration (config-not-code pipelines). A v1 book has a single
+   * templates/pipeline.json and no pipelineSequence; v2 splits each sequence
+   * pipeline into templates/pipeline/<name>.json and records pipelineSequence.
+   *
+   * No-op when already v2+. Otherwise wraps the legacy single pipeline into the
+   * new layout (name from its `name`, else "pipeline"), sets pipelineSequence +
+   * schemaVersion=2, and persists book.json. Mutates `manifest` in place so the
+   * caller sees the bumped values. Fail-soft: a migration error logs ⚠ and leaves
+   * the book readable (never throws).
+   */
+  private async migrateBookToV2(dir: string, manifest: BookManifest): Promise<void> {
+    const v = manifest.schemaVersion ?? 0;
+    if (v >= 2) return;                    // already v2+
+    if (v < BOOK_MIN_SUPPORTED) return;    // too old (quarantined) — leave for the gate, don't migrate
+    try {
+      const legacy = join(dir, 'templates', 'pipeline.json');
+      let name = 'pipeline';
+      if (existsSync(legacy)) {
+        const parsed = JSON.parse(readFileSync(legacy, 'utf-8')) as { name?: unknown };
+        if (typeof parsed.name === 'string' && parsed.name.trim()) name = parsed.name.trim();
+        await mkdir(join(dir, 'templates', 'pipeline'), { recursive: true });
+        await writeFile(join(dir, 'templates', 'pipeline', `${name}.json`), readFileSync(legacy, 'utf-8'), 'utf-8');
+      }
+      manifest.pipelineSequence = [name];
+      manifest.schemaVersion = 2;
+      manifest.lastWrittenByApp = this.appVersion;
+      manifest.history = manifest.history ?? [];
+      manifest.history.push({ at: new Date().toISOString(), event: 'migrate', detail: 'v1->v2' });
+      await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    } catch (err) {
+      console.warn(`  ⚠ Books: v1->v2 migration failed for "${manifest.slug}" — leaving readable. ${(err as Error)?.message || err}`);
     }
   }
 
@@ -629,6 +688,63 @@ export class BookService {
   }
 
   /**
+   * Composes a book's snapshotted sections (templates/sections/*.md) into a single
+   * string for prompt injection (config-not-code pipelines, Task 11). Each .md file
+   * goes under a "## Section — <name>" header (alphabetical by name); *.meta.json
+   * sidecars are skipped. Reads fresh each call. Returns null when slug is
+   * null/invalid, no sections snapshot exists, or no non-empty section files exist.
+   */
+  sectionsOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const dir = this.bookDir(slug);
+    if (!dir) return null;
+    const secDir = join(dir, 'templates', 'sections');
+    if (!existsSync(secDir)) return null;
+    let names: string[];
+    try {
+      names = readdirSync(secDir, { withFileTypes: true })
+        .filter((e) => e.isFile() && e.name.endsWith('.md'))
+        .map((e) => e.name)
+        .sort();
+    } catch {
+      return null;
+    }
+    const parts: string[] = [];
+    for (const file of names) {
+      let body: string;
+      try { body = readFileSync(join(secDir, file), 'utf-8').trim(); } catch { continue; }
+      if (!body) continue;
+      parts.push(`## Section — ${file.replace(/\.md$/, '')}\n\n${body}`);
+    }
+    return parts.length ? parts.join('\n\n') : null;
+  }
+
+  /** The active book's composed sections block, or null (config-not-code, Task 11). */
+  getActiveSections(): string | null {
+    return this.sectionsOf(this.activeBookSlug);
+  }
+
+  /**
+   * Return the book's SNAPSHOTTED content for one referenced skill
+   * (templates/skills/<name>/SKILL.md), or null when slug is null/invalid, the
+   * book has no such snapshot, or the file is unreadable (fail-soft). The caller
+   * falls back to the global SkillLoader so matching stays global; only the
+   * injected *content* prefers the book's frozen copy (config-not-code, Task 12).
+   */
+  skillContentOf(slug: string | null, name: string): string | null {
+    if (!slug || !name) return null;
+    const dir = this.bookDir(slug);
+    if (!dir) return null;
+    const p = join(dir, 'templates', 'skills', name, 'SKILL.md');
+    if (!existsSync(p)) return null;
+    try {
+      return readFileSync(p, 'utf-8');
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * First-run seed (book-container Phase 3a):
    *  - no books            → create a Default Book (built-in default Author +
    *                          default pipeline) and activate it.
@@ -688,12 +804,54 @@ export class BookService {
     if (!slug) return null;
     const d = this.bookDir(slug);
     if (!d) return null;
+    // v2: the first pipeline of the snapshotted sequence. Resolve the first name
+    // from the manifest's pipelineSequence; fall back to the legacy single
+    // templates/pipeline.json for an un-migrated v1 book.
+    const seq = this.pipelineSequenceOf(slug);
+    if (seq.length) return this.snapshotPipelineOf(slug, seq[0]);
     const p = join(d, 'templates', 'pipeline.json');
     if (!existsSync(p)) return null;
     try {
       return JSON.parse(readFileSync(p, 'utf-8'));
     } catch (err) {
       console.warn(`  ⚠ Books: could not parse pipeline.json for "${slug}" — ${(err as Error)?.message || err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Read the manifest's pipelineSequence (ordered names) for a slug, or [] when
+   * the book is unknown/unreadable or has no sequence (v1, pre-migration).
+   */
+  private pipelineSequenceOf(slug: string | null): string[] {
+    if (!slug) return [];
+    const d = this.bookDir(slug);
+    if (!d) return [];
+    const mf = join(d, 'book.json');
+    if (!existsSync(mf)) return [];
+    try {
+      const m = JSON.parse(readFileSync(mf, 'utf-8')) as BookManifest;
+      return Array.isArray(m.pipelineSequence) ? m.pipelineSequence : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Parse and return one snapshotted sequence pipeline (templates/pipeline/<name>.json
+   * → LibraryPipeline shape). Null if slug is null/invalid, no book exists, or the
+   * file is missing/corrupt (fail-soft — caller decides). Mirrors pipelineOf.
+   */
+  snapshotPipelineOf(slug: string | null, name: string): import('./library-types.js').LibraryPipeline | null {
+    if (!slug || !name) return null;
+    const d = this.bookDir(slug);
+    if (!d) return null;
+    const p = join(d, 'templates', 'pipeline', `${name}.json`);
+    if (!existsSync(p)) return null;
+    try {
+      return JSON.parse(readFileSync(p, 'utf-8'));
+    } catch (err) {
+      console.warn(`  ⚠ Books: could not parse pipeline/${name}.json for "${slug}" — ${(err as Error)?.message || err}`);
       return null;
     }
   }
@@ -772,6 +930,19 @@ export class BookService {
    * returns [] when no pipeline resolves so the UI falls back to LIFECYCLE_PHASES.
    */
   phasesForBook(slug: string | null): string[] {
+    const seq = this.pipelineSequenceOf(slug);
+    if (seq.length) {
+      const phases: string[] = [];
+      for (const name of seq) {
+        const p = this.snapshotPipelineOf(slug, name);
+        if (!p) continue;
+        for (const ph of pipelinePhases(p)) {
+          if (phases[phases.length - 1] !== ph) phases.push(ph); // dedup adjacent-equal only
+        }
+      }
+      return phases;
+    }
+    // Fall back to the single-pipeline behavior (un-migrated v1 / no sequence).
     const p = this.pipelineOf(slug);
     return p ? pipelinePhases(p) : [];
   }
@@ -784,6 +955,7 @@ export class BookService {
   async setPhase(slug: string, phase: string): Promise<void> {
     const dir = this.bookDir(slug);
     if (!dir || !existsSync(join(dir, 'book.json'))) return;
+    await this.assertWritable(slug); // schemaVersion gate (mirrors writeTemplate/repull)
     let m: BookManifest;
     try {
       m = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
@@ -804,14 +976,14 @@ export class BookService {
     const e = this.library.get(kind, name);
     if (!e) return null;
     if (e.files) return e.files;
-    if (kind === 'pipeline' && e.pipeline) return { 'pipeline.json': JSON.stringify(e.pipeline, null, 2) + '\n' };
+    if (kind === 'pipeline' && e.pipeline) return { [`${name}.json`]: JSON.stringify(e.pipeline, null, 2) + '\n' };
     if (typeof e.content === 'string') return { [kind === 'section' ? `${name}.md` : 'SKILL.md']: e.content };
     return null;
   }
 
   /** templates/ (or .baseline/) relative dir for an asset's files. */
   private assetRel(kind: RepullAsset['kind'], name: string): string {
-    if (kind === 'pipeline') return '';            // file lives at <root>/pipeline.json
+    if (kind === 'pipeline') return 'pipeline';    // v2: file lives at <root>/pipeline/<name>.json
     if (kind === 'section') return 'sections';
     if (kind === 'skill') return join('skills', name);
     return kind;                                   // author/voice/genre dir
@@ -819,7 +991,7 @@ export class BookService {
 
   /** Map a library file name to its on-disk name under templates/. */
   private assetFileName(kind: RepullAsset['kind'], libFileName: string, name: string): string {
-    if (kind === 'pipeline') return 'pipeline.json';
+    if (kind === 'pipeline') return `${name}.json`; // v2: per-name file
     if (kind === 'section') return `${name}.md`;
     return libFileName;
   }
@@ -837,8 +1009,8 @@ export class BookService {
     const base = this.bookDir(slug);
     if (!base) return null;
     if (kind === 'pipeline') {
-      const p = join(base, root, 'pipeline.json');
-      return existsSync(p) ? { 'pipeline.json': readFileSync(p, 'utf-8') } : null;
+      const p = join(base, root, 'pipeline', `${name}.json`);
+      return existsSync(p) ? { [`${name}.json`]: readFileSync(p, 'utf-8') } : null;
     }
     if (kind === 'section') {
       const p = join(base, root, 'sections', `${name}.md`);
@@ -895,9 +1067,9 @@ export class BookService {
    * Enforce the schemaVersion gate on a per-book WRITE path. Throws when the
    * book's classified status is not `ok` (a too-old book is `quarantined`, a
    * too-new one `readonly`) so we never rewrite a book in an incompatible app's
-   * shape. Today BOOK_MIN_SUPPORTED === BOOK_SCHEMA_VERSION === 1, so non-`ok`
-   * is unreachable and this is a no-op — it becomes load-bearing at the first
-   * v1→v2 schema bump. See classifyVersion in book-types.ts.
+   * shape. As of the 2026-06-14 v1→v2 bump (SCHEMA=2, MIN=1) a `readonly` book
+   * (written by a newer app, schemaVersion > 2) is reachable, so this gate is now
+   * load-bearing on writes (incl. setPhase). See classifyVersion in book-types.ts.
    */
   private async assertWritable(slug: string): Promise<void> {
     const opened = await this.open(slug);
@@ -927,7 +1099,7 @@ export class BookService {
 
     const writeMap = async (root: 'templates' | '.baseline', files: Record<string, string>) => {
       const rel = this.assetRel(kind, name);
-      const dir = kind === 'pipeline' ? join(base, root) : join(base, root, rel);
+      const dir = join(base, root, rel);
       await mkdir(dir, { recursive: true });
       for (const [libName, content] of Object.entries(files)) {
         await writeFile(join(dir, this.assetFileName(kind, libName, name)), content, 'utf-8');
@@ -1009,7 +1181,11 @@ export class BookService {
     if (!tdir) return null;
     const wired = WIRED_KINDS.has(kind);
     if (kind === 'pipeline') {
-      const p = join(tdir, 'pipeline.json');
+      // v2 layout: templates/pipeline/<name>.json. Resolve the name from the
+      // caller, else the first sequence pipeline (back-compat single-pipeline read).
+      const pname = name || this.pipelineSequenceOf(slug)[0];
+      if (!pname) return null;
+      const p = join(tdir, 'pipeline', `${pname}.json`);
       return existsSync(p) ? { content: readFileSync(p, 'utf-8'), wired } : null;
     }
     if (kind === 'section') {
@@ -1049,8 +1225,11 @@ export class BookService {
     if (kind === 'pipeline') {
       const raw = String(body.content ?? '');
       parsePipelineJson(raw); // throws 'pipeline content must be...' on bad input
-      await mkdir(tdir, { recursive: true });
-      await writeFile(join(tdir, 'pipeline.json'), raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      // v2 layout: templates/pipeline/<name>.json. Resolve the name from the
+      // caller, else the first sequence pipeline (back-compat single-pipeline edit).
+      const pname = name || this.pipelineSequenceOf(slug)[0] || 'pipeline';
+      await mkdir(join(tdir, 'pipeline'), { recursive: true });
+      await writeFile(join(tdir, 'pipeline', `${pname}.json`), raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
       return { wired };
     }
     if (kind === 'section') {

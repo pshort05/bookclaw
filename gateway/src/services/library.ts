@@ -14,9 +14,10 @@
 import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
-import type { LibraryKind, LibrarySource, LibraryPipeline } from './library-types.js';
+import type { LibraryKind, LibrarySource, LibraryPipeline, LibrarySequence } from './library-types.js';
 import type { SkillStep } from '../skills/loader.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
+import { parseSequence } from './sequence-parse.js';
 
 /** Lightweight catalog row for list(). */
 export interface LibraryEntry {
@@ -31,6 +32,7 @@ export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>; // author/genre: filename -> content
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
+  sequence?: LibrarySequence;     // sequence: parsed JSON
   steps?: SkillStep[];            // skill: executable phases (steps.json)
   retries?: number;               // skill: per-phase retry budget
 }
@@ -42,7 +44,7 @@ interface SkillCatalogLike {
 }
 
 /** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
-const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section'] as const;
+const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section'] as const;
 type FileKind = (typeof FILE_KINDS)[number];
 
 /** Subdirectory under the library root for each file-backed kind. */
@@ -51,6 +53,7 @@ const DIR_LAYOUT: Record<FileKind, string> = {
   voice: 'voices',
   genre: 'genres',
   pipeline: 'pipelines',
+  sequence: 'sequences',
   section: 'sections',
 };
 
@@ -98,7 +101,7 @@ export class LibraryService {
   private overlayPath(kind: FileKind, name: string): string | null {
     if (!ENTRY_NAME_RE.test(name)) return null;
     const dir = join(this.workspaceDir, DIR_LAYOUT[kind]);
-    if (kind === 'pipeline') return join(dir, `${name}.json`);
+    if (kind === 'pipeline' || kind === 'sequence') return join(dir, `${name}.json`);
     if (kind === 'section') return join(dir, `${name}.md`);
     return join(dir, name); // author/voice/genre: a directory
   }
@@ -116,6 +119,13 @@ export class LibraryService {
     if (kind === 'pipeline') {
       const raw = String(body.content ?? '');
       parsePipelineJson(raw); // throws on invalid JSON or missing steps/schemaVersion
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      return;
+    }
+    if (kind === 'sequence') {
+      const raw = String(body.content ?? '');
+      parseSequence(JSON.parse(raw)); // throws on invalid JSON or missing/empty pipelines
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
       return;
@@ -231,6 +241,12 @@ export class LibraryService {
           const pipeline = JSON.parse(raw) as LibraryPipeline;
           const name = item.name.replace(/\.json$/, '');
           out.set(name, { kind, name, source, description: pipeline.description, pipeline });
+        } else if (kind === 'sequence') {
+          if (!item.isFile() || !item.name.endsWith('.json')) continue;
+          const raw = await readFile(join(dir, item.name), 'utf-8');
+          const name = item.name.replace(/\.json$/, '');
+          const sequence = parseSequence({ ...JSON.parse(raw), name });
+          out.set(name, { kind, name, source, description: sequence.description, sequence });
         } else if (kind === 'section') {
           if (!item.isFile() || !item.name.endsWith('.md')) continue;
           const content = await readFile(join(dir, item.name), 'utf-8');

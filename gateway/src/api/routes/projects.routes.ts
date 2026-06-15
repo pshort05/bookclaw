@@ -119,6 +119,33 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const activeBook = services.books?.getActiveBook() ?? undefined;
       const contextWithSlug = { ...(context || {}), bookSlug: activeBook };
 
+      // Config-not-code pipelines (Task 10): when the active book has a non-empty
+      // pipelineSequence, chain one Project per sequence entry from the book's own
+      // snapshots. Takes precedence over the legacy single-pipeline / template
+      // branches below, which stay as the no-sequence fallback (no active book, or
+      // a legacy v1 book not yet migrated).
+      if (activeBook) {
+        const opened = await services.books.open(activeBook);
+        const pipelineSequence: string[] = Array.isArray(opened?.manifest?.pipelineSequence)
+          ? opened!.manifest.pipelineSequence
+          : [];
+        if (pipelineSequence.length > 0) {
+          const seqContext = { ...(context || {}), ...resolvedConfig };
+          const { pipelineId, projects } = engine.createBookSequence(
+            { slug: activeBook, pipelineSequence },
+            title,
+            description,
+            seqContext,
+            (n: string) => services.books.snapshotPipelineOf(activeBook, n),
+          );
+          if (projects.length === 0) {
+            return res.status(400).json({ error: 'Book sequence resolved no runnable pipelines' });
+          }
+          projects.forEach(applyProjectOptions);
+          return res.json({ pipelineId, project: projects[0], projects, planning: 'book-sequence' });
+        }
+      }
+
       // Novel pipeline: use dedicated pipeline builder
       // Trust the explicitly-sent type; only infer from description if no type provided
       const inferredType = type || engine.inferProjectType(description);

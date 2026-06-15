@@ -88,10 +88,14 @@ if [ -n "$SPEND" ] && node -e "process.exit(Number(process.argv[1])>0?0:1)" "$SP
 else
   fail "per-book spend not attributed" "byBook[$SLUG]='$SPEND' (provider may have routed free/Ollama)"
 fi
-if node -e "process.exit(Number(process.argv[1])>Number(process.argv[2])?0:1)" "${NEW_TOTAL:-0}" "${BASE_TOTAL:-0}"; then
-  pass "lifetime total increased" "$BASE_TOTAL → $NEW_TOTAL"
+# Non-decreasing rather than strictly-greater: the displayed total is 4dp-rounded,
+# so a sub-$0.0001 call can round to the same display while the new book's bucket
+# (from 0) rounds up to 0.0001 — the byBook>0 check above is the real proof of
+# recording. This guards only against the total going backwards.
+if node -e "process.exit(Number(process.argv[1])>=Number(process.argv[2])?0:1)" "${NEW_TOTAL:-0}" "${BASE_TOTAL:-0}"; then
+  pass "lifetime total non-decreasing" "$BASE_TOTAL → $NEW_TOTAL"
 else
-  fail "lifetime total did not increase" "$BASE_TOTAL → $NEW_TOTAL"
+  fail "lifetime total decreased" "$BASE_TOTAL → $NEW_TOTAL"
 fi
 
 # ── 5. Selective reset clears the book bucket ──

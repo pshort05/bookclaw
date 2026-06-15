@@ -18,6 +18,10 @@ export const GLOSSARY: Record<LibraryKind, { canon: string; def: string }> = {
     canon: 'Pipeline',
     def: 'An ordered group of Steps that run in sequence to produce or transform assets (planning → world & characters → drafting → revision → format → launch). A Book selects a Pipeline; pipelines are reusable templates.',
   },
+  sequence: {
+    canon: 'Sequence',
+    def: 'An ordered list of pipelines a book runs in sequence. A Book can run several pipelines back-to-back; a Sequence names that ordered chain as a reusable preset.',
+  },
   section: {
     canon: 'Section',
     def: 'Reusable book-section templates — front and back matter (title page, dedication, author note, also-by). Sections are part of the Manuscript.',

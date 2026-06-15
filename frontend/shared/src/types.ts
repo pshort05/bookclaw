@@ -112,6 +112,7 @@ export interface BookManifest {
   title: string;
   schemaVersion: number;
   phase: string;
+  pipelineSequence?: string[];   // v2: ordered pipeline names the book runs
   createdAt: string;
   pulledFrom: {
     author: PulledRef;
@@ -147,7 +148,7 @@ export interface Project {
   [k: string]: unknown;
 }
 
-export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill';
+export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'sequence';
 export interface LibraryEntry {
   kind: LibraryKind;
   name: string;

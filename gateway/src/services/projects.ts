@@ -17,6 +17,8 @@ import { AuthorOSService } from './author-os.js';
 import { ContextEngine } from './context-engine.js';
 import type { SkillCatalogEntry } from '../skills/loader.js';
 import type { LibraryPipeline } from './library-types.js';
+import { buildPipelineVars } from './pipeline-vars.js';
+import { expandSteps } from './pipeline-expand.js';
 import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -646,13 +648,18 @@ Description: ${description}`;
 
     const id = `project-${this.nextId++}`;
     const now = new Date().toISOString();
-    let steps: ProjectStep[] = pipeline.steps.map((s, i) => ({
+    // Resolve steps through the data-driven expander: interpolates {{vars}} and
+    // flattens any { expand:'chapters', steps:[...] } group into interleaved
+    // per-chapter steps. Plain steps pass through (single emission).
+    const vars = buildPipelineVars({ title, description, ...context });
+    const resolved = expandSteps(pipeline.steps as any[], vars);
+    let steps: ProjectStep[] = resolved.map((s, i) => ({
       id: `${id}-step-${i + 1}`,
       label: s.label,
       skill: s.skill,
       toolSuggestion: s.toolSuggestion,
       taskType: s.taskType,
-      prompt: this.expandTemplate(s.promptTemplate, { title, description, ...context }),
+      prompt: s.prompt,
       status: 'pending' as const,
       ...(s.phase ? { phase: s.phase } : {}),
       ...(s.wordCountTarget ? { wordCountTarget: s.wordCountTarget } : {}),
@@ -1535,6 +1542,48 @@ Description: ${description}`;
   }
 
   /**
+   * Create a sequence-driven book run (config-not-code pipelines, Task 10).
+   * Chains one Project per entry in `book.pipelineSequence`, each built from the
+   * book's snapshotted pipeline (resolved via `snapshotResolver`), all linked by
+   * a single shared `pipelineId` and ordered by `pipelinePhase`. Unresolved names
+   * are logged and skipped (fail-soft). Mirrors createPipeline's pending/wait
+   * semantics: each project is created pending; the first phase is the only one
+   * pending-ready, the rest wait (advancement is managed by the dashboard/API).
+   */
+  createBookSequence(
+    book: { slug: string; pipelineSequence: string[] },
+    title: string,
+    description: string,
+    context: Record<string, any>,
+    snapshotResolver: (name: string) => LibraryPipeline | null,
+  ): { pipelineId: string; projects: Project[] } {
+    const pipelineId = `pipeline-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+    const projects: Project[] = [];
+    book.pipelineSequence.forEach((name) => {
+      const p = snapshotResolver(name);
+      if (!p) {
+        console.log(`  ⚠ Book sequence: pipeline snapshot "${name}" not found — skipping`);
+        return;
+      }
+      const proj = this.createProjectFromPipeline(
+        p,
+        `${title} — ${p.label || name}`,
+        description,
+        { ...context, bookSlug: book.slug },
+      );
+      proj.pipelineId = pipelineId;
+      // Number by resolved position (not the raw sequence index) so a skipped/
+      // unresolved pipeline doesn't leave a phase-number gap — phase 1..N stays
+      // contiguous for getPipelineProjects + the pipeline status UI.
+      proj.pipelinePhase = projects.length + 1;
+      projects.push(proj);
+    });
+
+    this.persistState();
+    return { pipelineId, projects };
+  }
+
+  /**
    * Get all projects belonging to a pipeline.
    */
   getPipelineProjects(pipelineId: string): Project[] {
@@ -1579,18 +1628,6 @@ Description: ${description}`;
   }
 
   // ── Private Helpers ──
-
-  private expandTemplate(template: string, vars: Record<string, any>): string {
-    let result = template;
-    for (const [key, value] of Object.entries(vars)) {
-      if (typeof value === 'string') {
-        result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-      }
-    }
-    // Clean up any remaining unexpanded vars
-    result = result.replace(/\{\{[^}]+\}\}/g, '');
-    return result;
-  }
 
   private inferTaskType(description: string): string {
     const type = this.inferProjectType(description);

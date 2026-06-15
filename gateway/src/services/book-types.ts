@@ -6,7 +6,7 @@
  */
 
 /** Bump ONLY when book.json / the container layout changes in a breaking way. */
-export const BOOK_SCHEMA_VERSION = 1;
+export const BOOK_SCHEMA_VERSION = 2;
 /** Oldest book schema this app can open without migration. */
 export const BOOK_MIN_SUPPORTED = 1;
 
@@ -28,6 +28,7 @@ export interface BookManifest {
   createdByApp: string;       // provenance only — never gates
   lastWrittenByApp: string;   // provenance only
   phase: string;              // current pipeline phase (advanced by ProjectEngine.onStepCompleted, TODO #15); 'planning' at creation
+  pipelineSequence?: string[]; // v2: ordered pipeline names the book runs (source of truth); each snapshotted to templates/pipeline/<name>.json
 
   createdAt: string;          // ISO
   pulledFrom: {
@@ -65,10 +66,12 @@ export interface BookSummary {
  * ENFORCED on per-book TEMPLATE writes — BookService.writeTemplate and .repull
  * throw via assertWritable when status is not `ok`, so a quarantined/readonly
  * book is never rewritten in an incompatible app's shape. Enforcement at the
- * engine's data-output path (BookService.dataDirOf) remains DEFERRED to the
- * first v1→v2 schema bump (it's cross-cutting; see the note there). Today
- * BOOK_MIN_SUPPORTED === BOOK_SCHEMA_VERSION === 1, so every book is `ok` and
- * both the badge and the new throws are unreachable until that bump.
+ * engine's data-output path (BookService.dataDirOf) remains DEFERRED (it's
+ * cross-cutting; see the note there). As of the 2026-06-14 v1→v2 bump,
+ * BOOK_SCHEMA_VERSION === 2 with BOOK_MIN_SUPPORTED === 1, so v1 and v2 books
+ * both classify `ok` (v1 is lazily migrated on open); a `readonly` book — one
+ * written by a newer app (schemaVersion > 2) — is now reachable, and the
+ * template-write throws fire for it.
  */
 export function classifyVersion(v: number): BookStatus {
   if (v < BOOK_MIN_SUPPORTED) return 'quarantined'; // too old for this app
@@ -76,8 +79,8 @@ export function classifyVersion(v: number): BookStatus {
   return 'ok';
 }
 
-/** Snapshot kinds that currently DRIVE generation (author+voice via SoulService, pipeline via the engine). genre/sections/skills are stored records, not yet injected. */
-export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline', 'worldbuilding']);
+/** Snapshot kinds that DRIVE generation (author+voice via SoulService, pipeline via the engine, genre/world/sections via the prompt composer, skill content via snapshot-preference). */
+export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline', 'worldbuilding', 'section', 'skill']);
 
 /** A single .md filename (no path separators) allowed inside a multi-file template entry. */
 export const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;

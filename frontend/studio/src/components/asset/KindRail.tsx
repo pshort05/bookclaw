@@ -24,6 +24,10 @@ const KINDS: Array<{ id: LibraryKind; label: string; svg: React.ReactNode }> = [
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M7 6h7a3 3 0 013 3 3 3 0 01-3 3H7"/></svg>,
   },
   {
+    id: 'sequence', label: 'Sequences',
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h11M4 12h16M4 18h11"/><path d="M19 4l3 2-3 2M19 14l3 2-3 2"/></svg>,
+  },
+  {
     id: 'section', label: 'Sections',
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v5H4zM4 13h16v7H4z"/></svg>,
   },

@@ -18,6 +18,7 @@ import { ENTRY_NAME_RE, type LibraryService, type LibraryWriteBody } from './lib
 import type { InjectionDetector } from '../security/injection.js';
 import { LIBRARY_KINDS, type LibraryKind } from './library-types.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
+import { parseSequence } from './sequence-parse.js';
 import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
 import { SKILL_CATEGORIES, parseSteps } from '../skills/loader.js';
 
@@ -80,6 +81,9 @@ export class LibraryTransferService {
     if (kind === 'pipeline') {
       // get() returns the parsed pipeline only; import re-validates via parsePipelineJson.
       zip.addFile('files/pipeline.json', Buffer.from(JSON.stringify(entry.pipeline, null, 2) + '\n', 'utf-8'));
+    } else if (kind === 'sequence') {
+      // get() returns the parsed sequence only; import re-validates via parseSequence.
+      zip.addFile('files/sequence.json', Buffer.from(JSON.stringify(entry.sequence, null, 2) + '\n', 'utf-8'));
     } else if (kind === 'section') {
       zip.addFile(`files/${name}.md`, Buffer.from(entry.content ?? '', 'utf-8'));
     } else if (kind === 'skill') {
@@ -165,6 +169,12 @@ export class LibraryTransferService {
       catch (err) { return `invalid pipeline.json: ${(err as Error).message}`; }
       return null;
     }
+    if (kind === 'sequence') {
+      if (names.length !== 1 || names[0] !== 'sequence.json') return 'sequence requires exactly files/sequence.json';
+      try { parseSequence(JSON.parse(readFileSync(join(filesDir, 'sequence.json'), 'utf-8'))); }
+      catch (err) { return `invalid sequence.json: ${(err as Error).message}`; }
+      return null;
+    }
     if (kind === 'section') {
       if (names.length !== 1 || !MD_FILE_RE.test(names[0])) return 'section requires exactly one .md file';
       return null;
@@ -228,6 +238,8 @@ export class LibraryTransferService {
       if (typeof manifest.description === 'string') body.description = manifest.description;
       if (kind === 'pipeline') {
         body.content = readFileSync(join(filesDir, 'pipeline.json'), 'utf-8');
+      } else if (kind === 'sequence') {
+        body.content = readFileSync(join(filesDir, 'sequence.json'), 'utf-8');
       } else if (kind === 'section') {
         const md = readdirSync(filesDir).find(n => n.endsWith('.md'));
         if (!md) throw new Error('staged section .md missing');

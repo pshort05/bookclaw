@@ -5,7 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { LibraryService } from '../../gateway/src/services/library.js';
@@ -67,5 +67,45 @@ test('phasesForBook returns [] when no pipeline resolves (frontend falls back to
   const { root, svc } = await makeBook();
   try {
     assert.deepEqual(svc.phasesForBook('does-not-exist'), []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+/** A book whose sequence spans two pipelines with distinct, adjacent-dupe phases. */
+async function makeSequenceBook() {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-seq-'));
+  const lib = seedLibrary(root); await lib.loadAll();
+  const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+  const p1 = { schemaVersion: 1, name: 'p1', label: 'P1', description: 'd', steps: [
+    { label: 'a', taskType: 'general', promptTemplate: 'x', phase: 'planning' },
+    { label: 'b', taskType: 'general', promptTemplate: 'x', phase: 'bible' },
+  ] };
+  const p2 = { schemaVersion: 1, name: 'p2', label: 'P2', description: 'd', steps: [
+    { label: 'c', taskType: 'general', promptTemplate: 'x', phase: 'bible' },   // adjacent-dup with p1's tail
+    { label: 'd', taskType: 'general', promptTemplate: 'x', phase: 'writing' },
+  ] };
+  const m = await svc.create({
+    title: 'Seq', author: 'default', voice: 'default', pipeline: 'novel-pipeline', sections: [],
+    pipelines: [{ name: 'p1', pipeline: p1 as never }, { name: 'p2', pipeline: p2 as never }],
+  });
+  return { root, svc, slug: m.slug };
+}
+
+test('phasesForBook concatenates phases across the sequence, dedup adjacent only', async () => {
+  const { root, svc, slug } = await makeSequenceBook();
+  try {
+    // p1: [planning, bible] ++ p2: [bible, writing] -> adjacent-dedup -> planning,bible,writing
+    assert.deepEqual(svc.phasesForBook(slug), ['planning', 'bible', 'writing']);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('setPhase throws on a readonly/quarantined book (assertWritable gate)', async () => {
+  const { root, svc, slug } = await makeBook();
+  try {
+    // Force the book to a too-new schemaVersion -> classifyVersion => 'readonly'.
+    const mf = join(root, 'workspace', 'books', slug, 'book.json');
+    const m = JSON.parse(readFileSync(mf, 'utf-8'));
+    m.schemaVersion = 999;
+    writeFileSync(mf, JSON.stringify(m));
+    await assert.rejects(() => svc.setPhase(slug, 'production'), /readonly|refusing/i);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

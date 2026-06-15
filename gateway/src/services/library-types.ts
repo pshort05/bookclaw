@@ -5,7 +5,7 @@
  */
 
 /** Library template kinds. `skill` is served via SkillLoader delegation. */
-export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'section', 'skill'] as const;
+export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section', 'skill'] as const;
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 
 /** Where a library entry came from. Mirrors SkillSource. */
@@ -34,6 +34,15 @@ export interface LibraryPipeline {
 }
 
 export const PIPELINE_SCHEMA_VERSION = 1;
+
+/** An ordered list of pipeline names a book runs, in sequence. */
+export interface LibrarySequence {
+  schemaVersion?: number;
+  name: string;
+  label?: string;
+  description?: string;
+  pipelines: string[];
+}
 
 /**
  * Phase sequence the dynamic `novel-pipeline` produces, in order. Mirrors the
