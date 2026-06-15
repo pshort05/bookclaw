@@ -1,5 +1,8 @@
 # Genre Guide Template
 
+One-page schema reference. For the full walkthrough — what belongs in each file, the naming
+rules, and the ways to add a genre — see [HOW-TO-CREATE-GENRE-GUIDES.md](HOW-TO-CREATE-GENRE-GUIDES.md).
+
 A genre in BookClaw is a directory of markdown files under `library/genres/<name>/`
 (built-in) or `workspace/library/genres/<name>/` (user overlay). Every `.md` file in
 the directory is snapshotted into a book at create time and injected into generation

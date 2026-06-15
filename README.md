@@ -272,6 +272,7 @@ All supporting documents live in [`docs/`](docs/).
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) — Install and run your first task in minutes.
 - [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) — Step-by-step walkthrough of the full novel pipeline.
 - [docs/GLOSSARY.md](docs/GLOSSARY.md) — Canonical vocabulary (Book, Pipeline, Step, Author, Voice, Genre, …).
+- [docs/HOW-TO-CREATE-GENRE-GUIDES.md](docs/HOW-TO-CREATE-GENRE-GUIDES.md) — Author a genre guide: the seven files, what each contains, and how to add one.
 
 **Operations & security**
 - [docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md) — Start, stop, monitor, and manage across local, Docker, and VPS.
