@@ -238,6 +238,9 @@ has_status "/api/library/pipeline/no-such" "404" "library unknown name -> 404"
 # Config-not-code pipelines: the `sequence` kind + the built-in `novel` preset.
 body_has   "/api/library?kind=sequence" '"novel"' "library lists the novel sequence"
 body_has   "/api/library/sequence/novel" 'book-production' "sequence/novel lists its pipelines"
+# Editors: the `editor` kind + the built-in maeve persona.
+body_has   "/api/library?kind=editor" '"maeve"' "library lists the maeve editor"
+body_has   "/api/library/editor/maeve" 'systemPrompt' "editor/maeve returns its systemPrompt"
 
 # ── Books: read + create API (book-container Phase 2) ──
 # Hermetic: only the missing-title 400 path is exercised, so no book is written

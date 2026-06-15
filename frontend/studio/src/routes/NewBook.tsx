@@ -11,7 +11,7 @@ export function NewBook() {
   const loadBooks = useStore((s) => s.loadBooks);
   const [opts, setOpts] = useState<Partial<Record<LibraryKind, LibraryEntry[]>>>({});
   const [title, setTitle] = useState('');
-  const [sel, setSel] = useState<Record<LibraryKind, string>>({ author: '', voice: '', genre: '', pipeline: '', sequence: '', section: '', skill: '' } as Record<LibraryKind, string>);
+  const [sel, setSel] = useState<Record<LibraryKind, string>>({ author: '', voice: '', genre: '', pipeline: '', sequence: '', section: '', skill: '', editor: '' } as Record<LibraryKind, string>);
   const [sections, setSections] = useState<string[]>([]);
   const [pipelineSkills, setPipelineSkills] = useState<string[]>([]);
   // The composed, editable ordered list of pipeline names this book will run.

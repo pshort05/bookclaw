@@ -5,7 +5,7 @@
  */
 
 /** Library template kinds. `skill` is served via SkillLoader delegation. */
-export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section', 'skill'] as const;
+export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'section', 'skill'] as const;
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 
 /** Where a library entry came from. Mirrors SkillSource. */
@@ -42,6 +42,17 @@ export interface LibrarySequence {
   label?: string;
   description?: string;
   pipelines: string[];
+}
+
+/** A developmental-editor persona that replaces the author voice in chat. */
+export interface LibraryEditor {
+  schemaVersion?: number;
+  name: string;
+  label?: string;
+  description?: string;
+  systemPrompt: string;
+  model?: string;
+  temperature?: number;
 }
 
 /**

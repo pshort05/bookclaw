@@ -14,10 +14,11 @@
 import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
-import type { LibraryKind, LibrarySource, LibraryPipeline, LibrarySequence } from './library-types.js';
+import type { LibraryKind, LibrarySource, LibraryPipeline, LibrarySequence, LibraryEditor } from './library-types.js';
 import type { SkillStep } from '../skills/loader.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { parseSequence } from './sequence-parse.js';
+import { parseEditor } from './editor-parse.js';
 
 /** Lightweight catalog row for list(). */
 export interface LibraryEntry {
@@ -33,6 +34,7 @@ export interface LibraryEntryFull extends LibraryEntry {
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
   sequence?: LibrarySequence;     // sequence: parsed JSON
+  editor?: LibraryEditor;         // editor: parsed JSON
   steps?: SkillStep[];            // skill: executable phases (steps.json)
   retries?: number;               // skill: per-phase retry budget
 }
@@ -44,7 +46,7 @@ interface SkillCatalogLike {
 }
 
 /** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
-const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section'] as const;
+const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'section'] as const;
 type FileKind = (typeof FILE_KINDS)[number];
 
 /** Subdirectory under the library root for each file-backed kind. */
@@ -54,6 +56,7 @@ const DIR_LAYOUT: Record<FileKind, string> = {
   genre: 'genres',
   pipeline: 'pipelines',
   sequence: 'sequences',
+  editor: 'editors',
   section: 'sections',
 };
 
@@ -101,7 +104,7 @@ export class LibraryService {
   private overlayPath(kind: FileKind, name: string): string | null {
     if (!ENTRY_NAME_RE.test(name)) return null;
     const dir = join(this.workspaceDir, DIR_LAYOUT[kind]);
-    if (kind === 'pipeline' || kind === 'sequence') return join(dir, `${name}.json`);
+    if (kind === 'pipeline' || kind === 'sequence' || kind === 'editor') return join(dir, `${name}.json`);
     if (kind === 'section') return join(dir, `${name}.md`);
     return join(dir, name); // author/voice/genre: a directory
   }
@@ -126,6 +129,13 @@ export class LibraryService {
     if (kind === 'sequence') {
       const raw = String(body.content ?? '');
       parseSequence(JSON.parse(raw)); // throws on invalid JSON or missing/empty pipelines
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      return;
+    }
+    if (kind === 'editor') {
+      const raw = String(body.content ?? '');
+      parseEditor(JSON.parse(raw)); // throws on invalid JSON or missing name/systemPrompt
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
       return;
@@ -247,6 +257,12 @@ export class LibraryService {
           const name = item.name.replace(/\.json$/, '');
           const sequence = parseSequence({ ...JSON.parse(raw), name });
           out.set(name, { kind, name, source, description: sequence.description, sequence });
+        } else if (kind === 'editor') {
+          if (!item.isFile() || !item.name.endsWith('.json')) continue;
+          const raw = await readFile(join(dir, item.name), 'utf-8');
+          const name = item.name.replace(/\.json$/, '');
+          const editor = parseEditor({ ...JSON.parse(raw), name });
+          out.set(name, { kind, name, source, description: editor.description, editor });
         } else if (kind === 'section') {
           if (!item.isFile() || !item.name.endsWith('.md')) continue;
           const content = await readFile(join(dir, item.name), 'utf-8');

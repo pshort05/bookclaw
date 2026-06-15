@@ -15,6 +15,7 @@ import { spawn } from 'child_process';
 import AdmZip from 'adm-zip';
 import { SLUG_RE } from './book-types.js';
 import type { BookService } from './book.js';
+import type { EditorService } from './editor.js';
 
 export const SNAPSHOT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(-\d{3})?$/;
 
@@ -73,6 +74,7 @@ export class BackupService {
   private root: string;
   private cfg: () => BackupCfg;
   private books: BookService | null = null;
+  private editors: EditorService | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private bootTimer: ReturnType<typeof setTimeout> | null = null;
   private meta: { appVersion?: string; workspaceSchemaVersion?: number };
@@ -87,6 +89,7 @@ export class BackupService {
   }
 
   setBooks(books: BookService): void { this.books = books; }
+  setEditors(editors: EditorService): void { this.editors = editors; }
 
   async initialize(): Promise<void> {
     const rel = relative(this.workspaceDir, this.root);
@@ -272,6 +275,7 @@ export class BackupService {
       await rm(live, { recursive: true, force: true });
       await cp(join(snapDir, 'books', opts.book), live, { recursive: true });
       await this.books?.initialize();
+      await this.editors?.initialize();
       await this.prune();
       return { preSnapshot: pre.name, restartRecommended: wasActive };
     }
@@ -282,6 +286,7 @@ export class BackupService {
       await cp(join(snapDir, top), live, { recursive: true });
     }
     await this.books?.initialize();
+    await this.editors?.initialize();
     await this.prune();
     return { preSnapshot: pre.name, restartRecommended: true };
   }

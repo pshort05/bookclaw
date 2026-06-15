@@ -133,7 +133,7 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
 
   // ── Write path (Phase 4): workspace-overlay CRUD. Built-ins are read-only;
   // skills are handled by /api/skills (SkillLoader overlay). ─────────────────
-  const WRITABLE = ['author', 'voice', 'genre', 'pipeline', 'section'] as const;
+  const WRITABLE = ['author', 'voice', 'genre', 'pipeline', 'editor', 'section'] as const;
   const isWritable = (v: string): v is (typeof WRITABLE)[number] =>
     (WRITABLE as readonly string[]).includes(v);
 

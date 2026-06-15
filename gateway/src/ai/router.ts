@@ -81,6 +81,7 @@ const TASK_TIERS: Record<string, TaskTier> = {
   book_bible:       'mid',       // World building
   consistency:      'mid',       // Consistency checks — same tier as book_bible
   final_edit:       'premium',   // Final polish needs best reasoning
+  editor_chat:      'mid',       // Developmental-editor interactive chat
 };
 
 // Provider preference order per tier (first available wins)
@@ -132,6 +133,7 @@ const TASK_OUTPUT_BUDGET: Record<string, number> = {
   consistency:      8192,   // Cross-chapter check report
   final_edit:       8192,   // Final-pass notes
   research:         8192,   // Research syntheses
+  editor_chat:      4096,   // Conversational developmental-editor feedback
   general:          4096,   // Default
 };
 

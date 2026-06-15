@@ -80,6 +80,7 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
       () => readBackupCfg(gw.config),
       { appVersion: await appVersion(), workspaceSchemaVersion: WORKSPACE_SCHEMA_VERSION });
     if (gw.books) gw.backup.setBooks(gw.books);
+    if (gw.editors) gw.backup.setEditors(gw.editors);
     await gw.backup.initialize();
     // Hook registered unconditionally — the service checks the live enabled/onCompletion flags.
     gw.projectEngine.onProjectCompleted(async () => { await gw.backup?.onCompletionSnapshot(); });

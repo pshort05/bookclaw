@@ -30,4 +30,8 @@ export const GLOSSARY: Record<LibraryKind, { canon: string; def: string }> = {
     canon: 'Skill',
     def: 'A reusable instruction block attached to a Step and injected into its Prompt — focused know-how (e.g. "write vivid sensory detail", "audit dialogue"). Skills are machinery you attach to Steps, not content the Book owns.',
   },
+  editor: {
+    canon: 'Editor',
+    def: 'An interactive developmental-editor persona you chat with to finetune ideas.',
+  },
 };
