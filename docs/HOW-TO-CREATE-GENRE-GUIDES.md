@@ -3,7 +3,8 @@
 A **genre guide** teaches BookClaw what a genre feels like and what its readers expect, so
 every chapter, outline, and revision step writes to genre. This document explains the files
 a genre guide is made of, what belongs in each, the rules they follow, and the ways to add a
-new one. For the one-page schema reference, see [GENRE-GUIDE-TEMPLATE.md](GENRE-GUIDE-TEMPLATE.md).
+new one. For the one-page schema reference, see [GENRE-GUIDE-TEMPLATE.md](GENRE-GUIDE-TEMPLATE.md);
+for the *who writes it* side, see [HOW-TO-CREATE-AUTHOR-PROFILES.md](HOW-TO-CREATE-AUTHOR-PROFILES.md).
 
 ## What a genre guide is and how it is used
 
