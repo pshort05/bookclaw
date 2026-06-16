@@ -241,6 +241,9 @@ body_has   "/api/library/sequence/novel" 'book-production' "sequence/novel lists
 # Editors: the `editor` kind + the built-in maeve persona.
 body_has   "/api/library?kind=editor" '"maeve"' "library lists the maeve editor"
 body_has   "/api/library/editor/maeve" 'systemPrompt' "editor/maeve returns its systemPrompt"
+# Prompt Runner: the `prompt` kind + a built-in craft prompt.
+body_has   "/api/library?kind=prompt" '"dialogue-editor"' "library lists a built-in prompt"
+body_has   "/api/library/prompt/dialogue-editor" 'systemPrompt' "prompt/dialogue-editor returns its systemPrompt"
 
 # ── Books: read + create API (book-container Phase 2) ──
 # Hermetic: only the missing-title 400 path is exercised, so no book is written
@@ -262,6 +265,22 @@ case "$SEQ_CREATE" in
   *) fail "book create from sequence missing pipelineSequence: $(printf '%s' "$SEQ_CREATE" | head -c 160)" ;;
 esac
 SEQ_SLUG="$(printf '%s' "$SEQ_CREATE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log(j?.book?.slug||j?.slug||"")}catch(e){console.log("")}})' 2>/dev/null || true)"
+# Prompt Runner write-back: PUT a data file, PUT again (versions the prior), list
+# versions, restore one — exercises the file-versions round-trip on the book above.
+if [ -n "$SEQ_SLUG" ]; then
+  log ""
+  log "book file write-back + versioning"
+  pc1="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{"content":"v1"}' -X PUT "$BASE/api/books/$SEQ_SLUG/files/probe.md")"
+  [ "$pc1" = "200" ] && pass "PUT file -> 200" || fail "PUT file should be 200 (got $pc1)"
+  code "${AUTH[@]}" -H 'Content-Type: application/json' -d '{"content":"v2"}' -X PUT "$BASE/api/books/$SEQ_SLUG/files/probe.md" >/dev/null
+  VERS="$(curl -s --max-time 8 "${AUTH[@]}" "$BASE/api/books/$SEQ_SLUG/files/probe.md/versions")"
+  VID="$(printf '%s' "$VERS" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log((JSON.parse(s).versions||[])[0]?.id||"")}catch(e){console.log("")}})' 2>/dev/null || true)"
+  [ -n "$VID" ] && pass "second PUT created a prior version" "$VID" || fail "no version recorded: $(printf '%s' "$VERS" | head -c 120)"
+  if [ -n "$VID" ]; then
+    rc="$(code "${AUTH[@]}" -H 'Content-Type: application/json' -d "{\"id\":\"$VID\"}" -X POST "$BASE/api/books/$SEQ_SLUG/files/probe.md/restore")"
+    [ "$rc" = "200" ] && pass "restore version -> 200" || fail "restore should be 200 (got $rc)"
+  fi
+fi
 [ -n "$SEQ_SLUG" ] && curl -s --max-time 8 "${AUTH[@]}" -X DELETE "$BASE/api/books/$SEQ_SLUG" >/dev/null 2>&1 || true
 
 # ── Costs: lifetime-total reset (Track A) ──

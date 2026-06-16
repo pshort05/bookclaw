@@ -12,7 +12,7 @@ import styles from '../../routes/AssetStudio.module.css';
 const KIND_LABELS: Record<LibraryKind, string> = {
   author: 'Authors', voice: 'Voices', genre: 'Genres',
   pipeline: 'Pipelines', sequence: 'Sequences', section: 'Sections', skill: 'Skills',
-  editor: 'Editors',
+  editor: 'Editors', prompt: 'Prompts',
 };
 
 // Composed view used within this component (label + canon + def).
@@ -20,11 +20,12 @@ const KIND_DEFS: Record<LibraryKind, { label: string; canon: string; def: string
   (Object.keys(GLOSSARY) as LibraryKind[]).map((k) => [k, { label: KIND_LABELS[k], ...GLOSSARY[k] }]),
 ) as Record<LibraryKind, { label: string; canon: string; def: string }>;
 
-const WRITABLE_KINDS: LibraryKind[] = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section', 'editor'];
+const WRITABLE_KINDS: LibraryKind[] = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section', 'editor', 'prompt'];
 
 const STARTER_PIPELINE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-pipeline', label: 'New Pipeline', description: '', steps: [] }, null, 2);
 const STARTER_SEQUENCE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-sequence', label: 'New Sequence', description: '', pipelines: [] }, null, 2);
 const STARTER_EDITOR_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-editor', label: 'New Editor', description: '', systemPrompt: 'You are an interactive developmental editor.' }, null, 2);
+const STARTER_PROMPT_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-prompt', label: 'New Prompt', description: '', systemPrompt: 'You are a writing-craft assistant. Return the revised text.' }, null, 2);
 
 interface Props {
   scope: Scope;
@@ -114,6 +115,8 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
         await createLibraryEntry(kind, name, { content: STARTER_SEQUENCE_JSON });
       } else if (kind === 'editor') {
         await createLibraryEntry(kind, name, { content: STARTER_EDITOR_JSON });
+      } else if (kind === 'prompt') {
+        await createLibraryEntry(kind, name, { content: STARTER_PROMPT_JSON });
       } else if (kind === 'section') {
         await createLibraryEntry(kind, name, { content: `# ${name}\n` });
       } else {

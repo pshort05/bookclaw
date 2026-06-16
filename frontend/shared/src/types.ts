@@ -148,7 +148,7 @@ export interface Project {
   [k: string]: unknown;
 }
 
-export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'sequence' | 'editor';
+export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'sequence' | 'editor' | 'prompt';
 export interface LibraryEntry {
   kind: LibraryKind;
   name: string;
@@ -168,11 +168,16 @@ export interface LibraryEditor {
   schemaVersion?: number; name: string; label?: string; description?: string;
   systemPrompt: string; model?: string; temperature?: number;
 }
+export interface LibraryPrompt {
+  schemaVersion?: number; name: string; label?: string; description?: string;
+  systemPrompt: string; model?: string; temperature?: number;
+}
 export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>;
   content?: string;
   pipeline?: LibraryPipeline;
   editor?: LibraryEditor;
+  prompt?: LibraryPrompt;
 }
 export type RepullStatus = 'in-sync'|'library-updated'|'locally-edited'|'diverged'|'library-removed'|'no-baseline';
 export interface RepullAsset { kind: LibraryKind; name: string; status: RepullStatus; libraryPresent: boolean; hasBaseline: boolean; wired: boolean; }

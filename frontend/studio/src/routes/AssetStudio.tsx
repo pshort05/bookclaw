@@ -9,6 +9,7 @@ import { PipelineEditor } from '../components/asset/PipelineEditor.js';
 import { SequenceEditor } from '../components/asset/SequenceEditor.js';
 import { SkillEditor } from '../components/asset/SkillEditor.js';
 import { EditorEditor } from '../components/asset/EditorEditor.js';
+import { PromptEditor } from '../components/asset/PromptEditor.js';
 import { RepullPanel } from '../components/asset/RepullPanel.js';
 import styles from './AssetStudio.module.css';
 
@@ -130,6 +131,8 @@ export function AssetStudio() {
               <SkillEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             ) : kind === 'editor' ? (
               <EditorEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
+            ) : kind === 'prompt' ? (
+              <PromptEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             ) : (
               <ProseEditor key={editorKey} scope={scope} kind={kind} name={selectedName} displayName={bookDisplayName} />
             )

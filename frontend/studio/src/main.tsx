@@ -13,6 +13,7 @@ import { Insights } from './routes/Insights.js';
 import { Settings } from './routes/Settings.js';
 import { Confirmations } from './routes/Confirmations.js';
 import { Files } from './routes/Files.js';
+import { PromptRunner } from './routes/PromptRunner.js';
 import { Series } from './routes/Series.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="new-book" element={<NewBook />} />
           <Route path="library" element={<AssetStudio />} />
           <Route path="files" element={<Files />} />
+          <Route path="prompt-runner" element={<PromptRunner />} />
           <Route path="series" element={<Series />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />

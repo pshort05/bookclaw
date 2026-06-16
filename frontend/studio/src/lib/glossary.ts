@@ -34,4 +34,8 @@ export const GLOSSARY: Record<LibraryKind, { canon: string; def: string }> = {
     canon: 'Editor',
     def: 'An interactive developmental-editor persona you chat with to finetune ideas.',
   },
+  prompt: {
+    canon: 'Prompt',
+    def: 'A reusable writing-craft prompt you run against a book file.',
+  },
 };

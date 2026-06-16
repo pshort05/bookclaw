@@ -20,6 +20,7 @@ import { LIBRARY_KINDS, type LibraryKind } from './library-types.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { parseSequence } from './sequence-parse.js';
 import { parseEditor } from './editor-parse.js';
+import { parsePrompt } from './prompt-parse.js';
 import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
 import { SKILL_CATEGORIES, parseSteps } from '../skills/loader.js';
 
@@ -88,6 +89,9 @@ export class LibraryTransferService {
     } else if (kind === 'editor') {
       // get() returns the parsed editor only; import re-validates via parseEditor.
       zip.addFile('files/editor.json', Buffer.from(JSON.stringify(entry.editor, null, 2) + '\n', 'utf-8'));
+    } else if (kind === 'prompt') {
+      // get() returns the parsed prompt only; import re-validates via parsePrompt.
+      zip.addFile('files/prompt.json', Buffer.from(JSON.stringify(entry.prompt, null, 2) + '\n', 'utf-8'));
     } else if (kind === 'section') {
       zip.addFile(`files/${name}.md`, Buffer.from(entry.content ?? '', 'utf-8'));
     } else if (kind === 'skill') {
@@ -179,6 +183,12 @@ export class LibraryTransferService {
       catch (err) { return `invalid sequence.json: ${(err as Error).message}`; }
       return null;
     }
+    if (kind === 'prompt') {
+      if (names.length !== 1 || names[0] !== 'prompt.json') return 'prompt requires exactly files/prompt.json';
+      try { parsePrompt(JSON.parse(readFileSync(join(filesDir, 'prompt.json'), 'utf-8'))); }
+      catch (err) { return `invalid prompt.json: ${(err as Error).message}`; }
+      return null;
+    }
     if (kind === 'editor') {
       if (names.length !== 1 || names[0] !== 'editor.json') return 'editor requires exactly files/editor.json';
       try { parseEditor(JSON.parse(readFileSync(join(filesDir, 'editor.json'), 'utf-8'))); }
@@ -252,6 +262,8 @@ export class LibraryTransferService {
         body.content = readFileSync(join(filesDir, 'sequence.json'), 'utf-8');
       } else if (kind === 'editor') {
         body.content = readFileSync(join(filesDir, 'editor.json'), 'utf-8');
+      } else if (kind === 'prompt') {
+        body.content = readFileSync(join(filesDir, 'prompt.json'), 'utf-8');
       } else if (kind === 'section') {
         const md = readdirSync(filesDir).find(n => n.endsWith('.md'));
         if (!md) throw new Error('staged section .md missing');

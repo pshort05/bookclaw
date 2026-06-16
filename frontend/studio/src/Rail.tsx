@@ -132,6 +132,17 @@ export function Rail() {
           Files
         </NavLink>
 
+        {/* Prompt Runner — run a writing-craft prompt against a book file */}
+        <NavLink
+          to="/prompt-runner"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 17l6-6-6-6M12 19h8"/>
+          </svg>
+          Prompt Runner
+        </NavLink>
+
         {/* Insights — live route */}
         <NavLink
           to="/insights"

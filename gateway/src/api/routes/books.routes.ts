@@ -4,6 +4,7 @@ import { uploadZip, requireApprovedConfirmation, safePath, serveFile } from './_
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
+import { writeWithVersion, listVersions, restoreVersion } from '../../services/file-versions.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -142,6 +143,51 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!filePath) return res.status(403).json({ error: 'Path traversal blocked' });
     if (!existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
     void serveFile(res, filePath, filename, !!req.query.download);
+  });
+
+  // Write-back a book data/ file, snapshotting the prior content (Prompt Runner Replace).
+  app.put('/api/books/:slug/files/:filename', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir) return res.status(404).json({ error: 'Book not found' });
+    const filename = String(req.params.filename);
+    if (!safePath(dataDir, filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    const { content } = req.body ?? {};
+    if (typeof content !== 'string') return res.status(400).json({ error: 'content required' });
+    await writeWithVersion(dataDir, filename, content);
+    res.json({ ok: true });
+  });
+
+  // List prior versions of a book data/ file (newest first).
+  app.get('/api/books/:slug/files/:filename/versions', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir) return res.status(404).json({ error: 'Book not found' });
+    const filename = String(req.params.filename);
+    if (!safePath(dataDir, filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    res.json({ versions: await listVersions(dataDir, filename) });
+  });
+
+  // Restore a prior version of a book data/ file (the current content is snapshotted first).
+  app.post('/api/books/:slug/files/:filename/restore', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir) return res.status(404).json({ error: 'Book not found' });
+    const filename = String(req.params.filename);
+    if (!safePath(dataDir, filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    const { id } = req.body ?? {};
+    if (typeof id !== 'string' || !id) return res.status(400).json({ error: 'id required' });
+    try { await restoreVersion(dataDir, filename, id); res.json({ ok: true }); }
+    catch (err: any) {
+      const msg = String(err?.message || err);
+      // Only the deliberate "not found" / "invalid id" throws are 404; a real
+      // write/IO failure must surface as 500, not masquerade as a bad version id.
+      const notFound = msg === 'version not found' || msg === 'invalid version id';
+      res.status(notFound ? 404 : 500).json({ error: msg });
+    }
   });
 
   app.post('/api/books', async (req: Request, res: Response) => {

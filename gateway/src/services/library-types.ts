@@ -5,7 +5,7 @@
  */
 
 /** Library template kinds. `skill` is served via SkillLoader delegation. */
-export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'section', 'skill'] as const;
+export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'prompt', 'section', 'skill'] as const;
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 
 /** Where a library entry came from. Mirrors SkillSource. */
@@ -46,6 +46,17 @@ export interface LibrarySequence {
 
 /** A developmental-editor persona that replaces the author voice in chat. */
 export interface LibraryEditor {
+  schemaVersion?: number;
+  name: string;
+  label?: string;
+  description?: string;
+  systemPrompt: string;
+  model?: string;
+  temperature?: number;
+}
+
+/** A reusable writing-craft prompt run one-at-a-time against a book file. */
+export interface LibraryPrompt {
   schemaVersion?: number;
   name: string;
   label?: string;
