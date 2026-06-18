@@ -252,6 +252,22 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     });
   });
 
+  // F1 (config-not-code pipelines): explicitly advance a book sequence to its
+  // next phase. Starts the next pending phase project IFF the prior phase has
+  // completed (no AI execution — the started project still needs execute/auto-run).
+  // The onProjectCompleted hook advances automatically; this is the manual/UI lever.
+  app.post('/api/pipeline/:pipelineId/advance', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) {
+      return res.status(503).json({ error: 'Project engine not initialized' });
+    }
+    if (engine.getPipelineProjects(req.params.pipelineId).length === 0) {
+      return res.status(404).json({ error: 'Pipeline not found' });
+    }
+    const started = engine.advancePipeline(req.params.pipelineId);
+    res.json({ advanced: !!started, project: started ?? null });
+  });
+
   app.get('/api/projects/list', (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();
     if (!engine) {

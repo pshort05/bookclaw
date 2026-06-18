@@ -145,6 +145,8 @@ export interface Project {
   status: 'pending' | 'active' | 'completed' | 'failed' | 'paused';
   progress: number;
   steps: ProjectStep[];
+  pipelineId?: string;       // set on book-sequence projects (links the chained phases)
+  pipelinePhase?: number;    // 1-based phase order within the sequence
   [k: string]: unknown;
 }
 

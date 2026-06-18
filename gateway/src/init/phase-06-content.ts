@@ -53,6 +53,19 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   const templates = gw.projectEngine.getTemplates();
   console.log(`  ✓ Project engine: ${templates.length} pipeline templates + dynamic AI planning`);
 
+  // F1 (config-not-code pipelines): when a sequence project completes, auto-start
+  // the next pipeline phase so a multi-pipeline book progresses across its chained
+  // Projects (the bridge/"continue" path only picks up active/paused projects, so
+  // without this the sequence would stall). advancePipeline runs no AI itself — it
+  // only marks the next project active — so in the default posture advancement is
+  // free and generation stays user/poller-driven. (With autonomous mode ON, the
+  // heartbeat then runs the now-active phase, exactly as it already runs pending
+  // sequence projects — see heartbeat.ts project selection. Phase ordering across
+  // a sequence is NOT yet enforced in autonomous mode; tracked in docs/TODO.md.)
+  gw.projectEngine.onProjectCompleted((project: any) => {
+    if (project.pipelineId) gw.projectEngine.advancePipeline(project.pipelineId);
+  });
+
   // ── Phase 6f: Context Engine ──
   gw.contextEngine = new ContextEngine(join(ROOT_DIR, 'workspace'));
   gw.projectEngine.setContextEngine(gw.contextEngine);

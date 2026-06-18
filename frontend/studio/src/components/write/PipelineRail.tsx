@@ -24,8 +24,10 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
   const [pipeline, setPipeline] = useState<LibraryPipeline | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [seqTotal, setSeqTotal] = useState<number | null>(null); // F1: total phases in a book sequence
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyRef = useRef(false);
+  const followedRef = useRef<string | null>(null); // F1: guard so we follow once per completed phase
 
   // Load book detail (author/voice/genre/pipeline names + descriptions).
   useEffect(() => {
@@ -81,6 +83,44 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
     // ever passes a new function reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProject?.id, activeProject?.status]);
+
+  // F1: a book whose pipelineSequence has >1 entry runs as chained Projects linked
+  // by pipelineId. Load the phase count for the "Phase X / N" indicator, and when
+  // the tracked phase completes, follow to the next phase the engine auto-started
+  // (so the rail walks the whole sequence instead of dead-ending at "Completed").
+  useEffect(() => {
+    const pid = activeProject?.pipelineId;
+    setSeqTotal(null); // reset first so a pipeline switch never shows the prior book's total
+    if (!pid) return;
+    let cancelled = false;
+    api<{ phases: Array<{ id: string; phase: number; status: string }> }>(`/api/pipeline/${encodeURIComponent(pid)}`)
+      .then((r) => { if (!cancelled) setSeqTotal(r.phases.length); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeProject?.pipelineId]);
+
+  useEffect(() => {
+    const pid = activeProject?.pipelineId;
+    if (!activeProject || activeProject.status !== 'completed' || !pid) return;
+    const fromId = activeProject.id;
+    if (followedRef.current === fromId) return; // already followed from this phase
+    let cancelled = false;
+    (async () => {
+      const r = await api<{ phases: Array<{ id: string; phase: number; status: string }> }>(
+        `/api/pipeline/${encodeURIComponent(pid)}`,
+      ).catch(() => null);
+      // Mark followed only after a successful read — a transient fetch failure
+      // leaves the guard unset so a later re-render can retry instead of dead-ending.
+      if (cancelled || !r) return;
+      followedRef.current = fromId;
+      const next = r.phases.find((p) => p.id !== fromId && p.status !== 'completed' && p.status !== 'failed');
+      if (!next) return; // sequence finished
+      const pr = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(next.id)}`).catch(() => null);
+      if (!cancelled && pr?.project) onProjectChange(pr.project);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject?.id, activeProject?.status, activeProject?.pipelineId]);
 
   const action = async (url: string) => {
     if (busyRef.current) return;
@@ -200,7 +240,12 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
       {/* Pipeline plan */}
       {pipeline && (
         <>
-          <div className={styles.sec}>Pipeline · {pipeline.name}</div>
+          <div className={styles.sec}>
+            Pipeline · {pipeline.name}
+            {seqTotal && seqTotal > 1 && activeProject?.pipelinePhase
+              ? ` · Phase ${activeProject.pipelinePhase} / ${seqTotal}`
+              : ''}
+          </div>
 
           {/* Static pipeline: template has steps — map onto project statuses. */}
           {!useDynamicSteps && planSteps.map((ps, i) => {

@@ -1592,6 +1592,32 @@ Description: ${description}`;
       .sort((a, b) => (a.pipelinePhase || 0) - (b.pipelinePhase || 0));
   }
 
+  /**
+   * Advance a book sequence (config-not-code pipelines, F1): start the next
+   * still-`pending` phase project, but ONLY once every earlier phase has
+   * `completed`. Marks it active (its first step active) WITHOUT running any AI —
+   * advancement itself is free; generation stays driven by the user/poller (or,
+   * when autonomous mode is on, the heartbeat picks up the now-active phase).
+   * A `failed`/`paused` earlier phase is treated as not-yet-complete, so the
+   * sequence intentionally halts there (the stuck phase is visible in the UI)
+   * rather than skipping past it. Returns the started project, or null when
+   * nothing is ready to advance (current phase still running, no further phase,
+   * or unknown pipelineId).
+   */
+  advancePipeline(pipelineId: string): Project | null {
+    const phases = this.getPipelineProjects(pipelineId);
+    if (phases.length === 0) return null;
+    const next = phases.find(p => p.status === 'pending');
+    if (!next) return null;
+    // Gate: every project ordered before `next` must be completed.
+    const ready = phases
+      .filter(p => (p.pipelinePhase || 0) < (next.pipelinePhase || 0))
+      .every(p => p.status === 'completed');
+    if (!ready) return null;
+    this.startProject(next.id);
+    return this.getProject(next.id) ?? null;
+  }
+
   // ── Core Lessons (self-improvement feedback loop) ──
 
   /**
