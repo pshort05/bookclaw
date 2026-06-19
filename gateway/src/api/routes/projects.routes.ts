@@ -2,7 +2,7 @@ import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
 import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from '../../util/wordcount.js';
-import { runExecutableSkillStep } from '../../services/skill-runner.js';
+import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 
 // Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
 // Telegram, or a double-click) from processing the same step → duplicated
@@ -405,7 +405,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
 
     try {
-      const projectContext = await engine.buildProjectContext(project, activeStep);
+      // F2: inject passive step-skill content (snapshot → global), same as the
+      // bridge path — buildProjectContext alone never added it on the studio path.
+      const projectContext = (await engine.buildProjectContext(project, activeStep))
+        + passiveSkillBlock(services, (activeStep as any).skill, project.bookSlug);
       const userMessage = await buildStepUserMessage(project, activeStep);
       const { provider: stepProvider, model: stepModel } = stepRouting(project, activeStep);
       let response = '';
@@ -603,7 +606,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       if (!activeStep) break;
 
       try {
-        const projectContext = await engine.buildProjectContext(currentProject, activeStep);
+        // F2: inject passive step-skill content (snapshot → global), same as the
+        // bridge path — buildProjectContext alone never added it on the studio path.
+        const projectContext = (await engine.buildProjectContext(currentProject, activeStep))
+          + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug);
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
         const { provider: stepProvider, model: stepModel } = stepRouting(currentProject, activeStep);
         let response = '';

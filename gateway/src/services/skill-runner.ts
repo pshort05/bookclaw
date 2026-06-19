@@ -62,6 +62,32 @@ export async function runExecutableSkillStep(
   }
 }
 
+/**
+ * Passive step-skill injection (config-not-code pipelines, F2). Returns the
+ * markdown block to APPEND to a step's project context when the step references
+ * a non-executable ("passive") skill, or '' when there's no skill / no content.
+ * Mirrors the executable-skill resolution: prefer the book's FROZEN snapshot
+ * (copy-on-create isolation) when the project is bound to a book, else fall back
+ * to the mutable global SkillLoader. Shared by the bridge path (startAndRunProject)
+ * and the studio run paths (projects.routes.ts /execute + /auto-execute), which
+ * previously skipped passive-skill content entirely.
+ */
+export function passiveSkillBlock(
+  deps: {
+    skills?: { getSkillByName(n: string): { name?: string; content?: string } | undefined };
+    books?: { skillContentOf(slug: string | null, name: string): string | null };
+  },
+  skillName: string | undefined,
+  bookSlug?: string | null,
+): string {
+  if (!skillName) return '';
+  const snapshot = bookSlug ? deps.books?.skillContentOf(bookSlug, skillName) ?? null : null;
+  if (snapshot) return `\n\n# Skill: ${skillName}\n\n${snapshot}`;
+  const skillData = deps.skills?.getSkillByName?.(skillName);
+  if (skillData) return `\n\n# Skill: ${skillData.name}\n\n${skillData.content}`;
+  return '';
+}
+
 export class SkillRunner {
   constructor(private complete: SkillCompleteFn) {}
 

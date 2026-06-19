@@ -47,7 +47,7 @@ import { PersonaService } from './services/personas.js';
 import { ContextEngine } from './services/context-engine.js';
 import { MemorySearchService } from './services/memory-search.js';
 import { UserModelService } from './services/user-model.js';
-import { runExecutableSkillStep } from './services/skill-runner.js';
+import { runExecutableSkillStep, passiveSkillBlock } from './services/skill-runner.js';
 import { CronSchedulerService } from './services/cron-scheduler.js';
 import { AutoSkillService } from './services/auto-skill.js';
 import { WritingJudgeService } from './services/writing-judge.js';
@@ -1912,21 +1912,13 @@ class BookClawGateway {
         // Build project context and inject the relevant skill if specified
         let projectContext = await gateway.projectEngine.buildProjectContext(project, activeStep);
 
-        // If the step references a specific skill, inject its full content.
-        // Prefer the book's FROZEN snapshot (copy-on-create isolation) when the
-        // project is bound to a book; fall back to the mutable global SkillLoader.
-        const stepSkill = (activeStep as any).skill;
-        if (stepSkill) {
-          const snapshot = project.bookSlug ? gateway.books?.skillContentOf(project.bookSlug, stepSkill) : null;
-          if (snapshot) {
-            projectContext += `\n\n# Skill: ${stepSkill}\n\n${snapshot}`;
-          } else {
-            const skillData = gateway.skills.getSkillByName(stepSkill);
-            if (skillData) {
-              projectContext += `\n\n# Skill: ${skillData.name}\n\n${skillData.content}`;
-            }
-          }
-        }
+        // If the step references a passive skill, inject its full content
+        // (snapshot-preferred → global SkillLoader). Shared with the studio paths.
+        projectContext += passiveSkillBlock(
+          { skills: gateway.skills, books: gateway.books },
+          (activeStep as any).skill,
+          project.bookSlug,
+        );
 
         // Build user message with uploaded content injected directly
         // For large documents (15K+ words): read from disk with smart truncation

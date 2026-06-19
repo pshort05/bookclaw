@@ -34,16 +34,22 @@ Started: 2026-06-18. Driver: autonomous (per user request).
 ## Phase table
 | Feature | design | plan | TDD code | code-review | fix med+ | smoke | deploy | remote-smoke |
 |---------|--------|------|----------|-------------|----------|-------|--------|--------------|
-| F1 sequence advance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | ⬜ |
-| F2 skill on studio   | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| F1 sequence advance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| F2 skill on studio   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | ⬜ |
 | F3 migration baseline| ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Final: update+run full smoke | — | — | — | — | — | ⬜ | — | ⬜ |
 
 ## How to resume
-Next action: implement F1 with TDD — write `tests/unit/pipeline-advance.test.ts` first (advancePipeline), then `gateway/src/services/projects.ts`.
+Next action: implement F2 with TDD — extract `passiveSkillBlock(services, skillName, bookSlug)` into `gateway/src/services/skill-runner.ts` (write `tests/unit/skill-injection.test.ts` first), then call it from index.ts startAndRunProject + the two studio paths in projects.routes.ts (/execute ~392, /auto-execute ~590).
+
+## Deploy mechanics (learned during F1 — don't re-discover)
+- `./push.sh` commits but its `git push` FAILS in this sandbox (HTTPS remote, no creds). The commit is made locally. Push manually via SSH: `GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new" git push git@github.com:pshort05/bookclaw.git main`. Then `rm -f commit_message` (push.sh's set -e aborts before it deletes the file).
+- Deploy trigger: `touch build_now` (gitignored). A build watcher consumes it on a timer tick (~1-2 min), runs scripts/deploy.sh, writes `.build-logs/last-build.status` (`commit=<short> result=PASS`). Mercury live at http://192.168.1.32:3847. Token: `grep '^BOOKCLAW_AUTH_TOKEN=' docker/.env`.
+- Verify deploy: `cat .build-logs/last-build.status` shows your commit + PASS; then curl Mercury /api/status (version V26.06.18).
 
 ## Log
 - 2026-06-18: investigated all 3; designs above.
 - 2026-06-18: F1 coded (TDD). `advancePipeline` + tests/unit/pipeline-advance.test.ts (5 tests); onProjectCompleted auto-advance hook (phase-06-content.ts); POST /api/pipeline/:id/advance route; PipelineRail follow-to-next-phase + "Phase X / N" + Project type fields. Backend tsc clean, studio build clean, 387/387 unit.
 - 2026-06-18: F1 code-review (3 finder agents). Fixed: (B2) corrected over-claiming "zero unattended cost" comments — accurate now re: heartbeat picks up active/pending sequence projects when autonomous mode is ON (pre-existing; no NEW cost); (F5) PipelineRail follow-effect set `followedRef` before the fetch → a transient failure dead-ended the sequence; now set only after a successful pipeline read; (F4) reset seqTotal on pipeline switch. Added docs/TODO.md note: heartbeat doesn't enforce sequence phase order in autonomous mode (pre-existing, out of scope). Re-verified tsc/build/tests.
-- 2026-06-18: F1 smoke `tests/pipeline-advance-smoke.sh` (gate + real-AI auto-advance hook). Local boot test clean (route mounts, hook wired, 404 feature-detect, no boot errors). Deploying F1 to Mercury.
+- 2026-06-18: F1 smoke `tests/pipeline-advance-smoke.sh` (gate + real-AI auto-advance hook). Local boot test clean. Deployed F1 (commit cce955e, last-build PASS). Mercury smoke 7/7 (incl. real-AI phase-1 completion → phase-2 auto-started). F1 DONE.
+- 2026-06-18: F2 coded (TDD). `passiveSkillBlock` helper in skill-runner.ts + tests/unit/skill-injection.test.ts (5); wired into index.ts startAndRunProject (replaced inline block) + projects.routes.ts /execute + /auto-execute. tsc clean, 392/392 unit. Code-review (1 agent, behavior-equivalence focus) → [] no findings (exact equivalence confirmed; no double-injection; services structural typing valid). Smoke `tests/skill-injection-smoke.sh` (passive skill w/ marker → assert marker in /execute output). Local boot clean. Deploying F2 to Mercury.
