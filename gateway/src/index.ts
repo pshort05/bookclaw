@@ -39,6 +39,7 @@ import { BookService } from './services/book.js';
 import { EditorService } from './services/editor.js';
 import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
 import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
+import { isChatCommand } from './services/chat-command.js';
 import { DISPLAY_VERSION } from './version.js';
 import { AuthorOSService } from './services/author-os.js';
 import { TTSService } from './services/tts.js';
@@ -509,9 +510,20 @@ class BookClawGateway {
           // Key the conversation channel per socket so concurrent web clients
           // don't share one server-side history (history resets on reconnect,
           // which is acceptable — better than cross-client context leakage).
-          await this.handleMessage(data.content, `webchat:${socket.id}`, (response) => {
-            socket.emit('response', { content: response });
-          });
+          const channel = `webchat:${socket.id}`;
+          // Slash commands + natural-language advance verbs route to the command
+          // handler (same as /api/chat) so the studio chat and standalone Chat app
+          // dispatch `/editors`, `/editor …`, `/novel`, etc. instead of sending
+          // them to the model as prose. Use this socket's channel so a command that
+          // enters editor mode applies to this socket's conversation.
+          if (isChatCommand(data.content)) {
+            const result = await this.handleDashboardCommand(data.content, channel);
+            socket.emit('response', { content: result });
+          } else {
+            await this.handleMessage(data.content, channel, (response) => {
+              socket.emit('response', { content: response });
+            });
+          }
         } catch (error) {
           // 'error' is reserved on the Socket.IO client; use a custom event name.
           socket.emit('chat_error', { message: 'An error occurred processing your message' });
@@ -520,6 +532,12 @@ class BookClawGateway {
       });
 
       socket.on('disconnect', () => {
+        // Clear this socket's ephemeral editor session so per-socket pointers
+        // don't accumulate in the persisted channel-editors.json.
+        const channel = `webchat:${socket.id}`;
+        if (this.editors?.getChannelEditor(channel)) {
+          this.editors.clearChannelEditor(channel).catch(() => {});
+        }
         this.audit.log('connection', 'websocket_disconnected', { id: socket.id });
       });
     });
@@ -1285,7 +1303,7 @@ class BookClawGateway {
   // Dashboard file list cache for /read and /export number-picking
   public dashboardLastFileList: string[] = [];
 
-  async handleDashboardCommand(input: string): Promise<string> {
+  async handleDashboardCommand(input: string, channel: string = 'api'): Promise<string> {
     const parts = input.split(/\s+/);
     let cmd = parts[0].toLowerCase();
     let args = input.substring(parts[0].length).trim();
@@ -1298,9 +1316,12 @@ class BookClawGateway {
     }
     const workspaceDir = join(ROOT_DIR, 'workspace');
     const handlers = this.buildTelegramCommandHandlers();
-    // Dashboard chat shares the 'api' channel with /api/chat regular messages,
-    // so an editor entered via command applies to the same conversation thread.
-    const dashboardChannel = 'api';
+    // Channel-stateful commands (editor mode) key off this channel so they apply
+    // to the SAME conversation thread the follow-up messages use. /api/chat passes
+    // 'api' (its default chat channel); the Socket.IO handler passes its per-socket
+    // `webchat:<id>` channel so a command entered over the socket affects that
+    // socket's chat — without it the editor would be set on a different channel.
+    const dashboardChannel = channel;
 
     // Natural language commands (no slash prefix)
     const lower = input.toLowerCase().trim();

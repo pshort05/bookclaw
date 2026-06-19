@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { DISPLAY_VERSION, BREAKING_VERSION } from '../../version.js';
 import { asyncHandler } from './_shared.js';
+import { isChatCommand } from '../../services/chat-command.js';
 
 /**
  * Core endpoints: health/liveness/readiness probes, status dashboard, chat API,
@@ -86,10 +87,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     }
 
     // Slash commands + natural language commands: route to dedicated handler
-    const lower = message.toLowerCase().trim();
-    const isCommand = message.startsWith('/') ||
-      ['continue', 'next', 'go', 'resume'].includes(lower);
-    if (isCommand) {
+    if (isChatCommand(message)) {
       try {
         const result = await gateway.handleDashboardCommand(message);
         return res.json({ response: result });

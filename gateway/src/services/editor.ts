@@ -37,6 +37,9 @@ export class EditorService {
       const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw as Record<string, any> : {};
       let pruned = obj !== raw;
       for (const [ch, v] of Object.entries(obj)) {
+        // Per-socket channels are ephemeral (the socket id never survives a
+        // restart, and disconnect clears them) — drop any that lingered.
+        if (ch.startsWith('webchat:')) { pruned = true; continue; }
         const name = v && typeof v === 'object' ? v.editor : undefined;
         if (typeof name === 'string' && this.get(name)) {
           // Legacy records (pre-mode) have no `mode` — default to brainstorm.

@@ -57,6 +57,23 @@ test('a pointer persists with its mode across a fresh instance over the same dir
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('ephemeral webchat:* pointers are pruned on init', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-edsvc-'));
+  try {
+    const cfgDir = join(root, 'workspace', '.config');
+    mkdirSync(cfgDir, { recursive: true });
+    // A dead per-socket pointer (socket ids never survive a restart) + a stable one.
+    writeFileSync(join(cfgDir, 'channel-editors.json'), JSON.stringify({
+      'webchat:abc123': { editor: 'maeve', withBook: false, mode: 'brainstorm' },
+      'api': { editor: 'maeve', withBook: false, mode: 'critique' },
+    }));
+    const svc = new EditorService(join(root, 'workspace'), stubLibrary);
+    await svc.initialize();
+    assert.equal(svc.getChannelEditor('webchat:abc123'), null);
+    assert.deepEqual(svc.getChannelEditor('api'), { editor: 'maeve', withBook: false, mode: 'critique' });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('a legacy pointer without a mode loads as brainstorm', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-edsvc-'));
   try {

@@ -83,5 +83,18 @@ fi
 OFF=$(chat "/editor off")
 case "$OFF" in *[Nn]ormal*|*chat*) pass "/editor off returns to normal chat" ;; *) fail "/editor off did not confirm" "$(printf '%s' "$OFF" | head -c 120)" ;; esac
 
+# ── 8. Socket.IO path (what the studio chat + Chat app actually use) ──
+# The dashboard/Chat-app send over Socket.IO, not POST /api/chat. This asserts
+# slash commands are dispatched over the socket too (the bug: they weren't).
+if [ -f "$SCRIPT_DIR/chat-socket-smoke.js" ]; then
+  if BASE_URL="$BASE_URL" BOOKCLAW_AUTH_TOKEN="$TOKEN" node "$SCRIPT_DIR/chat-socket-smoke.js"; then
+    pass "socket.io chat dispatches /editor commands"
+  else
+    fail "socket.io chat command dispatch failed (see output above)"
+  fi
+else
+  echo "  [SKIP] chat-socket-smoke.js not found"
+fi
+
 echo "  SUMMARY: $PASSES passed, $FAILS failed"
 exit "$FAILS"
