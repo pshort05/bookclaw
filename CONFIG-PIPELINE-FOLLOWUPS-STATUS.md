@@ -35,8 +35,8 @@ Started: 2026-06-18. Driver: autonomous (per user request).
 | Feature | design | plan | TDD code | code-review | fix med+ | smoke | deploy | remote-smoke |
 |---------|--------|------|----------|-------------|----------|-------|--------|--------------|
 | F1 sequence advance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| F2 skill on studio   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | ⬜ |
-| F3 migration baseline| ✅ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| F2 skill on studio   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| F3 migration baseline| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | ✅(local) |
 | Final: update+run full smoke | — | — | — | — | — | ⬜ | — | ⬜ |
 
 ## How to resume
@@ -52,4 +52,6 @@ Next action: implement F2 with TDD — extract `passiveSkillBlock(services, skil
 - 2026-06-18: F1 coded (TDD). `advancePipeline` + tests/unit/pipeline-advance.test.ts (5 tests); onProjectCompleted auto-advance hook (phase-06-content.ts); POST /api/pipeline/:id/advance route; PipelineRail follow-to-next-phase + "Phase X / N" + Project type fields. Backend tsc clean, studio build clean, 387/387 unit.
 - 2026-06-18: F1 code-review (3 finder agents). Fixed: (B2) corrected over-claiming "zero unattended cost" comments — accurate now re: heartbeat picks up active/pending sequence projects when autonomous mode is ON (pre-existing; no NEW cost); (F5) PipelineRail follow-effect set `followedRef` before the fetch → a transient failure dead-ended the sequence; now set only after a successful pipeline read; (F4) reset seqTotal on pipeline switch. Added docs/TODO.md note: heartbeat doesn't enforce sequence phase order in autonomous mode (pre-existing, out of scope). Re-verified tsc/build/tests.
 - 2026-06-18: F1 smoke `tests/pipeline-advance-smoke.sh` (gate + real-AI auto-advance hook). Local boot test clean. Deployed F1 (commit cce955e, last-build PASS). Mercury smoke 7/7 (incl. real-AI phase-1 completion → phase-2 auto-started). F1 DONE.
+- 2026-06-18: F3 coded (TDD). migrateBookToV2 now also writes `.baseline/pipeline/<name>.json` (relocate legacy `.baseline/pipeline.json` if present, else seed from templates). 2 new tests in book-migration-v2.test.ts. tsc clean, 394/394 unit. Code-review (1 agent) → [] (fail-soft preserved, idempotent, no wrong-file reads, only affects migrated v1 books). Smoke `tests/migration-baseline-smoke.sh` is LOCAL (boots a gateway, drops a v1 fixture, drives repull → migrate; Mercury has only v2 books so no remote smoke possible — migration paths also unit-covered). Local smoke 5/5. Deploying F3 to Mercury.
+
 - 2026-06-18: F2 coded (TDD). `passiveSkillBlock` helper in skill-runner.ts + tests/unit/skill-injection.test.ts (5); wired into index.ts startAndRunProject (replaced inline block) + projects.routes.ts /execute + /auto-execute. tsc clean, 392/392 unit. Code-review (1 agent, behavior-equivalence focus) → [] no findings (exact equivalence confirmed; no double-injection; services structural typing valid). Smoke `tests/skill-injection-smoke.sh` (passive skill w/ marker → assert marker in /execute output). Local boot clean. Deploying F2 to Mercury.

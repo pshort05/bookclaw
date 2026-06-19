@@ -81,6 +81,48 @@ test('migration is idempotent (a second open() is a no-op)', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('migration relocates the legacy .baseline/pipeline.json to the v2 path (F3)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-mig-'));
+  try {
+    const lib = seedLibrary(root); await lib.loadAll();
+    const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+    const dir = makeV1Book(root, 'legacy', 'deep-revision');
+    // A v1 pristine baseline at the legacy single-file path, with DISTINCT content.
+    const baselineBody = JSON.stringify({ schemaVersion: 1, name: 'deep-revision', label: 'PRISTINE', steps: [] }, null, 2);
+    write(dir, '.baseline/pipeline.json', baselineBody);
+
+    await svc.open('legacy');
+
+    const p = join(dir, '.baseline', 'pipeline', 'deep-revision.json');
+    assert.ok(existsSync(p), 'baseline relocated to the v2 per-name path');
+    assert.equal(readFileSync(p, 'utf-8'), baselineBody, 'pristine baseline content preserved (relocated, not reseeded)');
+    const rp = (await svc.repullStatus('legacy')).find(a => a.kind === 'pipeline' && a.name === 'deep-revision');
+    assert.ok(rp); assert.equal(rp!.hasBaseline, true);
+    assert.notEqual(rp!.status, 'no-baseline');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('migration seeds .baseline/pipeline/<name>.json from templates when no legacy baseline exists (F3)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-mig-'));
+  try {
+    const lib = seedLibrary(root); await lib.loadAll();
+    const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+    const dir = makeV1Book(root, 'legacy', 'deep-revision'); // no .baseline/ at all
+
+    await svc.open('legacy');
+
+    const p = join(dir, '.baseline', 'pipeline', 'deep-revision.json');
+    assert.ok(existsSync(p), 'baseline seeded at the v2 per-name path');
+    assert.equal(
+      readFileSync(p, 'utf-8'),
+      readFileSync(join(dir, 'templates', 'pipeline', 'deep-revision.json'), 'utf-8'),
+      'seeded from the migrated templates pipeline content',
+    );
+    const rp = (await svc.repullStatus('legacy')).find(a => a.kind === 'pipeline' && a.name === 'deep-revision');
+    assert.ok(rp); assert.equal(rp!.hasBaseline, true);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('migration falls back to "pipeline" name when the legacy file has none', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-mig-'));
   try {

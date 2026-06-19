@@ -336,10 +336,20 @@ export class BookService {
       const legacy = join(dir, 'templates', 'pipeline.json');
       let name = 'pipeline';
       if (existsSync(legacy)) {
-        const parsed = JSON.parse(readFileSync(legacy, 'utf-8')) as { name?: unknown };
+        const legacyContent = readFileSync(legacy, 'utf-8');
+        const parsed = JSON.parse(legacyContent) as { name?: unknown };
         if (typeof parsed.name === 'string' && parsed.name.trim()) name = parsed.name.trim();
         await mkdir(join(dir, 'templates', 'pipeline'), { recursive: true });
-        await writeFile(join(dir, 'templates', 'pipeline', `${name}.json`), readFileSync(legacy, 'utf-8'), 'utf-8');
+        await writeFile(join(dir, 'templates', 'pipeline', `${name}.json`), legacyContent, 'utf-8');
+
+        // F3: also migrate the re-pull baseline to the v2 per-name layout, else
+        // repullStatus reports 'no-baseline' and loses 3-way merge. Prefer the v1
+        // pristine baseline (.baseline/pipeline.json); seed from the templates
+        // content when the book has none.
+        const legacyBaseline = join(dir, '.baseline', 'pipeline.json');
+        const baselineContent = existsSync(legacyBaseline) ? readFileSync(legacyBaseline, 'utf-8') : legacyContent;
+        await mkdir(join(dir, '.baseline', 'pipeline'), { recursive: true });
+        await writeFile(join(dir, '.baseline', 'pipeline', `${name}.json`), baselineContent, 'utf-8');
       }
       manifest.pipelineSequence = [name];
       manifest.schemaVersion = 2;
