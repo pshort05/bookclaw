@@ -1,16 +1,16 @@
 # BookClaw Glossary — Canonical Terminology
 
 This is the **canonical vocabulary** for BookClaw. New work, docs, API names, and
-the eventual UI rewrite should use these terms. It is written to be clear to
+the React studio UI should use these terms. It is written to be clear to
 someone seeing BookClaw for the first time.
 
 Two kinds of things have names: **Program Elements** (the machinery that does the
 work) and **Book Assets** (the content a book is made of).
 
-> **Note on the current UI/code.** Some older terms still appear in the running
-> dashboard and parts of the code (`persona`, `soul`, `book-bible`, `LLM`, the
+> **Note on the current UI/code.** Some older terms still appear in the React
+> studio UI and parts of the code (`persona`, `soul`, `book-bible`, `LLM`, the
 > library `author` bundle, `section`). Those are being migrated to the terms
-> below; a full UI rename is deferred to the planned UI rewrite. When in doubt,
+> below; a full UI rename is still in progress. When in doubt,
 > the names on this page win. See [Reconciliation](#reconciliation-with-older-terms).
 
 ---
@@ -33,7 +33,8 @@ A Book usually produces a manuscript, but it can also cover only part of the wor
 ### Pipeline
 An ordered group of **Steps** that run in sequence to produce or transform assets
 (for example: *planning → world & characters → drafting → revision → format →
-launch*). A Book selects a Pipeline; pipelines are reusable templates.
+launch*). A Book runs a data-driven sequence of one or more named Pipelines;
+pipelines are reusable, editable templates (config, not hardcoded phases).
 
 ### Step
 A single unit of work in a Pipeline. A Step runs **either**:
@@ -124,6 +125,5 @@ Series
 | `LLM` (provider + model) | **Model** |
 | library `section` (front/back matter) | part of **Manuscript** |
 
-These are mapped here so the migration is unambiguous. Code and the dashboard will
-adopt the canonical terms over time; the larger UI rename happens in the planned UI
-rewrite.
+These are mapped here so the migration is unambiguous. Code and the React studio UI
+adopt the canonical terms over time; the larger UI rename is still in progress.

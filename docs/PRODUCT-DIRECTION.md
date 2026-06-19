@@ -2,6 +2,8 @@
 
 Status: living document. Updated 2026-06-09.
 
+Status (2026-06-18): Several items this document frames as "future work" / "Net-new" have since shipped, and the status lines below predate them. Specifically: the **per-step model override** (called out as "does not exist yet" in use cases #1 and #2, the data model Pipeline entry, and the thin-slice) is implemented (`ProjectStep.modelOverride`, applied via `stepRouting()` in `_shared.ts`; `POST /api/projects/:id/steps/:stepId/model` route). **Data-driven, config-not-code pipelines** are implemented — a book runs a named **sequence** of editable library pipelines (`sequence-parse.ts`, `pipeline-expand.ts`, library `pipelines`/`sequences` kinds); the hardcoded 6-phase pipeline is no longer the generation path. The book-container model is complete (Phases 0-12). The strategic reasoning below is preserved as the original snapshot; treat the implementation-status columns as of 2026-06-09.
+
 This document sets the product and market direction for BookClaw. It is the "why and for whom" companion to the [North Star](TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision) in `TODO.md` (the "what to build") and the [god-class refactor](GOD-CLASS-REFACTOR.md) and [OpenClaw backport audit](OPENCLAW-UPDATES.md) (the "how"). Where any of those conflict with this document on priority, this document wins.
 
 ---

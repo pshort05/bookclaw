@@ -6,9 +6,9 @@ Quick reference for starting, stopping, and managing BookClaw.
 
 ## Windows — via Docker Desktop or WSL2
 
-BookClaw v5+ does not ship a supported Windows-direct install. Windows users should run BookClaw through Docker Desktop or under WSL2; both flows reuse the steps in the **VPS / Remote Server (Docker)** section below.
+BookClaw does not ship a supported Windows-direct install. Windows users should run BookClaw through Docker Desktop or under WSL2; both flows reuse the steps in the **VPS / Remote Server (Docker)** section below.
 
-- **Docker Desktop:** install Docker Desktop for Windows, clone the repo in PowerShell or Git Bash, then follow the **Start with Docker** subsection below. The dashboard is reachable at `http://localhost:3847` from the Windows host.
+- **Docker Desktop:** install Docker Desktop for Windows, clone the repo in PowerShell or Git Bash, then follow the **Start with Docker** subsection below. The studio is reachable at `http://localhost:3847` from the Windows host.
 - **WSL2 (Ubuntu / Debian):** open your WSL distro and follow the **First-time setup** + **Start without Docker** steps below as if it were a Linux box.
 
 Direct `npm start` from a Windows command prompt or PowerShell is not a supported configuration on this fork. Some `process.platform === 'win32'` branches survive in the source from upstream OpenClaw — they may continue to work, but Windows-direct is not tested or documented.
@@ -52,6 +52,13 @@ npm run docker:down
 npm start
 ```
 
+> **Workspace version gate:** on boot the gateway compares the persisted
+> `workspace/.bookclaw/workspace.json` schema version against the build's
+> supported range and **fails closed** (process exits) if the workspace is
+> incompatible — protecting an old or newer workspace from a mismatched build.
+> Override with `BOOKCLAW_SKIP_VERSION_GATE=1` (unsafe; only when you know what
+> you are doing).
+
 ### Network access
 
 This fork binds to `0.0.0.0:3847` by default — the Docker image is reachable
@@ -93,7 +100,7 @@ ssh -L 3847:localhost:3847 user@your-vps-ip
 |---|---|
 | Main code | `gateway/src/index.ts` |
 | UI (v6 React studio) | Served statically at `/` (built from `frontend/studio/`). The old vanilla-JS dashboard was retired. |
-| Skills | `skills/{core,author,marketing}/` (19 active, rest in `_archived/`) |
+| Skills | `skills/{core,author,marketing,ops}/` (active categories; `premium/` is gitignored, rest in `_archived/`) |
 | Config | `config/default.json` (public), `config/user.json` (private) |
 | Vault (encrypted keys) | `config/.vault/vault.enc` |
 | Project outputs | `workspace/projects/` |
@@ -104,11 +111,11 @@ ssh -L 3847:localhost:3847 user@your-vps-ip
 | Self-improvement | `workspace/.agent/` |
 | Workspace (Docker host mount) | `/home/paul/bookclaw-workspace` — the whole `workspace/` tree, bind-mounted on the host (override with `BOOKCLAW_WORKSPACE_PATH`). Back this directory up. Owned by the container user (uid 999), so host writes/deletes need `sudo`. |
 
-## API Keys (Dashboard > Settings)
+## API Keys (Studio > Settings)
 
-All keys are stored in the encrypted vault. Set them via the dashboard:
-1. Open **http://localhost:3847** > **Settings** tab
-2. Enter API keys in the provider fields
+All keys are stored in the encrypted vault. Set them via the studio:
+1. Open **http://localhost:3847** > **Settings** (`/settings`)
+2. Enter API keys in the provider fields (values are write-only — never read back)
 3. Click **Save** — keys are encrypted with AES-256-GCM
 
 | Provider | Where to get key | Cost |
@@ -123,8 +130,8 @@ All keys are stored in the encrypted vault. Set them via the dashboard:
 
 1. Message **@BotFather** on Telegram → `/newbot`
 2. Copy the bot token
-3. Dashboard > Settings > paste token > Save
-4. Dashboard > Telegram > enter your Telegram user ID > Save
+3. Studio > Settings > paste the Telegram bot token > Save
+4. Studio > Settings > enter your Telegram user ID (allowed users) > Save
 5. Message your bot — it should respond
 
 ## Common Commands
@@ -139,13 +146,13 @@ curl -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" http://localhost:3847/api/s
 npx tsc --noEmit
 
 # View project list
-curl http://localhost:3847/api/projects/list | node -e "const d=require('fs').readFileSync(0,'utf8');JSON.parse(d).projects.forEach(p=>console.log(p.id,p.title,p.status,p.progress+'%'))"
+curl -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" http://localhost:3847/api/projects/list | node -e "const d=require('fs').readFileSync(0,'utf8');JSON.parse(d).projects.forEach(p=>console.log(p.id,p.title,p.status,p.progress+'%'))"
 
 # Compile manuscript from chapter files
-curl -X POST http://localhost:3847/api/projects/PROJECT_ID/compile
+curl -X POST -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" http://localhost:3847/api/projects/PROJECT_ID/compile
 
 # Resume a stuck project
-curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
+curl -X POST -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" http://localhost:3847/api/projects/PROJECT_ID/resume
 ```
 
 ## Ports
@@ -153,7 +160,7 @@ curl -X POST http://localhost:3847/api/projects/PROJECT_ID/resume
 | Service | Port | Binding |
 |---|---|---|
 | BookClaw | 3847 | configurable via `BOOKCLAW_BIND` (default `0.0.0.0`; set `127.0.0.1` for loopback-only) |
-| Chat app | 3848 | configurable via `BOOKCLAW_CHAT_PORT`; served separately from the main studio |
+| Chat app | 3848 (convention) | disabled unless `BOOKCLAW_CHAT_PORT` is set (docker-compose publishes 3848); served separately from the main studio |
 | Ollama (if installed) | 11434 | localhost only |
 
 ## Security Checklist

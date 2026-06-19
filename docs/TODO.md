@@ -58,13 +58,10 @@ The full-codebase review's CRITICAL/HIGH/MEDIUM findings and all safe LOW items 
 
 ## Owner roadmap — 2026-06-12 batch
 
-Eight items the owner queued on 2026-06-12. **#1 (versioning format) and #2 (README warning) were done immediately** — see COMPLETED.md. The remaining work (items #3–#8 plus the breaking-change gate follow-on to #1):
+Eight items the owner queued on 2026-06-12. **#1 (versioning format), #2 (README warning), and the breaking-change gate follow-on to #1 are done** — see COMPLETED.md. The remaining work (items #3–#8):
 
-- [ ] **Versioning — breaking-change gate (follow-on to #1).** The display version is now CalVer `V{yy.mm.dd}` and a manually-bumped `BREAKING_VERSION` integer (`gateway/src/version.ts`, surfaced in `/api/status` + `/api/health`) is the breaking-change marker. **Still to build:** the enforcing gate — on boot, compare `BREAKING_VERSION` against the persisted `workspace/.bookclaw/workspace.json` marker (which currently stores `WORKSPACE_SCHEMA_VERSION`) and refuse/quarantine (read-only) on an incompatible mismatch, mirroring the per-book `classifyVersion` fail-closed posture. Decide whether `BREAKING_VERSION` and `WORKSPACE_SCHEMA_VERSION` unify or stay separate, and what "refuse" means for a running container (warn-and-continue vs hard-stop).
 - [ ] **Import the owner's existing genre + pipeline documents.** Bring the owner's existing genre guides and pipeline definitions into the product as library entries (built-in or workspace overlay). Pairs with Phase 12 library element import (`/api/library/import`) and the `LibraryService` overlay write path; may need a small content-conversion step to the 7-file genre-guide schema (`docs/GENRE-GUIDE-TEMPLATE.md`) and the `pipeline.json` shape. Owner to provide the source documents.
 - [ ] **File explorer for documents.** A studio UI to browse the uploaded manuscripts under `workspace/documents/` (and likely a book's `data/` outputs) — list/preview/download/delete. Backend largely exists (`/api/documents`, `/api/books/:slug/files`); this is mostly a frontend route + reuse of the sanitized markdown preview. Decide scope (documents only vs a unified per-book file tree) and whether delete needs the confirmation gate.
-
-- [ ] **Update the documentation.** General docs refresh across `README.md`, `docs/ARCHITECTURE.md`, `docs/QUICKSTART.md`, `docs/SECURITY.md`, and the book-container/glossary docs to reflect the now-complete Phases 0–12, the code-review hardening (2026-06-12), the new CalVer versioning, and the features above as they land. (Several SECURITY.md / README localhost-only statements are already flagged stale in CLAUDE.md.)
 
 ## Quick cleanups (minutes)
 

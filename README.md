@@ -162,7 +162,7 @@ Three concentric layers wrap the work:
 
 - **Security perimeter** — bearer auth, deny-by-default CORS, optional source-IP allowlist, encrypted vault, workspace sandbox, prompt-injection detection, audit logging, and a confirmation gate for irreversible external actions.
 - **AI routing** — six providers mapped to free / mid / premium tiers with per-task reasoning and output budgets.
-- **Skills + Projects** — markdown skills injected into a project engine that runs hardcoded templates or AI-planned pipelines, with per-book containers (a portable `book.json` + template snapshot + outputs) as the emerging data model.
+- **Skills + Projects** — markdown skills injected into a project engine that runs config-driven pipeline sequences (editable named pipelines under `library/`) or AI-planned steps, with per-book containers (a portable `book.json` + template snapshot + outputs) as the data model.
 
 **For the full design — entry point and init sequence, request/data flow, the three layers in detail, the book-container model, and the on-disk layout — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).**
 
@@ -198,10 +198,11 @@ bookclaw/
 
 ## Testing
 
-Tests are plain scripts (no test-framework dependency) so any check can be re-run:
+Tests run through Node's built-in `node --test` runner (no third-party test framework) so any check can be re-run:
 
 ```bash
-npm run test:unit      # node --test (via tsx) over tests/unit/*.test.ts (+ builds the frontend)
+npm run test:unit      # node --test (via tsx) over tests/unit/*.test.ts (~400 unit tests; builds the frontend first)
+npm run test:api       # bash tests/api/api-test.sh against a running instance
 npm run test:smoke     # boots the gateway and asserts the security perimeter (hermetic)
 npm test               # unit + api + smoke
 npx tsc --noEmit       # type-check only

@@ -9,6 +9,11 @@ One low-severity follow-on was deferred (see TODO "schemaVersion gate at the dat
 path"): `BookService.setPhase` writes the manifest without the `assertWritable` gate —
 unreachable while all books are schema v1; add the gate at the first v1→v2 bump.
 
+**Status update (2026-06-18):** the deferred follow-on has since shipped. `BookService.setPhase`
+now calls `await this.assertWritable(slug)` before writing the manifest (book.json), and the
+gate is load-bearing now that a too-new (schemaVersion > 2) book is reachable. The rest of this
+document is retained as the original point-in-time design/implementation record.
+
 **Review fix (medium):** book-production emits a `polish` step phase that is not a member
 of a novel-pipeline book's `phasesForBook` → the live/persisted phase is now **clamped to
 the book's segment list** (in `buildBookCards` and the `onStepCompleted` hook), so a

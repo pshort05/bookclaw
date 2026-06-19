@@ -1,6 +1,8 @@
 # BookClaw — Full Codebase Review — 2026-06-12
 
 > **STATUS (updated 2026-06-12): all surgically-addressable findings FIXED.** A 5-agent fan-out resolved every CRITICAL/HIGH/MEDIUM finding plus the safe LOW items in one batch (`tsc` clean, 211/211 unit tests, frontend build green). The only items left open are the genuinely large/deferred ones — config-not-code pipelines, phases-as-data, `WIRED_KINDS`, the god-class refactor, TLS-aware CSP, custom dialogs, and chat markdown rendering — all tracked under "Deferred from code review 2026-06-12" in `docs/TODO.md`, with the completed batch recorded in `docs/COMPLETED.md`. The finding text below is preserved as-written for the historical record.
+>
+> **STATUS (2026-06-18): three of the deferred North Star items have since shipped** — **config-not-code pipelines** and **phases-as-data** (named pipelines now run as an editable, data-driven book *sequence*; the code-generated 6-phase enum is no longer the generation path — commits `e79c796`, F1/F2/F3, and `31c66d8`), and **`WIRED_KINDS`** now includes `section` and `skill` (`gateway/src/services/book-types.ts`). The remaining deferred items (god-class refactor, TLS-aware CSP, custom dialogs, chat markdown rendering) are still open. The North Star analysis in sections below is preserved as the 2026-06-12 snapshot.
 
 Reviewer: Claude (Fable 5), 7-agent fan-out across chat, security, AI/engine, book-container data layer, API/init, and frontend. Findings are compared against the **North Star** (multi-author / multi-book studio; "adding an author, genre, or pipeline should be configuration, not code" — `docs/TODO.md` North Star, `docs/BOOK-CONTAINER-ARCHITECTURE.md`).
 

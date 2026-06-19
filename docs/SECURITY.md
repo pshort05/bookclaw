@@ -37,7 +37,7 @@ should be suspicious of any future version or fork that claims otherwise:
 - **It does not auto-approve irreversible actions.** Every publish, send,
   submit, upload, bid change, purchase, and delete passes through the
   `ConfirmationGateService`. If you don't click "Approve" in the
-  dashboard, nothing happens.
+  studio, nothing happens.
 - **It does not store your platform passwords.** API keys, bot tokens,
   and OAuth refresh tokens are stored in the local AES-256-GCM vault at
   `config/.vault/vault.enc`. Passwords for username+password logins
@@ -67,11 +67,17 @@ should be suspicious of any future version or fork that claims otherwise:
 > auto-generated; `BOOKCLAW_AUTH_DISABLED=1` to opt out); **CORS denies
 > cross-origin by default** (`BOOKCLAW_CORS_ORIGINS` allowlist); an optional
 > **source-IP allowlist** (`BOOKCLAW_ALLOWED_IPS`) gates all clients in front
-> of auth; and Helmet **`connectSrc` is `'self'`** (the dashboard is same-origin
-> only). **Still pending: API-level rate limiting.** This posture suits a
-> trusted single-user LAN. If the service is reachable from any untrusted
-> network, also front it with a reverse proxy (Caddy / Nginx / Traefik) for TLS
-> — or set `BOOKCLAW_BIND=127.0.0.1` to restore the upstream loopback default.
+> of auth; Helmet **`connectSrc` is `'self'`** (the studio is same-origin
+> only); and **per-IP rate limiting** fronts `/api/*` (separate strict/anon and
+> generous/authed buckets — `BOOKCLAW_RATELIMIT_UNAUTH`, `BOOKCLAW_RATELIMIT_AUTH`,
+> `BOOKCLAW_RATELIMIT_WINDOW_MS`; loopback and allowlisted IPs exempt). A
+> **boot-time workspace version gate** also fail-closed refuses to start when the
+> persisted workspace schema is incompatible with the running build (override
+> `BOOKCLAW_SKIP_VERSION_GATE=1`), so an incompatible app can't corrupt the data.
+> This posture suits a trusted single-user LAN. If the service is reachable from
+> any untrusted network, also front it with a reverse proxy (Caddy / Nginx /
+> Traefik) for TLS — or set `BOOKCLAW_BIND=127.0.0.1` to restore the upstream
+> loopback default.
 
 | Concern | Status |
 |---|---|
@@ -83,7 +89,7 @@ should be suspicious of any future version or fork that claims otherwise:
 | Budget cap | Persisted daily + monthly spend; fallback provider respects cap. |
 | Audit log | Every action written to daily JSONL files under `workspace/.audit/`. Secrets redacted. |
 | Confirmation gate | Universal — all Wave 3 writes go through `ConfirmationGateService`. 24h expiry. |
-| Rate limiting | In-process per-channel rate limits. External scraping backs off on 429. |
+| Rate limiting | Per-IP HTTP rate limiting fronts `/api/*` (`BOOKCLAW_RATELIMIT_UNAUTH`/`_AUTH`/`_WINDOW_MS`; loopback + allowlisted IPs exempt), plus in-process per-channel limits. External scraping backs off on 429. |
 
 ### Master-key handling
 
@@ -99,7 +105,7 @@ Wave 3 features (Launch Orchestrator, AMS Ads, BookBub, Reader Intel)
 drive your own browser via the Claude-in-Chrome MCP. Rules:
 
 - BookClaw **never clicks Publish / Submit / Send** without your
-  explicit dashboard approval on a confirmation card that includes a
+  explicit studio approval on a confirmation card that includes a
   screenshot + dry-run diff.
 - Your browser's existing logged-in sessions are used. BookClaw does
   not persist cookies to its own store.

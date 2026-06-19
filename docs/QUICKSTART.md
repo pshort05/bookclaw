@@ -19,26 +19,26 @@ npm install
 ## Start
 
 ```bash
-npx tsx gateway/src/index.ts
+npm start
 ```
 
-You should see:
+You should see (the version is a CalVer build stamp, `V{yy.mm.dd}`):
 
 ```
-  BookClaw V5.x.x
+  BookClaw V26.06.xx
   ═══════════════════════════════════
   The Autonomous AI Writing Agent
   ...
-  ✓ Skills: 25+ loaded
-  ✓ Project engine: 8 templates + dynamic AI planning
+  ✓ Skills: 29 loaded (15 author-specific)
+  ✓ Project engine: 7 pipeline templates + dynamic AI planning
   ═══════════════════════════════════
   BookClaw is ready to write
-  Studio: http://localhost:3847
+  Dashboard: http://localhost:3847
 ```
 
 ## Configure
 
-1. Open **http://localhost:3847** in your browser — this opens the v6 studio (Book Board). A standalone Chat app is also available at **http://localhost:3848**.
+1. Open **http://localhost:3847** in your browser — this opens the v6 studio (Book Board). A standalone Chat app can also be enabled on its own port by setting `BOOKCLAW_CHAT_PORT` (e.g. `3848`); it is disabled unless that variable is set.
 2. Go to **Settings** in the left rail
 3. Paste your **Gemini API key** and click Save
 4. The provider status should show "Gemini" as active
@@ -61,7 +61,7 @@ You should see:
 
 ### Option C: API
 ```bash
-curl -X POST http://localhost:3847/api/projects \
+curl -X POST http://localhost:3847/api/projects/create \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $BOOKCLAW_AUTH_TOKEN" \
   -d '{"title":"Robot Story","description":"Write a short story about a robot who learns to paint","planning":"dynamic"}'

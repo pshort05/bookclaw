@@ -3,14 +3,12 @@ import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { ConfigService } from '../services/config.js';
 import { ROOT_DIR } from '../paths.js';
+import { WORKSPACE_SCHEMA_VERSION, workspaceGate } from '../services/workspace-version.js';
 import type { BookClawGateway } from '../index.js';
 
-/**
- * Current on-disk schema version of the workspace tree. Bumped only on a
- * breaking layout change; the per-book/library compatibility gate (a later
- * phase) reads this. See docs/BOOK-CONTAINER-ARCHITECTURE.md.
- */
-export const WORKSPACE_SCHEMA_VERSION = 1;
+// Re-exported for the rest of init/ (phase-06-content) that still imports it
+// from here; the source of truth + the gate logic live in workspace-version.ts.
+export { WORKSPACE_SCHEMA_VERSION };
 
 /** Phase 1: Configuration + workspace schema marker. */
 export async function initConfig(gw: BookClawGateway): Promise<void> {
@@ -23,21 +21,40 @@ export async function initConfig(gw: BookClawGateway): Promise<void> {
 
 /**
  * Stamp workspace/.bookclaw/workspace.json with the schema version on first run
- * (and log the version on later runs). No compatibility gate yet — that lands
- * with the per-book version gate. Fail-soft: a marker problem must not block
- * startup.
+ * (and gate compatibility on later runs). The gate (workspace-version.ts) refuses
+ * to start when the marker was written by a too-new app (or is too old) so an
+ * incompatible build can't corrupt the data — fail-closed, mirroring the per-book
+ * version gate; an operator can override with BOOKCLAW_SKIP_VERSION_GATE=1.
+ *
+ * Fail-soft only for non-version problems: a missing marker is a fresh workspace
+ * (stamp it) and an unreadable marker can't be classified, so neither blocks
+ * startup. A *determinable* incompatible version is the one case that halts boot.
  */
 async function stampWorkspaceMarker(): Promise<void> {
   const markerDir = join(ROOT_DIR, 'workspace', '.bookclaw');
   const markerPath = join(markerDir, 'workspace.json');
 
   if (existsSync(markerPath)) {
+    let m: { schemaVersion?: unknown; createdByApp?: unknown };
     try {
-      const m = JSON.parse(await fs.readFile(markerPath, 'utf-8'));
-      console.log(`  ℹ Workspace schema v${m.schemaVersion} (created by app ${m.createdByApp ?? '?'})`);
+      m = JSON.parse(await fs.readFile(markerPath, 'utf-8'));
     } catch {
       console.log('  ⚠ Workspace schema marker present but unreadable — leaving it untouched');
+      return;
     }
+    // Missing/non-numeric schemaVersion → 0 → quarantined (fail-closed, mirrors
+    // the per-book `schemaVersion ?? 0` posture).
+    const markerVersion = Number(m.schemaVersion) || 0;
+    const gate = workspaceGate(markerVersion, process.env.BOOKCLAW_SKIP_VERSION_GATE === '1');
+    if (gate.level === 'fatal') {
+      console.error(`\n  ✖ FATAL: ${gate.message}\n`);
+      process.exit(1);
+    }
+    if (gate.level === 'warn') {
+      console.log(`  ⚠ ${gate.message}`);
+      return;
+    }
+    console.log(`  ℹ Workspace schema v${markerVersion} (created by app ${m.createdByApp ?? '?'})`);
     return;
   }
 

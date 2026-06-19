@@ -1,6 +1,6 @@
 # BookClaw: Evolve BookClaw vs. Re-Fork OpenClaw — Effort Comparison
 
-> **Status (2026-06-09):** Decision implemented — Option A was taken. The rename (AuthorClaw → BookClaw) is complete and book-container Phases 0–7 are done. Frozen decision record; see docs/COMPLETED.md for current state.
+> **Status (2026-06-18):** Decision implemented — Option A was taken. The rename (AuthorClaw → BookClaw) is complete and the book-container model is fully shipped (Phases 0–12; Phase 12 was the final planned phase). Frozen decision record; see docs/COMPLETED.md for current state.
 
 Decision memo for review. Prepared 2026-05-30.
 

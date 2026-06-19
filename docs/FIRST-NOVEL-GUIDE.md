@@ -1,8 +1,8 @@
 # BookClaw — Your First Novel, Step by Step
 
-A practical, end-to-end walkthrough: from a one-sentence idea to chapter files on disk. Assumes you've already installed BookClaw and the dashboard loads at **http://localhost:3847**. If you haven't, see [QUICKSTART.md](QUICKSTART.md) and come back here.
+A practical, end-to-end walkthrough: from a one-sentence idea to chapter files on disk. Assumes you've already installed BookClaw and the studio loads at **http://localhost:3847**. If you haven't, see [QUICKSTART.md](QUICKSTART.md) and come back here.
 
-This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with BookClaw — pipeline mode, studio-driven, with Telegram on the side for mobile control. The standalone Chat app at **http://localhost:3848** is a phone-friendly alternative surface for the same chat interface. Once you've shipped one book this way, branch out.
+This guide is opinionated. It walks the *path of least resistance* for someone writing their first book with BookClaw — pipeline mode, studio-driven, with Telegram on the side for mobile control. The optional standalone Chat app (enabled by setting `BOOKCLAW_CHAT_PORT=3848`, then reachable at **http://localhost:3848**) is a phone-friendly alternative surface for the same chat interface. Once you've shipped one book this way, branch out.
 
 ---
 
@@ -12,9 +12,10 @@ Before you click anything, internalize this:
 
 - **You give BookClaw a *persona* and a *premise.*** Everything downstream is built off those two anchors.
 - **A book is a *pipeline* — 6 phases, run end to end.** Planning → Bible → Production → Revision → Format → Launch. You can run the whole pipeline with one command, or run each phase individually if you want to review between steps.
-- **Every phase produces files** under `workspace/projects/<project-id>/`. You can open them, edit them, and the next phase will read your edits.
-- **Skills, not templates, do the actual writing.** BookClaw dynamically picks 19 focused skills per step. You don't pick skills — the planner does.
-- **Pipeline state is durable.** You can `/stop` mid-novel, close your laptop, and resume from the dashboard or Telegram days later.
+- **Every phase produces files** under the book's container at `workspace/books/<slug>/data/` (one markdown file per step). You can open them, edit them, and the next phase will read your edits.
+- **Skills, not templates, do the actual writing.** BookClaw matches a focused skill to each step from its catalog (~50 skills) and injects that skill's content into the prompt. You don't pick skills — the planner does.
+- **Pipeline state is durable.** You can `/stop` mid-novel, close your laptop, and resume from the studio or Telegram days later.
+- **A book is a *container.*** Each project is bound to a book at creation (`workspace/books/<slug>/`), and its persona, voice, genre, and output routing all resolve from that binding — so multiple books can run concurrently without cross-contamination.
 - **You are the editor, not the typist.** Plan to spend 10–15 minutes reviewing each phase's output before unlocking the next. Set that expectation now and the rest is easy.
 
 ---
@@ -25,21 +26,23 @@ Don't skip these. The single biggest determinant of output quality is the inputs
 
 - [ ] **Decide your pen name.** Real or fictional. This will become the *Persona* and will color voice, themes, and bio.
 - [ ] **Write your idea in one to three sentences.** Not a synopsis — a logline. Example: *"A burned-out hedge fund analyst on vacation falls for the rival firm's heir, only to discover their families have been at war for thirty years."*
-- [ ] **Pick a genre + sub-genre.** "Romance" is too broad. "Contemporary romance, billionaire/dual-POV, heat level 4" is workable. The narrower, the better the planning. (Genre now maps to a named library profile in BookClaw — Phase 7 — that shapes generation at every step, so a specific genre choice matters more than it used to.)
+- [ ] **Pick a genre + sub-genre.** "Romance" is too broad. "Contemporary romance, billionaire/dual-POV, heat level 4" is workable. The narrower, the better the planning. (Genre maps to a named library profile in BookClaw — a genre guide that the book container snapshots and feeds into the system prompt at every step, so a specific genre choice matters more than it used to.)
 - [ ] **Pick a target word count.** 75k–95k for romance, 90k–110k for thriller, 100k–130k for epic fantasy. Don't say "long" — say "85,000 words."
 - [ ] **Have a Gemini API key saved in Settings.** Free tier is enough for your first book. Add Claude later for the revision phase if you want premium edits.
-- [ ] **Decide where you'll review the output.** Dashboard (browser) and Telegram (phone) both work. The dashboard is better for the first book — you see file contents inline.
+- [ ] **Decide where you'll review the output.** The studio (browser) and Telegram (phone) both work. The studio is better for the first book — you see file contents inline.
 
 If any of those bullets stall you, pause here. Five minutes of clarity now saves an hour of regenerating off-target chapters later.
 
 ---
 
-## STEP 1 — Create your Author Persona
+## STEP 1 — Create your Author
 
-The persona is the single most-injected piece of context in every step that follows. Get it right.
+The author identity is the single most-injected piece of context in every step that follows. Get it right.
 
-### 1a. Open the Personas area
-In the v6 studio, persona selection is part of the **New-Book picker** flow. You'll see a card grid of existing personas (probably empty on a fresh install) before you create a book.
+> Terminology note: the studio's canonical concept is now **Author** (the pen-name identity — name, bio, voice) plus a separate **Voice** asset (prose style). This consolidates the older "persona" / "soul" concepts; where this guide says "persona," read it as your Author. The legacy `personas.json` store still exists under the hood.
+
+### 1a. Open the New-Book picker
+In the v6 studio, author/voice/genre selection is part of the **New-Book picker** flow (the `New Book` route). You pick from your library of **Author**, **Voice**, and **Genre** assets (probably sparse on a fresh install) before you create a book; you can also create or edit those assets in the **Asset Studio**.
 
 ### 1b. Create your persona
 Two paths:
@@ -117,22 +120,22 @@ The agent replies with the pipeline outline:
 The numbers vary based on word count + chapter count. A 90k-word, 30-chapter novel comes out to ~70 production steps.
 
 ### 3d. Note the project ID
-The dashboard shows a card for the new project under **Projects**. The project ID looks like `proj_2026-05-28_a3f7b2`. Write it down or pin the card — you'll want it for `/files`, `/read`, `/stop`, and the API calls in `LAUNCH-GUIDE.md`.
+The studio shows a card for the new project. The project ID looks like `proj_2026-05-28_a3f7b2`. Write it down or pin the card — you'll want it for `/files`, `/read`, `/stop`, and the API calls in `LAUNCH-GUIDE.md`.
 
 ---
 
 ## STEP 4 — Phase 1: Book Planning (the most important review)
 
-Phase 1 runs automatically. It produces ~6 files in `workspace/projects/<project-id>/01-planning/`:
+Phase 1 runs automatically. Each step writes one markdown file into the book's container at `workspace/books/<slug>/data/` (files are named after the step, e.g. `<step-id>-premise.md`; access them by number through `/files` / `/read` rather than guessing the exact name). The planning steps cover:
 
-| File | What it is | What to look for |
+| Step output | What it is | What to look for |
 |---|---|---|
-| `market-analysis.md` | Comp titles, audience, hooks | Does it pick the right tropes for your genre? |
-| `premise.md` | The expanded premise | Is the conflict actually conflictful? |
-| `characters.md` | Cast list with arcs | Two leads minimum. Each with a wound + a want. |
-| `outline.md` | High-level beat structure | Inciting incident, midpoint, black moment, resolution — all present? |
-| `synopsis.md` | One-page synopsis | This is the file you'd give a future agent or KDP listing. |
-| `structure.md` | Chosen story structure | Should match your genre (Romancing the Beat for romance, Save the Cat for thriller, etc.) |
+| Market analysis | Comp titles, audience, hooks | Does it pick the right tropes for your genre? |
+| Premise | The expanded premise | Is the conflict actually conflictful? |
+| Characters | Cast list with arcs | Two leads minimum. Each with a wound + a want. |
+| Outline | High-level beat structure | Inciting incident, midpoint, black moment, resolution — all present? |
+| Synopsis | One-page synopsis | This is the file you'd give a future agent or KDP listing. |
+| Structure | Chosen story structure | Should match your genre (Romancing the Beat for romance, Save the Cat for thriller, etc.) |
 
 ### 4a. Stop the pipeline after Planning
 While Phase 1 is running, watch the **Activity** view (left rail in the studio). The moment it shows **Phase 1 complete, starting Phase 2**, click **Stop** (or send `/stop`).
@@ -144,7 +147,7 @@ While Phase 1 is running, watch the **Activity** view (left rail in the studio).
 This is the most important checkpoint in the whole pipeline. Everything downstream — bible, chapters, revisions — compounds on Phase 1's output. A weak premise here yields a weak novel six hours later.
 
 ### 4b. Read every Phase 1 file
-Dashboard → Projects → your project → **Files**. Or:
+Studio → your project → **Files**. Or:
 ```
 /files
 /read 3
@@ -152,11 +155,11 @@ Dashboard → Projects → your project → **Files**. Or:
 (`3` being the file number from the `/files` listing.)
 
 ### 4c. Edit anything that feels off
-Open the files directly:
+Open the files directly under the book's data directory:
 ```
-workspace/projects/<project-id>/01-planning/outline.md
+workspace/books/<slug>/data/
 ```
-Edit in any text editor. Save. BookClaw will read your edits when Phase 2 starts.
+Find the outline file (the step name is in the filename), edit it in any text editor, and save. BookClaw will read your edits when Phase 2 starts.
 
 Things to fix at this stage:
 - **Generic character names** — change them. The leads are stuck with whatever name lands here.
@@ -174,15 +177,15 @@ Or click **Resume** on the project card.
 
 ## STEP 5 — Phase 2: Book Bible (your continuity insurance)
 
-Phase 2 produces the documents that every subsequent chapter will be checked against:
+Phase 2 produces the documents that every subsequent chapter will be checked against (again, one markdown file per step in `workspace/books/<slug>/data/`):
 
-| File | Purpose |
+| Step output | Purpose |
 |---|---|
-| `world-building.md` | Setting, era, technology, rules. Even contemporary romance has a "world" (the firm, the city, the social rules). |
-| `character-bible.md` | Full per-character profiles — backstory, voice samples, physical detail, arc. |
-| `continuity.md` | Locations, timeline, recurring objects. This is what catches "she had brown eyes in chapter 3 and green eyes in chapter 19." |
-| `themes.md` | What the book is *about* beneath the plot. |
-| `style.md` | Voice constraints — banned words, sentence-length cadence, dialogue rhythm. |
+| World-building | Setting, era, technology, rules. Even contemporary romance has a "world" (the firm, the city, the social rules). |
+| Character bible | Full per-character profiles — backstory, voice samples, physical detail, arc. |
+| Continuity | Locations, timeline, recurring objects. This is what catches "she had brown eyes in chapter 3 and green eyes in chapter 19." |
+| Themes | What the book is *about* beneath the plot. |
+| Style | Voice constraints — banned words, sentence-length cadence, dialogue rhythm. |
 
 ### 5a. Same checkpoint pattern as Phase 1
 Let Phase 2 finish, then `/stop`. Read every file. Edit aggressively.
@@ -190,7 +193,7 @@ Let Phase 2 finish, then `/stop`. Read every file. Edit aggressively.
 The character bible is the single highest-leverage edit you can make in the whole pipeline. The chapters in Phase 3 will be only as alive as these profiles are. If a character bible reads "ambitious, smart, hardworking" — rewrite it. Make them *specific.* The bible BookClaw drafts is a starting point, not a finish line.
 
 ### 5b. Add your own files if you have them
-Drop additional reference docs into `workspace/projects/<project-id>/02-bible/` and they'll be picked up by the production phase. This is where you'd paste a hand-written character backstory, a real-world location guide, or research notes.
+Drop additional reference docs into the book's `workspace/books/<slug>/data/` directory and they'll be picked up by the production phase. This is where you'd paste a hand-written character backstory, a real-world location guide, or research notes.
 
 ### 5c. Resume
 ```
@@ -207,14 +210,12 @@ This is the long phase. For a 90k-word book, expect:
 - Run time depends entirely on which AI provider you've routed creative writing to (free Gemini = slower per-token, premium Claude = faster + tighter prose, costs more)
 
 ### 6a. What gets produced
-For each chapter, BookClaw writes:
+For each chapter, BookClaw writes one markdown file into the book's data directory, named after the step that produced it (e.g. a step labeled "Chapter 1" lands as a `…-chapter-1.md` file):
 ```
-workspace/projects/<project-id>/03-production/ch-01.md
-workspace/projects/<project-id>/03-production/ch-02.md
-...
+workspace/books/<slug>/data/
 ```
 
-Files are zero-padded so they sort correctly (`ch-01.md` not `ch-1.md`). This matters for the format phase later.
+Use `/files` to see the numbered list and `/read N` to open one — that's more reliable than guessing the exact filename.
 
 ### 6b. Watch the first three chapters carefully
 The first three chapters are where voice locks in. If chapters 1–3 feel right, the rest of the book will inherit that voice. If they feel wrong, fix them now before the agent compounds the problem 27 more times.
@@ -224,7 +225,7 @@ The first three chapters are where voice locks in. If chapters 1–3 feel right,
 - Opening hook is concrete, not abstract
 - Persona voice is recognizable
 - Word count is in range (~2,000–3,500 for most genres)
-- No banned-vocabulary slip-ups (check `02-bible/style.md` for the list)
+- No banned-vocabulary slip-ups (check the style file from Phase 2 for the list)
 - Chapter ends on a *hook*, not a summary
 
 **If a chapter is off:**
@@ -232,8 +233,8 @@ The first three chapters are where voice locks in. If chapters 1–3 feel right,
 /stop
 ```
 Then either:
-- **Edit `ch-01.md` directly** and let the next chapter's context inherit your edits, OR
-- **Delete `ch-01.md` and ask the agent to retry**:
+- **Edit the chapter file directly** and let the next chapter's context inherit your edits, OR
+- **Delete the chapter file and ask the agent to retry**:
   ```
   /project rewrite chapter 1 with more sensory grounding and a sharper opening hook
   ```
@@ -246,9 +247,9 @@ After you've validated chapters 1–3, you can let the agent run unattended. It 
 Check in every 5–10 chapters to make sure nothing has drifted (character voice, POV, pacing).
 
 ### 6d. The "compile" step
-After all chapters are drafted, Phase 3's last step compiles them into a single working manuscript:
+After all chapters are drafted, the compile step stitches them into a single working manuscript:
 ```
-workspace/projects/<project-id>/03-production/manuscript.md
+workspace/books/<slug>/data/manuscript.md
 ```
 This is your **first complete draft.** Congratulations — you have a novel.
 
@@ -258,30 +259,16 @@ This is your **first complete draft.** Congratulations — you have a novel.
 
 Once Phase 3 finishes, the pipeline rolls forward. You can let it run end-to-end or stop after each phase.
 
-### Phase 4 — Deep Revision (21 steps)
-Three passes — structural → scene-level → line-level — plus AI beta readers. Output:
-```
-workspace/projects/<project-id>/04-revision/manuscript-final.md
-```
-This is the version you'd send to a human editor.
+All phase outputs land as step files in the same `workspace/books/<slug>/data/` directory; use `/files` to list them.
 
-### Phase 5 — Format & Export (4 steps)
-Generates front matter, back matter, and KDP-ready files:
-```
-workspace/projects/<project-id>/05-format/<title>.docx
-workspace/projects/<project-id>/05-format/<title>.epub
-```
-The `.docx` matches KDP's trim-size templates; the `.epub` is valid EPUB3.
+### Phase 4 — Deep Revision
+Three passes — structural → scene-level → line-level — plus AI beta readers. The revised manuscript is written back into the book's data directory (a `manuscript.md` / revised-manuscript file). This is the version you'd send to a human editor.
 
-### Phase 6 — Book Launch (6 steps)
-Marketing copy:
-```
-workspace/projects/<project-id>/06-launch/blurb.md
-workspace/projects/<project-id>/06-launch/amazon-description.html
-workspace/projects/<project-id>/06-launch/keywords.md
-workspace/projects/<project-id>/06-launch/ad-copy.md
-workspace/projects/<project-id>/06-launch/social-posts.md
-```
+### Phase 5 — Format & Export
+Generates front matter, back matter, and KDP-ready files. DOCX export writes a `.docx` alongside the manuscript in the data directory (also reachable via `/export N docx`); the `.docx` matches KDP's trim-size templates.
+
+### Phase 6 — Book Launch
+Marketing copy — blurb, Amazon description, keywords, ad copy, social posts — each produced as its own step file in the data directory.
 
 These are drafts. Review and edit before publishing — *especially* the blurb.
 
@@ -293,7 +280,7 @@ These are drafts. Review and edit before publishing — *especially* the blurb.
 ```
 /status
 ```
-or just glance at the project card on the dashboard.
+or just glance at the project card in the studio.
 
 ### See all output files
 ```
@@ -325,8 +312,8 @@ continue   ← resumes from where it stopped
 ### Track word count toward a daily goal
 Studio → **Insights** view (left rail) → today's writing progress. Set your goal in **Settings → Autonomous Heartbeat Mode**.
 
-### Switch the active persona
-Studio → **New-Book picker** → select a different persona card → **Set Active**. Or assign a persona explicitly when you create a project.
+### Switch the active book
+Studio → **Book drawer** → select a different book → **Set Active**. Each book is bound to its own persona/voice/genre, so switching the active book switches the persona that free chat uses. Or assign a persona explicitly when you create a project.
 
 ---
 
@@ -336,10 +323,10 @@ Studio → **New-Book picker** → select a different persona card → **Set Act
 |---|---|---|
 | Chapter is generic / off-voice | Persona under-specified | Edit persona, delete the bad chapter, retry |
 | Pipeline stuck at one step | Provider rate-limit or API outage | Check Settings → provider status. Add a fallback provider or wait. |
-| Character names changed mid-book | Bible wasn't locked before Phase 3 | Edit `02-bible/character-bible.md`, edit affected chapters, continue |
+| Character names changed mid-book | Bible wasn't locked before Phase 3 | Edit the character-bible file in `workspace/books/<slug>/data/`, edit affected chapters, continue |
 | Chapter ends with a summary sentence | Style guide didn't pick up | Add "no summary sentences at chapter end" to persona's style notes |
-| Output too short for word target | Outline split the book into too few chapters | Stop, edit `01-planning/outline.md` to add chapters, restart Phase 3 |
-| Agent re-asks for info you already gave | Context truncation | Check `workspace/memory/` — it should have the bible + prior chapters. If not, run `/compact` and continue. |
+| Output too short for word target | Outline split the book into too few chapters | Stop, edit the outline file in `workspace/books/<slug>/data/` to add chapters, restart Phase 3 |
+| Agent re-asks for info you already gave | Context truncation | Check `workspace/memory/` — it should have the bible + prior chapters. If not, restart the step and continue. |
 | Project totally derailed | Bad Phase 1 output | Faster to start a new project with a tighter premise than to dig out |
 
 For everything else: the **Activity** view (left rail in the studio) shows every step the agent took, what skills it called, and what the output was. Read it like a flight recorder.
@@ -368,7 +355,7 @@ Don't aim to ship a publish-ready novel on the first run. Aim to ship a *complet
 ## What to do after your first novel
 
 - **Back up your persona.** Copy `workspace/.config/personas.json` somewhere safe.
-- **Save the project's bible.** Future books in the same world should reuse `02-bible/world-building.md` and `02-bible/continuity.md`.
+- **Save the project's bible.** Future books in the same world should reuse the world-building and continuity files from the book's `workspace/books/<slug>/data/` directory. (For a multi-book world, BookClaw also has a series container at `workspace/series/`.)
 - **Note which phases you babysat.** That's the editing pass you'll always need for this genre/voice combination. Bake the lesson into the persona's style notes.
 - **Add a paid provider if you're going to ship the book.** Free Gemini is fine for drafts. For revision and final polish, Claude or GPT-4o materially improves the line-edit quality. Costs are typically $1–4 per full-novel revision pass.
 - **Run a second book.** This is where BookClaw earns its keep. Book 2 in the same persona, in the same world, with the same bible, will run faster and tighter than book 1 ever could.

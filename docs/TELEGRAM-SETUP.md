@@ -178,10 +178,9 @@ Click **Connect Telegram** (or restart BookClaw — the bridge auto-connects on 
 
 In the console you should see:
 ```
-🤖 Telegram bridge connected as @bookclaw_home_bot
-   Allowed users: 3
-   Polling started
+  ✓ Telegram bridge connected (command center mode)
 ```
+(The bridge validates the token against `api.telegram.org`, then starts long-poll polling.)
 
 ---
 
@@ -195,7 +194,7 @@ On your phone, open Telegram, search for `@bookclaw_home_bot`, press **Start**, 
 You should get a reply within a second or two. If you do — Telegram is wired up.
 
 ### 5b. LAN test (dashboard)
-From another device on your LAN, open `http://<host-ip>:3847`. You should see the same dashboard, same project list, same Activity Log as on the host machine. Both surfaces drive the same agent — start a project from your phone via Telegram, then watch it run live from your laptop's browser. A standalone Chat app is also available on port 3848 (`BOOKCLAW_CHAT_PORT`).
+From another device on your LAN, open `http://<host-ip>:3847`. You should see the same dashboard, same project list, same Activity Log as on the host machine. Both surfaces drive the same agent — start a project from your phone via Telegram, then watch it run live from your laptop's browser. A standalone Chat app can optionally be served on its own port — it's off unless you set `BOOKCLAW_CHAT_PORT` (e.g. `3848`).
 
 ### 5c. Sanity check the allowlist
 Ask a friend (or a second Telegram account) who's **not** on the allowlist to open the bot and send `/status`. They should get:
@@ -386,7 +385,7 @@ For genuinely isolated multi-tenant use (one bot per pen name, separate workspac
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Bot doesn't reply to anything | Token wrong, or BookClaw not actually running | Check console: `🤖 Telegram bridge connected` should appear. If not, verify the token in Settings. |
+| Bot doesn't reply to anything | Token wrong, or BookClaw not actually running | Check console: `✓ Telegram bridge connected (command center mode)` should appear. If not, verify the token in Settings. |
 | Bot replies "Not authorized" | Your Telegram user ID isn't in the allowlist | Settings → Telegram Allowed Users → add your ID → Save → restart BookClaw |
 | Bot was working, suddenly stops | Network blip or token revoked | `curl https://api.telegram.org/bot<TOKEN>/getMe` from the host. `ok: true` means token is fine. If not, regenerate via `/token` in BotFather. |
 | LAN device can't open dashboard | Firewall on host, or host IP changed | See **Firewall** section. Re-check `<host-ip>` with `hostname -I` (Linux) or `ipconfig getifaddr en0` (macOS). |

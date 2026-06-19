@@ -1,6 +1,6 @@
 # Book-Container Architecture
 
-**Status:** Phases 0–7 implemented and deployed (as of 2026-06-09). Phases 8–12 remain. This doc is the roadmap source-of-truth; per-phase completion detail is in docs/COMPLETED.md and docs/TODO.md. This is the concrete
+**Status (updated 2026-06-18):** all phases (0–12) are now implemented and deployed — the per-phase records in the [Phased implementation plan](#phased-implementation-plan) below carry their own completion dates (Phase 12 landed 2026-06-12). *(Original status line, preserved for the record: "Phases 0–7 implemented and deployed (as of 2026-06-09). Phases 8–12 remain.")* This doc is the roadmap source-of-truth; per-phase completion detail is in docs/COMPLETED.md and docs/TODO.md. This is the concrete
 data-model design for the [North Star](TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision)
 multi-author / multi-book platform, and it subsumes the in-dashboard
 prompt/skill editor (the "[In-dashboard editor for prompts + skills]" TODO item,

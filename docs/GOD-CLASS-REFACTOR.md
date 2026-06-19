@@ -1,6 +1,8 @@
 # The God Class Problem — Analysis and Three-Level Refactor Plan
 
 > **STATUS — Level 1 COMPLETE (2026-06-01).** Both god classes were split into thin composition roots, behavior-preserving: `index.ts` 2,649 → 2,103 (init phases → `gateway/src/init/` modules) and `routes.ts` 5,518 → 59 (234 endpoints → 12 mounters under `gateway/src/api/routes/` + `_shared.ts`). Verified by tsc + a 234/234 route-registration diff + smoke + a Docker rebuild + a full end-to-end pipeline run. See [COMPLETED.md](COMPLETED.md). **Levels 2 (service registry) and 3 (plugin contracts) remain deferred** per the Recommendation below — do them feature-driven, after `AIRouter`/`ProjectEngine` have unit tests. The numbers and plan below describe the *original* (pre-Level-1) state and are retained for the Level 2–3 work.
+>
+> **Update (2026-06-18):** Levels 2 and 3 are still **not** implemented (no service registry, no `gateway/src/plugins/`). One precondition the plan was waiting on has since landed: a unit-test suite now exists (~410 tests under `tests/unit/`, `npm run test:unit`), so the doc's repeated "there are no tests" / "not even one passing test" framing below is now historical. Separately, the **data-driven (config-not-code) pipeline** outcome the North Star section anticipates has shipped — a book now runs an editable *sequence* of named pipelines rather than the hardcoded 6-phase templates.
 
 A standing architectural debt in BookClaw: two files (`gateway/src/index.ts` and `gateway/src/api/routes.ts`) own the wiring for the entire system. Together they're ~8,200 lines of intertwined initialization and routing that every new feature has to touch.
 

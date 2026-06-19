@@ -1,6 +1,8 @@
 # StoryHackerAI → BookClaw Feature-Porting Candidates
 
 > **Status (2026-06-09):** Porting roadmap snapshot (~2026-05-28), mostly unimplemented. Item #3 (genre templates) was since built in Phase 7 via a different 7-file schema — see docs/GENRE-GUIDE-TEMPLATE.md. Other items remain candidates.
+>
+> **Status (2026-06-18):** Still a historical record. Since the note above, the book-container model shipped (Phases 0-12), which effectively delivers **#10** (per-novel metadata co-location): each book now carries its own `workspace/books/<slug>/book.json` manifest instead of a single global `projects-state.json`. Pipelines also became **config-not-code** — a book runs a data-driven `sequence` of editable JSON pipelines under `library/` (`pipelines/`, `sequences/`), the relevant infrastructure for #7/#9, though those items' specific behaviours (true earlier-phase replay, per-step tier metadata) are not yet built on top of it. The highest-value items remain candidates: **#1** (OpenRouter is still one provider among six in `gateway/src/ai/router.ts`, not the canonical gateway) and **#2/#4/#5/#6** (the chapter-internal multi-pass selector/brief/chronology/style/wordcount passes have no implementation in the source). The analysis below is unchanged from the 2026-05-28 snapshot.
 
 Snapshot taken 2026-05-28. Compares **StoryHackerAI** (`~/data/Writing/StoryHackerAI/`) against the current BookClaw tree.
 

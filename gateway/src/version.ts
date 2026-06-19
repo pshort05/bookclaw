@@ -9,12 +9,14 @@
  * local server time. Distinct from `package.json`'s semver, which npm tooling
  * and book/workspace provenance still use.
  *
- * BREAKING_VERSION — the product's breaking-change gate. The date stamp carries
- * no compatibility signal, so this separate integer is bumped BY HAND whenever a
- * change breaks compatibility with previously-created workspaces / books /
- * config. A forthcoming boot gate compares it against the persisted
- * `workspace/.bookclaw/workspace.json` marker and refuses/quarantines on an
- * incompatible mismatch (tracked in docs/TODO.md "Owner roadmap"). Starts at 1.
+ * BREAKING_VERSION — an API-surfaced product breaking-change marker. The date
+ * stamp carries no compatibility signal, so this separate integer is bumped BY
+ * HAND whenever a change breaks compatibility with previously-created workspaces
+ * / books / config, and is surfaced in /api/status + /api/health for visibility.
+ * It is NOT the enforcing gate: the boot-time workspace-compatibility gate is
+ * driven by WORKSPACE_SCHEMA_VERSION (workspace-version.ts), which is the integer
+ * persisted in `workspace/.bookclaw/workspace.json` and compared on startup (kept
+ * separate by the 2026-06-18 owner decision). Starts at 1.
  */
 function bootVersion(): string {
   const d = new Date();
@@ -27,7 +29,8 @@ export const DISPLAY_VERSION = process.env.BOOKCLAW_VERSION || bootVersion();
 
 /**
  * Breaking-change marker — bump by hand on any change that breaks compatibility
- * with existing workspaces/books/config. The enforcing boot gate is a TODO; for
- * now this is surfaced in /api/status and /api/health so the value is visible.
+ * with existing workspaces/books/config. Surfaced in /api/status and /api/health
+ * for visibility. The enforcing boot gate is separate and version-driven by
+ * WORKSPACE_SCHEMA_VERSION (workspace-version.ts).
  */
 export const BREAKING_VERSION = 1;

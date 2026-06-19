@@ -106,8 +106,8 @@ style, not an impersonation.
 
 Choose whichever fits how you work:
 
-1. **Asset Studio (recommended for most users).** In the studio, go to **Make → Library &
-   Assets**, select the **Author** kind, and create a new entry; then do the same for the
+1. **Asset Studio (recommended for most users).** In the studio, go to **Make → Library**,
+   select the **Author** kind, and create a new entry; then do the same for the
    **Voice** kind under the same name. The editor writes the files into your user overlay. (In
    a book's scope, the same editor edits that book's frozen snapshot instead of the library.)
 
