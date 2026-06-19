@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { composeEditorPrompt } from '../../gateway/src/services/editor-prompt.ts';
+import { composeEditorPrompt, MODE_DIRECTIVE } from '../../gateway/src/services/editor-prompt.ts';
 
 test('composeEditorPrompt surfaces the editor persona', () => {
   const out = composeEditorPrompt('You are Maeve.', {});
@@ -31,4 +31,25 @@ test('composeEditorPrompt appends memory and heartbeat when present', () => {
   assert.ok(out.includes('Recent conversation context'));
   assert.ok(out.includes('prior chat'));
   assert.ok(out.includes('status line'));
+});
+
+test('composeEditorPrompt defaults to the brainstorm directive', () => {
+  const out = composeEditorPrompt('You are Maeve.', {});
+  assert.ok(out.includes(MODE_DIRECTIVE.brainstorm));
+  assert.ok(!out.includes(MODE_DIRECTIVE.critique));
+});
+
+test('composeEditorPrompt appends the critique directive when mode is critique', () => {
+  const out = composeEditorPrompt('You are Maeve.', {}, 'critique');
+  assert.ok(out.includes(MODE_DIRECTIVE.critique));
+  assert.ok(!out.includes(MODE_DIRECTIVE.brainstorm));
+});
+
+test('composeEditorPrompt places the mode directive after the persona and before context', () => {
+  const out = composeEditorPrompt('You are Maeve.', { memories: 'prior chat' }, 'brainstorm');
+  const personaAt = out.indexOf('You are Maeve.');
+  const directiveAt = out.indexOf(MODE_DIRECTIVE.brainstorm);
+  const memoryAt = out.indexOf('Recent conversation context');
+  assert.ok(personaAt >= 0 && directiveAt > personaAt, 'directive follows persona');
+  assert.ok(memoryAt > directiveAt, 'context follows the directive');
 });

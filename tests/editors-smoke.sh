@@ -3,10 +3,12 @@
 # BookClaw — Editors feature smoke (REAL AI call)
 # ═══════════════════════════════════════════════════════════
 # Verifies the developmental-editor chat feature against a running instance:
-# the built-in `maeve` editor resolves, /editors lists it, /editor maeve enters
-# editor mode, a brainstorming message gets an in-character reply (real model
-# call), and /editor off returns to normal chat. Drives POST /api/chat (the same
-# endpoint the dashboard uses; channel "api"). Self-cleaning (ends in /editor off).
+# the built-in `maeve` editor resolves, /editors prints the numbered selection
+# menu (with both modes), bare /editor maeve re-prompts for a mode, /editor maeve
+# brainstorm enters and returns an in-character AI greeting, a follow-up message
+# gets an in-character reply, /editor maeve critique enters critique mode, and
+# /editor off returns to normal chat. Drives POST /api/chat (the same endpoint the
+# dashboard uses; channel "api"). Self-cleaning (ends in /editor off).
 #
 # Usage:  BASE_URL=http://192.168.1.32:3847 tests/editors-smoke.sh
 # Env: BASE_URL, BOOKCLAW_AUTH_TOKEN (else docker/.env / docker exec), CONTAINER.
@@ -41,15 +43,27 @@ trap 'chat "/editor off" >/dev/null 2>&1 || true' EXIT
 [ -n "$(req GET /api/library/editor/maeve | jget entry.editor.systemPrompt)" ] \
   && pass "built-in editor 'maeve' resolves" || fail "maeve editor missing"
 
-# ── 2. /editors lists the built-ins ──
+# ── 2. /editors prints the numbered selection menu (with both modes) ──
 LIST=$(chat "/editors")
-case "$LIST" in *[Mm]aeve*) pass "/editors lists maeve" ;; *) fail "/editors missing maeve" "$(printf '%s' "$LIST" | head -c 120)" ;; esac
+case "$LIST" in
+  *[Mm]aeve*brainstorm*critique*|*brainstorm*[Mm]aeve*) pass "/editors prints the menu with modes" ;;
+  *[Mm]aeve*) case "$LIST" in *brainstorm*) pass "/editors prints the menu with modes" ;; *) fail "/editors menu missing modes" "$(printf '%s' "$LIST" | head -c 160)" ;; esac ;;
+  *) fail "/editors missing maeve" "$(printf '%s' "$LIST" | head -c 160)" ;;
+esac
 
-# ── 3. Enter editor mode ──
-ENTER=$(chat "/editor maeve")
-case "$ENTER" in *[Mm]aeve*) pass "/editor maeve enters editor mode" "$(printf '%s' "$ENTER" | head -c 60)" ;; *) fail "/editor maeve did not confirm" "$(printf '%s' "$ENTER" | head -c 120)" ;; esac
+# ── 3. Bare /editor maeve (no mode) re-prompts for a mode ──
+NEED=$(chat "/editor maeve")
+case "$NEED" in *brainstorm*critique*|*critique*brainstorm*) pass "/editor maeve re-prompts for a mode" ;; *) fail "/editor maeve did not re-prompt for mode" "$(printf '%s' "$NEED" | head -c 160)" ;; esac
 
-# ── 4. Brainstorm message → in-character reply (real model call) ──
+# ── 4. Enter brainstorm mode → in-character AI greeting (real model call) ──
+GREET=$(chat "/editor maeve brainstorm")
+if [ -n "$GREET" ] && [ "${#GREET}" -gt 20 ] && ! printf '%s' "$GREET" | grep -q '\[AI provider failure\]'; then
+  pass "/editor maeve brainstorm returns an AI greeting" "${GREET:0:60}…"
+else
+  fail "brainstorm greeting empty/failed" "$(printf '%s' "$GREET" | head -c 160)"
+fi
+
+# ── 5. Follow-up message → in-character reply (still in editor mode) ──
 REPLY=$(chat "I have a romantasy idea: a rebel sky-sailor bonded to a storm-dragon. Poke holes in the premise in two or three sentences.")
 if [ -n "$REPLY" ] && [ "${#REPLY}" -gt 20 ] && ! printf '%s' "$REPLY" | grep -q '\[AI provider failure\]'; then
   pass "editor replied in mode (real AI call)" "${REPLY:0:60}…"
@@ -57,7 +71,15 @@ else
   fail "editor reply empty/failed" "$(printf '%s' "$REPLY" | head -c 160)"
 fi
 
-# ── 5. Leave editor mode ──
+# ── 6. Switch to critique mode → in-character AI greeting ──
+CRIT=$(chat "/editor maeve critique")
+if [ -n "$CRIT" ] && [ "${#CRIT}" -gt 20 ] && ! printf '%s' "$CRIT" | grep -q '\[AI provider failure\]'; then
+  pass "/editor maeve critique enters critique mode" "${CRIT:0:60}…"
+else
+  fail "critique greeting empty/failed" "$(printf '%s' "$CRIT" | head -c 160)"
+fi
+
+# ── 7. Leave editor mode ──
 OFF=$(chat "/editor off")
 case "$OFF" in *[Nn]ormal*|*chat*) pass "/editor off returns to normal chat" ;; *) fail "/editor off did not confirm" "$(printf '%s' "$OFF" | head -c 120)" ;; esac
 

@@ -37,7 +37,8 @@ import { SkillLoader } from './skills/loader.js';
 import { LibraryService } from './services/library.js';
 import { BookService } from './services/book.js';
 import { EditorService } from './services/editor.js';
-import { composeEditorPrompt } from './services/editor-prompt.js';
+import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
+import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
 import { DISPLAY_VERSION } from './version.js';
 import { AuthorOSService } from './services/author-os.js';
 import { TTSService } from './services/tts.js';
@@ -651,19 +652,13 @@ class BookClawGateway {
     // ── Determine best AI provider for this task ──
     // Project steps pass their own taskType to avoid misclassification
     // (e.g., "copy editing" in a prompt shouldn't route to premium tier)
-    // Editor mode forces the 'editor_chat' task type; an editor with a `model`
-    // pins the exact OpenRouter model (mirrors the per-step model override
-    // below, where overrideModel flows straight into aiRouter.complete).
+    // Editor mode forces the 'editor_chat' task type and resolves provider+model
+    // through the shared resolveEditorRouting helper (same atomic OpenRouter pin
+    // used by the entry greeting). Non-editor turns route by classified taskType.
     const taskType = editorCfg ? 'editor_chat' : (overrideTaskType || this.classifyTask(content));
-    const editorProvider = editorCfg?.model ? 'openrouter' : preferredProvider;
-    const provider = this.aiRouter.selectProvider(taskType, editorProvider);
-    // Pin the editor's model+provider atomically: only send the (OpenRouter) model
-    // id when the resolved provider is actually OpenRouter — otherwise selectProvider
-    // may have fallen back (OpenRouter unconfigured) and an OpenRouter id would be
-    // sent to the wrong provider.
-    const editorModel = editorCfg?.model
-      ? (provider.id === 'openrouter' ? editorCfg.model : undefined)
-      : overrideModel;
+    const { provider, model: editorModel } = editorCfg
+      ? this.resolveEditorRouting(editorCfg.model, preferredProvider, overrideModel)
+      : { provider: this.aiRouter.selectProvider(taskType, preferredProvider), model: overrideModel };
 
     // ── Log skill matching to activity ──
     if (skills.length > 0) {
@@ -686,7 +681,7 @@ class BookClawGateway {
       skills,
       heartbeatContext,
       channel,
-      ...(editorCfg ? { editorPrompt: editorCfg.systemPrompt, manuscript: editorManuscript } : {}),
+      ...(editorCfg ? { editorPrompt: editorCfg.systemPrompt, editorMode: activeEditor!.mode, manuscript: editorManuscript } : {}),
     });
 
     if (extraContext) {
@@ -948,6 +943,68 @@ class BookClawGateway {
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /**
+   * Resolve the provider + pinned model for an editor turn. An editor's `model`
+   * pins OpenRouter, but the id is only forwarded when the resolved provider is
+   * actually OpenRouter — otherwise selectProvider may have fallen back (OpenRouter
+   * unconfigured) and an OpenRouter id would be sent to the wrong provider. Shared
+   * by the chat path (handleMessage) and the entry greeting so the pin can't drift.
+   */
+  private resolveEditorRouting(editorModel: string | undefined, basePreferredProvider?: string, baseModel?: string) {
+    const provider = this.aiRouter.selectProvider('editor_chat', editorModel ? 'openrouter' : basePreferredProvider);
+    const model = editorModel ? (provider.id === 'openrouter' ? editorModel : undefined) : baseModel;
+    return { provider, model };
+  }
+
+  /** Render the `/editor` selection menu for a channel (its current editor, if any). */
+  public buildEditorMenuFor(channel: string): string {
+    const editors = this.editors?.list() ?? [];
+    const cur = this.editors?.getChannelEditor(channel) ?? null;
+    const active = cur
+      ? { editor: cur.editor, mode: cur.mode, label: this.editors?.get(cur.editor)?.label }
+      : null;
+    return buildEditorMenu(editors, active);
+  }
+
+  /**
+   * Produce an in-character opening greeting when a channel enters an editor.
+   * One AI call using the composed (persona + mode) prompt; cost recorded and the
+   * greeting appended to the channel history so the session continues coherently.
+   * Fail-soft: any AI failure returns a static line — entry must never be blocked.
+   */
+  public async generateEditorGreeting(
+    channel: string,
+    editorCfg: { label?: string; name?: string; systemPrompt: string; model?: string; temperature?: number },
+    mode: EditorMode,
+    withBook: boolean,
+  ): Promise<string> {
+    const label = editorCfg.label || editorCfg.name || 'your editor';
+    const fallback = `You're now with **${label}** (${mode}${withBook ? ', reviewing your active book' : ''}). What are we working on?`;
+    try {
+      const system = composeEditorPrompt(
+        editorCfg.systemPrompt,
+        { heartbeat: this.heartbeat.getContext() },
+        mode,
+      );
+      const { provider, model: editorModel } = this.resolveEditorRouting(editorCfg.model);
+      const { getOutputBudget } = await import('./ai/router.js');
+      const response = await this.aiRouter.complete({
+        provider: provider.id,
+        system,
+        messages: [{ role: 'user', content: 'Open the session: introduce yourself in character in 2-4 sentences, make clear which mode we are in, and invite me to begin. Do not summarize these instructions.' }],
+        maxTokens: getOutputBudget('editor_chat'),
+        ...(editorModel ? { model: editorModel } : {}),
+        ...(typeof editorCfg.temperature === 'number' ? { temperature: editorCfg.temperature } : {}),
+      });
+      const text = (response.text || '').trim() || fallback;
+      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost);
+      this.getHistory(channel).push({ role: 'assistant', content: text, timestamp: new Date() });
+      return text;
+    } catch {
+      return fallback;
+    }
+  }
+
   public buildSystemPrompt(context: {
     soul: string;
     genreGuide?: string | null;
@@ -959,17 +1016,19 @@ class BookClawGateway {
     heartbeatContext: string;
     channel?: string;
     editorPrompt?: string;
+    editorMode?: EditorMode;
     manuscript?: string;
   }): string {
     // Editor mode: the developmental-editor persona REPLACES the author voice —
-    // no soul/genre/world/sections, just the editor prompt + memory/heartbeat
-    // (and opt-in manuscript context). See composeEditorPrompt.
+    // no soul/genre/world/sections, just the editor prompt + a session-mode
+    // directive + memory/heartbeat (and opt-in manuscript context). See
+    // composeEditorPrompt.
     if (context.editorPrompt) {
       return composeEditorPrompt(context.editorPrompt, {
         memories: context.memories,
         heartbeat: context.heartbeatContext,
         manuscript: context.manuscript,
-      });
+      }, context.editorMode);
     }
 
     let prompt = '';
@@ -1295,8 +1354,8 @@ class BookClawGateway {
           '`/cover [description]` — Generate a book cover image',
           '',
           '✍️ **Editors**',
-          '`/editors` — List developmental-editor personas + current one',
-          '`/editor:<name>` — Enter editor mode (add `book` to review your active book; `off` to exit)',
+          '`/editors` — Show the editor selection menu',
+          '`/editor <name> <brainstorm|critique>` — Enter editor mode (add `book` to review your active book; `/editor off` to exit)',
           '',
           '🧹 **Workspace**',
           '`/clean` — View workspace usage',
@@ -1825,45 +1884,36 @@ class BookClawGateway {
 
     return {
       /**
-       * `/editors` — list available developmental-editor personas + the channel's
-       * current active editor. Defined alongside the Telegram handlers, but
-       * currently dispatched only from the dashboard/API chat (handleDashboardCommand);
+       * `/editors` — print the numbered editor selection menu (same as bare
+       * `/editor`). Defined alongside the Telegram handlers, but currently
+       * dispatched only from the dashboard/API chat (handleDashboardCommand);
        * wiring into the Telegram bridge's command router is a follow-up.
        */
       editorsCommand(channel: string): string {
-        const editors = gateway.editors?.list() ?? [];
-        const lines = editors.length
-          ? editors.map((e) => `**${e.label || e.name}** — ${e.description || 'developmental editor'}`)
-          : ['_No editors available._'];
-        const active = gateway.editors?.getChannelEditor(channel) ?? null;
-        const cur = active
-          ? `In session with **${active.editor}**${active.withBook ? ' (reviewing your active book)' : ''}.`
-          : 'No editor active. Enter one with `/editor:<name>`.';
-        return ['**Editors:**', ...lines, '', cur].join('\n');
+        return gateway.buildEditorMenuFor(channel);
       },
       /**
-       * `/editor[:<name>] [book]` — enter/leave/show editor mode for a channel.
-       * `off`/`none`/`exit` clears it; an unknown name is rejected; a trailing
+       * `/editor[:<name>] [mode] [book]` — show the menu / enter / leave editor
+       * mode for a channel. Bare (or unknown second token) → menu; `off`/`none`/
+       * `exit` clears it; a name with no mode re-prompts for the mode; a valid
+       * name+mode enters and returns an in-character AI greeting. A trailing
        * `book` token opts into active-book ("manuscript under review") context.
        */
       async editorCommand(channel: string, args: string): Promise<string> {
-        const trimmed = (args || '').trim();
-        if (!trimmed) {
-          const active = gateway.editors?.getChannelEditor(channel) ?? null;
-          if (!active) return 'No editor active. Use `/editors` to list them, then `/editor:<name>`.';
-          const cfg = gateway.editors?.get(active.editor);
-          return `In session with **${cfg?.label || active.editor}**${active.withBook ? ' (reviewing your active book)' : ''}. Send \`/editor off\` to return to normal chat.`;
-        }
-        const name = trimmed.split(/\s+/)[0].toLowerCase();
-        if (name === 'off' || name === 'none' || name === 'exit') {
+        const parsed = parseEditorCommand(args);
+        if (parsed.kind === 'show') return gateway.buildEditorMenuFor(channel);
+        if (parsed.kind === 'off') {
           await gateway.editors?.clearChannelEditor(channel);
           return 'Back to normal chat.';
         }
-        const cfg = gateway.editors?.get(name);
-        if (!cfg) return `Unknown editor; try \`/editors\`.`;
-        const withBook = /\bbook\b/i.test(trimmed);
-        await gateway.editors?.setChannelEditor(channel, name, withBook);
-        return `You're now in session with **${cfg.label || name}**.${withBook ? ' (reviewing your active book)' : ''}`;
+        const cfg = gateway.editors?.get(parsed.name);
+        if (!cfg) return 'Unknown editor; try `/editors`.';
+        if (parsed.kind === 'need-mode') {
+          const bookTail = parsed.withBook ? ' book' : '';
+          return `**${cfg.label || parsed.name}** has two modes — pick one: \`/editor ${parsed.name} brainstorm${bookTail}\` or \`/editor ${parsed.name} critique${bookTail}\`.`;
+        }
+        await gateway.editors?.setChannelEditor(channel, parsed.name, parsed.withBook, parsed.mode);
+        return gateway.generateEditorGreeting(channel, cfg, parsed.mode, parsed.withBook);
       },
       /**
        * Create a project using DYNAMIC AI PLANNING.

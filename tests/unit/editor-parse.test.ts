@@ -14,3 +14,7 @@ test('parseEditor rejects empty name or systemPrompt and clamps temperature', ()
   assert.throws(() => parseEditor({ name: 'x', systemPrompt: '' }));
   assert.equal(parseEditor({ name: 'x', systemPrompt: 'y', temperature: 9 }).temperature, 2);
 });
+test('parseEditor passes through specialty when present and omits it otherwise', () => {
+  assert.equal(parseEditor({ name: 'x', systemPrompt: 'y', specialty: '  Romantasy  ' }).specialty, 'Romantasy');
+  assert.equal(parseEditor({ name: 'x', systemPrompt: 'y' }).specialty, undefined);
+});

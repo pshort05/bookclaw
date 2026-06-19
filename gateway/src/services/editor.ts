@@ -11,12 +11,13 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryEditor } from './library-types.js';
+import type { EditorMode } from './editor-prompt.js';
 
 interface LibraryLike {
   get(kind: string, name: string): { editor?: LibraryEditor } | undefined;
   list(): Array<{ kind: string; name: string; label?: string; description?: string }>;
 }
-export interface ActiveEditor { editor: string; withBook: boolean; }
+export interface ActiveEditor { editor: string; withBook: boolean; mode: EditorMode; }
 
 export class EditorService {
   private library: LibraryLike;
@@ -38,19 +39,21 @@ export class EditorService {
       for (const [ch, v] of Object.entries(obj)) {
         const name = v && typeof v === 'object' ? v.editor : undefined;
         if (typeof name === 'string' && this.get(name)) {
-          this.channelEditors.set(ch, { editor: name, withBook: !!v.withBook });
+          // Legacy records (pre-mode) have no `mode` — default to brainstorm.
+          const mode: EditorMode = v.mode === 'critique' ? 'critique' : 'brainstorm';
+          this.channelEditors.set(ch, { editor: name, withBook: !!v.withBook, mode });
         } else { pruned = true; }
       }
       if (pruned) await this.persist();
     } catch { /* fail-soft: no editor sessions */ }
   }
 
-  list(): Array<{ name: string; label?: string; description?: string }> {
+  list(): Array<{ name: string; label?: string; description?: string; specialty?: string }> {
     return this.library.list().filter((e) => e.kind === 'editor')
       .map((e) => {
-        // The catalog row may not carry `label`; resolve it from the parsed editor.
+        // The catalog row may not carry `label`/`specialty`; resolve from the parsed editor.
         const full = this.get(e.name);
-        return { name: e.name, label: full?.label ?? e.label, description: full?.description ?? e.description };
+        return { name: e.name, label: full?.label ?? e.label, description: full?.description ?? e.description, specialty: full?.specialty };
       });
   }
   get(name: string): LibraryEditor | null {
@@ -59,8 +62,8 @@ export class EditorService {
   getChannelEditor(channel: string): ActiveEditor | null {
     return this.channelEditors.get(channel) ?? null;
   }
-  async setChannelEditor(channel: string, name: string, withBook: boolean): Promise<void> {
-    this.channelEditors.set(channel, { editor: name, withBook });
+  async setChannelEditor(channel: string, name: string, withBook: boolean, mode: EditorMode = 'brainstorm'): Promise<void> {
+    this.channelEditors.set(channel, { editor: name, withBook, mode });
     await this.persist();
   }
   async clearChannelEditor(channel: string): Promise<void> {

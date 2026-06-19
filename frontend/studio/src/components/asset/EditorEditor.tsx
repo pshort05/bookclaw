@@ -17,6 +17,7 @@ interface EditorData {
   name?: string;
   label?: string;
   description?: string;
+  specialty?: string;
   systemPrompt?: string;
   model?: string;
   temperature?: number;
@@ -31,6 +32,7 @@ interface EditorData {
 export function EditorEditor({ scope, kind, name, displayName }: Props) {
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
+  const [specialty, setSpecialty] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('');
   const [model, setModel] = useState('');
   const [temperature, setTemperature] = useState('');
@@ -57,6 +59,7 @@ export function EditorEditor({ scope, kind, name, displayName }: Props) {
         }
         setLabel(ed.label ?? '');
         setDescription(entry.description ?? ed.description ?? '');
+        setSpecialty(ed.specialty ?? '');
         setSystemPrompt(ed.systemPrompt ?? '');
         setModel(ed.model ?? '');
         setTemperature(typeof ed.temperature === 'number' ? String(ed.temperature) : '');
@@ -80,6 +83,7 @@ export function EditorEditor({ scope, kind, name, displayName }: Props) {
         description,
         systemPrompt,
       };
+      if (specialty.trim()) payload.specialty = specialty.trim();
       if (model.trim()) payload.model = model.trim();
       if (temp !== '' && !Number.isNaN(Number(temp))) payload.temperature = Number(temp);
       const serialized = JSON.stringify(payload, null, 2);
@@ -137,6 +141,12 @@ export function EditorEditor({ scope, kind, name, displayName }: Props) {
           rows={2}
           spellCheck={false}
         />
+      </div>
+
+      {/* Specialty */}
+      <div className={styles.descfield}>
+        <div className={styles.fl}>Specialty <em>· short genre/craft tag for the /editor menu (e.g. "Romantasy")</em></div>
+        <input style={inputStyle} value={specialty} onChange={(e) => { setSpecialty(e.target.value); mark(); }} placeholder="— falls back to the label —" />
       </div>
 
       <p style={{ color: 'var(--dim)', fontSize: 13, margin: '0 0 22px', maxWidth: '64ch' }}>

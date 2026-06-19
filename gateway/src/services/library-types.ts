@@ -50,6 +50,8 @@ export interface LibraryEditor {
   name: string;
   label?: string;
   description?: string;
+  /** Short genre/craft tag shown in the `/editor` selection menu (e.g. "Romantasy"). */
+  specialty?: string;
   systemPrompt: string;
   model?: string;
   temperature?: number;

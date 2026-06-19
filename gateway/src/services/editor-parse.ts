@@ -14,6 +14,7 @@ export function parseEditor(raw: unknown): LibraryEditor {
   };
   if (typeof o.label === 'string') out.label = o.label;
   if (typeof o.description === 'string') out.description = o.description;
+  if (typeof o.specialty === 'string' && o.specialty.trim()) out.specialty = o.specialty.trim();
   if (typeof o.model === 'string' && o.model.trim()) out.model = o.model.trim();
   if (typeof o.temperature === 'number') out.temperature = Math.max(0, Math.min(2, o.temperature));
   return out;
