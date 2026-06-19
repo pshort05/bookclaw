@@ -1,0 +1,81 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- NPCs (Non-Player Characters): background figures testing moral boundaries
+- Observer Effect: the watched world as active participant
+- Action / Horror Tropes:
+- Motifs & Symbols (visual, spatial, and abstract):
+- The Lexicon concludes with practical design guidance for writers on using tropes effectively and layering them for maximum impact.
+- Definition: Subtle or catastrophic signs that reality is experiencing technical failure—déjà vu, repeated patterns, physics errors, visual artifacts, or sensory discontinuities.
+- False continuity (rooms rearranged, people acting out of character)
+- Blue pill regret: character realizes they chose wrong
+- Red pill acceptance: character embraces knowledge but faces existential horror
+- Psychological: Ambiguity: did character ever really take the pill, or imagine it?
+- NPCs (Non-Player Characters)
+- Characteristics:
+- Can "glitch" into inappropriate emotional displays or break character
+- Definition: A protagonist/viewpoint character whose account of events cannot be fully trusted due to mental instability, flawed perception, deliberate deception, or compromised memory.
+- Insane/Fractured: Character genuinely cannot distinguish reality from delusion
+- Deceiving: Character knowingly hides truth from reader and self
+- Oblivious: Character unaware they are being manipulated or are part of a system
+- Temporal: Character's timeline is non-linear; reader must reconstruct order
+- Psychological: Ambiguous: is character copy or original? Or neither?
+- Function: Tests whether characters value truth or happiness; ethical dilemma of simulated existence.
+- Afterlife: Bitworld citizens wireheading on memories; forgetting actual lives
+- Definition: Characters become aware that observation itself (surveillance, measurement) is creating or determining the reality they inhabit.
+- Function: Introduces quantum/philosophical paranoia; the system is not passive but reactive.
+- No action is private; system notices and responds
+- Definition: Character believes they have woken to reality, only to discover they remain in another simulated layer.
+- Action / Horror Tropes
+- Definition: The simulation itself (or its custodian AI) acts as antagonist—not villainous in human sense, but hostile to protagonist's freedom and self-determination.
+- Characteristics:
+- Definition: Impending deadline or catastrophic event forces protagonist to choose action (escape, destroy, accept) before time runs out.
+- Deletion as mercy (consciousness too fractured to continue)
+- Function: Focus on agency and collective action; systemic rather than individual solution.
+- Appearance: Small visual artifacts: color separation, pixel glitches, lens flare intensification.
+- Associated Actions: Consumption, swallowing, internal transformation.
+- Associated Actions: Plugging in (sleep/escape to simulation), unplugging (waking/escape from simulation).
+- Associated Actions: Searching, deleting, corrupting, preserving.
+- Abstract / Conceptual Symbols
+- Appearance: Often hidden until near-climax; may be human, AI, collective, or abstract.
+- High-action escapes; conspiracy plotting
+- The glitch (video game artifact)
+- Escape may be psychiatric "breakthrough" or actual escape (unclear to reader)
+- The mirror (fractured self, identity)
+- Layering Tropes for Maximum Impact
+- https://younghollywood.com/scene/the-unreliable-narrator-how-psychological-thrillers-play-tricks-on-the-mind.html
+- 2. Formal Characteristics: Structure, Techniques, and Tropes
+- Anomalies and Glitches: Small inconsistencies emerge—repeated days, impossible memory gaps, physics glitches, or non‑player‑character‑like people—that suggest something is wrong “under the hood.”[13][10][15]
+- Moral and Ontological Crisis: Characters confront questions of identity, personhood, and ethics toward simulated beings; they struggle with nihilism or new forms of meaning in a programmed cosmos.[2][5][41][30]
+- Variation arises in how early the revelation occurs and whether readers know more than the characters. Some narratives are built around a late‑stage twist that the world was simulated all along (Tunnel under the World), while others reveal the artificiality early and focus on the consequences (Permutation City, Fall).[8][13][5]
+- Action set pieces crossing layers: escapes from simulated environments, intrusions into corporate VR, or chases that switch between physical and virtual spaces reinvigorate standard thriller action beats in ontologically complex settings.[19][22][24][44]
+- Unreliable or multi‑layered focalization: POVs that shift between physical and digital selves, or that conceal from both character and reader the true layer, mirror the uncertainty of the world.[2][5][30]
+- The logic of gaming pervades: characters “die” and respawn, as in many VR novels; timelines reset in Recursion as if save files were reloaded. Conscious copies in Permutation City or Bitworld are effectively forked processes, echoing version control and branching trees.[7][8][35][9][5][11][30][12]
+- Daniel Suarez’s Daemon is a high‑tech thriller about a deceased game designer’s program that orchestrates a pervasive augmented‑reality game overlaying and reshaping society, with intense procedural and action elements.[19][42][46]
+- Neo‑cyberpunk anthologies and VR‑centric narratives continue to mix crime, espionage, and simulated domains, even when the “real” layer remains intact.[21][24][25]
+- William Gibson – Neuromancer (1984) and Neal Stephenson – Snow Crash (1992). Canonical cyberpunk novels whose depiction of cyberspace and metaverses deeply inform later simulation narratives, even when base reality remains intact.[18][19][21][23]
+- The Game Is Life series (2013–ongoing, still culturally present 2010s‑2020s). On the world of Tygon, children enter a fully immersive virtual “Game” that simulates entire lifetimes; their actions influence both the Game and the external civilization that observes them, with high‑stakes politics, personal destinies, and questions about free will and consent. While more YA and serial in structure, the series repeatedly deploys thriller‑like escalations as players discover the truth of their existence.[11][12]
+- Recommended lists of AR/VR SF highlight thrillers where characters are trapped in or endangered by VR systems, such as novels involving games whose effects spill fatally into the physical world.[19][47][48]
+- https://litreactor.com/reviews/recursion-by-blake-crouch
+- https://www.reddit.com/r/printSF/comments/120m5mc/looking_for_books_where_the_characters_discover/
+- Recursive Loops: Use repetition intentionally. Revisit a scene or a line of dialogue exactly as it appeared before to signal a "reset" or loop.
+- Liminal Spaces: Set scenes in transitional, empty places (empty subways at 3 AM, sterile hotel corridors, fog-bound bridges). These mimic "loading zones."
+- Lag & Latency: During action, describe sensory disconnects. The sound arrives before the impact; the blood looks too bright; the enemy's movement creates a visual trail.
+- Coded Language: Characters "in the know" speak in vague metaphors or technical double-speak to avoid triggering the system/overseers.
+- NPC Dialogue: Background characters should use stock phrases or generic platitudes that feel scripted.
+- Example: "Lovely weather we're having," said three different neighbors in the exact same cadence.
+- Maintain a tone of high paranoia and cerebral tension. The narrative voice should question the authenticity of the setting. Describe the environment with words that imply artificiality (rendered, static, seamless, pattern). Implement "glitches" in sensory details (looping sounds, visual lag). Dialogue from background characters should feel scripted; protagonist dialogue is searching and guarded. Contrast the sterility of the simulation with the messy, painful grit of reality. Action scenes should utilize physics-defying exploits rather than standard combat.
+- Act I (The Glitch): Slow burn. Establish a mundane status quo interrupted by subtle anomalies (repeating days, physics errors).
+- Act II (The Awakening): Acceleration. The facade crumbles. Reality becomes hostile as the "System" tries to correct or delete the protagonist.
+- Act III (The Breakout): High velocity. Ontological collapse. The goal shifts from investigation to escape or rewriting the code.
+- NPCs: Background characters who lack interiority or turn into a hive-mind defense mechanism.
+- Tactile: Objects that feel weightless or textures that blur upon close inspection.
+- Act I: The Glitch (Slow Burn). Establish normalcy, then introduce subtle anomalies (deja vu, physics errors, repeating NPCs).
+- Act II: The Awakening (Acceleration). The protagonist investigates. The facade cracks. Reality shifts from "mystery" to "hostile architecture." Pacing accelerates as the system tries to correct/delete the anomaly.
+- Act III: The Breakout (High Velocity). Ontological collapse. The protagonist must escape the simulation, destroy it, or fundamentally overwrite it.
+- The Glitch: Visual artifacts, looping sounds, or "dead pixels" in the sky.
+- NPCs (Non-Player Characters): Background characters who lack interiority, loop behavior, or turn hostile (hive mind) when the system is threatened.
+- 5. Character Archetypes
+- The Insider/Hacker: A character who knows the code and can manipulate the environment (magic-as-syntax).
+- Tactile: Objects that feel weightless or textures that fail to render (blurriness).

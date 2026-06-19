@@ -1,0 +1,63 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Psychological Tension: The true terror is internal. The horror should exploit the characters' (and thus the reader's) deepest anxieties: loss of control, isolation, paranoia, grief, and the fragility of sanity. The most terrifying moments are when the protagonist can no longer trust their own perceptions.
+- Visceral Reality: When the horror is revealed, it must have impact. The prose should become sharp, precise, and unflinching. Ground the supernatural or the monstrous in concrete, physical detail to make it feel terrifyingly real.
+- Stretching (Building Dread): Use longer, more complex sentences to describe the character's growing anxiety or the oppressive atmosphere. Linger on small, unsettling details. Slow the pace down to a crawl before a scare, forcing the reader to live in the suspense.
+- The Snap (The Scare): Use short, sharp, staccato sentences for moments of sudden action or shocking reveals. The abrupt change in rhythm creates a jolt.
+- Claustrophobic Prose: In moments of high tension, focus the prose tightly on the character's immediate sensory experience. The world shrinks to what they can see, hear, and feel right now. Limit their awareness to heighten their sense of being trapped.
+- 1st Person or Close 3rd Limited: These are ideal for horror. They trap the reader inside the protagonist's head, forcing them to experience the terror and uncertainty directly. The reader only knows what the character knows, making them vulnerable to every surprise.
+- Gothic Horror: Lean into atmosphere and dread. Use more elaborate, lyrical prose. The setting (a decaying mansion, a misty moor) is a character. The horror is slow, creeping, and often tied to a dark history.
+- Slasher/Monster: The prose should be propulsive and cinematic. Focus on action, suspense, and clear, impactful descriptions of the physical threat. Pacing is key.
+- "It was only a dream": Use very sparingly. It can rob a scene of its stakes unless the dream reveals a crucial truth or the line between dream and reality is the central horror.
+- "Don't go in there!": Acknowledge the character's internal reasoning. They aren't just being stupid; they are driven by a desperate hope, a need to save someone, or a disbelief they must conquer.
+- 7. Style in Action: Example Snippets
+- This lexicon offers 170+ entries defining horror storytelling across literature, film, and visual media. It can be used for creative reference, story design, genre study, and as a practical writing or teaching tool.
+- Character Tropes
+- Character Tropes (18 entries) - The Final Girl, Unreliable Narrator, Harbinger, Creepy Child, and more archetypal figures
+- Subversion & Meta Tropes (10 entries) - Genre Savvy characters, False Protagonists, Lampshade Hanging, and self-aware horror conventions
+- Practical application information for creators
+- Practical Applications
+- This comprehensive catalog represents horror's shared vocabulary—the accumulated wisdom of decades of frightening storytelling across media. It's designed as both reference guide and creative springboard, helping users understand what makes horror work and how to innovate within the genre.1. Character Tropes
+- Don't Go in There: Character enters obvious danger; creates dramatic irony.
+- No Good Deed: Acts of kindness lead to demise.
+- Small Town With Dark Secret: Apparent idyll, actual menace.
+- Strange Smell: Olfactory suggestion of decay or wrongness.
+- Creative Kills: Novel, memorable death scenes.
+- Decapitation: Decisive, final act.
+- These drive plot and structure, often challenging character agency.
+- https://www.reddit.com/r/horror/comments/14yq52i/every_horror_character_trope_in_existence/
+- https://blog.celtx.com/horror-character-archetypes-guide/
+- https://screenrant.com/most-common-horror-movie-stereotype-characters/
+- https://www.reddit.com/r/horror/comments/dvasf7/character_tropes/
+- https://the-artifice.com/six-archetypal-horror-characters-and-why-they-are-important/
+- https://www.thegothiclibrary.com/tag/character-tropes/
+- https://screencraft.org/blog/what-makes-a-killer-horror-movie-character-common-horror-character-archetypes/
+- I've created a comprehensive style guide specifically formatted for NovelCrafter that covers all essential aspects of horror fiction writing. This guide provides practical, actionable techniques writers can implement immediately.
+- Setting and world-building as active story elements
+- Character development for vulnerable protagonists and effective antagonists
+- Three-act horror structure with specific percentages
+- Scene-level scare construction
+- Practical Application
+- The guide emphasizes actionable techniques with concrete examples showing both ineffective and effective approaches. It includes specific checklists, comparative examples (❌ vs. ✅), and strategic guidelines for creating atmosphere, managing pacing, and evoking genuine fear.
+- https://litreactor.com/columns/how-to-write-horror
+- https://litreactor.com/columns/storyville-building-up-your-horror-story-before-you-tear-it-down
+- https://thewritepractice.com/how-to-write-horror/
+- https://litreactor.com/columns/storyville-show-vs-tell
+- https://www.premiumbeat.com/blog/7-pacing-tips-editing-horror-films/
+- Horror narratives frequently employ discontinuous and convoluted storytelling, incorporating tales within tales, changing narrators, and framing devices such as discovered manuscripts or interpolated histories. The unreliable narrator has become particularly prevalent, creating ambiguity about what is real versus imagined, supernatural versus psychological. This narrative instability mirrors the genre's thematic concerns with fractured reality and uncertain perception.[13][14][15]
+- The pacing of horror fiction typically alternates between slow-building dread and intense climactic moments. Gothic horror favors gradual atmospheric accumulation, while slasher and splatterpunk subgenres may employ more rapid-fire shocks. Contemporary horror often blends these approaches, using psychological tension to amplify visceral impact.[16][17][18]
+- Setting as Character
+- The Gothic tradition established setting as integral to horror's effectiveness. Isolated locations—decaying mansions, remote cabins, abandoned institutions, dark forests—serve both practical and symbolic functions. Practically, they cut characters off from help and safety; symbolically, they represent psychological states, historical trauma, or moral decay. The claustrophobic atmosphere typical of Gothic horror creates an oppressive sense of inescapability.[19][20][21][15]
+- Contemporary horror has expanded beyond traditional haunted houses to include suburban homes, corporate offices, and digital spaces, demonstrating the genre's adaptability to modern anxieties. The setting often functions as a character itself, with its own agency and malevolent intent.[22][23]
+- Horror's remarkable flexibility has spawned numerous subgenres, each with distinctive characteristics, conventions, and appeals. Understanding these categories illuminates how horror adapts to different fears, cultural contexts, and narrative goals.
+- The progenitor of modern horror, Gothic horror emphasizes atmosphere, psychological depth, and the weight of the past. Characterized by haunted settings, supernatural elements, themes of isolation and confinement, and morally ambiguous characters, Gothic horror explores how history haunts the present. Contemporary Gothic horror continues this tradition while addressing modern concerns, as seen in works like Silvia Moreno-Garcia's Mexican Gothic (2020) and T. Kingfisher's Southern Gothic tales.[27][10][15][28][29][30][31][19]
+- Emerging in the 1980s as a reaction against subtle, suggestive horror, splatterpunk emphasizes graphic violence, gore, transgressive content, and explicit confrontation with taboo subjects. While controversial, splatterpunk often incorporates social commentary and pushes boundaries to expose societal hypocrisies. Contemporary authors like Kristopher Triana and Wrath James White continue this tradition.[18][47][25][48]
+- The horror landscape includes numerous other subgenres: supernatural horror (ghosts, demons, paranormal entities), slasher horror (serial killers stalking victims), occult horror (witchcraft, satanism, demonic forces), survival horror (characters fighting to stay alive in hostile environments), dark fantasy (blending fantasy elements with horror), and numerous hybrid forms that cross genre boundaries.[23][16][19][17]
+- Haunted spaces—houses, castles, hospitals, asylums—function as containers for evil, repositories of memory, and metaphors for psychological states. Darkness and shadow represent the unknown and concealed threats, playing on primal fears of what lurks unseen. Mirrors and reflections suggest duality, self-examination, fractured identity, and alternate realities.[21][19][20][15]
+- Ancient evil awakened describes dormant horrors disturbed by human intrusion, often functioning as environmental allegory. Cursed artifacts—objects containing malevolent power—combine material culture with supernatural threat. Groups in isolated locations face external dangers while interpersonal tensions create internal horror.[16][13][49][14]
+- The "don't go in there" impulse, where characters enter obviously dangerous spaces, serves both narrative necessity and audience participation through dramatic irony. Splitting up increases vulnerability and isolation. Creepy children subvert innocence to suggest corruption or malevolence. Body transformation horror depicts unwanted physical change, loss of bodily integrity, or violation.[51][43][13][49][14][15]
+- Paul Tremblay has become synonymous with psychological horror and ambiguous narratives. Recent works include Survivor Song (2020), The Pallbearer's Club (2022), and Horror Movie (2024), all characterized by unreliable narrators and multiple interpretive possibilities.[32][10][40][52]
+- https://litreactor.com/columns/the-new-splatterpunks
+- https://porterhousereview.org/articles/the-so-called-horror-genre-that-actually-scares-me-a-critique-of-cozy-horror/

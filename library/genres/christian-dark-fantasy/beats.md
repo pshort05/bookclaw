@@ -1,0 +1,42 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  Open scenes with grounding detail—orient the reader in body and place before moving to thought or dialogue
+-  Use white space and scene breaks to control pacing; darkness accumulates; give readers breath
+-  End chapters on hooks that arise organically from character decisions, not artificial cliffhangers
+- 
+- Dialogue in Christian Dark Fantasy must accomplish three things simultaneously: reveal character, advance plot, and carry thematic weight without becoming sermon.
+- Rules of Engagement:**
+- 1. **No one speaks in thesis statements.** Characters express belief through implication, struggle, and reaction—not exposition. A priest who has lost his faith does not announce it; he avoids the confessional, quotes scripture with faint irony, or cannot finish the Lord's Prayer.
+- 2. **Conflict drives dialogue.** Every conversation should contain at least one point of friction—competing desires, unspoken tensions, or incompatible worldviews. Agreement is the enemy of drama.
+- 3. **Subtext over text.** What characters do not say matters as much as what they do. A wife asking her husband if he slept well, when they both know something visited him in the night, carries more weight than direct confrontation.
+- 4. **Faith language must be natural, not performative.** Characters who pray or reference scripture should do so in ways consistent with their background, emotional state, and level of theological education. A street thief and a seminary professor do not speak the same language of faith.
+- | Chapter | Scene Purpose | Emotional Beat | Stakes |
+- |---|---|---|---|
+- | [Ch. 1] | [e.g., Establish baseline] | [e.g., Unease] | [e.g., Spiritual complacency] |
+- ```
+- 
+- ```
+- Divine Nature:** [How God or the divine functions in this world—active, hidden, distant, present]
+- Nature of Evil:** [e.g., Fallen angels, cosmic corruption, spiritual rebellion]
+- Afterlife:** [What happens after death—known, unknown, contested]
+- Miracles:** [Frequency, mechanism, cost, visibility]
+- Spiritual Warfare:** [How does combat between good and evil operate?]
+- Demon Capabilities:** [Powers, limitations, methods of influence]
+- Angelic Presence:** [Active, rare, absent, feared]
+- Prayer Efficacy:** [How prayer functions—direct intervention, sustenance, mystery]
+- Sacred Objects:** [Existence, power source, limitations]
+- Before moving on, verify each scene against the following:
+-  [ ] **Grounding:** Reader knows where, when, and through whose perspective
+-  [ ] **Conflict:** At least one point of friction drives the scene
+-  [ ] **Stakes:** Something is at risk—physical, spiritual, relational
+-  [ ] **Character Revelation:** Something new or deepened is shown about a character
+-  [ ] **Thematic Resonance:** Scene connects to the story's central question
+-  [ ] **Pacing:** Darkness accumulates or breathes as needed; no filler
+-  [ ] **Sensory Detail:** At least two senses engaged beyond sight
+-  [ ] **Subtext:** Characters communicate beneath and beyond their words
+-  [ ] **Movement:** Scene ends in a different place—emotionally, physically, or spiritually—than it began
+-  [ ] **Hook:** Transition to next scene creates forward momentum
+- 
+- Use this guide during drafting and revision. Return to it when scenes feel flat, dialogue rings false, or darkness loses its weight.*

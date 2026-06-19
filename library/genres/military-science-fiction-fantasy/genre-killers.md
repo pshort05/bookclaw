@@ -1,0 +1,147 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- ✓ **Show military hierarchy constraining character agency** — Not just as obstacle, but as central tension. How does rank position limit/enable choice?
+- ✓ **Prioritize character relationships within military structure** — Mentorship, unit bonds, command responsibility. These relationships drive emotional stakes.
+- ✓ **Demonstrate character growth through advancement** — Progression (rank, skill, responsibility) should be visible and meaningful. Readers feel satisfaction from earned growth.
+- ✓ **Address psychological costs of military service** — PTSD, moral injury, guilt, trauma. Show how military experience transforms character identity.
+- ✓ **Create genuine organizational dilemmas** — Place characters where doing their duty creates moral compromise. No easy solutions.
+- ✓ **Use military terminology naturally** — Don't explain jargon; trust readers to learn context. Assumption of shared knowledge increases authenticity.
+- ✓ **Ground fantastical elements in military function** — How do mages integrate into military hierarchy? How do magical limitations shape tactics?
+- ✓ **Show training, improvement, and earned mastery** — Progression fantasy elements readers: visible skill development, repeating practice, genuine mastery emerging from effort.
+- ✗ **Use military as backdrop without functional hierarchy** — Hierarchy must constrain and enable plot, not merely provide setting flavor.
+- ✗ **Create lone heroes who supersede organization** — Individual talent serves organizational goals; character can't simply ignore chain of command without consequence.
+- ✗ **Treat casualty numbers as abstract numbers** — Each death matters emotionally; show how unit experiences loss. No nameless casualties.
+- ✗ **Write soldiers following orders unquestioningly** — Show internal conflict, doubt, moral compromise. Characters wrestle with orders, not simply obey.
+- ✗ **Ignore power system's organizational implications** — If mages are elite force multipliers, how does military organize around them? If leveling is visible, how do ranks work?
+- ✗ **Neglect sensory grounding in military context** — Show weight of armor, smell of fear, sound of command. Make magical/fantastical elements feel consequential through sensory detail.
+- ✗ **Use dialogue for world-building exposition** — Show world through action/experience. Dialogue should sound like soldiers: efficient, assuming shared knowledge.
+- ✗ **Create procedurally perfect military without friction** — Show supply problems, personality conflicts, resource limitations, organizational incompetence. Perfect systems are boring.
+- 
+- Template**:
+- ```
+- "[Rank/title], [statement/request]," [character] said.
+- "[Rank/title], [response/order]," [superior/peer] replied.
+- ```
+- Example**:
+- ```
+- "Sir, the third battalion's moving into exposed position," Reeves reported.
+- "Acknowledged, Captain. Have them hold until reinforcements arrive."
+- ```
+- Function**: Establishes hierarchy, professionalism, high stakes.
+- 
+- Template**:
+- ```
+- "[First name/nickname], [question/statement]?"
+- "[First name/nickname], [response—sardonic, direct, or joking]."
+- ```
+- Example**:
+- ```
+- "Kael, you actually volunteering for night watch?"
+- "Better than listening to Torres snore in the barracks. Besides, nobody shoots at ghosts."
+- ```
+- Function**: Shows trust, dark humor, authenticity of unit bonds.
+- 
+- Template**:
+- ```
+- "You're still [failing at specific skill]," [mentor] said.
+- "[Character defensive response or acceptance]," [character] said.
+- "[Explanation of why/how—showing mentor's authority]."
+- ```
+- Example**:
+- ```
+- "You're still dropping your guard after the third feint," Commander Voss said. "You'll be dead before your fourth strike lands."
+- "I compensate with speed," Kael said.
+- "Speed gets you dead against anyone who's faced three feints before. Again."
+- ```
+- Function**: Shows skill progression, mentor-mentee power dynamic, character advancement.
+- 
+- Template**:
+- ```
+- "[Officer presents impossible choice with rationale]."
+- "[Subordinate shows internal conflict—shouldn't this choice be different?]"
+- "[Officer explains why ethics must yield to military necessity]."
+- ```
+- Example**:
+- ```
+- "We evacuate the southern village or hold the bridge," Captain Torres said. "We can't do both."
+- "The village has five thousand civilians," Reeves said.
+- "Yes. If we don't hold the bridge, fifty thousand die when the army breaks through."
+- ```
+- Function**: Creates genuine moral complexity without easy answers.
+- 
+- | Pitfall | Why It Fails | Fix |
+- |---------|------------|-----|
+- | Military hierarchy exists but doesn't constrain plot | Readers feel hierarchy is decoration | Make rank/position prevent character from taking shortcuts; force strategic thinking around constraints |
+- | Character progression invisible or unmotivated | Readers lose sense of growth and advancement | Show training, skill failure → practice → success; make rank advancement unlock new challenges |
+- | Dialogue explains world to characters who already know it | Info-dumping kills authenticity | Use action/internal monologue for world detail; dialogue assumes shared military knowledge |
+- | Casualties treated as abstract numbers | Emotional stakes collapse | Name casualties, show unit's grief, make deaths matter to characters personally |
+- | Simplistic good-vs-evil factions | Moral complexity disappears | Create legitimate competing interests; show how characters see enemy as equally justified |
+- | Magic/technology system operates independently from military | Speculative element feels bolted on | Show how power system shapes organizational structure and unit tactics |
+- | Character ignores chain of command without consequence | Hierarchy becomes meaningless | Show realistic consequences of insubordination; characters can't simply ignore orders |
+- | Lone hero story presented as military narrative | Organizational structure irrelevant | Make unit success/failure dependent on collective action, not individual heroics |
+- | Trauma/PTSD mentioned but not addressed | Emotional depth flattened | Make psychological cost explicit; show how characters cope (or fail to cope) |
+- | Mentor relationship underdeveloped | Central character bond feels superficial | Show specific skill-teaching sequences; make mentorship earn emotional weight |
+- 
+- Speech markers**:
+-  Full sentences, formal phrasing in official contexts
+-  Expects to be obeyed; phrasing often imperative
+-  Uses lower rank to establish authority ("Captain, report")
+-  Can show vulnerability to peers only
+-  Internally strategic thinking (visible in POV monologue)
+- Example**: *"Third battalion advances on my order. Dismissed."*
+- Speech markers**:
+-  Bridges officer and enlisted culture
+-  Formal with superiors, informal with unit
+-  Often shows conflict between loyalty to officers and loyalty to soldiers
+-  Problem-solving focus
+- Example**: *"Sir, with respect, pulling the flank now will expose the squad."* vs. *"Torres, get those people behind the barrier."*
+- Speech markers**:
+-  Direct, efficient communication
+-  Dark humor, sardonic commentary on leadership
+-  Uses first names/nicknames with peers
+-  Internal self-reliance mindset (shows in dialogue and choices)
+- Example**: *"Torres wants us to hold impossible ground. Again. How many of us is he planning to spend this time?"*
+- Speech markers**:
+-  Technical terminology specific to specialty
+-  Often isolated from mainstream unit culture
+-  Resentment or pride about differentiation
+-  Different problem-solving approach than rank-and-file
+- Example**: *"Mage Corps says containment field will hold. I'm saying it depends on how much power the enemy throws at it."*
+- 
+- Military world-building should not appear in exposition-heavy dialogue:
+-  Avoid characters explaining to each other what they already know
+-  Use physical action and internal monologue for world detail
+-  Dialogue should sound like actual military people: efficient, assuming shared knowledge
+-  Info-dump about magic systems in action sequences (character discovering limits through struggle)
+- 
+- ACT ONE: Formation**
+-  Establish character's role within military organization
+-  Show how military hierarchy constrains/enables character agency
+-  Introduce core conflict (external enemy, internal corruption, impossible orders, etc.)
+-  Plant mentor relationship or unit bond that will sustain narrative
+- ACT TWO: Pressure & Growth**
+-  Character advancing through rank/skill progression (or resisting advancement)
+-  Military duty creating genuine moral dilemmas
+-  Unit bonds tested through rising stakes
+-  Character discovering costs of advancement (relationships, innocence, ethics)
+- ACT THREE: Reckoning**
+-  Character forced to choose between military obligation and personal morality
+-  Consequences of military decisions cascading to emotional/organizational climax
+-  Resolution showing how character has been transformed by military experience
+-  Aftermath establishing new organizational reality
+- | Pitfall | Solution |
+- |---------|----------|
+- | Military as backdrop rather than character | Make organizational structure drive plot conflicts |
+- | Info-dump dialogue explaining world | Show world through character action and experience |
+- | Lone hero superseding organization | Emphasize how individual talent serves organizational goals |
+- | Ignore psychological costs of combat | Make trauma, guilt, moral injury explicit in character arcs |
+- | Simplistic good-vs-evil factions | Create legitimate competing interests, political complexity |
+- | Ignore military hierarchy's constraints | Show how rank/position limits character's agency and choices |
+- | Unrealistic casualty levels | Show real consequences of warfare, deaths mattering to characters |
+- 
+- "The captain sent me to die, which was fine. I'd volunteered."* — Shows character agency within military structure
+- "My first mistake was admitting I could see magic. My second was joining the legion."* — Personal choice within larger obligation
+- "The drill sergeant knew I was lying about my experience. We both pretended otherwise."* — Military culture of knowing without stating
+- 

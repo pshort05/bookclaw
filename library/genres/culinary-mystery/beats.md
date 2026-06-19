@@ -1,0 +1,69 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] Include at least 1 sensory food description
+-  [ ] Advance either mystery plot OR character development
+-  [ ] Use kitchen tools/settings purposefully (e.g., timer ticking = deadline pressure)
+-  [ ] Dialogue reflects food culture hierarchy (see below)
+- | Role | Speech Patterns |
+- |------|----------------|
+- | **Master Chef** | Precise measurements, technical terms ("sous-vide at 57°C"), critique-focused |
+- | **Home Cook** | Comfort-focused ("a pinch of love"), recipe gaps ("bake until done") |
+- | **Food Critic** | Hyperbolic metaphors ("this reduction sings of regret"), judgmental phrasing |
+- | **Diner Owner** | Cost/quality balance ("subbed cheaper paprika, but customers noticed") |
+- 
+- Word count: 498*
+- ```markdown
+- Core Appeal**: [E.g., Food-as-comfort meets puzzle-solving]
+- Target Audience**: [E.g., Cozy mystery fans, food enthusiasts]
+- Tropes to Use**:
+-  Recipe-as-clue
+-  Kitchen alibi
+-  Poisoned potluck
+- Tropes to Avoid**:
+-  Chef-as-villain (overused)
+-  Magical cooking solutions
+- Comparables**: *Murder She Baked*, *Kitchen Confidential* meets *Miss Marple*
+- ```
+- ```markdown
+- Voice**: [E.g., Warm but observant]
+- Metaphor Style**: Food-based ("doubts curdled like split hollandaise")
+- Description Ratio**:
+-  30% sensory food details
+-  20% kitchen atmosphere
+-  50% plot/character
+- Taboos**: Graphic violence, food waste as punchlines
+- ```
+- ```markdown
+- Culinary Role**: [Pastry chef/Food truck owner/etc.]
+- Signature Dish**: [E.g., Anxiety-reducing cinnamon rolls]
+- Investigation Strength**: [E.g., Spotting inconsistencies in kitchen routines]
+- Flaw**: [E.g., Over-relies on taste-testing evidence]
+- Food Philosophy**: [E.g., "Cooking is chemistry with consequences"]
+- ```
+- ```markdown
+- Act 1 Trigger**: [Food-related crime: sabotaged competition/tampered ingredients]
+- Midpoint Twist**: [Culinary revelation: e.g., allergy knowledge proves alibi false]
+- Climax Setting**: [Food demonstration venue: cooking show/restaurant opening]
+- Resolution Symbol**: [Restorative meal: community supper/reopened bakery]
+- ```
+- ```markdown
+- Setting**: [Type: Coastal bistro/Urban food market]
+- Key Locations**:
+-  Primary Kitchen: [Describe layout/quirks]
+-  Rival Establishment: [Contrasting cuisine/style]
+- Food Culture Rules**:
+-  Local delicacies: [List 3+ plot-relevant foods]
+-  Forbidden pairings: [E.g., No cilantro in traditional dishes]
+- Seasonal Influences**: [How harvest/festivals affect plot]
+- ```
+- 1. **Define Culinary Hook**: Unique food angle (e.g., cheese cave mysteries)
+- 2. **Build Kitchen Map**: Label key clue locations (pantry, stove, walk-in)
+- 3. **Create Recipe Index**: List dishes with plot functions (e.g., "Clue: Thyme in dessert = time manipulation")
+- 4. **Set Food Rules**: Establish 3 culinary "facts" for consistency (e.g., "All cooks sharpen knives at 4 PM")
+- 5. **Develop Palate Profile**: For each main character, assign:
+-  Favorite/loathed food
+-  Cooking tells (e.g., burns butter when lying)
+- 
+- Word count: 498*

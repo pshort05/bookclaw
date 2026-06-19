@@ -1,0 +1,46 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- ✓ Vary sentence length to control pacing
+- ✓ Use short, punchy sentences during action
+- ✓ Ground action in sensory detail (taste, smell, texture, sound)
+- ✓ Show characters suffering minor consequences (bruised ribs, bleeding cuts)
+- ✓ Employ banter with setup-response-escalation structure
+- ✓ Allow humor to emerge from character personality under pressure
+- ✓ Use dark humor and irony as primary comedic tools
+- ✓ Include witty one-liners that demonstrate character intelligence
+- ✓ Maintain stakes even during funny moments
+- ✓ Give secondary characters humor that suits their competence level
+- ✗ Stop action for extended comedic scenes
+- ✗ Use slapstick or cartoon physics that undermine plausibility
+- ✗ Force jokes that don't fit character voice
+- ✗ Sacrifice plot momentum for a punchline
+- ✗ Make protagonists incompetent for comedic effect
+- ✗ Overuse puns, wordplay, or meta-humor
+- ✗ Include lengthy exposition disguised as banter
+- ✗ Ignore consequences of violence or danger
+- ✗ Make jokes at the expense of plot credibility
+- ✗ Treat danger as genuinely comedic rather than seriously perilous
+- 
+- Setup**: Character A identifies problem
+- Response**: Character B deflects with humor
+- Escalation**: Character A escalates or Character C adds twist
+- Example**:
+-  A: "The building is collapsing."
+-  B: "Again? I just paid for repairs."
+-  C: "You own the building?"
+-  B: "Owned. Past tense. Pretty sure it's not mine anymore."
+- | Pitfall | Problem | Fix |
+- |---------|---------|-----|
+- | **Forced Jokes** | Humor doesn't fit character or moment; breaks immersion | Make jokes emerge from character voice and circumstance; cut anything that feels obligatory |
+- | **Tone Whiplash** | Shift abruptly from silly to serious or vice versa | Weave humor and action together; avoid stopping narrative to "be funny" |
+- | **Incompetent Protagonists** | Characters fail not from bad luck but from stupidity | Make protagonists skilled; humor comes from intelligence under pressure, not bungling |
+- | **Consequence-Free Violence** | Action has no weight because nobody suffers | Show minor injuries, exhaustion, pain; make danger feel real |
+- | **Exposition Dialogue** | Long speeches disguised as banter that slow pacing | Cut explanatory dialogue; deliver exposition through action and brief exchanges |
+- | **Overwrought Descriptions** | Verbose action sequences that kill momentum | Use short sentences during action; save detailed prose for reaction and consequence moments |
+- | **Inconsistent Tone** | Humor style shifts between characters or scenes | Define each character's humor style early; maintain consistent narrative voice |
+- | **Dialogue Overuse** | Too much banter, not enough plot movement | Ensure every scene has functional purpose (advances plot or reveals character) alongside humor |
+- | **Stakes Unclear** | Reader doesn't understand what's at risk | Establish clear objectives, obstacles, and consequences early; reference them consistently |
+- | **Underdeveloped Secondary Characters** | Supporting cast lacks personality or humor | Give each secondary character distinct voice and comedic style matching their competence |
+- 

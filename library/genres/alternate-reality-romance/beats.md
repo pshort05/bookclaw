@@ -1,0 +1,59 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Use strong dialogue tags sparingly. Favor action beats that reveal character and advance plot.
+- Acceptable:** "said," "asked," "replied," "breathed," "whispered"
+- Overuse:** "exclaimed," "retorted," "breathlessly declared," "passionately insisted"
+- Integrate action beats before or after dialogue to reveal character state and intimacy level:
+- > "I don't know how to stay." She wraps her arms around herself, a gesture of retreat he recognizes now. He steps closer despite it.
+- >
+- > "Then don't figure it out alone."
+- 
+- Act One: Displacement & Disorientation (25%)**
+-  Inciting incident: transition to alternate reality
+-  Introduction to love interest (often in disorienting circumstances)
+-  Establishment of stakes and world rules
+-  Initial romantic spark (tension, attraction, or conflict)
+-  End with commitment to the alternate reality or love interest
+- Act Two: Integration & Intimacy (50%)**
+-  Deepening understanding of alternate world and love interest
+-  Romantic progression: vulnerability increases
+-  External conflicts escalate (world stakes, obstacles, antagonists)
+-  Romantic obstacles emerge (misunderstanding, duty, fear, or external threat)
+-  Midpoint: major emotional or plot revelation that deepens romantic stakes
+-  Lower midpoint: climactic separation or breaking point in romance
+-  Recommitment: protagonist chooses love interest and/or alternate reality despite cost
+- Act Three: Resolution & Integration (25%)**
+-  Final external conflict resolved
+-  Romantic resolution (HEA: Happily Ever After; HFN: Happy For Now)
+-  Clear narrative of how protagonist integrates into alternate reality or brings worlds together
+-  Thematic closure on belonging/identity/home
+- | Beat | Placement | Purpose |
+- |------|-----------|---------|
+- | Inciting Incident | 0-10% | Transition to alternate reality |
+- | Love Interest Introduction | 5-15% | Meet LI, establish romantic tension |
+- | World Commitment | 15-25% | Protagonist commits to staying/integrating |
+- | Emotional Deepening | 35-55% | Vulnerability, confession, intimacy escalation |
+- | Midpoint Revelation | 45-55% | Information that raises romantic/external stakes |
+- | Separation/Crisis | 60-70% | Relationship threatened or broken |
+- | Final Confrontation | 70-85% | External antagonist defeated, relationship recommitted |
+- | Resolution | 85-100% | HEA established, world integration complete |
+- 
+- Single POV advantage:** Readers experience the alternate reality's strangeness alongside protagonist. Maintain this throughout for maximum immersion.
+- Dual POV advantage:** When done well, offers intimate dual perspective on romantic relationship. Requires clear POV separation (chapters or clear section breaks).
+- Avoid:** Omniscient POV in contemporary ARR. It distances readers from disorientation essential to the genre.
+- 
+- Before writing any scene, confirm:
+-  [ ] **Purpose is clear:** Does this scene advance romance, worldbuilding, or external plot?
+-  [ ] **POV is locked:** Whose consciousness are we in? No switches mid-scene.
+-  [ ] **Opening line orients reader:** Where are we? What world? What's the emotional/physical state?
+-  [ ] **Sensory details anchor the world:** At least 1-2 signature sensory details for this location
+-  [ ] **Dialogue reveals character:** What we learn about character through speech, not description
+-  [ ] **Conflict present:** What does one character want? What's blocking them?
+-  [ ] **Action beats visible:** What are bodies doing? Where are hands?
+-  [ ] **Stakes clear:** What happens if character fails in this scene?
+-  [ ] **Subtext acknowledged:** What's unsaid under the dialogue?
+-  [ ] **Closing beat resonant:** Does scene end on emotional or plot revelation?
+- 
+- Version 1.0 | Updated January 2026*

@@ -1,0 +1,41 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- The Dead Sheep: The symbol of the failure of European farming methods in a hostile land.
+- Avoid: Americanisms like "Sheriff," "Saloon" (use Pub or Shanty), "Ranch" (use Station), "Canyon" (use Gorge or Gully), "Prairie."
+- Write in the style of an Australian 'Meat Pie' Western. The setting is the Australian Outback—hot, dusty, and fly-blown. Use Australian colonial terminology (Bushranger, Trooper, Station, Damper, Billy). The tone should be cynical, gritty, and anti-authoritarian. Dialogue should feature dry wit. The environment is lethal and ancient. Avoid American western terms (Ranch, Sheriff, Saloon).
+- Upper left (Color Light Red): Low Demand, High Saturation; Label as ‘Avoid These Opportunities’
+- The specific historical context profoundly shapes Australian Western content: the British penal transportation system that brought convict and assigned labor; the violent dispossession of Indigenous peoples and frontier wars largely erased from official history; the gold rushes of the 1850s onward that drew migrant populations; the establishment of pastoral stations with quasi-feudal power structures; and the mythology of the bushranger—the escaped convict or criminal who became a folk hero in popular consciousness. Unlike American Westerns, Australian Westerns cannot avoid these historical realities without appearing willfully ignorant; the genre's very foundation rests upon acknowledging settler colonialism's violent origins.[3][5][18][19]
+- Low Demand, High Saturation ("Avoid These Opportunities")
+- Trope Analysis - Organized guidance on tropes to deploy, subvert, or avoid entirely
+- Avoid: melodrama, sentimentality, romanticization of frontier violence, cartoonish exaggeration
+- Avoid Romanticization: Don't present landscape as sublime wilderness to be conquered or appreciated from distance. Instead, emphasize its indifference to human ambition, its capacity to kill, its spiritual significance to Indigenous peoples
+- Avoid making them simply tragic victims or romantic rebels
+- Avoid making them primarily repositories of wisdom for settler characters' education
+- Show specific restrictions her gender creates while avoiding victimhood framing
+- Avoid making authority figures simply villainous or one-dimensional
+- Avoid stereotypical patterns of speech that reduce characters to caricature
+- Indigenous characters: Distinct speech patterns reflecting language backgrounds, but avoid stereotyping
+- Avoid:
+- Avoid Americanisms (e.g., "gotten" instead of "got"; "railroad" instead of "railway")
+- Engage seriously with historical atrocities; don't soften or minimize frontier massacres and systemic violence
+- Avoid stark good-vs.-evil framings
+- Tropes: Deploy, Subvert, or Avoid
+- Avoid making them simply tragic or romantic; emphasize moral costs of their choices
+- Avoid making Indigenous characters exist primarily to educate settler characters
+- Avoid gratuitous violence; employ violence purposefully to illuminate themes
+- Avoid romanticization of Indigenous peoples or presenting them primarily as repository of wisdom
+- Avoid redemption arcs suggesting individual moral change resolves systemic injustice
+- Avoid framing law enforcement as moral authority
+- Avoid celebrating frontier capitalism without acknowledging its foundation in theft
+- Tropes to Avoid
+- Avoid crude comedic exoticization or stereotyping of Australian culture
+- Don't employ outback caricature or treat Australian characters as eccentric curiosities
+- Avoid straightforward transplantation of American Western conventions without cultural adaptation
+- Don't employ American frontier mythology (manifest destiny, wilderness as untamed nature)
+- Avoid presenting Indigenous or colonized peoples primarily as passive victims
+- Avoid suggesting that individual moral transformation or settler guilt resolves colonial harm
+- Don't offer easy reconciliation between settler and Indigenous characters
+- Prose employs clear, precise language; avoids melodrama and purple prose
+- Moral binaries are avoided; characters can be simultaneously sympathetic and culpable

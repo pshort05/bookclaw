@@ -1,0 +1,101 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  **Ground comedy in character truth.** *"I've never been good with authority figures. The detective glared at me. I smiled. He looked more irritated."*
+-  **Use subtext.** What characters don't say creates humor and tension.
+-  **Vary pace intentionally.** Short sentences for comedy beats; medium-length for tension.
+-  **Create specific, concrete details.** Not "he dressed badly" but "his blazer had 1987 shoulder structure."
+-  **Write distinct character voices.** Readers should identify speakers without dialogue tags.
+-  **Maintain stakes throughout.** Humor doesn't diminish genuine danger.
+-  **Use sharp, witty dialogue.** Subtext and quips outperform long speeches.
+-  **Develop supporting characters.** Secondary characters should have dimension and arc.
+-  **Integrate romance as co-equal stakes.** If present, it should matter as much as thriller plot.
+-  **Show character incompetence creating complications.** Protagonist's gaps drive both plot and humor.
+-  **Force jokes.** Humor should emerge naturally from character/situation, not feel inserted.
+-  **Use slapstick or physical comedy.** Falls, mishaps, exaggerated physical pratfalls date the genre.
+-  **Kill stakes with comedic asides.** "Of course, at that moment my cat knocked over a lamp"—while someone's pointing a gun—undercuts tension.
+-  **Write long, expository dialogue.** "As you know, I'm a detective with 20 years of experience..."
+-  **Use excessive exclamation marks.** One per 5,000 words in most Comedy Thrillers.
+-  **Create one-note comic relief characters.** Supporting cast should have substantive roles and character arcs.
+-  **Overuse dialogue tags beyond "said" and "asked."** Replace with action beats.
+-  **Employ heavy noir prose or flowery language.** Keep prose transparent; character voice should dominate.
+-  **Ignore class/social status in dialogue.** Characters from different backgrounds should speak differently.
+-  **Resolve plot through coincidence or luck.** Endings should feel earned through character action/cleverness.
+- 
+- Template**:
+- ```
+- Character A states or asks something with surface meaning.
+- Character B's response reveals subtext (what they actually mean).
+- Character A reacts, revealing relationship dynamics.
+- Information or character truth emerges.
+- ```
+- ```
+- "We need to talk about the body," Margaret said.
+- "Which body?" I asked. "The one in the library or the one in the garden?"
+- "You know very well there's only one body."
+- "Technically, there are two. You just haven't found the second one yet."
+- Margaret's expression suggested she was reconsidering our friendship.
+- ```
+- What's Happening**: Margaret is serious/concerned; protagonist uses humor to deflect. Her response shows she's not amused. His comment implies he knows something dangerous. Creates both character dynamic and plot intrigue.
+- ```
+- "You're in my way," Detective Chen said.
+- "I'm investigating the same crime."
+- "You're a graphic designer. You investigate fonts."
+- "And I'm better at it than you are at investigating murders. Your last case took six months."
+- "That was—" He stopped. "You've been reading my case files?"
+- "The public ones. You're not very good at deletion."
+- ```
+- What's Happening**: Both characters are competent but in different fields. Banter reveals attraction masked by professional competition. Humor from truth—he can't deny the slow case resolution. Chemistry established through wit.
+- ```
+- "Why did you kill him?" the detective asked.
+- "He was going to ruin everything," I said.
+- "The evidence suggests you killed him because he slept with your wife."
+- "That too."
+- "You understand this is murder?"
+- "I'm aware of the definition, yes."
+- ```
+- What's Happening**: Deadpan honesty in response to serious accusation creates dark humor. Character's calm admission is unsettling and comedic simultaneously. Subtext: this person is dangerous but self-aware about it.
+- 
+- | Pitfall | Why It Happens | Fix |
+- |---------|----------------|-----|
+- | **Humor Undercuts Stakes** | Writer worried tension is too heavy; inserts comedy to lighten mood | Integrate humor into scenes with tension rather than interrupting with relief comedy |
+- | **Forced, Obvious Jokes** | Writer tells joke rather than showing character finding situation funny | Ensure humor emerges from character truth and specific details |
+- | **Unequal Balance (All Plot, No Humor)** | Writer defaults to thriller structure, forgets comedy | Consciously alternate scenes; ensure 40-50% dialogue; build humor into dialogue |
+- | **Excessive Exposition in Dialogue** | Writer needs to convey information; uses dialogue as shortcut | Weave information into scenes through action/discovery; avoid "As you know..." speeches |
+- | **Flat Supporting Characters** | Writer focuses on protagonist; secondary cast are functional only | Give supporting characters distinctive voices and their own arcs |
+- | **Slapstick or Physical Comedy** | Writer thinks "funny = physical" | Replace with witty dialogue and character-driven humor |
+- | **Unresolved Romantic Tension** | Writer unsure how to resolve romance with thriller plot | Resolve it clearly (together, apart, unresolved-for-sequel) by page end |
+- | **Inconsistent Character Voice** | Writer's own voice creeps in; character voice wavers | Read dialogue aloud; ensure each character distinct without dialogue tags |
+- | **Plot Holes Explained Away with Humor** | Writer uses comedy to gloss over plot logic gaps | Fix actual plot; don't use humor as band-aid |
+- | **Climax Resolves Through Luck/Coincidence** | Writer can't figure out how protagonist solves problem cleverly | Protagonist must solve through their intelligence, resources, or character strength |
+- 
+-  Formal registers, complex sentence structures
+-  Assumes shared cultural references
+-  Minimal contractions in formal dialogue
+-  Abstract thinking; uses jargon naturally
+-  Example: *"The forensic evidence suggests premeditation. I'll need your analysis."*
+-  Casual registers, simpler sentence structures
+-  Direct communication; minimal subtext
+-  Heavy contractions
+-  Concrete thinking; specific details
+-  Example: *"He didn't just stab him. He stabbed him, like, a lot. A lot."*
+-  [ ] Humor undermining stakes
+-  [ ] Forced jokes that feel inserted
+-  [ ] Over-reliance on slapstick
+-  [ ] Inconsistent character voice
+-  [ ] Unbalanced tone (all plot, no humor; all humor, no plot)
+-  [ ] [Other: ___________________]
+- [Which quadrant of the Reader Demand Matrix does your story occupy? How does it fit the 2023-2025 market trends?]
+- Example: "Cozy mystery-comedy with 55+ protagonist (High Demand, Low Saturation—'Harvest These Opportunities'). Features diverse cast and disability representation (trending strongly +52% growth)."
+- 
+- Entry Type**: Style Guide
+- Purpose**: Establish consistent prose style, dialogue conventions, and narrative voice
+- 
+-  [ ] [Specific to your project—example: "Overly literary description that slows Comedy Thriller pacing"]
+-  [ ] [___________________]
+-  [ ] [___________________]
+- 
+- Entry Type**: Character (Protagonist)
+- Purpose**: Detailed protagonist development ensuring character-driven comedy and stakes
+- 

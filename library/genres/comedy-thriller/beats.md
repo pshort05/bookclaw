@@ -1,0 +1,74 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] Scene objective clear (plot, character, or relationship development)
+-  [ ] Emotional tone determined (tense, comedic, mixed)
+-  [ ] POV character established
+-  [ ] Setting grounded in specific details
+-  [ ] Characters' motivations clear
+-  [ ] Begin in action or dialogue, not description
+-  [ ] Establish scene location implicitly through details
+-  [ ] Character voice apparent immediately
+-  [ ] Reader oriented (who, where, what's happening)
+-  [ ] Dialogue and action balanced
+-  [ ] Multiple purposes served (plot, character, humor/tension)
+-  [ ] Information revealed organically
+-  [ ] Conflict or tension present
+-  [ ] Pacing appropriate to scene type (tense = longer; comedy relief = shorter)
+-  [ ] Scene objective achieved or complicated
+-  [ ] New information, revelation, or comedic beat
+-  [ ] Hook to next scene (reader wants to continue)
+-  [ ] No excessive summary or explanation
+-  [ ] Read dialogue aloud for naturalness and distinct voices
+-  [ ] Each character line advances plot or reveals character
+-  [ ] Remove exposition disguised as dialogue
+-  [ ] Humor doesn't override scene objective or stakes
+-  [ ] Pacing maintains forward momentum
+-  [ ] Scene connects to previous and next scenes
+- 
+- Scenes Feel Slow**:
+-  Increase dialogue percentage; reduce prose description
+-  Tighten sentences; remove unnecessary detail
+-  Ensure each line moves plot or reveals character
+- Humor Isn't Landing**:
+-  Is it character-specific? Generic jokes don't work
+-  Is it specific and concrete? Vague humor fails
+-  Does it emerge from character truth? Forced jokes obvious
+- Stakes Feel Soft**:
+-  What could protagonist lose? Make it clear and significant
+-  Is antagonist credible threat? Strengthen antagonist
+-  Do consequences matter? Show real repercussions
+- Romance Subplot Feels Tacked On**:
+-  Is it integrated into plot? Or running parallel?
+-  Do romantic scenes have comedic elements?
+-  Does romance have stakes (emotional risk)?
+- 
+- | Metric | Comedy Thriller Range |
+- |--------|----------------------|
+- | Dialogue % | 40-50% of manuscript |
+- | Paragraph Length | Short (1-3 lines) to medium (3-7 lines); avoid long blocks |
+- | Scene Length | 2-6 pages typical |
+- | Chapter Length | 2,000-4,000 words typical |
+- | POV Shifts | Within chapter or between chapters; consistent within scene |
+- | Exclamation Marks | 1-2 per 5,000 words maximum (except high-energy cozy mystery) |
+- | Dialogue Tags Beyond "Said/Asked" | 5-10% maximum |
+- | Word Count | 70,000-90,000 words typical (up to 110,000 for epic caper) |
+- Opening**: Ground reader immediately in action or dialogue (avoid description)
+-  Example: *"There's a body in your garage," Marcus said.* (Not: *The morning light filtered through the leaves...*)
+- Middle**: Develop scene objective (plot, character, or relationship development)
+- Close**: Leave reader with new information, complication, or comedic beat that propels forward
+- Romance** (Present in 78% of contemporary Comedy Thrillers):
+-  Not primary plot but co-equal emotional stakes
+-  Banter and chemistry driving investment
+-  Can remain unresolved if sequel exists
+-  15-20% of word count minimum
+- Found Family/Ensemble Cast**:
+-  Multiple POV characters in ensemble-driven stories
+-  Relationship development as important as plot
+-  Supporting character arcs earning reader investment
+- Professional/Personal Stakes**:
+-  Protagonist's career, reputation, or livelihood at risk
+-  Job loss or professional consequences alongside thriller stakes
+-  Creates relatability
+- 

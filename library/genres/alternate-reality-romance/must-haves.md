@@ -1,0 +1,85 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+-  [ ] Alternate reality feels tangible through sensory detail
+-  [ ] Love interest established within first 15% and has clear, conflicting motivations
+-  [ ] Romantic arc mirrors or complicates external stakes
+-  [ ] Dialogue reveals character and world simultaneously
+-  [ ] POV consistent within scenes (limited switches per chapter maximum)
+-  [ ] Pacing alternates between exposition, intimacy, and action
+-  [ ] Tone maintains balance between wonder and romance
+-  [ ] Ending definitively answers: Does protagonist stay? Do they stay together?
+- 
+- Version 1.0 | Updated January 2026*
+- These templates are designed for rapid entry into NovelCrafter's Codex system. Each template provides a structured framework to capture essential information about Alternate Reality Romance projects. Use these as starting points; customize fields as needed for your specific world and story.
+- How to use:**
+- 1. Copy the relevant template below
+- 2. Fill in bracketed sections [LIKE THIS] with your project-specific information
+- 3. Expand or condense sections based on your needs (no section is mandatory)
+- 4. Save each entry separately in your Codex for easy cross-referencing
+- 5. Link related entries (e.g., Protagonist entry references World-Building entry)
+- Best Practice:** Create entries in this order: Genre Guide → World-Building → Protagonist → Story Structure → Style Guide
+- 
+- Entry Title:** Alternate Reality Romance: [Your Story Title] Genre Framework
+- Purpose:** Clarify your specific flavor of ARR and how it differs from standard expectations
+- 
+- [Define your story's specific subgenre. Example: "Fated-mates portal fantasy with cozy cottage-core setting" or "Dark romantasy with reverse-harem and reincarnation mechanics"]
+- Sight:** [What does this world look like distinctively? Color palette, lighting]
+- Sound:** [What sounds are unique here?]
+- Smell:** [What's the scent signature?]
+- Touch:** [How does air/ground feel on skin?]
+- Taste:** [What flavor does the air have?]
+- [What does she learn? What does she gain/lose?]
+- 
+- When creating Codex entries, cross-reference like this:
+-  **Genre Guide** links to: Style Guide, World-Building
+-  **Protagonist entry** links to: Love Interest character profile (if detailed), Story Structure
+-  **Story Structure** links to: Protagonist, World-Building
+-  **World-Building** links to: Story Structure, Style Guide
+-  **Style Guide** links to: Genre Guide, Protagonist (for voice)
+- 
+- Version 1.0 | Updated January 2026*
+- Compatible with NovelCrafter's Codex system*
+- Genre Essential Requirements:**
+- 1. Romantic relationship is central plot (minimum 40-80 pages of development)
+- 2. Alternate reality must be integral to plot, not decoration
+- 3. Ending must be HEA (Happily Ever After) or HFN (Happy For Now) with romantic resolution
+- 4. Emotional stakes must equal or exceed external stakes
+- 5. Love interest must have agency, conflicting goals, and believable motivation
+- Story Length:** 70,000-120,000 words (adult ARR); 60,000-90,000 words (YA ARR)
+- POV Structure:** Maintain consistent POV per scene; dual POV acceptable if clearly separated
+- Tense:** Present or past acceptable; present tense preferred for immediacy
+- 
+- Act One: Displacement (0-25%)**
+-  [ ] Inciting incident occurs within first 10% (transition to alternate reality)
+-  [ ] Love interest appears within first 15%
+-  [ ] World's core rules established (at least 2-3 key differences)
+-  [ ] Romantic tension introduced (attraction, conflict, or intrigue)
+-  [ ] Protagonist commits to staying/exploring by act's end
+-  [ ] Reader understands stakes for returning to original world
+-  [ ] First emotional beat with love interest (not yet intimate)
+- Act Two, Part A: Integration (25-50%)**
+-  [ ] Protagonist actively learns world's systems and culture
+-  [ ] Love interest revealed as more complex than initial impression
+-  [ ] Romantic vulnerability begins (character shares fears/hopes)
+-  [ ] External antagonist or conflict introduced
+-  [ ] Protagonist experiences consequences of world's rules
+-  [ ] Romantic connection deepens (intimacy, physical or emotional)
+-  [ ] Midpoint revelation: information that raises emotional or external stakes
+- Act Two, Part B: Crisis (50-75%)**
+-  [ ] Romantic relationship tested by external pressure
+-  [ ] Love interest and protagonist's goals come into conflict
+-  [ ] Protagonist questions decision to stay in alternate world
+-  [ ] Climactic separation or heartbreak moment (60-70%)
+-  [ ] Low point: romance seems impossible or relationship dissolved
+-  [ ] Recommitment: protagonist chooses love interest/world despite cost
+-  [ ] Action escalates toward external climax
+- Act Three: Resolution (75-100%)**
+-  [ ] Final confrontation with external antagonist
+-  [ ] Romantic resolution: HEA or HFN clearly established
+-  [ ] Protagonist's status in alternate world defined (staying, hybrid existence, etc.)
+-  [ ] Thematic closure: what has protagonist learned about belonging/identity?
+-  [ ] Final scene confirms romantic commitment and world integration
+-  [ ] Last page leaves reader with clear sense of couple's future
+- 

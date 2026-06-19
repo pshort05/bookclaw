@@ -1,0 +1,17 @@
+Tropes are the recurring patterns that readers expect and enjoy in this genre.
+
+## Dominant Tropes
+
+- MW:  Please build a comprehensive lexicon of Tropes, Themes, Motifs, and Symbols for the Magical Realism genre. Point out any important variations in these story devices in key subgenres.
+- II. Major Tropes (The "What")
+- The Non-Reaction: The defining trope. Characters witness the impossible (a woman ascending to heaven while hanging laundry) and react only to the mundane aspects (worrying about losing the bedsheets).
+- Recurring sensory details and distinct aesthetic patterns.
+- "Do not explain the mechanics of magic. Do not use 'fantasy' tropes like fireballs or spellcasting. Treat the impossible as boring and the ordinary as miraculous."
+
+## Rising Tropes
+
+- Please build a comprehensive guide for the Magical Realism fiction genre. Begin with an overview of the field, discussing its history and evolution. Analyze the form, content, and context for the genre, and any key subgenres. Include important themes, motifs, tropes, and symbols. List important authors and titles, particularly from the last ten years.
+- Repetition and mirror reversals structuring narrative patterns
+- This technique often accomplishes its effects through the creation of unreliable or ambiguous narration. Authors may employ first-person or third-person limited perspectives that restrict readers' knowledge to the narrator's understanding, creating productive ambiguity about whether magical events "actually" occur or whether they represent the narrator's subjective perception. Frame narratives—where a character recounts events told to them by another character—multiply layers of perspective and interpretation, rendering events progressively more distorted or magical through retelling. This narrative strategy creates what scholars term the "defamiliarization of the familiar," where ordinary objects, situations, or relationships are rendered strange or unfamiliar through unusual perspective or description, revealing hidden or new aspects of common elements and challenging readers' assumptions about reality's nature.[13][14]
+- Magical realism characteristically employs non-linear narrative structures and cyclical time. Rather than adhering to conventional linear chronology, magical realist narratives frequently blend past, present, and future, present time as cyclical rather than progressive, or create temporal ambiguity where the sequence of events remains unclear. Characters may exist outside normal temporal boundaries, or magical elements may permit time travel, suspended animation, or temporal manipulation without explanation. This temporal flexibility allows authors to explore how historical trauma, cultural memory, and generational patterns shape present consciousness, a technique particularly important for postcolonial and indigenous authors reconstructing silenced or suppressed histories.[13]
+- Beyond postcolonial and historical concerns, magical realism explores universal human themes through its distinctive formal means. García Márquez's One Hundred Years of Solitude is structured around the theme of solitude—the human condition of isolation despite desires for connection—which manifests both psychologically and structurally through the novel's cyclical return to similar character names and repeated family patterns. The title itself encapsulates this theme: characters' solitudes appear both as individual psychological states and as generational, familial, and communal conditions.[8]

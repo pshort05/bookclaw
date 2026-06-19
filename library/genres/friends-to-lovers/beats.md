@@ -1,0 +1,156 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Keep tags simple (said, asked) to maintain flow. Use action beats to convey emotional states instead: a character fidgeting, avoiding eye contact, or unconsciously moving closer during a vulnerable moment.
+- While flexible, the Friends-to-Lovers arc follows a distinct emotional progression.
+-    **Establish the Friendship:** Show, don't just tell, their deep bond. Demonstrate their history, trust, and role in each other's lives.
+-    **The Inciting Incident (The Glitch):** A single event—often external—causes one or both to see the other in a new, romantic light. This could be a fake date, seeing them flirt with someone else, a moment of vulnerability, or a physical touch that sparks unexpected electricity.
+-    **Denial & Normalization:** The character(s) try to rationalize the feeling away ("It was just the wine," "We're just really close friends"). They may double down on being "just friends."
+-    **Building Tension:** The attraction becomes harder to ignore. Interactions are laden with subtext. There may be "almost moments"—a near-kiss, a confession interrupted.
+-    **The Catalyzing Event:** An external force (a new love interest for one, a move, a life crisis) forces the issue, making the status quo unbearable.
+-    **The Friendship in Peril:** The romantic tension begins to strain the friendship. Awkwardness, jealousy, or miscommunication creates distance. The characters (and the reader) feel the potential loss acutely.
+-    **The Dark Moment:** Often, a failed attempt to return to "just friends" or a major misunderstanding leads to a rupture. The friendship seems broken, and the possibility of romance appears lost.
+-    **Confrontation & Realization:** Forced by the dark moment, the characters must honestly confront their feelings. This often involves a grand, vulnerable gesture or confession that explicitly acknowledges the friendship as the foundation.
+-    **The Leap:** They decide the potential for a deeper love is worth the risk of changing the friendship.
+-    **The New Dynamic:** Show the transition from friends to lovers. Highlight how the existing friendship enriches the romantic relationship (e.g., ease, deep understanding) while navigating the new physical and emotional intimacy. The ending should feel earned and deeply satisfying, a culmination of their long journey.
+- While not all are required, these are common emotional beats:
+- 1.  **The Established Vibe:** Show their effortless friendship.
+- 2.  **The Glitch:** The first moment of seeing the friend *differently*.
+- 3.  **The Denial:** "We're just friends."
+- 4.  **The Jealousy Spark:** Reacting to their interest in someone else.
+- 5.  **The Almost-Kiss:** Interrupted or aborted.
+- 6.  **The Catalyzing Crisis:** An event that makes "just friends" untenable.
+- 7.  **The Awkward Phase:** Friendship strained by unspoken feelings.
+- 8.  **The Failed Date/Experiment:** Trying to date others fails miserably.
+- 9.  **The Breaking Point:** The friendship fractures.
+- 10. **The Realization:** "I'm in love with my best friend."
+- 11. **The Grand Gesture/Confession:** Acknowledging the risk and the history.
+- 12. **The First *Real* Kiss:** Charged with years of history.
+- 13. **The New Normal:** Navigating a relationship that is both familiar and thrillingly new.
+- To quickly set up your Friends-to-Lovers project, create these five Codex entries using the templates below. They will serve as your central reference, ensuring consistency in style, character, and structure.
+- 1.  **Create a "Genre Guide"** entry using Template 1. This is your high-level overview.
+- 2.  **Create a "Style Guide"** entry using Template 2. Paste your specific prose rules here.
+- 3.  **Create a character entry for your Protagonist** using Template 3.
+- 4.  **Create a character entry for the Love Interest (The Friend)** using Template 3.
+- 5.  **Create a "Story Structure"** entry using Template 4 to plot your beats.
+- 6.  **(Optional) Create a "World-Building"** entry using Template 5 to define the story's social setting.
+- 
+- Entry Name:** Genre Guide: Friends-to-Lovers Romance
+- Type:** Genre Guide
+- Core Premise:** A romance that evolves from a deep, pre-existing friendship, where the central conflict is the risk of losing that vital friendship versus the hope of gaining a deeper love.
+- Reader Promise:** Readers expect a slow-burn emotional journey rooted in intimacy and history, culminating in a profoundly earned and satisfying romantic resolution.
+- Key Conventions:**
+-    Established friendship shown in detail.
+-    "Glitch" moment of changed perception.
+-    Denial and rationalization of feelings.
+-    Tension that strains the friendship.
+-    Confession that explicitly acknowledges the friendship.
+-    Relationship evolution that retains friendship's core.
+- Related Tropes:** Fake Dating, Roommates to Lovers, Childhood Friends to Lovers, "Oh no, they're hot!", Jealousy as a Catalyst.
+- Comp Titles:** *People We Meet on Vacation* by Emily Henry, *The Friend Zone* by Abby Jimenez, *Love and Other Words* by Christina Lauren.
+- 
+- Entry Name:** Style Guide: [Your Novel's Title]
+- Type:** Style Guide
+- Prose Style:**
+-    **Tone:** Authentic, intimate, emotionally resonant. Balances warm friendship comfort with sharp romantic tension.
+-    **POV:** Close third-person limited (or first-person) from [Protagonist Name]'s perspective.
+-    **Key Techniques:**
+-    Deep POV for internal conflict.
+-    Elevating mundane shared activities with new subtext.
+-    Emphasis on sensory details that break the "friend" barrier.
+-    Subtext-driven dialogue and action.
+- Dialogue Rules:**
+- 1.  Early dialogue: effortless banter, shared references, comfortable silences.
+- 2.  Mid-story dialogue: disrupted by loaded pauses, accidental admissions, deflections.
+- 3.  Confession dialogue: vulnerable, specific to their history, acknowledges the risk.
+- 4.  Use action beats over fancy dialogue tags.
+- Descriptive Focus:**
+-    **Characters:** Describe through the POV character's evolving perception. What familiar detail becomes newly captivating?
+-    **Settings:** Familiar spaces (apartment, usual bar) should feel like extensions of their friendship, then later like charged arenas.
+-    **Romantic Moments:** Focus on emotional weight and history, not just physical description.
+- 
+- Entry Name:** Character: [Character Name]
+- Type:** Character
+- Role in Story:** [Protagonist / The Friend (Love Interest)]
+- Core Concept:** [E.g., The Cautious Best Friend / The Unaware Charmer]
+- Biography:**
+-    **History with Other Lead:** [Detail key shared memories, how they met, inside jokes.]
+-    **Defining Friendship Moment:** [The moment they knew this person was their best friend.]
+- Emotional Arc (Friends-to-Lovers):**
+-    **Starting Point:** View of the other as... [e.g., "My rock, my safe place, purely platonic."]
+-    **The Glitch:** The moment perception cracks... [Describe the inciting incident.]
+-    **Internal Conflict:** Primary fear... [e.g., "Losing the most important person in my life."]
+-    **Denial Strategy:** How they rationalize feelings... [e.g., "It's just proximity."]
+-    **Breaking Point:** What makes the status quo unbearable... [e.g., "Seeing them propose to someone else."]
+-    **Realization:** "I am in love with my best friend."
+-    **Final State:** View of the other as... [e.g., "My partner, my love, and still my best friend."]
+- Key Dialogue Traits:**
+-    **With Love Interest:** [E.g., "Teasing, supportive, shares obscure references."]
+-    **When Stressed/Tense:** [E.g., "Uses humor to deflect, becomes quiet."]
+-    **Confession Style:** [E.g., "Blunt and heartfelt after a buildup of anxiety."]
+- 
+- Entry Name:** Story Structure: [Your Novel's Title]
+- Type:** Plot/Outline
+- Structure Type:** Three-Act Friends-to-Lovers Romance
+- Act 1: Foundation & First Crack**
+-    **Opening Image:** [Scene that encapsulates their current, comfortable friendship.]
+-    **Establishing the Bond:** [Key scene(s) showing their history, trust, and dynamic.]
+-    **Inciting Incident (The Glitch):** [Event:  ____________]. Page/Chap Target: ____
+-    **Denial & Normalization:** [How the POV character dismisses the new feeling.]
+- Act 2: Escalation & Crisis**
+-    **Rising Tension Sequence:**
+-    Near-Miss #1: [____________]
+-    Catalyzing Event: [External force, e.g.,  ____________]
+-    Jealousy/Strain: [Scene where friendship is tested.]
+-    **Midpoint:** [A significant step or realization (often misinterpreted).]
+-    **Awkward Phase/Friendship in Peril:** [Scenes showing growing distance.]
+-    **Dark Moment:** [The rupture. The friendship seems broken.] Page/Chap Target: ____
+- Act 3: Resolution & Evolution**
+-    **Realization:** [POV character admits love to self, often during separation.]
+-    **Grand Gesture/Confession:** [The vulnerable, specific confession scene.] Page/Chap Target: ____
+-    **The Leap:** [First real kiss/commitment.]
+-    **Navigating the New Normal:** [Scene(s) showing their evolved relationship.]
+-    **Final Image:** [Scene that mirrors or contrasts the opening, showing their new depth.]
+- 
+- Entry Name:** World: [Your Novel's Setting/Context]
+- Type:** Setting/World
+- Social/Professional Context:**
+-    **Shared World:** [E.g., Co-workers at a small firm, neighbors in an apartment building, members of the same book club.]
+-    **Impact on Friendship:** [How does this context facilitate their bond? Shared jargon, routines, etc.]
+-    **Impact on Romance:** [What are the stakes/risks within this world if the relationship changes? Office gossip? Social circle dynamics?]
+- Key Locations:**
+-    **The Friendship Zone:** Their "place" (e.g., a specific booth at a diner, one of their apartments). Describe its comfort and familiarity.
+-    **The Tension Zone:** A place where the dynamic shifts (e.g., a wedding, a fancy restaurant, a confined space like a car).
+-    **The Resolution Zone:** Where the confession/final commitment likely happens. Often a place of significance to their friendship.
+- Supporting Cast Roles:**
+-    **The Confidant:** [Name & Role]. The one who says, "You're in love with them, you idiot."
+-    **The External Catalyst:** [Name & Role]. The person/event that forces reevaluation.
+-    **The Social Circle:** How does the friend group/family perceive their relationship? This can add pressure or support.
+- Cultural/Tone Setting:**
+-    **Overall Vibe:** [E.g., Cozy small town, fast-paced city, academic campus.]
+-    **Influences on Tone:** How does the setting contribute to the story's feeling? (e.g., a cozy setting amplifies intimacy, a busy city provides anonymity for tension).
+-    **Rule 1:** The friendship must be real, shown through shared history, comfort, and inside knowledge.
+-    **Rule 2:** The romantic tension arises from *changing perception*, not discovering a stranger.
+-    **Rule 3:** The central conflict is **Risk vs. Reward**: the fear of losing the friendship versus the hope of gaining deeper love.
+-    **Rule 4:** The first acknowledgment of romantic feeling is a moment of **terror**, not just joy.
+-    **Rule 5:** The confession/reunion must explicitly honor and reference the pre-existing friendship.
+- 1. Start with Familiar Banter:** Use a shared reference or comfortable joke.
+- 2. Introduce a Disruptive Element:** An external stressor, a loaded question, or accidental physical proximity.
+- 3. Break the Rhythm:** Let the banter falter. Insert a beat of silence or a misstep.
+- 4. Subtextual Admission:** One character says something that *almost* reveals their feelings.
+- 5. Retreat to Safety:** The other character (or the same one) deflects with a joke or changes the subject, re-establishing the "friend" boundary.
+- Example:**
+- > *[Banter]* "Pass the popcorn, you hog. You always steal the good bits."
+- > *[Disruption]* Their fingers brushed during the handoff, a static shock making them both jump.
+- > *[Break]* A long pause where the movie's dialogue filled the room.
+- > *[Subtext]* "You know, sometimes I think..." she started, her voice softer.
+- > *[Retreat]* "You think I'm a popcorn thief? Guilty as charged." He forced a laugh, pulling his hand back. "What's next on the list?"
+- For any key scene, ask:
+-  [ ] Does this scene show their friendship OR advance the romantic tension? (Ideally both).
+-  [ ] Is there subtext? What's being felt but not said?
+-  [ ] Are there specific, character-knowledge details that root the scene in their history?
+-  [ ] Does the dialogue sound authentically like two close friends (ease, teasing, shared references)?
+-  [ ] Is there a small, disruptive element that hints at the changing dynamic?
+-  [ ] Does the scene end with the emotional status quo shifted, even slightly?
+-  [ ] Does it utilize sensory detail (touch, smell, taste) to create intimacy?

@@ -1,1 +1,9 @@
-{"description":"High-stakes, high-heat dark and mafia romance—featuring morally grey anti-heroes, extreme psychological tension, survival-driven power dynamics, and the fierce, protective redemption of deeply flawed characters."}
+{
+  "name": "dark-romance",
+  "ratings": {
+    "quality": "A",
+    "heat": "NC-17",
+    "age": "Adult",
+    "content": "NC-17"
+  }
+}

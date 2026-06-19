@@ -1,0 +1,49 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+- ## 1. NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+- ### 3 MUST-HAVE TROPES
+- ### 3 MUST-HAVE SCENES
+- | Mainstream Publisher Crossovers   | Orbit's digital LitRPG push (e.g., first title Jan 2025) spiked hybrid fantasy sales 40% per PW reports. | Core System Mechanics                         | Stats/skills must quantify growth—readers crave measurable power fantasy since genre inception. |
+-  **Hook (0-50 words)**: Must include a visceral system notification or isekai jolt to shatter normalcy—e.g., *Dungeon Crawler Carl*'s alien broadcast: "Earth has been added to the MultiVerse," slamming stakes in 20 words.
+-  **Stakes setup (201-500 words)**: Must imply irreversible loss (world/family/game death)—e.g., *The Primal Hunter*'s tutorial massacre hints at no escape, building dread via first kill's moral weight.
+- ### (MUST-HAVE Elements or Readers Immediately DNF)
+- #### THREE MUST-HAVE TROPES
+-  **Why It Matters**: The dopamine mechanism. Readers want to see **measurable growth**, whether through numbered stats, skill trees, or ability unlocks. The mechanism must be **consistent and knowable**.
+-  **Critical Detail**: The system doesn't have to be stat-heavy (numbers don't dominate), but it must follow **internal rules readers can predict**. Arbitrary power-ups = DNF
+- ### THREE MUST-HAVE SCENES
+- | **"All Is Lost" Moment (Plot Point 2)** | Pages 500–600 | 80,000–100,000 words | *He Who Fights with Monsters*: Jason faces a cascading series of losses/revelations (~page 550) that forces him to reassess his entire approach. He must fundamentally change strategy for Act 3. |
+- | **STAT-LIGHT SYSTEMS** | 2024 sees growing demand for "progression fantasy" with minimized numbers, emphasis on narrative—*Beware of Chicken*, *Heretical Fishing*. Publishers acquiring hybrid lit-prog fantasies that blur genre lines. | **CONSISTENT MECHANICS ARE ETERNAL** | Whether stats are heavy or light, readers must understand the rules and trust them. Inconsistency kills trust. |
+- | **SERIALIZATION-FIRST MENTALITY** | 2024 authors release chapters weekly on RoyalRoad before publishing traditionally. Reader expectation: serials release frequent chapters; novels should feel "meaty" (120K+ words). | **PACING CONSISTENCY IS ETERNAL** | Serial readers train on "regular updates create addiction." Traditional readers expect narrative structure. Your book must satisfy both: regular (chapter) payoffs + larger (book-arc) payoffs. |
+- | **POWER LEVEL TRANSPARENCY** | Readers want *charts*, *comparisons*, *explicit power rankings*. Visible stat progression + level tiers (Rank System, Tier System) trending hard (see *Primal Hunter*, *Defiance of the Fall*). | **GROWTH CLARITY IS ETERNAL** | Readers must understand progression. Whether you use explicit levels (1–100) or narrative description ("now I could crush boulders"), readers need to *know* when the MC improved and by how much. |
+- What Must Appear**:
+- What Must Appear**:
+- What Must Appear**:
+-  A choice the MC must make (even if forced)
+-  Words 300–400: "Jason encounters a monster. He has no weapon, no skills. He must *run or fight*."
+-  Sentence 3–4: What choice must MC make? (Even if forced, it's still a choice)
+- 4. **System Apocalypse Market Saturation**: 2024 saw explosion of "System awakens on Earth" debuts; Publishers Weekly notes "impossible to differentiate new entries." Your differentiation must be (a) unique system mechanic or (b) unique character/tone. Recommendation: Audit your opening 30 pages against top 10 RoyalRoad hits. If premise is indistinguishable, differentiation *must be character*.
+- Competitive Bar**: High. "Good enough" no longer works. Bestselling debuts must deliver (a) unique system + (b) emotionally real MC + (c) found family stakes + (d) escalating plot tension. Mediocre stats + boring characters = invisible on algorithm.
+- 1. 🎯 NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+- 3 MUST-HAVE TROPES
+- The System Interface: This is the definition of the genre. Readers must see the system. Blue boxes, stat screens, floating notifications, quest logs. This is not optional.
+- Meaningful, Visible Progression: The core dopamine loop. The reader must see the numbers go up (Level 1 -> Level 2), see new skills being unlocked (
+- "Zero to Hero" / The Underdog: The protagonist must start weak, often as a "loser" in the real world (or transported in a weak state). This makes the subsequent power gain feel earned and satisfying.
+- 3 MUST-HAVE SCENES
+- The "Build" Becomes Clear (The Midpoint Pivot): The scene where the MC must commit to a class, a rare skill, or a unique path that differentiates them from everyone else. This sets their "brand" for the rest of the series.
+- Inconsistent "Math": Your System rules must be concrete. If a spell costs 10 Mana, and you show the MC casting it with 5, readers will notice and will post 1-star reviews calling out the "lazy writing." The rules must be iron-clad.
+- Max Quiet Chapters Before Tension Spike: One (1). A "quiet" chapter must still contain progression (allocating stats, crafting, learning a new schematic). Two sequential chapters with only talking and no System interaction will cause readers to skim.
+- Hook (0-50 words): Must include an unambiguous System signal OR a moment of "real-world" failure.
+- Stakes Setup (201-500 words): Must imply imminent, lethal danger. The System is not a toy.
+- 1. 🎯 NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+- 3 MUST-HAVE TROPES
+- The System Interface: This is the definition of the genre. Readers must see the system. Blue boxes, stat screens, floating notifications, quest logs. This is not optional.
+- Meaningful, Visible Progression: The core dopamine loop. The reader must see the numbers go up (Level 1 -> Level 2), see new skills being unlocked (
+- "Zero to Hero" / The Underdog: The protagonist must start weak, often as a "loser" in the real world (or transported in a weak state). This makes the subsequent power gain feel earned and satisfying.
+- 3 MUST-HAVE SCENES
+- The "Build" Becomes Clear (The Midpoint Pivot): The scene where the MC must commit to a class, a rare skill, or a unique path that differentiates them from everyone else. This sets their "brand" for the rest of the series.
+- Inconsistent "Math": Your System rules must be concrete. If a spell costs 10 Mana, and you show the MC casting it with 5, readers will notice and will post 1-star reviews calling out the "lazy writing." The rules must be iron-clad.
+- Max Quiet Chapters Before Tension Spike: One (1). A "quiet" chapter must still contain progression (allocating stats, crafting, learning a new schematic). Two sequential chapters with only talking and no System interaction will cause readers to skim.
+- Hook (0-50 words): Must include an unambiguous System signal OR a moment of "real-world" failure.
+- Stakes Setup (201-500 words): Must imply imminent, lethal danger. The System is not a toy.

@@ -1,0 +1,139 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- For each key scene, ensure:
+-  [ ] **Mood:** Established through setting/lighting/weather in the first paragraph.
+-  [ ] **Objective:** The POV character enters with a clear goal (extract info, process a scene, avoid a fight).
+-  [ ] **Obstacle:** Something impedes them (a lie, a bureaucratic wall, their own emotion).
+-  [ ] **Turn:** The scene ends on a different emotional or factual note than it began.
+-  [ ] **Subtext:** At least one exchange where the spoken words hide the true meaning.
+-  [ ] **Cost:** The scene extracts a small price from the protagonist (frustration, a painful memory, a compromised principle).
+-  [ ] **Brevity:** Cut any description or dialogue that doesn't serve mood, character, or plot.
+- 
+- Word Count:** ~950
+- Nordic Noir, or Scandinavian Noir, is a subgenre of crime fiction characterized by its dark, morally complex narratives set against the stark social and physical landscapes of the Nordic countries. It is not merely a crime story in a Scandinavian setting; it is a vehicle for social critique, exploring systemic failures, the erosion of the welfare state, and the darkness beneath the surface of seemingly egalitarian societies.
+- Core Tenets:**
+-    **Social Realism:** The crime is a symptom of a deeper societal sickness. The investigation exposes flaws in institutions, families, and communities.
+-    **Psychological Depth:** Focus is on the internal lives and moral compromises of the investigators, victims, and perpetrators. Protagonists are often flawed, melancholic, and burdened by personal demons.
+-    **Atmosphere as Character:** The setting—whether the bleak fjords of Norway, the dense forests of Sweden, or the endless winter darkness—is integral to the mood and often reflects the internal state of the characters.
+-    **Justice is Elusive:** Endings are frequently ambiguous, bittersweet, or pyrrhic. The resolution of the case rarely fixes the underlying societal or personal damage.
+- Tone:** Sober, restrained, and melancholic. Avoid melodrama. Emotion is conveyed through action, subtext, and stark description rather than exclamation.
+- Pacing:** Deliberate and methodical, mirroring the painstaking nature of real police work. Build tension through accumulation of detail, psychological unease, and the slow unveiling of secrets, rather than constant action set-pieces.
+- Description:**
+-    **Economy:** Be precise and minimalist. Describe only what is necessary to establish mood, reveal character, or advance the plot. Use strong, concrete nouns and verbs.
+-    **Sensory Detail:** Focus on cold, damp, darkness, and silence. The chill of a morgue, the relentless rain on a car roof, the oppressive quiet of a suburban home at night.
+-    **Weather & Light:** Use the extreme Nordic seasons—oppressive winter darkness, glaring summer nights without end—as active elements that affect mood, behavior, and plot.
+- Narrative Voice:** Typically close third-person, often following the protagonist. The voice should be intelligent, observant, and slightly detached, allowing the grim realities of the story to speak for themselves.
+- Subtext is Paramount:** Characters, especially Nordic characters, often say less than they mean. What is *not* said is as important as what is. Dialogue should be layered with unspoken tension, history, and social codes.
+- Naturalism & Restraint:** Speech patterns should feel authentic—interrupted, hesitant, or clipped. Avoid lengthy, expository monologues. Characters frequently deflect with mundane talk or silence when faced with emotional confrontation.
+- Functional:** Dialogue often serves a procedural purpose (interviews, briefings) but must simultaneously reveal character dynamics and power struggles. The questioning style of detectives is typically patient, persistent, and psychologically probing rather than aggressive.
+- Cultural Nuance:** Reflect social norms like *Janteloven* (the Law of Jante, discouraging individualism) through characters' reluctance to boast, confess, or stand out. Formality/informality in address (using last names vs. first names) can signal shifting relationships.
+- Act I: The Shattering of Order**
+-    **The Hook:** Discover a body or a crime that disrupts the perceived peace. The crime should feel like a violation of the social fabric (e.g., in a quiet suburb, a pristine nature spot).
+-    **Introduction of the Protagonist:** Establish their professional competence alongside their personal fragmentation (divorce, addiction, grief, estrangement).
+-    **The First Clue:** The initial evidence points toward complexity—a hidden life, a connection to power, or a motive buried in the past.
+- Act II: The Unraveling**
+-    **The Investigation as Excavation:** The procedural plotline follows the methodical collection of evidence, interviews, and dead ends. Each step should peel back a layer of societal or personal illusion.
+-    **Parallel Personal Descent:** The protagonist's personal life deteriorates or is forced into crisis by the case, mirroring the case's themes (e.g., investigating a broken family while their own falls apart).
+-    **Antagonist as Shadow:** The perpetrator is often a reflection of the protagonist or a product of the same broken system. Their motives should be disturbingly understandable.
+-    **Midpoint:** A significant revelation that reframes the case, often exposing a wider conspiracy or a more personal connection to the protagonist.
+- Act III: The Costly Resolution**
+-    **Convergence:** The professional and personal plotlines collide, forcing the protagonist to make a difficult moral choice.
+-    **Climax:** The confrontation is often quiet, psychological, and location-specific (a remote cabin, an empty office building). It's about truth, not spectacle.
+-    **Denouement:** The crime is solved, but the victory is hollow. The protagonist is left to deal with the personal wreckage. The societal critique is underscored—nothing has fundamentally changed. The final image should resonate with melancholy and unresolved tension.
+- 
+- Word Count:** ~750
+- 1.  In NovelCrafter, create a new Codex for your project.
+- 2.  Create a **Genre Guide** entry using Template 1. This is your master reference.
+- 3.  Create a **Style Guide** entry using Template 2. Link it to your Genre Guide.
+- 4.  For each major character, create a **Protagonist** (or Antagonist/Suspect) entry using Template 3. Focus on their *wound* and *moral compromise*.
+- 5.  Create a **Story Structure** entry using Template 4 to outline your three-act plot.
+- 6.  Create at least one **World-Building** entry using Template 5 to define your setting's social and physical atmosphere.
+- 7.  **Link everything.** Use NovelCrafter's linking feature to connect characters to the style, structure, and world entries.
+- 
+- Entry Type:** Genre
+- Name:** Nordic Noir Core Principles
+- Description:**
+- Defines the essential rules and atmosphere for this Nordic Noir narrative.
+- Key Attributes:**
+-  **Subgenre Focus:** [e.g., Police Procedural, Psychological Thriller]
+-  **Primary Social Critique:** [e.g., Erosion of the welfare state, immigration tensions, corporate corruption]
+-  **Mandatory Tone:** Melancholic, restrained, psychologically dark.
+-  **Ending Type:** Pyrrhic victory / Ambiguous justice.
+-  **Key Trope Inclusions:** [e.g., "The flawed detective," "Past crime resurfacing," "Systemic failure"]
+- Reference Links:**
+-  [Link to Style Guide]
+-  [Link to Story Structure]
+- Content Notes:**
+- Paste the core "Genre Definition" section from your Style Guide here for quick reference.*
+- 
+- Entry Type:** Style
+- Name:** Nordic Noir Prose & Dialogue Style
+- Description:**
+- Enforces the specific literary style for this project: minimalist prose, subtext-heavy dialogue, atmospheric description.
+- Key Attributes:**
+-  **Prose Mandate:** Economical, precise, sober. Avoid purple prose.
+-  **Dialogue Mandate:** Naturalistic, full of subtext, culturally restrained. No exposition dumps.
+-  **Description Mandate:** Sensory, focused on cold/dark/silence. Weather is active.
+-  **POV:** Close third-person, likely single protagonist.
+-  **Pacing:** Slow-burn, methodical.
+- Reference Links:**
+-  [Link to Genre Guide]
+-  [Link to Protagonist entry]
+- Content Notes:**
+- Paste the "Prose Style Guidance" and "Dialogue Conventions" sections here. Include the dialogue template and examples for AI reference.*
+- 
+- Entry Type:** Character
+- Name:** [Protagonist Name] - The Nordic Noir Detective
+- Description:**
+- A deeply flawed investigator whose personal life mirrors the societal decay they investigate.
+- Key Attributes:**
+-  **Core Competence:** [e.g., Brilliant forensic analyst, dogged interviewer]
+-  **The Wound:** [e.g., Death of a child, failed marriage, addiction]
+-  **The Flaw:** [e.g., Emotional detachment, obsessive workaholism, moral flexibility]
+-  **Personal Crisis (Arc):** [e.g., Custody battle, sobriety threatened, estranged parent ill]
+-  **Moral Compromise:** [e.g., Will break protocol for "justice," will sacrifice personal life for the case]
+-  **Connection to Theme:** [e.g., Their flaw exemplifies the corrosive nature of the work/system]
+- Reference Links:**
+-  [Link to Style Guide for dialogue tone]
+-  [Link to Story Structure for their arc beats]
+-  [Link to World-Building for their relationship to the setting]
+- Content Notes:**
+- Describe their appearance, habits, and backstory only as it directly informs their wound, flaw, and investigation style.*
+- 
+- Entry Type:** Structure
+- Name:** Nordic Noir Three-Act Breakdown
+- Description:**
+- The plot skeleton following Nordic Noir's specific pacing and thematic beats.
+- Key Attributes:**
+-  **Act I Trigger:** [Specific crime that shatters social order]
+-  **Act I Protagonist State:** [Their personal life *before* the case]
+-  **Midpoint Reversal:** [The revelation that changes everything]
+-  **Act II Low Point:** [Personal and professional failure collide]
+-  **Act III Choice:** [The moral dilemma the protagonist faces]
+-  **Final Image:** [The melancholic, unresolved closing moment]
+- Reference Links:**
+-  [Link to Genre Guide]
+-  [Link to Protagonist entry]
+- Content Notes:**
+- Use the Story Structure Checklist from the QRG to populate your acts. This entry is your high-level plot map.*
+- 
+- Entry Type:** World
+- Name:** [Setting Name] - Social & Physical Atmosphere
+- Description:**
+- The living, breathing Nordic setting that acts as a character and reflects the story's themes.
+- Key Attributes:**
+-  **Physical Environment:** [e.g., Stockholm archipelago in winter, Reykjavik's endless night]
+-  **Social Environment:** [e.g., Wealthy tech-suburb with hidden poverty, tight-knit fishing village with secrets]
+-  **Atmospheric Mandate:** [e.g., Oppressive damp, blinding snow, silent forests]
+-  **Institutional Critique:** [e.g., Overburdened police, corrupt municipal council, failing social services]
+-  **Symbolic Location:** [e.g., The abandoned factory, the pristine fjord, the brutalist apartment block]
+- Reference Links:**
+-  [Link to Genre Guide]
+-  [Link to Style Guide for descriptive tone]
+-  [Link to Protagonist for their relationship to place]
+- Content Notes:**
+- Focus on sensory and social details that will directly influence scenes. How does the cold feel? What does the silence in a suburb sound like? What unspoken rules govern this place?*
+- 
+- Word Count:** ~1,200

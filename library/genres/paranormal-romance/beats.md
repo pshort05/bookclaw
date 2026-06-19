@@ -1,0 +1,163 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- I. Tropes (Narrative Devices & Character Archetypes)
+- Forced Proximity (Magical): Characters are trapped together not by a snowstorm, but by a magical ward, a binding ritual, or a safe house during a purge.
+- Touch Her And Die: The male protagonist (usually the supernatural one) reacts with extreme, lethal violence if the heroine is threatened.
+- Character Archetypes
+- The Sunshine Mook: A secondary character (usually a beta wolf or friendly vampire) who explains the world-building to the human protagonist.
+- Fate vs. Free Will: The central philosophical conflict. Do the characters truly love each other, or are they slaves to the mating bond/biology?
+- Sanctuary and Belonging: Characters are often outcasts (loner wolves, orphans). The romance provides a "home" or "pack" where they finally fit in.
+- III. Motifs (Recurring Imagery & Narrative Beats)
+- The Scent: The primary identifier. Characters are identified by complex scent profiles (e.g., "rain and ozone" or "sandalwood and blood") rather than visual descriptions.
+- Rapid Healing: Wounds that knit together visibly. Used to allow characters to take massive physical damage without ending the story.
+- The True Name: In some lore, knowing a being's true name grants power over them. Sharing it is the ultimate act of trust.
+- Motif: The Pulse. The vampire is fixated on the sound of the heroine’s heartbeat.
+- The paranormal romance genre represents one of the most dynamic and rapidly evolving segments of contemporary fiction, blending the timeless appeal of romantic love with elements that defy scientific explanation. This comprehensive guide explores the genre's rich history, defining characteristics, essential subgenres, recurring themes and tropes, key symbolism, and the most influential authors and works shaping the field today—particularly over the last decade.
+- The critical distinguishing feature of paranormal romance is that the romance must remain the primary focus—the supernatural elements enhance and complicate the love story rather than serving as the main plot. To determine whether a novel qualifies as paranormal romance, one useful test is to mentally remove all romantic elements; if the story loses its essential narrative purpose, it is paranormal romance rather than urban fantasy. The genre typically features dual point-of-view (POV) narration, presenting the perspectives of both main characters to emphasize the emotional intimacy and mutual development of the romantic relationship.[3][4][5]
+- The turning point arrived in the early 2000s, when paranormal romance experienced explosive growth that would reshape the romance publishing industry. A pivotal cultural moment catalyzed this expansion: September 11, 2001 triggered renewed reader and writer interest in paranormal romance narratives. The genre provided psychological refuge, allowing both creators and consumers to explore fear, loss, and otherworldly chaos through safely distanced fictional frameworks—addressing emotions too "painful or controversial to confront directly at the time".[8]
+- The early post-9/11 era was characterized by narratives depicting "the shock of discovering magical (and menacing) elements irrupting in our everyday reality." Gradually, the genre evolved from discovery narratives toward fully realized fictional worlds where paranormal elements constituted the baseline reality rather than shocking aberrations. Stories began reflecting either dystopian backdrops or settings where realistic and fantastic elements coexisted as normalized aspects of world-building.[8]
+- Form, Content, and Context: Defining Characteristics
+- Dual or Multiple POV: Most paranormal romances employ dual point-of-view narration, alternating between the protagonists' perspectives to establish emotional parity and showcase the developing romantic connection. This contrasts sharply with urban fantasy, which typically utilizes single first-person POV focused on the protagonist's journey. The dual-POV structure allows readers to understand both characters' emotional stakes, misunderstandings, and growth simultaneously, deepening investment in their relationship.[12][4][3]
+- Romantic Conflict Integration: External supernatural conflicts directly feed the central romantic relationship. Rather than the romance being secondary to paranormal action, obstacles to the couple's happiness stem from their supernatural natures or their worlds' supernatural governance. A vampire's immortality versus a human lover's mortality, rival packs preventing werewolf pair bonding, or prophecies forbidding certain matches all exemplify how paranormal elements generate the story's emotional stakes.[2][5]
+- This contrasts with urban fantasy's characteristically grittier, more violent tone emphasizing survival, action sequences, and the protagonist's individual agency within a hostile supernatural landscape. Urban fantasy prioritizes adventure and mystery-solving; paranormal romance prioritizes intimate connection.[5]
+- Classic examples include Christine Feehan's Dark series, launching in 1999 and continuing through the present, and Kresley Cole's Immortals After Dark, which positions vampires within a broader paranormal hierarchy. Recent standout works include Carissa Broadbent's Crowns of Nyaxia series (beginning 2022), featuring vampire characters in deadly supernatural tournaments and political intrigue, and Lara Adrian's Midnight Breed series, which frames vampire romance through military precision and brotherhood.[21][22][11]
+- Shapeshifter romance—particularly werewolf variants—ranks among paranormal romance's most popular subgenres, with particular emphasis on the fated mates trope. In werewolf mythology, the Moon Goddess (or equivalent divine figure) predetermines perfect pairs destined by supernatural law to bond. The fated mates concept appears in over 70% of werewolf romance novels, functioning as a defining element. This trope provides philosophical satisfaction (the idea of predetermined soulmates) while enabling dramatic tension (fated lovers often resist their destiny or face external obstacles).[23][24]
+- Beyond wolves, shapeshifter romance extends to multiple creature types—dragons, felines, bears, and hybrid creatures—each bringing distinct supernatural characteristics and worldbuilding opportunities. Patricia Briggs' Mercy Thompson series features shapeshifter protagonists in contemporary paranormal settings with complex interspecies politics.[27]
+- Witch and Magical Practitioner Romance
+- Paranormal romance featuring witches, mages, and magical practitioners emphasizes esoteric knowledge systems, magical education, and the tension between magical and non-magical worlds. These narratives often incorporate academy settings where characters learn to harness magical abilities. Harper L. Woods's recent Coven of Bones series (The Coven and The Cursed, 2023-2024) exemplifies this trend, combining academic paranormal romance with dark themes and forced-proximity tropes.[28][29][14]
+- Angel-demon romance narratives position characters from opposing supernatural hierarchies—celestial versus infernal forces—in romantic situations, generating inherent dramatic tension. These works often explore redemption themes, with one or both characters questioning their allegiance to their original faction. Larissa Ione's Demonica Underworld Series prominently features angels, demons, and hybrids navigating complex interspecies politics and forbidden bonds.[14][27]
+- The urban fantasy romance subgenre blurs boundaries between paranormal romance and urban fantasy proper, incorporating elaborate supernatural mysteries, worldbuilding, and action sequences while maintaining romantic relationships as plot-critical elements. Series like Ilona Andrews' Kate Daniels series and Sherrilyn Kenyon's Dark Hunter series exemplify this hybrid form, featuring protagonists navigating supernatural mysteries while developing romantic relationships with supernatural partners.[31][27][14]
+- Jeaniene Frost's Night Huntress universe pioneered contemporary paranormal romance incorporating detection and paranormal investigation elements, with protagonist Cat Crawfield hunting vampires while developing romantic connection with the vampire Bones. This subgenre maintains paranormal romance's emotional intensity while incorporating urban fantasy's plot complexity and action sequences.[15][32]
+- Paranormal romance featuring fae (or fairy) characters draws from Celtic and European mythology, emphasizing faerie courts, magical contracts, and the seductive danger of supernatural beings. Sarah J. Maas's A Court of Thorns and Roses series revolutionized this subgenre in the 2010s, creating elaborate fae worlds with political intrigue, multiple romance options, and epic paranormal conflicts. These narratives often feature beauty and seduction as weapons, fae political structures rivaling human governance, and magical bargains generating romantic consequences.[33][34][14]
+- Historical paranormal romance combines paranormal elements with historical settings, positioning supernatural creatures and magic within past eras. These narratives often explore how historical figures might have possessed paranormal identities (Vlad the Impaler as a vampire, for instance) or how paranormal elements might have shaped historical events. This subgenre remains less commercially dominant than contemporary paranormal romance but attracts dedicated readers seeking historical immersion combined with supernatural elements.[14][6]
+- Forbidden Love and Societal Rejection: Central to paranormal romance's emotional core is the concept that supernatural relationships violate established rules—whether societal (humans reacting with prejudice or violence toward supernatural beings), supernatural (species laws prohibiting interspecies bonding), or natural (fundamental biological incompatibility making relationships dangerous). This forbidden status elevates romantic connection to transgressive significance, with love itself becoming an act of rebellion or defiance.[2]
+- Good Versus Evil and Moral Complexity: Paranormal romance increasingly emphasizes moral ambiguity, particularly in dark paranormal romance, where characters operate in shades of gray rather than clear ethical frameworks. The supernatural setting enables exploration of how characters justify morally questionable actions and whether romantic love can exist between fundamentally opposed moral beings. This complexity distinguishes contemporary paranormal romance from earlier, more binary good-versus-evil narratives.[35][10][2]
+- Transformation and Evolution: Many paranormal romance protagonists undergo significant personal transformation through their relationships. A vampire might reconnect with humanity through loving a human; a powerful supernatural being might learn vulnerability; a character raised for violence or cruelty might discover capacity for tenderness. These transformations feel earned rather than convenient due to the paranormal elements providing concrete reasons for change.[2]
+- Hidden Magical Worlds and Secret Societies: Paranormal romance frequently features hidden communities operating parallel to human civilization, complete with their own governance, laws, hierarchies, and conflicts. These communities often reveal unexpected complexity, containing internal factions, generational conflicts, and prejudices rivaling human society. Protagonists frequently navigate between human and paranormal worlds, developing dual identities and allegiances.[2]
+- The Exploration of the Unknown: Many paranormal romances emphasize characters' journeys to uncover hidden truths about themselves, their supernatural natures, or their worlds. These discovery narratives mirror coming-of-age patterns, with romantic connection enabling or necessitating such revelations. Characters often learn they possess unexpected supernatural heritage, magical abilities, or destined roles they never anticipated.[2]
+- Fated Mates: The fated mates trope represents perhaps paranormal romance's most defining narrative device, particularly within werewolf romance. This trope posits that supernatural forces (typically the Moon Goddess in werewolf lore) predetermine perfect romantic pairings, with both partners experiencing immediate, overwhelming recognition upon meeting. The trope combines psychological satisfaction with romantic drama—yes, you've found your perfect match, but destiny has chosen your worst enemy, or a being you cannot ethically bond with, or someone belonging to your people's sworn enemies. Recent paranormal romance has begun complicating fated mates, questioning whether destiny should override individual choice and introducing alternative explanations for intense paranormal attraction.[24][23][21]
+- Enemies to Lovers: This foundational romance trope gains particular potency in paranormal settings where enemies often possess literal supernatural power to harm each other. Paranormal enmity frequently stems from species conflicts (vampire-hunter, werewolf-feline shifter), family vendetta, or supernatural law explicitly forbidding relationships. The transition from opposition to intimacy generates high emotional stakes when characters literally risk everything—allegiance to their people, their lives, their souls—by loving their enemy.[31]
+- Slow Burn Romance: Many paranormal romances emphasize gradual relationship development through increasing emotional intimacy and growing recognition of attraction before physical consummation. Slow-burn pacing allows complex paranormal worldbuilding and genuine character development while building tension. Harper L. Woods's Coven of Bones series balances slow-burn and spicy elements across its duology.[28][30]
+- Forced Proximity: Paranormal elements often trap couples in situations requiring intimate cohabitation—magical imprisonment, protective imprisonment after supernatural threat, forced marriage or bonding to prevent wars, or simply the logistics of paranormal hiding. These scenarios force characters to navigate relationship development despite emotional resistance.[3][28]
+- Love Triangles with Paranormal Elements: Paranormal romance frequently incorporates love triangles where supernatural elements complicate the dynamic beyond conventional romantic preference. A character might be torn between a fated mate and chosen love, or between two beings representing different worlds (human versus paranormal), or between a supernatural partner and maintaining human identity and connections.[36][33]
+- Claiming, Bonding, and Marking: Paranormal bonding rituals—blood exchanges, mating marks, magical bonds, or supernatural contracts—formalize supernatural relationships with concrete, visible consequences. These rituals create permanent connection transcending human marriage and generate unique erotic possibilities unavailable in conventional romance. Werewolf mating marks, vampire blood bonding, and fae magical contracts all exemplify this trope enabling relationship development with higher stakes than human romance permits.[37]
+- Redemption and Second Chances: Paranormal romance frequently features morally compromised characters earning redemption through love. Assassins, warriors, creatures raised for violence, or beings who caused harm earlier gain opportunity to prove their transformation through romantic devotion. The paranormal setting enables these redemption arcs to feel genuinely earned—the character must overcome supernatural nature, centuries of conditioning, or curse to achieve change.[21][31]
+- Night and Darkness: Paranormal romance's persistent association with nocturnal settings reflects the genre's Gothic ancestry. Darkness symbolizes the mysterious, the hidden, the sexually transgressive, and the dangerous. Nocturnal creatures (vampires, some shapeshifters) and nocturnal activities (hunting, spying, secret meetings) dominate paranormal romance, creating atmosphere distinct from daylight-set conventional romance.[20]
+- Immortality and Eternal Youth: Immortality symbolizes power, endless possibility, and profound loneliness. Paranormal characters who achieve eternal existence gain supernatural abilities but sacrifice mortality's urgency and purpose. Immortal protagonists often experience centuries of trauma, loss, and world-changing, creating depth complex characters carry into romance.[20]
+- Supernatural Transformation or Dual Nature: Physical transformation between human and supernatural forms (werewolf shift, vampire revelation, fae glamour dropping, demon manifestation) symbolizes internal conflicts between aspects of identity. Paranormal romance frequently uses literal transformation to represent psychological integration of conflicting elements—the character learning to accept both human and supernatural selves, integrating society and instinct, balancing civilization and primal nature.[2]
+- Sacred/Profane Items: Paranormal romance often employs sacred or forbidden items carrying symbolic weight—holy water threatening vampires (representing faith, protection, purity), silver harming werewolves (representing transformation and the moon's light), mystical artifacts conferring power or sealing contracts. These objects crystallize the paranormal world's rules and mythology into tangible symbols.[20]
+- Homes and Territory: Physical spaces representing safety and belonging carry symbolic significance in paranormal romance, particularly in shifter romance where territory bonds are literally supernatural. A character claiming territory signals commitment and power; loss of home symbolizes profound vulnerability or defeat. Safe havens within paranormal territories become locations where cross-species love develops despite external hostility.[24][23]
+- J.R. Ward revolutionized paranormal romance through her Black Dagger Brotherhood series, launching 2005 and continuing through present with recent 2024-2025 releases. The series features vampire warriors defending their race against enemies, establishing Ward's signature intense alpha heroes, intricate paranormal mythology, and multi-POV serial structure creating ongoing character investment. The Brotherhood's blend of paranormal action, complex world-building, and deeply emotional romance established templates numerous contemporary works follow. Ward continues the series with ongoing installments including Lover Forbidden (September 2025).[17][38][30]
+- Nalini Singh commands significant contemporary presence through dual paranormal romance series: Psy-Changeling (beginning 2006) and Guild Hunter (beginning 2009), both continuing through 2025 with recent releases in both series. Singh's paranormal world-building emphasizes species-specific psychologies and social structures, creating intricate politics within and between supernatural communities. Her recent work Atonement Sky (July 2025) continues the Psy-Changeling series with redemption themes and slow-burn reconnection between estranged lovers. Singh's systematic world-building and character development across multiple series demonstrates paranormal romance's capacity for literary sophistication.[39][16][30]
+- Morally gray and outright villainous protagonists who maintain reader sympathy despite unethical actions
+- Paranormal reverse harems (one female character romantically bonded with multiple male partners) and complex polyamorous paranormal relationships
+- Paranormal trauma exploration where characters process supernatural violence, violation, and loss through romantic connection[9]
+- Contemporary publishing increasingly features hybrid paranormal romance-urban fantasy, where elaborate paranormal mysteries and action sequences maintain equal narrative weight with romance development. This blending reflects reader appetite for complex plots combined with emotional romance arcs. The distinction between paranormal romance and urban fantasy has become increasingly blurred rather than clearly demarcated.[45][12][5]
+- Paranormal romance has evolved from marginal 1990s subgenre into one of publishing's most dynamic and commercially successful segments, demonstrating remarkable capacity to absorb cultural anxieties and evolving reader preferences while maintaining genre-defining focus on romantic love transcending supernatural boundaries. The genre's contemporary form represents sophisticated literary achievement—complex paranormal world-building, psychologically nuanced characters, and emotionally resonant romance developed across multiple narrative perspectives and extended series arcs.
+- https://sharonmk.co.uk/genre-conventions-tropes-common-themes-settings-characters-and-plot-devices-of-some-genres-part-2/
+- Narrative Focus: The romance is central, but the external plot (murder mystery, war, rogue faction) must drive the characters together. Balance the mundane (coffee shops, cell phones) with the magical.
+- Primal Sensory Details: Prioritize scent and raw physical instinct. Characters should smell emotions (fear is acrid, arousal is sweet, anger is burning). Focus on heart rates, pupil dilation, and the "pull" of the bond.
+- Vernacular: Modern, sharp, and snappy. Use contractions freely. Pop-culture references are acceptable to ground the story in the "now."
+- Alpha/Power Dynamics: Powerful characters speak with absolute authority. Use short, commanding sentences for Alphas/Master Vampires.
+- The Reveal: Dialogue often dances around secrets. Characters speak in code or double-entendres to hide the supernatural world from humans.
+- Banned/Avoided: Overly flowery "High Fantasy" speech (e.g., "perchance," "morrow") unless the character is 500+ years old and refuses to adapt.
+- Pacing & Beats
+- The Recognition: The moment the protagonists realize they are "Fated" or "Mates" is a major beat. It can be instant (Insta-love/lust) or rejected (Resisting the Bond), but it must be acknowledged physically.
+- Narrative Structure & POV - Recommended dual third-person limited with guidance on distinctive character voices
+- Prose Style - Sentence structure techniques including action pacing, romantic scene writing, and paranormal worldbuilding prose
+- Character Interiority - The seven forms of deep POV interiority essential to the genre
+- Dialogue - Guidelines for emotionally weighted, conflict-driven dialogue with distinctive character voices
+- Pacing & Scene Structure - The alternating intensity-intimacy rhythm that drives paranormal romance
+- The supernatural elements enhance and complicate the love story—they don't overshadow it. Even action-heavy paranormal romance prioritizes the emotional connection between protagonists.
+- Allows readers to experience both characters' perspectives on developing romance
+- Each character's narrative voice must be unmistakably individual:
+- Readers should identify the POV character within 1-2 paragraphs without section headers
+- Narrative Voice Characteristics
+- Intimate and immediate: Draw readers deeply into characters' consciousness
+- Mixed rhythm: Combine longer, lyrical sentences for atmospheric/sensual moments with short, punchy sentences for action/tension
+- Sensory immersion: Engage all five senses (sight, sound, touch, taste, smell)—crucial for paranormal settings and characters
+- Action Sequences
+- Intimate/Romantic Scenes
+- Character interiority revealing emotional vulnerability alongside physical attraction
+- Show paranormal impact (power dynamics, species conflict, magical mechanics) through character reaction rather than narrator commentary
+- 5. CHARACTER INTERIORITY & EMOTIONAL DEPTH
+- Paranormal romance requires sophisticated interiority—readers must understand characters' thoughts, fears, desires, and emotional processing:
+- Fears & anxieties: How character's deepest fears color perception of events
+- Desires & motivations: Internal drives pushing character toward romantic partner despite obstacles
+- Conflicts & ambivalence: Characters torn between contradictory needs (immortality vs. mortal love; pack loyalty vs. chosen mate)
+- Impressions & sensory interpretation: How character subjectively perceives surroundings, other characters, paranormal elements
+- Emotional reactions: Gut responses revealing character personality and vulnerability
+- Subconscious patterns: Ingrained behavioral responses character may not consciously control
+- Deep POV: Character thoughts integrated as natural prose rhythm (no italics needed unless character explicitly "thinks in words")
+- Show character's subjective interpretation of events; subtext reveals emotional truth beneath surface actions
+- 6. DIALOGUE CHARACTERISTICS
+- Emotionally weighted: Characters reveal feelings, desires, and conflicts through speech
+- Distinctive voices: Each character has recognizable speech pattern (vocabulary, contractions, formality level, accent/dialect if applicable)
+- Minimal exposition: Avoid having characters explain paranormal world to each other; show through action instead
+- Subtext: Characters say one thing; interiority reveals contradictory feelings
+- Vulnerability: Key moments feature characters revealing fears, secrets, emotional stakes
+- 7. PACING & SCENE STRUCTURE
+- Scene Architecture
+- Action/Conflict Scenes: Fast pacing, short sentences, dialogue-heavy, immediate stakes
+- Transition/Emotional Scenes: Moderate pacing, character reflection, sensory detail, relationship development
+- Intimate/Romantic Scenes: Slower pacing, rich sensory detail, deep interiority, physical and emotional connection
+- High-intensity action scene
+- Emotional beat bridging tension to intimacy (character tending wounds, private moment after battle)
+- Intimate scene deepening romantic connection
+- Reflection/quieter moment allowing reader breath and character processing
+- Return to rising action
+- Transitions Between Scenes
+- Emotional beats: Moments of reflection, care, or vulnerability naturally bridge action to romance
+- Dialogue: Character conversations reveal emotional stakes and deepen connection
+- Sensory detail: Shift from external sensory focus (danger, movement) to internal sensory focus (touch, scent, heartbeat)
+- Essential for creating immersive paranormal worlds and intense romantic scenes:
+- Sight: Paranormal transformations, supernatural environments, character physical reactions (pupils dilating, eyes glowing, fangs descending)
+- Smell: Paranormal pheromones, creature-specific scent (metallic for vampire, wild for werewolf), scent as recognition/attraction trigger
+- Use sensory detail to distinguish paranormal creatures and their unique characteristics
+- Concentrate sensory richness in intimate scenes; distribute throughout action sequences
+- Show don't tell: Characters discover and interact with paranormal world rather than explaining it
+- Hidden supernatural societies: Establish internal structures (laws, politics, territories, factions)
+- Forced Proximity: Magical imprisonment, protective hiding, supernatural contract forces extended cohabitation
+- Redemption Through Love: Morally compromised character earns transformation via romantic devotion
+- Ground paranormal tropes in character motivation and paranormal world logic
+- Sacred/Paranormal Objects: Holy water (faith/protection), silver (transformation/moon), artifacts (power/destiny)
+- Symbols should emerge naturally from paranormal worldbuilding and character arcs
+- Romantic connection influences characters' major decisions and actions
+- Rival packs preventing werewolf pair bonding makes relationship act of rebellion
+- Magical contract binding characters together forces intimacy despite emotional resistance
+- Action-Romance Balance
+- Ratio: Distribute roughly 40-50% action/paranormal plot, 50-60% romance/relationship development
+- Intersection: Paranormal plot elements generate romantic conflict; romance motivates paranormal plot actions
+- Emotional beats: Even high-action sequences connect to emotional/romantic stakes
+- Medium Heat: Explicit sexual scenes with moderate detail; sensuality emphasizes emotional connection
+- Emotional interiority remains critical: Even explicit scenes require character vulnerability and emotional stakes
+- Paranormal authenticity: Use paranormal elements organically in intimate scenes (feeding, marking, bonding, power exchange)
+- Sensory immersion: All five senses especially crucial in intimate scenes; texture, scent, taste create paranormal distinctiveness
+- Exposition dumps: Characters explaining paranormal world rather than showing through action and reaction
+- Passive protagonists: Characters react to paranormal events rather than driving plot through choices
+- Underdeveloped interiority: Readers lack access to character thoughts/motivations; emotional journey unclear
+- Telling instead of showing: Narrator explaining paranormal elements, character emotions, romantic tension rather than dramatizing
+- Unbalanced pacing: Action scenes dominate; insufficient emotional/intimate scenes to develop romance
+- Paranormal details without purpose: Supernatural elements included for "coolness" rather than serving story/character
+- Action/paranormal plot intersects with romantic plot; separate storylines still integrated
+- Emotional beats bridge action and intimate scenes smoothly
+- Character & Voice
+- Each POV character has unmistakably distinctive voice
+- Character interiority reveals fears, desires, conflicts, and emotional processing
+- Dialogue feels natural and reveals character personality/emotional state
+- Characters make choices driven by romantic/emotional stakes
+- Supernatural mechanics serve story/character rather than plot convenience
+- Paranormal worldbuilding revealed through action/character reaction, not exposition
+- All five senses engaged, especially in intimate and paranormal-specific scenes
+- Prose rhythm varies: short punchy sentences in action, longer sensual sentences in intimate scenes
+- Dialogue pacing matches scene emotional intensity
+- Characters' fears and vulnerabilities feel genuine
+- Emotional conflicts stem from character motivations/paranormal world logic
+- Paranormal Suspense/Action
+- https://jamigold.com/2020/03/character-internalization-to-italicize-or-not-to-italicize/
+- https://lizverity.com/author-advice/writing-advice/interiority-a-characters-subconscious-mind-with-examples/
+- https://ashanders.com/balancing-action-and-romance-in-your-paranormal-story/
+- https://ashanders.com/incorporating-suspense-and-action-in-paranormal-romance/
+- https://ashanders.com/utilizing-sensory-details-to-enhance-your-romance-scenes/

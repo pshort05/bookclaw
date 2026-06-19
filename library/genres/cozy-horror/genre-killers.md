@@ -1,0 +1,143 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  **Apocalyptic Scope**: Keep threats localized; avoid world-ending scenarios
+-  **Unearned Darkness**: Sudden tonal shifts to grim without preceding setup feel jarring
+-  **Isolated Protagonist**: Cozy horror requires community; loner protagonists undercut the genre
+-  **Bleak Endings**: Ambiguous or tragic endings violate reader expectations; satisfaction is essential
+-  **Ignored Humor**: Stories that take themselves too seriously miss cozy horror's signature tone
+- 
+- Natural Speech Patterns**: Dialogue should sound like how people actually speak—with contractions, interruptions, and informal syntax—not like narration.
+- Personality Through Speech**: Character's accent, vocabulary, speech patterns, and what they choose to mention reveals personality more effectively than physical description.
+- Supernatural Normalcy**: Characters discuss supernatural events casually once accepted as real, like discussing weather or work. This normalization creates the genre's distinctive tone.
+- ```
+- "So your ghost is a former librarian?"
+- "Apparently. She reorganized my kitchen by the Dewey Decimal System."
+- "That's... actually brilliant."
+- "I know, right? I'm considering letting her stay."
+- ```
+- Information Delivery**: Characters learn about the supernatural through conversations with community members, local historians, other supernatural beings, or established lore-keepers rather than info-dumps.
+- Emotional Connection**: Dialogue reveals deepening relationships; found family bonds develop through supportive banter and shared supernatural experience.
+- Humor**: Witty exchanges, comedic misunderstandings, and absurdist observations manage tone and create reader delight.
+- Mystery Advancement**: Characters discuss theories about supernatural phenomena; investigation advances through dialogue-based discovery.
+- Use simple tags (said, asked) and rely on distinct character voices to minimize confusion. Avoid elaborate tags (exclaimed, breathed, whispered) in most instances; let dialogue and action context establish tone.
+- 
+-  Create specific, detailed settings with personality and history
+-  Develop distinct secondary characters who form community
+-  Balance spooky with cozy in consistent ratio
+-  Use humor to defang potentially frightening moments
+-  Build emotional stakes alongside supernatural stakes
+-  Employ sensory grounding in comfort details
+-  End with satisfying emotional resolution
+-  Embrace the paradox; lean into it
+-  Employ graphic violence or gore
+-  Isolate protagonists from community
+-  Build toward apocalyptic scope
+-  Take the genre too seriously; embrace whimsy
+-  Rely on jump scares or sudden shocking revelations
+-  Create bleak or ambiguous endings
+-  Ignore humor; it's structural
+-  Treat supernatural beings as purely threatening
+-  Info-dump through narration; reveal through dialogue and discovery
+-  Forget that comfort is as important as creepiness
+- 
+- ✓ **Create a character-driven narrative** where emotional stakes matter more than plot complications
+- ✓ **Balance spooky and cozy constantly** through sensory grounding and humor integration
+- ✓ **Develop specific, detailed settings** with personality, history, and community
+- ✓ **Build found family connections** through shared supernatural experience
+- ✓ **Use humor deliberately** to manage reader anxiety and signal safety
+- ✓ **Ground supernatural scenes in comfort details** (warmth, familiar smells, textures)
+- ✓ **Develop distinct secondary characters** with their own voices and motivations
+- ✓ **Provide satisfying emotional resolution** with clear character growth
+- ✓ **Embrace the paradox** as your genre's signature strength
+- ✓ **Maintain tonal consistency** even when shifting between spooky and funny
+- ✓ **Reveal information through dialogue and discovery** rather than narration
+- ✓ **Create clear but uncomplicated mystery** driving protagonist engagement
+- ✗ **Employ graphic gore or violence**—this violates reader safety expectations
+- ✗ **Isolate protagonists from community**—cozy horror requires connection
+- ✗ **Build toward apocalyptic scope**—keep threats localized and personal
+- ✗ **Use jump scares as primary tension device**—atmosphere matters more
+- ✗ **Create bleak or tragic endings**—satisfaction is contractual obligation
+- ✗ **Info-dump through narration**—let characters reveal through conversation
+- ✗ **Neglect humor**—regular humorous beats are structural requirement
+- ✗ **Treat supernatural beings as purely evil**—complexity and sympathy expected
+- ✗ **Take the genre too seriously**—whimsy is essential ingredient
+- ✗ **Create unexplained mood shifts**—tonal variations must be justified
+- ✗ **Ignore secondary character development**—community is central structure
+- ✗ **Leave emotional arcs unresolved**—emotional satisfaction is requirement
+- 
+- Pattern**: Protagonist encounters something odd → Observes it aloud with mixture of curiosity and caution → Secondary character responds with experience/perspective → Humor defuses potential horror
+- ```
+- [PROTAGONIST notices something unusual]
+- "[Observation mixing curiosity with slight concern]"
+- [SECONDARY CHARACTER responds]
+- "[Explanation or shared perspective]"
+- [PROTAGONIST responds with humor or acceptance]
+- "[Witty observation or resigned agreement]"
+- ```
+- Sarah** opened the kitchen cabinet to find every mug facing backward.
+- "Well, that's one way to make a point," she said to the empty room.
+- Marcus**, the realtor who'd become her unlikely friend, glanced down from his coffee. "The previous owner mentioned the house had opinions about organizational systems."
+- "Opinions about mugs seem oddly specific."
+- "The previous owner worked in marketing. The house apparently was very detailed in its grievances."
+- Sarah turned a mug forward. Within an hour, they were backward again. She decided to leave them.
+- "I suppose this is how we communicate now," she said. "Through hostile interior design."
+- The library's computer system printed thirty copies of the same book title at 3 AM.
+- "*Practical Magic* by Alice Hoffman. Thirty copies," Riley said, holding up the stack. "On a Tuesday. When no one requested it."
+- "Seems aggressive," Maya muttered, loading them onto a cart.
+- "Or very pointed. Maybe the ghost has recommendations."
+- "Ghosts don't have reading lists, Riley."
+- "This one apparently does. And it's *very* into genre fiction."
+- Pattern**: Protagonist encounters supernatural being → Initial uncertainty → Realization being is not threatening → Humor and normalization
+- ```
+- [PROTAGONIST encounters supernatural presence]
+- "[Initial uncertainty or surprise]"
+- [SUPERNATURAL BEING responds]
+- "[Explanation or greeting]"
+- [PROTAGONIST processes]
+- "[Recognition that being isn't threatening, often with humor]"
+- [Shift to practical conversation about coexistence]
+- ```
+- Sarah found a translucent woman sitting at her kitchen table, calmly reading a book.
+- "I'm either having a stroke or this is actually happening," Sarah said.
+- The woman looked up. "Your house has poor insulation. I moved from the attic to the kitchen for the warmth. I'm Eleanor."
+- "Sarah. I'm trying very hard not to have feelings about waking up to strangers in my kitchen, even spectral ones."
+- "I can return to the attic if you prefer. Though the drafts are genuinely terrible up there."
+- "No, it's fine. Stay. We'll figure out the cohabitation rules. Do ghosts eat breakfast?"
+- "Not eat. But I do appreciate watching the process. It's been decades."
+- 
+- Problem**: Prose is consistently dark, humor is absent or minimal, tone never shifts to lightness.
+- Fix**: Audit your manuscript. Count humor beats (dialogue quips, comedic observations, absurdist moments). Every 500-1,000 words should include a humorous beat. If you're going more than 3,000 words without humor, the genre contract is broken.
+- Example Fix**:
+-  **Weak**: "Sarah climbed the stairs, terrified of what she'd find. The house was dark and menacing. She heard a sound that filled her with dread."
+-  **Strong**: "Sarah climbed the stairs, steeling herself. The house was dark and, yes, probably menacing, but at least it smelled like someone had burned rosemary cookies recently. She heard a sound—a sort of polite creaking—and decided the house was probably just saying hello."
+- Problem**: Protagonist solves problems alone; secondary characters are peripheral; community is absent or weak.
+- Fix**: Identify at least 3 secondary characters who interact meaningfully with protagonist. Ensure at least 30% of scenes include secondary character interaction. Create a scene specifically focused on found family bonding.
+- Checklist**:
+-  [ ] Does protagonist have a person to confide in about the supernatural?
+-  [ ] Are secondary characters developed beyond convenience?
+-  [ ] Is there at least one scene of pure character bonding (not plot-driven)?
+-  [ ] Do secondary characters contribute meaningfully to supernatural solution?
+- Problem**: What started as "my house is haunted" becomes "the world is ending."
+- Fix**: Keep scope rigorously localized. The threat should affect protagonist and immediate community, not extend to town, region, or world. If scope is creeping beyond local, cut or reframe.
+- Test**: Could the problem be solved by one person or a small group? If not, scope is too large.
+- Problem**: Violence, gore, or trauma begins appearing despite genre requirements.
+- Fix**: Remove graphic descriptions. Keep violence offstage. If violence occurs, handle it with emotional weight but without graphic detail. Ask: "Does reader need to see this, or does emotional impact work better through implication?"
+- Example**:
+-  **Too Graphic**: "Blood poured from the wound, arterial spray coating the wall..."
+-  **Genre Appropriate**: "She touched her arm and came away with blood. Enough that she needed to sit down and focus on breathing steadily."
+- Problem**: Story ends with protagonist still trapped, uncertain, or devastated; mystery remains unsolved; emotional arc incomplete.
+- Fix**: Ensure ending provides emotional satisfaction. This doesn't require happy endings, but satisfaction is mandatory. Reader should understand the new normal and feel invested in it.
+- Ending Satisfaction Checklist**:
+-  [ ] Is supernatural phenomenon explained, accepted, or resolved?
+-  [ ] Is protagonist's emotional arc completed?
+-  [ ] Does reader understand the new status quo?
+-  [ ] Would reader want to spend more time in this world?
+-  [ ] Is tone consistent with genre expectations (warm, not bleak)?
+- Problem**: Supernatural history revealed through author narration rather than character dialogue or discovery.
+- Fix**: Have characters discuss supernatural lore through conversation. Visit libraries where protagonists research. Interact with characters who have knowledge. Let protagonist discover through action and dialogue.
+- Example**:
+-  **Weak**: "The house had been built in 1847 by Ezekiel Marsh, a shipping magnate, and was haunted by his wife, who died of pneumonia in 1862..."
+-  **Strong**: "Sarah found the historical society tucked between a pharmacy and a laundromat. Marcus had promised the president would have 'all the dirt' on her house. 'Built in 1847,' the woman explained, pulling out a leather journal. 'Ezekiel Marsh was shipping money. His wife, Eleanor—' 'Eleanor?' Sarah interrupted. 'The name on the house deed?' 'That's the one. She died here in 1862. Pneumonia, officially. But...'"
+- 

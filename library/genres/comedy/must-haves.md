@@ -1,0 +1,79 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+- Readers tolerate cartoon physics and impossible escapes IF characters acknowledge the absurdity AND face genuine consequences. A character who jokes about near-death experiences but shows actual fear gains more reader investment than one who treats mortal danger as a game.
+-  [ ] Varied sentence length controls pacing
+-  [ ] Action sequences use short sentences for intensity
+-  [ ] Sensory details ground readers in physical reality
+-  [ ] Dialogue serves character and plot simultaneously
+-  [ ] Humor doesn't undercut genuine stakes
+-  [ ] Tone is irreverent but intelligent
+-  [ ] Competent characters drive narrative and comedy
+-  [ ] Balance between action and humor maintained across all acts
+- 
+- End of Style Guide*
+- 
+- NovelCrafter's Codex organizes story information into templates that reduce planning friction and keep research accessible while writing. Action-comedy writers benefit from templates that capture tone, character voice, pacing requirements, and subgenre specifics.
+- How to Use These Templates**:
+- 1. Create a new Codex entry for each template type below
+- 2. Fill in sections relevant to your manuscript
+- 3. Reference entries during writing sessions when you need quick tone checks, character voice consistency, or structure reminders
+- 4. Update templates as your story evolves
+- Recommended Entry Structure**: One Genre Guide (used for all projects), multiple Story Structure entries (one per act), multiple Protagonist entries (for each POV character), and World-Building entries as needed.
+- 
+- Title**: [Action-Comedy Genre Guide for {Your Project}]
+-  **Primary Subgenre**: [e.g., Spy Action-Comedy, Buddy Cop, Heist]
+-  **Secondary Elements**: [Any cross-genre elements: romance, fantasy, cyberpunk]
+-  **Tone Register**: [e.g., Dark and Witty, Absurdist, Self-Aware]
+-  [ ] Created Genre Guide entry for this project
+-  [ ] Created Style Guide entry with prose samples
+-  [ ] Created Protagonist entry for each POV character
+-  [ ] Created Story Structure entries for each act
+-  [ ] Created World-Building entries for primary and secondary locations
+-  [ ] Reviewed entries for consistency in tone and voice
+-  [ ] Bookmarked entries you reference frequently during writing
+-  [ ] Updated entries as story evolves through drafting
+- 
+- End of Codex Entry Templates*
+- 
+- | Rule | Guidance |
+- |------|----------|
+- | **Balance** | Action and comedy must carry equal weight. Neither should dominate or undercut the other. |
+- | **Stakes Matter** | Readers must believe real harm can occur, even as they laugh. Show consequences. |
+- | **Competence First** | Funny characters are skilled characters. Humor emerges from intelligence and self-awareness, not bumbling. |
+- | **Pacing** | Alternate action and humor beats. Build tension with short sentences; release with witty dialogue. |
+- | **Subtext** | What characters *don't* say is often funnier than what they do. Use implication and understatement. |
+- | **Authenticity** | Jokes must fit character voice and circumstance. Forced humor breaks reader immersion. |
+- | **Physical Reality** | Describe sensory details and consequences. Ground fantastical action in concrete descriptions. |
+- | **Tone Register** | Maintain irreverent-but-intelligent tone. Self-aware, dark, and situational humor over broad comedic tropes. |
+- 
+-  [ ] Protagonist introduced with personality and competence
+-  [ ] Humorous moment within first chapter establishes tone
+-  [ ] Character voice/dialogue style established
+-  [ ] World and stakes introduced
+-  [ ] Inciting incident forces action (by end of Act I)
+-  [ ] Reader understands protagonist's capability and flaw
+-  [ ] First major action sequence by 25% mark
+-  [ ] Obstacles introduced—both physical and interpersonal
+-  [ ] Humor continues but escalates with stakes
+-  [ ] Secondary characters introduced with their own humor styles
+-  [ ] Protagonist commitment deepens (point of no return)
+-  [ ] Dynamics between characters established through action and banter
+-  [ ] Midpoint: initial plan fails or reverses
+-  [ ] Stakes raised—what's truly at risk becomes clear
+-  [ ] Character vulnerability emerges beneath humor
+-  [ ] New complication introduced
+-  [ ] Ensemble dynamics shift (trust issues, new alliances)
+-  [ ] Humor reflects emotional stakes
+-  [ ] Sustained action sequences accelerate
+-  [ ] Secondary character arcs move toward resolution
+-  [ ] Protagonist faces personal/emotional obstacle alongside external one
+-  [ ] Humor becomes more frequent and darker as tension peaks
+-  [ ] False victory or near-defeat raises stakes further
+-  [ ] Final confrontation combines all learned skills
+-  [ ] Humor reaches peak authenticity—characters joke because stakes are familiar
+-  [ ] Resolution shows changed characters in new status quo
+-  [ ] Final scene often contains comedic grace note or wry observation
+-  [ ] Reader understands how protagonist has grown
+- 

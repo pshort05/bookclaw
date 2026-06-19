@@ -1,0 +1,52 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Each scene should balance three elements:
+- 1. **Functional Purpose**: Advances plot or reveals character
+- 2. **Action/Tension**: Physical or emotional conflict
+- 3. **Humor**: A comedic beat, witty exchange, or situational comedy
+- Organize scenes with this rhythm:
+-  Opening Hook (action, dialogue, or question)
+-  Functional Middle (exposition, planning, relationship-building)
+-  Comedic/Tense Payoff (action, revelation, or joke)
+-  Transition to Next Scene
+- 
+- Mistake**: Stopping action for comedy or stopping comedy to be "serious."
+- Solution**: Weave them together. A character can make a joke *while* being shot at, solving a puzzle *while* cracking wise, or failing *while* being funny about the failure.
+- 1. **Scene: {Title}**
+-  **Function**: [What does this scene accomplish?]
+-  **Tone**: [Action-heavy? Dialogue-driven? Exposition? Character moment?]
+-  **Key Beat**: [One sentence summarizing scene's pivot or revelation]
+- 2. **Scene: {Title}**
+-  **Function**:
+-  **Tone**:
+-  **Key Beat**:
+- [Repeat for each major scene in act]
+- Chase Opportunities**: [Can characters run/drive through this setting?]
+- Combat Space**: [Open or confined? High or low visibility?]
+- Escape Routes**: [Multiple exits? Dead ends? Hidden passages?]
+- Recurring Objects**: [Items that appear multiple times and might become important]
+- Environmental Hazards**: [Things that can hurt characters or complicate plans]
+- Comedic Elements**: [Objects or features with comic potential]
+- 
+- Before Writing the Scene**:
+-  [ ] What's the functional purpose? (Plot advance, character reveal, world-building)
+-  [ ] What's the action/tension element?
+-  [ ] What's the humor beat?
+-  [ ] How does this scene move toward climax?
+- While Writing**:
+-  [ ] Opening hook establishes stakes or question immediately
+-  [ ] Sensory details ground reader in location and moment
+-  [ ] Character voice distinct in dialogue and internal thought
+-  [ ] Action beats include physical consequences (heartbeat, sweat, trembling)
+-  [ ] Humor emerges from character and circumstance, not author insertion
+-  [ ] Pacing varies: short sentences during action, medium during dialogue, longer only for necessary exposition
+-  [ ] Scene contains at least one moment of genuine vulnerability or character growth
+- After Writing**:
+-  [ ] Does this scene earn its place, or could I cut it?
+-  [ ] Does humor undercut stakes, or enhance them?
+-  [ ] Is dialogue doing work (character, plot, humor) or is it filler?
+-  [ ] Do I understand what character wants and what obstacle blocks them?
+-  [ ] Does scene end on momentum or question that pulls reader forward?
+- 

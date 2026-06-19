@@ -1,10 +1,27 @@
-# Romantasy — Themes
+Core themes and ideas central to this genre.
 
-Recurring ideas and values a romantasy explores. Choose two or three to anchor the book.
+## Central Themes
 
-- **Love as power** — the central relationship reshapes magic, politics, or fate; intimacy and agency are intertwined.
-- **Found family** — a ragtag court, crew, or coven becomes the protagonist's true belonging.
-- **Self-sovereignty** — a heroine claims her own power, throne, or magic against those who would use her.
-- **Fate vs. choice** — bonds, prophecies, or mate-marks pull against the characters' freedom to choose each other.
-- **Sacrifice and worthiness** — love is proven through cost; the grand gesture is earned, not given.
-- **Belonging across difference** — mortal/fae, rival courts, enemy kingdoms: love bridges a divide the world says is impossible.
+- Chosen Family: Relationships with squads or courts must be treated as equally important to the central romance. These bonds provide the emotional safety net and collective power needed for the final conflict.
+- Extreme Possessiveness: Framing "ownership" as a romantic ideal rather than a character flaw to be overcome.
+- BUT central focus on romance: Relationship is the heart, not afterthought
+- Beyond central romance:
+- Make no meaningful choices
+- Powerful heroines with agency - Capable and making meaningful choices
+- Romance as central plot driver
+- Central romance: The primary thread
+- Romance as central plot - Relationship development drives story
+- THEMES IN ROMANTASY
+- Romantasy explores:
+- Romantasy explores:
+- Common themes:
+- Themes suggesting:
+- Meaningful sacrifice - What characters give up matters
+- Explores sensations fully
+- Make no meaningful choices
+- Relationship development as central plot
+- 4. MEANINGFUL ROMANTIC THEMES
+- ✗ Action overwhelming romance - Keep romance central
+- Romance as central driving plot
+- THEMES:
+- Meaningful sacrifice

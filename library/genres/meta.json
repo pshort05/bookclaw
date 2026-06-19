@@ -1,0 +1,182 @@
+{
+  "academic-mystery": {
+    "Heat": "PG-13",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "academy-romance": {
+    "Heat": "PG-13",
+    "Age": "YA",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "action": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "Medium"
+  },
+  "action-comedy": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "Medium"
+  },
+  "action-romance": {
+    "Heat": "R",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "High"
+  },
+  "adventure": {
+    "Heat": "G",
+    "Age": "YA",
+    "Content": "PG",
+    "Quality": "High"
+  },
+  "adventure-fantasy": {
+    "Heat": "G",
+    "Age": "YA",
+    "Content": "PG",
+    "Quality": "High"
+  },
+  "alternate-reality-romance": {
+    "Heat": "PG-13",
+    "Age": "NA",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "alternative-history": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "amateur-sleuth": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "ancient-world-science-fiction": {
+    "Heat": "PG-13",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "apocalyptic-fiction": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "High"
+  },
+  "apocalyptic-coming-of-age": {
+    "Heat": "G",
+    "Age": "YA",
+    "Content": "R",
+    "Quality": "High"
+  },
+  "australian-western": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "Medium"
+  },
+  "beach-romance": {
+    "Heat": "PG-13",
+    "Age": "NA",
+    "Content": "PG-13",
+    "Quality": "Medium"
+  },
+  "billionaire-romance": {
+    "Heat": "R",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "Medium"
+  },
+  "biopunk": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "bodice-ripper": {
+    "Heat": "NC-17",
+    "Age": "Adult",
+    "Content": "NC-17",
+    "Quality": "Medium"
+  },
+  "bwwm-romance": {
+    "Heat": "R",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "christian-dark-fantasy": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "christian-romance": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "G",
+    "Quality": "High"
+  },
+  "climate-fiction": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "climate-fiction-mystery": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "comedy": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "comedy-thriller": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "High"
+  },
+  "comedy-western": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "Medium"
+  },
+  "coming-of-age": {
+    "Heat": "G",
+    "Age": "YA",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "contemporary-romance": {
+    "Heat": "R",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  },
+  "cosy-motorcycle-club-romance": {
+    "Heat": "R",
+    "Age": "Adult",
+    "Content": "R",
+    "Quality": "High"
+  },
+  "cozy-dystopia": {
+    "Heat": "G",
+    "Age": "Adult",
+    "Content": "PG-13",
+    "Quality": "High"
+  }
+}

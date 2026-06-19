@@ -1,19 +1,21 @@
-# Romantasy — Reader Expectations
+Readers expect a narrative that delivers on specific emotional and structural promises.
 
-A satisfying romantic arc (HEA/HFN) AND a resolved fantasy stakes line. Heat level
-set early and kept consistent. Worldbuilding that serves the romance, not the reverse.
+## Tone
 
-## Tone & Mood
-Heightened and immersive: yearning, wonder, and danger. Banter and warmth balance high-stakes peril. Sensual tension builds steadily; the world feels lush and a little dangerous.
+Readers expect 6. Voice and Perspective: The Dual POV Framework
 
 ## Pacing
-Alternating romance and plot beats — a relationship escalation rarely goes more than a chapter or two without a world/stakes beat (and vice versa). Slow-burn tension is fine; dead air between the leads is not.
 
-## Setting Conventions
-A secondary or portal fantasy world (courts, academies, fae realms, rival kingdoms) where the magic system has rules that constrain or empower the romance. Place is sensory and specific.
+The pacing should be PLOT & PACING IN ROMANTASY
 
-## Character Archetypes
-A capable heroine claiming her power; a powerful, guarded love interest (fae lord, rival prince, dangerous mentor); a found-family ensemble; an antagonist whose goals threaten both the world and the bond.
+## Setting
+
+Physically Capable: Whether a dragon rider, elite assassin, or battle-hardened warrior, the lead must possess the physical agency to survive the world’s high-stakes trials.
+
+## Archetypes
+
+Romantasy Character Development
 
 ## Length & Format
-Typically 90k–130k words, third-person (often dual POV) past tense, adult or upper-YA. Establish the heat level early and hold it. Frequently book one of a series — close the romantic arc while leaving series threads open.
+
+Standard novel length for this genre is 70,000–120,000 words.

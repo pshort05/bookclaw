@@ -1,0 +1,95 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Scene Goal:** What clue, suspect info, or character development must this scene achieve?
+-  [ ] **Conflict/Tension:** Is there an obstacle? (A lying suspect, a locked door, the sleuth's own fear).
+-  [ ] **New Information:** Does the scene reveal at least one new piece of information (clue, red herring, motive)?
+-  [ ] **Character Revelation:** Do we learn something new about the sleuth or a suspect?
+-  [ ] **Senses:** Have I used at least two senses beyond sight (sound, smell, texture)?
+-  [ ] **Pacing:** Does the dialogue/vs.-action balance fit the scene's purpose (tense vs. contemplative)?
+-  [ ] **Transition:** Does the scene end with a reason to move to the next scene (a new question, a threat, a discovery)?
+- To quickly populate your NovelCrafter Codex for an Amateur Sleuth project:
+- 1.  Start with the **Genre Guide** (Template 1). Fill in your sub-genre, core premise, and key conventions.
+- 2.  Create your **Protagonist** entry (Template 3). This is your anchor.
+- 3.  Outline your **Story Structure** (Template 4) with your specific plot points.
+- 4.  Use the **World-Building** template (Template 5) to define your community and its rules.
+- 5.  Refer to the **Style Guide** (Template 2) for tone and prose consistency.
+- 
+- Entry Type:** Genre Guide
+- Title:** Amateur Sleuth - [Your Sub-Genre, e.g., Cozy, Traditional]
+- Core Premise:** A brief, one-sentence logline for your specific novel. (e.g., "A retired librarian in a coastal village must use her research skills to clear her friend's name when a despised land developer is found dead.")
+- Key Conventions:**
+-    **Sleuth Type:** (e.g., Reluctant, Nosy, Accidental)
+-    **Setting:** (e.g., Insular Village, Academic Campus, Family Estate)
+-    **Tone/Voice:** (e.g., Witty first-person, Warm third-person limited)
+-    **Level of Violence:** (e.g., Off-page, Minimal, Suggestive)
+-    **Romance Subplot?:** (Yes/No - If yes, describe dynamic)
+-    **Thematic Focus:** (e.g., Justice vs. Law, Community Secrets, Past Sins)
+- Reader Expectations to Meet:**
+-    A satisfying, fair-play puzzle.
+-    A protagonist to root for.
+-    A vivid, engaging community.
+-    A restoration of order.
+- Reader Expectations to Subvert (Optional):**
+-    (e.g., "The official detective is actually competent and helpful.")
+- 
+- Entry Type:** Style Guide
+- Title:** Prose & Dialogue Style - [Your Novel's Title]
+- Narrative Perspective:** (e.g., First-person past tense from sleuth's POV)
+- Key Prose Characteristics:**
+-    **Pacing:** (e.g., Deliberate in setup, brisk in interviews, tense in confrontations)
+-    **Descriptive Focus:** (e.g., Focus on domestic details, social cues, and hidden objects. Avoid lengthy landscape descriptions.)
+-    **Internal Monologue Style:** (e.g., Frequent, wry, self-deprecating. Used to flag clues with phrases like 'I filed that away...')
+- Dialogue Rules:**
+-    **Sleuth's Voice:** (e.g., Deceptively gentle, asks questions with a smile.)
+-    **Profanity Level:** (e.g., None. Use inventive euphemisms like 'Oh, fudge!')
+-    **Dialect/Slang:** (e.g., Light regional flavor for locals; avoid heavy phonetic spelling.)
+- Repeated Phrases/Themes:** (Note any recurring imagery or verbal tags for the sleuth.)
+- 
+- Entry Type:** Character (Protagonist)
+- Name:** [Sleuth's Name]
+- Role:** Amateur Sleuth
+- Core Identity:** (e.g., The Reluctant Researcher, The Nosy Neighbor with a Heart)
+- Occupation & Relevant Skills:** (e.g., Bookstore owner - Knowledge of poisons from classic mysteries, recognizes handwriting styles.)
+- Motivation for Investigating:** (Primary: Clear a friend? Secondary: Prove oneself? Intellectual curiosity?)
+- Flaw that Complicates Investigation:** (e.g., Terrible with technology, Overly trusting, Prone to jumping to conclusions)
+- Key Relationships:**
+-    **Confidant:** [Name] - Provides [support, expertise, comic relief].
+-    **Official Opposition:** [Detective Name] - Dynamic is [antagonistic, reluctantly cooperative, secretly admiring].
+-    **Personal Stake:** [Victim/Suspect Name] - Connection is [family, friend, old flame].
+- Arc:** From [State at start, e.g., "content but bored"] to [State at end, e.g., "valued community problem-solver with renewed purpose"].
+- 
+- Entry Type:** Plot Structure
+- Title:** Three-Act Breakdown - [Novel Title]
+- Act I: The Disruption**
+-    **Ordinary World:** [Brief scene/setting description]
+-    **Inciting Crime:** [Victim found/how]
+-    **Call to Investigate:** [Specific event that forces sleuth's hand]
+-    **Threshold Crossed:** [Sleuth's first active investigative step]
+- Act II: The Investigation**
+-    **Suspect Pool:** [List 3-5 key suspects with one-line motive]
+-    **Key Clues (Physical & Social):** 1) [Clue A], 2) [Clue B], 3) [Clue C]
+-    **Major Complication/Setback:** [e.g., Sleuth is publicly discredited, a second crime occurs]
+-    **Midpoint Reversal:** [The game-changing discovery]
+-    **Darkest Hour:** [The moment of maximum failure]
+- Act III: The Resolution**
+-    **Epiphany Source:** [Which overlooked clue, reinterpreted?]
+-    **Final Confrontation Setting:** [Where does the gathering/reveal happen?]
+-    **Key Proof:** [The irrefutable evidence presented]
+-    **Motive in One Sentence:** [The killer's true reason]
+-    **Restored Order:** [How does the community/sleuth find peace?]
+- 
+- Entry Type:** World-Building
+- Title:** The Community of [Your Setting]
+- Geography & Key Locations:**
+-    **Map:** (List 5-7 essential locations: e.g., The victim's mansion, the quirky cafe, the suspicious antiques shop, the public library, the secluded pier.)
+-    **Social Hubs:** Where do people gossip? (e.g., Post office, farmer's market.)
+- Social Hierarchy & Power Dynamics:**
+-    **Who has influence?** (e.g., The mayor, the old-money family, the newspaper editor.)
+-    **Who is on the outskirts?** (e.g., Newcomers, artists, the homeless veteran.)
+- The Rules (Written & Unwritten):**
+-    **Official Law:** Represented by [Detective's Name]. Their primary concern is [quick closure, avoiding scandal].
+-    **Community Code:** (e.g., "We take care of our own," "Don't air dirty laundry," "Old family names get respect.")
+- Technology & Communications:** What era/level? (e.g., Present day but limited cell service; 1930s with telegrams and house phones.) How does this help/hinder the investigation?
+- The Crime's Impact:** How has the murder specifically ruptured the social fabric? (e.g., Trust is broken, tourism is threatened, a lucrative deal is frozen.)

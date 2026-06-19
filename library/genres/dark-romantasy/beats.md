@@ -1,0 +1,139 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Act I (0–25%) — Hook, collision, trap**
+-  Establish tone + threat + taboo.
+-  Introduce both leads and their **power positions**.
+-  Inciting incident forces a dangerous goal.
+-  First major romantic spark (often antagonistic).
+-  Lock-in: oath, bargain, quest, bond, hostage situation, political engagement—something that keeps them entangled.
+- Act II (25–75%) — Escalation, binding, betrayal**
+-  Threat expands; costs increase.
+-  Forced proximity or shared secret intensifies intimacy.
+-  Midpoint: a binding event (kiss, pact, blood, magic) + a plot reversal.
+-  Late Act II: betrayal/reveal that breaks trust and makes the external threat worse.
+- Act III (75–100%) — Dark night, sacrifice, new order**
+-  Dark night: separation, failure, moral low point.
+-  Final choice: love requires a price (status, power, safety, soul).
+-  Climax resolves the fantasy conflict.
+-  Resolution clearly defines relationship outcome (HEA/HFN, or explicitly signaled tragedy).
+- For each scene:
+- 1) **Pressure:** threat, deadline, surveillance, magic cost
+- 2) **Temptation:** romance pull, softness, obsession, jealousy
+- 3) **Choice:** irreversible action that changes stakes
+- 4) **Consequence:** cost paid or debt incurred
+- 
+-  **Agency:** even in cages, characters choose (and pay).
+-  **Temptation is plot:** desire changes strategy.
+-  **Power shifts:** each encounter changes who holds leverage.
+-  **Tenderness is earned:** care appears after cost.
+-  **Aftermath exists:** wounds (physical/emotional) leave residue.
+- 
+- > “You look like a saint.”
+- > “Saints don’t keep daggers in their sleeves.”
+- > “Neither do liars. Yet here we are.”
+- > “I want you,” she said. “Not your throne. Not your leash. If you can’t tell the difference, leave.”
+- He kisses her like a vow—then signs her name into the contract anyway.
+- Purpose:* a drafting-side checklist for writing dark romantasy scenes and chapters.
+- 
+- 1) **Two engines, one car:** romance arc + fantasy plot arc must both move every act.
+- 2) **Darkness must matter:** it restricts options (law, curse, hunger, fear), not just mood.
+- 3) **Chemistry under threat:** attraction is sharpened by danger, secrecy, power imbalance.
+- 4) **Every scene ends with a cost:** a debt, wound, vow, exposure, betrayal, or irreversible choice.
+- 5) **Reader trust:** if using disturbing material, signal it and treat harm with consequences (avoid “trauma as spice”).
+- 
+-  Do make the love interest’s power **specific** (rank, magic, blackmail, prophecy).
+-  Do give the protagonist **agency** even in captivity/bargains (choices, lines they won’t cross).
+-  Do use **contracts, oaths, bargains, bonds** as plot tools.
+-  Do write tenderness as **earned**: after a price is paid.
+-  Do ground the fantasy: politics, religion, economy, and law should influence romance outcomes.
+-  Don’t rely on “miscommunication” as the main barrier.
+-  Don’t treat violence as aesthetic-only; show aftermath.
+-  Don’t make consent unclear *by accident* (be deliberate; clarify intent on-page).
+-  Don’t dump lore during a seduction scene—split heat and exposition.
+- 
+- Use this structure when you need tense, romantic, power-charged dialogue.
+- 1) **Objective line:** what the character says they want.
+- 2) **Power move:** threat, condition, offer, or boundary.
+- 3) **Counter:** refusal, bargaining, or a sharper question.
+- 4) **Vulnerability leak:** one honest sentence (or a tell).
+- 5) **Turn:** decision or action (touch, leaving, vow, violence).
+-  Objective: “Open the gate.”
+-  Power: “You’ll do it *my* way.”
+-  Counter: “Your way gets people killed.”
+-  Vulnerability: “So does yours. And I’m tired of burying them.”
+-  Turn: She offers her wrist. “Then bind me. But you break your oath, I burn you.”
+-  Objective: “Stay behind me.”
+-  Power: “That’s not a request.”
+-  Counter: “You don’t own me.”
+-  Vulnerability: “No. I just… can’t stand the thought of the world taking you.”
+-  Turn: He steps aside—giving her a weapon. “Prove it, then.”
+- 
+-  [ ] What does the POV character want **right now**?
+-  [ ] What’s the threat/clock?
+-  [ ] What romantic temptation will complicate their best choice?
+-  [ ] Establish place with 1 sensory anchor + 1 social rule (law/taboo/etiquette)
+-  [ ] Include one power exchange (offer, threat, boundary, leverage)
+-  [ ] Include one intimacy beat (touch, near-touch, confession, protectiveness)
+-  [ ] Make the protagonist choose (even if all options are bad)
+-  [ ] End on a consequence (wound, vow, exposure, debt, escalation)
+-  [ ] Set up the next pressure (new information or tightened constraint)
+- 
+-  “What would make this kiss *politically disastrous*?”
+-  “What does the villain offer that the love interest can’t?”
+-  “What would it cost to use magic *one more time*?”
+-  “How can this act of protection become a cage—and how does the protagonist name the boundary?”
+- Goal:* Copy/paste templates for 5 Codex entry types. Adapt brackets
+- 
+- 1) **Create a Codex collection:** “Dark Romantasy — Project Codex.”
+- 2) Add these five entries (below) and fill the bracketed fields.
+- 3) Decide your **content boundaries** (on-page/off-page) and pin them in both *Genre Guide* and *Style Guide*.
+- 4) Choose 3–5 **motifs** (e.g., thorns, iron, ash) and use them everywhere.
+- 5) Define the **magic cost** in one sentence. (If cost is vague, plot will be vague.)
+- 
+- Entry Name:** Dark Romantasy — Genre Guide
+-  **Primary genre:** Dark Romantasy (dark fantasy + romance)
+-  **Reader takeaway in one line:** [A dangerous fantasy where love is a weapon and a cure.]
+- Act I (0–25%)**
+-  Hook image: [ ]
+-  Inciting incident: [ ]
+-  Lock-in / point of no return: [ ]
+- Act II (25–75%)**
+-  Escalation ladder (3 steps):
+- 1) [ ] 2) [ ] 3) [ ]
+-  Midpoint binding act (romance) + reversal (plot): [ ]
+-  Reveal / betrayal: [ ]
+- Act III (75–100%)**
+-  Dark night (loss/separation/moral failure): [ ]
+-  Final choice (love costs something): [ ]
+-  Climax (external resolution): [ ]
+-  Ending state (new order): [ ]
+-  Every scene must include:
+-  Pressure (threat)
+-  Temptation (romance pull)
+-  Choice (irreversible action)
+- 
+- Entry Name:** World — [Realm Name]
+-  [A plague-lit empire where gods tax magic in blood.]
+-  Ruling power: [monarch/council/temple]
+-  Enforcement: [inquisitors/knights/spirits]
+-  Opposition: [rebels/coven/foreign court]
+-  Food/water scarcity: [ ]
+-  Law & punishment: [ ]
+-  Religion & taboo: [ ]
+-  Source: [blood, saints, shadows, contracts]
+-  Cost (one sentence): [Every spell steals a memory.]
+-  Limits (3): [ ]
+-  Price escalation (what happens if abused): [ ]
+-  Type: [fae/demons/vampires/eldritch]
+-  What they want: [ ]
+-  What they fear: [ ]
+-  How they bargain: [ ]
+-  Why love is dangerous here: [politics/oaths/bonds]
+-  Public consequence of intimacy: [execution, exile, war]
+- 
+-  Heat level: [ ]
+-  Violence level: [ ]
+-  Hard limits (never): [ ]
+-  Must-include emotional beats: [tenderness after violence] [confession under threat]

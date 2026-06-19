@@ -1,0 +1,100 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Goal:** What does the POV character want in this scene? (e.g., information, escape, survival)
+-  [ ] **Conflict:** What or who opposes them? How does the grim world make this opposition formidable?
+-  [ ] **Outcome:** Do they get what they want? Usually, the answer is "no" or "yes, but at a cost."
+-  [ ] **Atmosphere:** Have I used at least two sensory details (smell, sound, texture) to enhance the grim tone?
+-  [ ] **Consequence:** Does this scene change the character's situation, knowledge, or psyche in a lasting way?
+-  [ ] **Subtext:** Is the dialogue layered? Can I remove a line of direct explanation and imply it instead?
+- 1.  In NovelCrafter, create a new Codex for your project.
+- 2.  Create entries using the templates below. Fill in the bracketed `[placeholders]` with your specific details.
+- 3.  **Key Entries to Create First:**
+-  **1. Genre Guide:** Use the "Genre Guide" template below. Paste in the core definitions from the Style Guide.
+-  **2. Style Guide:** Use the "Style Guide" template. Summarize your prose and dialogue rules.
+-  **3. Protagonist:** Use the "Protagonist" template for your main character(s).
+-  **4. World-Building:** Use the "World-Building" template for your primary setting/faction.
+-  **5. Story Structure:** Use the "Story Structure" template to outline your planned arc.
+- 4.  **Linking:** Use NovelCrafter's linking feature to connect characters to their factions, locations to the world-building entry, etc.
+- 5.  **Reference:** Keep the Style Guide and QRG open as you write to maintain consistency.
+- 
+- Entry Name:** [Your Project Name] - Genre Guide
+- Type:** Genre Guide
+- Core Definition:**
+- > [Insert your project-specific genre definition. E.g., "A low-magic, character-driven story focused on the psychological toll of survival in a war-torn, morally bankrupt empire."]
+- Guiding Principles:**
+- 1.  **Moral Ambiguity:** [Describe how this manifests in your story. E.g., "No faction is wholly right. Every leader has blood on their hands."]
+- 2.  **Tone:** [Define the core emotional tone. E.g., "Weary, cynical, and oppressive, with moments of desperate, fierce determination."]
+- 3.  **Source of Darkness:** [Is it the world, the magic, the people? E.g., "The primary darkness stems from systemic political corruption and the corrosive nature of absolute power."]
+- Reader Expectation:**
+- > [What should a reader feel? E.g., "Readers should expect no safe characters, costly victories, and a world that challenges simplistic notions of heroism."]
+- 
+- Entry Name:** [Your Project Name] - Prose & Dialogue Style
+- Type:** Style Guide
+- Prose Rules:**
+-  **Voice:** [E.g., "Third-person limited, cynical, immediate. Focus on internal physical and emotional reactions."]
+-  **Descriptions:** [E.g., "Favor tactile, gritty details: mud, blood, rust, tired muscles. Avoid beauty unless it is stark, dangerous, or decaying."]
+-  **Pacing:** [E.g., "Deliberate and heavy. Slow down for violence and trauma; speed up only in moments of chaotic panic."]
+- Dialogue Rules:**
+-  **Key Principle:** [E.g., "Subtext is king. Characters lie, manipulate, and speak in half-truths."]
+-  **Class Markers:** [E.g., "Nobles: formal, indirect. Soldiers: blunt, profane. Peasants: superstitious, idiomatic."]
+-  **Avoid:** [E.g., "Modern slang, long monologues of exposition, characters stating their emotions plainly."]
+- 
+- Entry Name:** [Character Name]
+- Type:** Protagonist / Character
+- Core Motivation:**
+- > [The driving, often selfish, goal. E.g., "To survive and amass enough power to never be vulnerable again."]
+- Fatal Flaw:**
+- > [The trait that will cause their greatest suffering or moral failure. E.g., "Paralyzing distrust; he sabotages alliances that could save him."]
+- Moral Line (What they won't do... initially):**
+- > [E.g., "...harm a child." Note: The plot should test this line.]
+- Voice & Mannerisms:**
+-  **Speech Pattern:** [E.g., "Clipped sentences. Avoids eye contact when lying."]
+-  **Physical Tell:** [E.g., "Clutches the hilt of his knife when stressed."]
+-  **Worldview:** [E.g., "'Everyone has a price; the trick is finding it.'"]
+- Likely Arc:**
+- > [E.g., "From self-serving survivor to reluctant leader, but his trust issues will lead to a catastrophic betrayal by Act III."]
+- 
+- Entry Name:** [Your Project Name] - Central Conflict & Arc
+- Type:** Story Structure
+- Central Conflict:**
+- > [The core, irreconcilable struggle. E.g., "A brother and sister fight for control of their dying father's criminal empire, destroying the family and city in the process."]
+- Act I - The No-Win Situation:**
+-  [ ] **Inciting Incident:** [E.g., "The patriarch is poisoned. The siblings are forced to choose: ally or immediately fight for succession."]
+-  [ ] **Key Cost:** [The first major sacrifice. E.g., "Protagonist must execute a loyal friend to prove strength to the faction."]
+- Act II - The Descent:**
+-  [ ] **Midpoint Reversal:** [E.g., "They discover a third, external enemy (the crown) is manipulating them both into civil war."]
+-  [ ] **Point of No Return:** [E.g., "Protagonist commits an atrocity against their sibling's family, making peace impossible."]
+- Act III - The Pyrrhic Victory:**
+-  [ ] **Climax:** [E.g., "Final confrontation in the burning palace. The sibling is defeated but reveals the crown's army is already invading."]
+-  [ ] **Resolution:** [E.g., "Protagonist 'wins' the ruined empire but is now the public face of a city about to be conquered. They are more alone than ever."]
+- 
+- Entry Name:** [Faction or Location Name]
+- Type:** World-Building
+- Core Truth:**
+- > [The one-sentence, cynical essence. E.g., "A theocracy that promises salvation but practices brutal inquisition to maintain control."]
+- Source of Power:**
+- > [E.g., "Monopoly on 'divine' magic, enforced by a fanatical military order."]
+- Internal Contradiction:**
+- > [The flaw that will break it. E.g., "The high priests know their 'god' is silent; the magic comes from a corrupted, dying source they must secretly feed."]
+- Manifestation in Story:**
+-  **For Characters:** [E.g., "Protagonist must seek healing from them, but the price is a terrible secret or service."]
+-  **For Atmosphere:** [E.g., "Locations are imposing, filled with beautiful but ominous iconography. The air smells of incense and old stone."]
+- Key Cultural Prohibition:**
+- > [E.g., "To speak of the 'Silence of God' is heresy punishable by public immolation."]
+- Grimdark Fantasy is a subgenre characterized by its gritty, morally ambiguous, and pessimistic tone. It rejects traditional fantasy's clear distinctions between good and evil, instead presenting worlds where survival often requires compromise, brutality, and pragmatic cruelty. The focus is on the visceral, the cynical, and the psychologically realistic consequences of violence and power. Stories prioritize atmosphere, character degradation, and systemic corruption over heroic triumph.
+-  **Voice & Tone:** Maintain a relentless, cynical, and immersive tone. The narrative voice should be world-weary, direct, and unsentimental. Avoid authorial intrusion or moral judgment; let actions and their consequences speak for themselves.
+-  **Language & Description:** Use visceral, concrete, and sensory language. Describe settings, violence, and bodily functions with unflinching realism. Favors earthy, blunt vocabulary over flowery prose. Metaphors should be grounded in the physical world (rust, rot, mud, blood, bone).
+-  **Pacing:** Pacing is often deliberate and heavy, building dread and exhaustion. Action sequences are chaotic, confusing, and brutal rather than choreographed and glorious.
+-  **Perspective:** Deep third-person limited or first-person is standard. This confines the reader to a flawed, often traumatized viewpoint, heightening the sense of paranoia and unreliable perception.
+-  **Economy:** Be concise. Every sentence should serve atmosphere, character, or plot. Avoid lengthy exposition dumps; weave world-building into action and dialogue.
+-  **Subtext & Misdirection:** Characters rarely say what they mean directly. Dialogue is a tool for manipulation, concealance, and social maneuvering. What is left unsaid is as important as what is spoken.
+-  **Class & Education:** Dialogue must reflect the speaker's social station. Nobles use formal, layered, and often condescending language. Common soldiers and peasants use blunter, cruder, and more direct speech, often with regional dialect or slang.
+-  **Brevity & Impact:** Lines are often short, clipped, and loaded. Long, philosophical speeches are rare and should be reserved for moments of extreme tension or revelation.
+-  **Profanity & Idiom:** Use profanity and invented oaths that fit the world's culture. Idioms should derive from the setting's harsh realities (e.g., "sharp as a headsman's axe," "colder than a gravedigger's heart").
+-  **Plot Drivers:** Plots are driven by survival, revenge, ambition, or the desperate attempt to mitigate a greater catastrophe. The central conflict often involves navigating or confronting systemic corruption.
+-  **Character Arcs:** Traditional "hero's journey" arcs are subverted. Protagonists may not grow "better"; they may become harder, more cynical, or simply survive at great cost. Arcs focus on change as adaptation to a cruel world.
+-  **Moral Calculus:** Choices have severe, lasting consequences. There are no "good" options, only less-bad ones. The narrative should force characters (and readers) to weigh terrible alternatives.
+-  **Endings:** Endings are often pyrrhic, bittersweet, or outright tragic. Victory, if achieved, is tainted by loss, moral compromise, or the revelation that the world remains fundamentally unchanged or worse.
+-  **Scope:** Focus on the immediate, ground-level impact of events. Epic wars are experienced through mud, blood, and the suffering of individuals, not grand strategy maps.

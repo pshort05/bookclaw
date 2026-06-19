@@ -1,0 +1,45 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Characters maintain professional distance or mask vulnerability with humor.*
+- Example:**
+- > "I'm not usually in the market for complications," Maya said, turning back to her laptop.
+- >
+- > "Good thing I'm not offering one." Dev leaned against the doorframe. "Just coffee."
+- >
+- > She looked at him—really looked—and something in her chest shifted. "Coffee. Nothing else."
+- >
+- > "Nothing else," he agreed, and somehow it sounded like a promise.
+- Key Elements:** Short sentences. Subtext beneath the words. Physical distance mirrored in dialogue brevity.
+- Characters begin dropping masks. Humor softens. Directness increases.*
+- Example:**
+- > "I haven't felt like this in twenty years," she admitted.
+- >
+- > "Like what?"
+- >
+- > "Seen. Not just managed or accommodated. *Seen.*"
+- >
+- > He reached for her hand. "I see you."
+- Key Elements:** Longer sentences. Vulnerability named explicitly. Physical touch accompanying emotional risk.
+- Characters confront fears and differences without pretense.*
+- Example:**
+- > "I'm terrified you'll wake up and realize I'm too old, too complicated, too much."
+- >
+- > "Then you don't understand anything about why I'm here."
+- >
+- > "Convince me." She met his eyes. "I need you to say it out loud."
+- >
+- > "I'm here because you're brilliant and brave and because sleeping next to you feels like coming home after forty years away."
+- Key Elements:** Requests for reassurance feel earned, not needy. Responses are specific and grounded in character knowledge, not generic.
+- Characters commit with full understanding of costs and complexity.*
+- Example:**
+- > "My daughter still won't return my calls about us."
+- >
+- > "I know."
+- >
+- > "And I'm staying anyway. With you. Despite all of it."
+- >
+- > "I know that too. That's when I knew."
+- Key Elements:** Acknowledgment of real costs. Commitment despite obstacles, not ignorant of them.
+- 

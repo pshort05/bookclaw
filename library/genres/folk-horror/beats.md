@@ -1,0 +1,88 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Use this per scene to maintain genre effect.
+- Environment**
+-  [ ] What specific detail of land or weather marks this scene (fog, wind in trees, soil smell, distant bells)?
+-  [ ] Does any symbol or motif recur (stones, masks, animals, songs)?
+- Social Pressure**
+-  [ ] Who holds power in this scene? How is it signaled (seating, address, silence, tasks)?
+-  [ ] Is the protagonist being pulled deeper into obligations or pushed to the margins?
+- Belief & Ritual**
+-  [ ] Is there a visible or implied rule operating here?
+-  [ ] Does someone hint at consequences for obedience/disobedience?
+- Uncanny Element**
+-  [ ] Is there at least one detail that feels slightly “wrong” (sound, reaction, object out of place)?
+-  [ ] Is this wrongness tied to earlier hints or symbols?
+- Change & Cost**
+-  [ ] What changes for the protagonist by the end of the scene (knowledge, safety, relationships)?
+-  [ ] What new cost, risk, or moral compromise is now on the table?
+- 
+- Use a short embedded tale to seed the core horror.
+- Prompt structure:
+-  "Long ago, before [modern intrusion], the people here…"
+-  Introduce a **bargain** (with a saint, spirit, or land).
+-  Show a **betrayal** and its **price**.
+-  End on an **incomplete warning** (what people no longer say aloud).
+- Any time your protagonist crosses into deeper danger:
+-  Physical cue: gate, stile, path, fog bank, old stone.
+-  Social cue: oath, toast, handshake, gift, shared secret.
+-  Sensory glitch: sound drops, birds stop, cold breeze, smell of earth.
+- Write: 2–4 sentences tying the crossing to land and belief.
+- Pick an image that echoes your core motif:
+-  Scarecrow or effigy left standing.
+-  Field that should be barren, but isn’t.
+-  Empty mask looking toward the woods.
+-  Child humming the ritual song.
+- Ensure it reflects **who paid the price** and **whether the cycle continues**.
+- Folk horror is a subgenre of horror that roots its fear in folklore, rural or insular communities, and the clash between old beliefs and modern sensibilities. It draws on local myths, folk religion, seasonal rituals, and the dark side of nature to generate a slow-building sense of dread rather than pure shock.[cite:4][cite:6]
+- Typical elements:
+-  Isolated setting (rural village, remote farm, forest, moor, mountain valley, small coastal town)
+-  Community governed by old customs, taboos, and ritual
+-  Tension between outsiders and locals; modernity vs. tradition[\cite:31][cite:34]
+-  Nature (land, weather, animals, crops) as an active, uncanny presence
+-  Folk beliefs that may be superstition, genuinely supernatural, or both
+-  Moral or sacrificial logic that feels alien to the protagonist but coherent to the community
+- Core emotional experience: uncanny dread, growing unease, fear that ordinary traditions and landscapes hide something fundamentally hostile or inhuman.[cite:32]
+- Use this guide for works where folklore, community ritual, and landscape are central to the horror, not just a backdrop.
+- 
+-  **Call of the Place**: explicit reason to come (inheritance, research, job, relationship, pilgrimage).
+-  **First Local Story**: a folktale, warning, or song that encodes the threat.
+-  **Crossing the Boundary**: a physical or social marker; once crossed, leaving becomes difficult.
+-  **Taboo Violation**: someone breaks a rule they don’t fully understand.
+-  **Festival or Ritual Set Piece**: public, uncanny, partly comprehensible.
+-  **Private Revelation**: journal, shrine, hidden grove, or confession revealing the real cost.
+-  **Choice and Price**: protagonist’s moral decision within the folk logic.
+- Common ending modes for folk horror:
+-  **Cycle Continues**: the protagonist is sacrificed or absorbed; the pattern goes on.
+-  **Pyrrhic Escape**: escape at the cost of sanity, freedom, or loved ones.
+-  **Corrupted Conversion**: protagonist adopts the local belief in a way that is both horrifying and psychologically plausible.
+- 
+- Central themes:
+-  Tradition vs. modernity; community vs. autonomy[\cite:31][cite:32]
+-  Land ownership, exploitation, and reciprocity
+-  Religion, heresy, and alternative spiritualities
+-  Outsider guilt (colonialism, class, ecological harm)
+- Motifs and symbols:
+-  Circles, rings, and boundaries (stones, hedges, fences, property lines)
+-  Harvests, livestock, and blood as currency with the land
+-  Masks, costumes, and seasonal roles
+-  Effigies, scarecrows, corn dolls, carved figures[\cite:6][cite:39]
+- Implementation rules:
+-  [ ] Tie each symbol to a specific belief or fear.
+-  [ ] Reuse symbols in escalating contexts (from benign to horrifying).
+-  [ ] Let the final ritual re-contextualize earlier appearances.
+- 
+- Do**
+-  Use precise, sensory description of landscape and weather.
+-  Keep explanations minimal; rely on implication and ritual.
+-  Ground horror in human belief, community pressure, and moral logic.
+-  Use dialogue to show social hierarchy and shared assumptions.
+-  Build a slow, inevitable-feeling enclosure around the protagonist.
+- Don’t**
+-  Over-explain the cosmology or turn the horror into a rulebook.[cite:38]
+-  Reduce locals to caricatures or purely evil cultists; they should have coherent reasons.
+-  Rely solely on gore; it should be the endpoint of dread, not the main event.
+-  Break the internal logic of the belief system for a cheap twist.
+- Use this Style Guide as a baseline. Adapt voice, pacing, and emphasis for your specific sub-flavor (pastoral, cosmic, queer, eco-folk horror, etc.), but keep the core: folk belief, community pressure, land as character, and the slow revelation of an older, darker order beneath the everyday.

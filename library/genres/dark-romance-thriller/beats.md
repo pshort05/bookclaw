@@ -1,0 +1,68 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Opening Hook:** Does the first line establish mood, tension, or a question?
+-  [ ] **Sensory Details:** Have I engaged at least 2-3 senses, focusing on touch/sound/internal sensation?
+-  [ ] **Subtext in Dialogue:** Are characters saying what they mean, or is there a deeper game?
+-  [ ] **Power Dynamic:** Is there a clear shift or negotiation of power in this scene?
+-  [ ] **Romantic/Thriller Fusion:** Does the scene advance BOTH the relationship and the external plot?
+-  [ ] **Pacing:** Does my sentence structure match the scene's emotional beat (short for tension, longer for introspection)?
+-  [ ] **Closing Impact:** Does the scene end on a new story question, emotional shift, or raised stake?
+- 1.  **Start with Genre Guide:** Populate the Genre Guide first to establish your core tenets and boundaries.
+- 2.  **Define Your Style:** Use the Style Guide template to codify the specific voice, pacing, and descriptive rules for *your* novel.
+- 3.  **Build the Central Dynamic:** Create Protagonist entries for both main characters, focusing on their moral grayness and the specific push-pull between them.
+- 4.  **Plot the Fusion:** Use the Story Structure template to map your hybrid plot beats, ensuring romance and thriller arcs are intertwined.
+- 5.  **Set the Stage:** Use the World-Building template to design a setting that actively contributes to the mood and themes.
+- Entry Name:** Dark Romance Thriller - Core Tenets
+- Category:** Genre Guide
+- Content:**
+- Core Definition:** [A 2-3 sentence definition of DRT specific to your project, e.g., "A story where a forensic psychologist must entangle herself with a suspected serial killer to catch a copycat, blurring the lines between profiling and obsession."]
+- My Story's Mandates:**
+-    **Moral Line We Cross:** [e.g., "Protagonist will eventually conceal evidence."]
+-    **Central Obsession:** [e.g., "His mind. She needs to understand how he works, even if it destroys her."]
+-    **Threat That Binds Them:** [e.g., "The real killer is targeting her, and only the suspect can predict his moves."]
+-    **Cost of Love:** [e.g., "Her professional integrity and potentially her freedom."]
+- Forbidden Elements:** [List elements you will AVOID to maintain tone, e.g., "Slapstick humor, purely altruistic side characters, easy forgiveness of betrayals."]
+- Entry Name:** DRT Prose & Dialogue Rules
+- Category:** Style Guide
+- Content:**
+- Narrative Voice:** [e.g., "Close third-person limited from [Protagonist Name]'s POV. Voice is clinical when she's in professional mode, fractured and sensory when her control slips."]
+- Key Metaphor Families:**
+-    **Entrapment:** [e.g., "Cages, gilded rooms, psychological boxes, contracts."]
+-    **Corruption:** [e.g., "Stain, rot, tarnish, poisoned chalice."]
+-    **Predation:** [e.g., "Hunter/prey, spider/web, cat/mouse."]
+- Dialogue Rules for This MS:**
+-    **[Love Interest's Name]'s Speech:** Always indirect, answers questions with questions, uses silences as weapons, vocabulary is precise and antique.
+-    **[Protagonist's Name]'s Speech:** Starts direct and confrontational, becomes more evasive and layered as she gets drawn in.
+-    **Sexual Tension Cues:** Manifest as a break in the character's usual speech pattern (e.g., he stumbles on a word; she loses her train of thought).
+- Entry Name:** [Character Name]
+- Category:** Characters / Protagonists
+- Content:**
+- Surface Role:** [e.g., "Homicide detective, art forger, reclusive heiress."]
+- Hidden Darkness:** [The flaw, secret, or dark desire that makes them susceptible to the story's central relationship, e.g., "Addicted to risk, believes she deserves punishment, secretly admires ruthless efficiency."]
+- Moral Event Horizon:** [The line they swore they'd never cross. Will the plot force them over it?]
+- How They See [Love Interest's Name]:** [Initially: e.g., "A means to an end, a fascinating monster."] [At Midpoint: e.g., "A dangerous addiction, a necessary evil."] [At End: e.g., "My mirror, my shelter, my damnation."]
+- Key Sensory Trigger:** [A specific sensory detail tied to their emotional state or the love interest, e.g., "The scent of copper (blood) and sandalwood (him)."]
+- Entry Name:** DRT Beat Sheet - [Your Story Title]
+- Category:** Plot / Structure
+- Content:**
+- | **Act** | **Thriller Beat** | **Romance Beat** | **Fusion Moment (Scene Idea)** |
+- | :--- | :--- | :--- | :--- |
+- | **I: Entanglement** | First victim found with cryptic token. | Forced consultation with incarcerated expert. | Their first interview: professional facade cracks under his unnerving insight. |
+- | **IIA: Descent** | Killer escalates, targets protag's colleague. | She visits him alone, seeking a profile. He demands a personal concession. | In the prison visiting room, a deal is struck: her truth for his help. |
+- | **Midpoint** | Evidence suggests the WRONG man is inside. | She realizes she doesn't *want* him to be guilty. | Confrontation at the prison: "Did you do it?" / "Do you want me to lie?" |
+- | **IIB: Darkness** | Protag is suspended, becomes the prime suspect. | He is released; they go on the run together. | In a safe-house, dependency and desire collide. "Trust me." "I shouldn't." |
+- | **III: Reckoning** | Set trap for real killer using protag as bait. | Final choice: sacrifice him to win, or stand together? | The final confrontation where their unspoken signals are their only weapon. |
+- Entry Name:** Setting as Character - [e.g., "The City's Underbelly"]
+- Category:** World / Setting
+- Content:**
+- Overall Aesthetic:** [e.g., "Gothic Noir: modern skyscrapers casting long shadows, art deco interiors gone to seed, perpetual rain that feels like a purge."]
+- Key Locales & Their Symbolism:**
+-    **The Viper Room:** A high-end club. Surface: Glamour. Truth: A marketplace for secrets and flesh. Role: Where they first meet under false pretenses.
+-    **The Clarendon Loft:** His apartment. Surface: Sterile, minimalist. Truth: A curated cage, every object a tool or a trophy. Role: Where she is both captive and guest.
+-    **The Old Rainwater Tunnel:** The killer's lair. Surface: Forgotten infrastructure. Truth: A visceral, dripping womb of madness. Role: The final fused confrontation.
+- Social Geography:**
+-    **The Gilded Elite:** Power through old money and corruption. They speak in allusions and threats.
+-    **The Street Level:** Power through violence and information. They speak in blunt truths and slang.
+-    **The Protagonist's Position:** Caught between, belonging to neither, which is why she can navigate both to survive.

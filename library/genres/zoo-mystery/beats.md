@@ -1,0 +1,13 @@
+*Zoo mysteries follow an investigation arc modified by the zoo's operational rhythms and the animal community as active presence.*
+
+1. **Crime Discovery with Zoological Element** — crime discovered in/related to zoo environment (body in enclosure, rare animal stolen, sabotage affecting animal welfare); animal behavior reacts first (alarm calls, agitation, unusual patterns)
+2. **Lock-In: Compelled Investigation** — protagonist motivated to investigate internally (protect animals, preserve institution, personal responsibility); zoo access controlled or sealed (police lockdown, storm closure, security quarantine); external help unreliable
+3. **Initial Crime Scene Assessment** — forensic examination noting both human evidence and animal signs (tracks, disturbance, keepers' observations, feeding records); animal reactions provide timeline clues
+4. **First Round Interviews Across Departments** — suspects from Animal Care, Veterinary, Education, Facilities, Security, Management; each role reveals departmental tensions and operational knowledge relevant to crime method
+5. **Zoological Deep Dive** — protagonist reviews keeper logs, security footage, animal health records, inventory, enclosure maintenance records, diet manifests; physical zoo landscape examined for access points and hidden evidence
+6. **Midpoint Zoological Twist** — major discovery via animal data (animal wasn't where records said, toxin from specific species analysis, security footage capturing animal reaction to human intrusion) reframes suspects and timeline
+7. **Complications and False Leads** — red herring pointing toward animal escape, departmental blame, or framing innocent suspect; protagonist loses access or credibility via bureaucratic obstacle or animal emergency
+8. **Nocturnal Revelation** — alone after hours, protagonist observes crucial detail—unusual animal behavior pattern, timing inconsistency from keeper routines, overlooked physical evidence requiring specialized knowledge to recognize
+9. **Gathering and Confrontation** — final scene in zoo-specific location (veterinary theatre, director's office, commissary, off-exhibit animal area, iconic exhibit); relevant environment underscores institutional stakes
+10. **Denouement with Zoological Specificity** — explanation explicitly uses zoo knowledge to recreate crime method (animal toxin, keeper access timing, facility layout); motive tied to zoo's unique economy (breeding smuggling, research credit, animal welfare violation cover-up, inheritance of rare specimen)
+11. **Institutional Healing and Restoration** — resolution addressing zoo's operational recovery and reputation; protagonist's relationship to animals and institution affirmed, deepened, or fundamentally changed

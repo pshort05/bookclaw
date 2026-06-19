@@ -1,0 +1,142 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+-  [ ] **Act I: Integration (0-25%)**
+-  [ ] Establish protagonist's position and rank within organization
+-  [ ] Show the unwritten rules governing behavior (honor code, territory, loyalty hierarchy)
+-  [ ] Introduce the external threat or internal fault line
+-  [ ] Plant one incident that will force the protagonist to choose
+-  [ ] Tone: controlled; readers learn by observation
+-  [ ] **Act II: Fracture (25-75%)**
+-  [ ] External pressure intensifies (rival gang, police, economic collapse)
+-  [ ] Protagonist's internal conflict escalates
+-  [ ] Secondary characters reveal organizational fragility
+-  [ ] The code proves insufficient; loyalties are tested
+-  [ ] Multiple perspectives show different truths
+-  [ ] Tone: escalating; subtext becomes visible
+-  [ ] **Act III: Reckoning (75-100%)**
+-  [ ] Climactic choice: protagonist acts according to personal code or organizational survival
+-  [ ] Immediate consequences reveal the true cost
+-  [ ] Internal resolution (protagonist's understanding shifts, not external victory)
+-  [ ] Final scene shows protagonist changed by the choice
+-  [ ] Tone: reflective; clarity emerges
+- 
+- [Describe the emotional tone. Examples:
+-  Rain-soaked, neon-lit melancholy
+-  Paranoid tension underlying daily routine
+-  Fierce loyalty punctuated by explosive violence]
+-  [ ] Does Act I establish clear hierarchy?
+-  [ ] Is the honor code shown through action, not explanation?
+-  [ ] Is the impossible choice planted before the midpoint?
+-  [ ] Does Act II escalate pressure relentlessly?
+-  [ ] Are secondary perspectives included to show organizational fragility?
+-  [ ] Is the climax intimate, not spectacular?
+-  [ ] Does Act III resolve internal conflict, not just external plot?
+-  [ ] Does the ending show protagonist changed, not triumphant?
+- ```
+- 
+- Purpose:** Document organizational structures, territory, codes, and the yakuza/triad world your story inhabits.
+- ```
+- Name:** [Official name; any aliases]
+- Type:** [Yakuza-gumi / Triad family / Independent crew]
+- Headquarters Location:** [City and specific neighborhood]
+- Territory:** [Geographic area controlled; key locations within territory]
+- Primary Operations:** [Business types: protection, gambling, narcotics, labor, etc.]
+- Oyabun / Dragon Head:** [Name, age, personality, leadership style]
+- Wakagashira / Enforcers:**
+-  [Name and role]
+-  [Name and role]
+- Key Lieutenants:**
+-  [Name and area of control]
+-  [Name and area of control]
+- [Describe the unwritten rules governing behavior within this organization]
+- Core Principles (ranked by importance):**
+- 1. [Example: "Loyalty to the oyabun above all other obligations"]
+- 2. [Example: "Territory is inviolable; encroachment means war"]
+- 3. [Example: "Disputes settled through organizational channels, never outside"]
+- 4. [Example: "Family of members are protected; harming them is ultimate violation"]
+- 5. [Example: "Silence is sacred; betrayal to authorities is death"]
+- Punishment for Violations:**
+-  [Example: "Breaking oath of silence: execution"]
+-  [Example: "Violating territory: war or negotiated retaliation"]
+-  [Example: "Disloyalty: exile or worse"]
+- Key Locations:**
+-  [Neighborhood name]: [What the organization controls; which subordinate oversees]
+-  [Neighborhood name]: [What the organization controls; which subordinate oversees]
+-  Safe houses: [Specific locations]
+-  Headquarters: [Where leaders meet]
+- [Organization Name]:**
+-  **Leadership:** [Oyabun/Dragon Head name]
+-  **Territory:** [What they control]
+-  **Conflict Type:** [Uneasy truce / Active war / Economic competition / Shared territory]
+-  **Key Incidents:** [Past conflicts that shape current relationship]
+- How Members Enter:**
+- [Describe induction process and rituals]
+- Rank Progression:**
+- 1. Associate / [Junior Level]: [Duties, status, symbols]
+- 2. Kobun / [Mid-Level]: [Duties, status, symbols]
+- 3. Wakagashira / [Senior Level]: [Duties, status, symbols]
+- 4. Oyabun / [Leadership]: [Duties, status, symbols]
+-  **Tattoos:** [Describe sleeve designs, back pieces, and what they signify]
+-  **Clothing:** [Describe how different ranks dress]
+-  **Jewelry/Accessories:** [Rings, pins, other status markers]
+-  **Forms of Address:** [How characters are titled; who uses honorifics]
+- Modernization Pressures:**
+-  [How is the organization adapting to law enforcement?]
+-  [Role of technology and cyber-crime?]
+-  [Younger members' attitudes toward tradition?]
+-  [Economic viability of traditional operations?]
+- If Yakuza:**
+-  Tattoo artist relationships and meanings
+-  Connection to bushido code and samurai legacy
+-  Modern police/yakuza relationship (affiliation registration laws, etc.)
+- If Triad:**
+-  Triadic oaths and ritual significance
+-  Cantonese honorifics and forms of address
+-  Dragon symbolism and hierarchical meanings
+-  Connection to Hong Kong/Macau territory
+- [Document information about this organization that will be revealed during story]
+-  [Secret that affects protagonist's choices]
+-  [Hidden weakness in the organization]
+-  [True relationship with rival gang]
+- ```
+- 
+- 1. **Start Simple:** You don't need to complete all templates immediately. Begin with Protagonist and Organization entries, then expand.
+- 2. **Use for Consistency:** Reference these entries while writing to maintain accurate hierarchy, speech patterns, and organizational logic.
+- 3. **Update as You Discover:** Your understanding will deepen as you write. Update entries to reflect new insights.
+- 4. **Cross-Link Entries:** Use your Codex's linking feature to connect related entries (Character to Organization, Organization to Location, etc.).
+- 5. **Reference During Revision:** During revision passes, these entries help identify inconsistencies in rank, terminology, or hierarchy dynamics.
+- 
+- Document Version:** 1.0 | **Last Updated:** January 2026 | **Word Count:** 1,487
+- 
+- Yakuza/Triad fiction** is organized crime narrative centered on Japanese yakuza syndicates or Chinese/Hong Kong triad organizations. These stories explore the underworld through the lens of characters embedded within hierarchical criminal structures, emphasizing codes of honor, territorial power dynamics, and the tension between personal loyalty and systemic brutality.
+- Core Appeal:** Readers seek stories examining loyalty in corrupt systems, the cost of honor in amoral contexts, and characters navigating impossible choices within rigid hierarchies.
+- Key Distinction:** Unlike detective procedurals that solve crimes, yakuza/triad fiction immerses readers *inside* the criminal organization itself.
+- 
+- ✓ Clear organizational hierarchy and chain of command
+- ✓ Explicit or implicit code of honor (loyalty, non-interference with family, territorial respect)
+- ✓ External threat forcing internal response (rival gang, police, economic collapse)
+- ✓ Protagonist with investment in the organization and personal reasons to resist it
+- ✓ Exploration of what loyalty *costs*
+-  **Tattoos:** Visual markers of commitment and rank
+-  **Rain/Neon:** Atmospheric markers of moral ambiguity
+-  **Food & Drink:** Intimate spaces where truth emerges
+-  **Cars:** Liminal spaces for dangerous conversations
+-  **Violence's Aftermath:** Scars, hospital stays, grief—consequences matter more than action
+- Oyabun/Dragon Head Speech Patterns:**
+-  Declarative without justification
+-  Uses silence strategically
+-  Speaks to subordinates through intermediaries when possible
+-  Personal philosophy encoded in oblique references
+- Kobun/Street-Level Speech Patterns:**
+-  Deferential (yes/no answers)
+-  Seeks permission before acting
+-  Concerns center on immediate survival and rank
+-  Uses organizational language unconsciously
+- Civilian Characters:**
+-  Confusion at yakuza protocols
+-  Tendency to ask direct questions
+-  Assume legality/morality codes apply
+-  Provide reader perspective on underworld strangeness
+- 

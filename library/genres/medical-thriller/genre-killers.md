@@ -1,0 +1,45 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  Do research medical procedures, terminology, and settings thoroughly for authenticity.
+-  Do create relatable protagonists with flaws and expertise, such as a dedicated but overworked ER doctor.
+-  Do use suspense techniques like foreshadowing, red herrings, and cliffhangers to keep tension high.
+-  Do incorporate real-world issues (e.g., pandemics, bioethics) to enhance relevance and stakes.
+-  Do revise dialogue to ensure it sounds natural and serves character or plot development.
+-  Don't overload the narrative with technical exposition; integrate information through action or dialogue.
+-  Don't rely on clichés like evil pharmaceutical companies without adding unique twists.
+-  Don't neglect secondary characters; give them distinct voices and roles in the plot.
+-  Don't sacrifice emotional resonance for technical accuracy; balance science with human drama.
+-  Don't resolve conflicts too easily; let characters struggle and make hard choices.
+- Template for Medical Dialogue:**
+-  **Character (Role):** [Dialogue] *Action Beat or Emotion* [Contextual Explanation].
+- Examples:**
+- 1. **Diagnostic Scene:**
+-  Dr. Patel: "The MRI shows a mass in the frontal lobe. It could be glioblastoma." *She points at the scan, her voice steady but eyes worried.* (Use medical term with visual aid for clarity.)
+-  Family Member: "Is that... cancer? What are our options?" (Layperson's response to drive emotional stakes.)
+- 2. **Conspiracy Revelation:**
+-  Whistleblower: "The trial data was falsified. They knew about the side effects and covered it up." *He slides a document across the table, hands trembling.* (Dialogue reveals plot twist with action to show tension.)
+-  Protagonist: "We need to get this to the authorities before more people die." (Urgency and next steps.)
+- 3. **Ethical Debate:**
+-  Ethicist: "Using an untested vaccine on this population is risky, but waiting costs lives."
+-  Doctor: "My oath is to do no harm. How can we gamble with their lives?" (Highlights moral conflict.)
+-  **Pitfall:** Info-dumping medical jargon.
+-  **Fix:** Break up explanations with action or dialogue; use analogies for complex concepts.
+-  **Pitfall:** Passive protagonists who react rather than act.
+-  **Fix:** Give protagonists clear goals and agency; let them make tough decisions.
+-  **Pitfall:** Predictable plot twists.
+-  **Fix:** Subvert expectations by blending medical accuracy with unique scenarios (e.g., a virus with psychological effects).
+-  **Pitfall:** Underdeveloped settings.
+-  **Fix:** Describe medical environments vividly to enhance immersion and authenticity.
+-  **Pitfall:** Rushed endings.
+-  **Fix:** Allow for a satisfying denouement that reflects on consequences and character arcs.
+- In medical thrillers, dialogue can reflect social hierarchies to add realism:
+-  **Elite Professionals (e.g., Surgeons, Administrators):** Use authoritative, polished language with technical terms; may be curt under stress.
+-  Example: "The board demands accountability. Rectify this oversight immediately."
+-  **Mid-Level Staff (e.g., Nurses, Technicians):** Blend professionalism with relatable concerns; often pragmatic.
+-  Example: "We're short-staffed again. How do we manage this influx without compromising care?"
+-  **Patients or Laypeople:** Express vulnerability, confusion, or anger; language is emotional and accessible.
+-  Example: "I don't understand all these tests. Just tell me if I'm going to be okay."
+-  **Marginalized Groups:** May show distrust or cultural nuances, highlighting social themes.
+-  Example: "My community won't trust another government experiment. We've been burned before."

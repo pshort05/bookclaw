@@ -1,0 +1,117 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- ## 1. NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+-  **LitRPG System Integration**: Characters actively engage with quantifiable stats, skills, and notifications that drive decision-making and growth. *2024 Example*: In *System Clash: A LitRPG Adventure (System Universe Book 8)* by SunriseCV, the protagonist's class evolution hinges on system prompts during multiversal conflicts, hitting Amazon #1 in GameLit & LitRPG Fiction.
+-  **Isekai/System Apocalypse Hook**: Ordinary person thrust into a game-like world via death, portal, or global event, blending familiarity with high stakes. *2024 Example*: *Dungeon Crawler Carl* by Matt Dinniman opens with Earth's alien takeover turning survivors into dungeon contestants, a staple in IGN's 2025 LitRPG recommendations reflecting 2024 buzz.
+- ### 3 MUST-HAVE SCENES
+-  **First Major Combat Test (pp. 100-150)**: MC deploys early skills against a boss or horde, showcasing growth and risk. *Example*: In *The Primal Hunter*, Jake's axe-wielding frenzy against tutorial beasts peaks around p. 120, blending visceral action with stat reveals.
+-  **Pacing Lulls in Early Acts**: More than two quiet chapters of setup before action, leading to 25% abandonment rates in Amazon analytics for underperforming titles.
+- | Beat                  | Page | Word Count | Bestseller Proof |
+- | All Is Lost (Betrayal/Reset) | 300-325 | 40,000-45,000 | *He Who Fights with Monsters* alliance fracture around p. 310 sustains tension, mirroring top Shepherd poll retention. |
+-  **Character intro (51-200 words)**: Always show MC's raw reaction—flawed humor or grit—to humanize amid chaos, as in *He Who Fights with Monsters* where Jason's snarky denial reveals his clever survivor core by word 150.
+- ## 6. YOUR ACTION PLAN (For a BESTSELLING debut)
+-  **DO THIS**: Spend 70% of Act 1 establishing the system's rules and MC's baseline stats—anchors reader buy-in, as proven in *System Universe*'s 2024 dominance.
+- ## 1. NON-NEGOTIABLE GENRE CONTRACT
+- TROPE #3: FOUND FAMILY / CORE TEAM DYNAMIC (Obligatory Secondary Cast)**
+-  *The Wandering Inn*: Multiple POV characters with distinct relationships and growth arcs
+-  **Reader Psychology**: Goodreads 5-star reviews consistently mention "character bonds," "team dynamics," or "relationships that matter"
+- ### THREE MUST-HAVE SCENES
+- SCENE #1: THE "SYSTEM REVEAL" (Pages 1–50 of Book 1)**
+-  **What Happens**: Reader witnesses the protagonist's *first* interaction with the system/game mechanics—not explanation of mechanics, but **demonstration**
+- SCENE #2: THE "POWER SPIKE MOMENT" (Early Midpoint, Pages 100–200)**
+-  **Page Range**: 100–200 pages (25–50% mark of Act 1). Publishers Weekly research shows readers expect tangible proof of progression by this point.
+- SCENE #3: THE "BETRAYAL / CONSEQUENCE" (Climax of Act 1 or Early Act 2, Pages 250–350)**
+-  **Why**: High stakes. Readers rejected by vaporware stakes. This scene proves the world is dangerous even for the powerful.
+-  "MC has magical fireproof skin but runs *next to* a chemical spill cloud instead of just walking past it. Character is infuriatingly stupid."
+-  "MC is handed a rare artifact, then immediately gives it away for no reason other than 'plot.'"
+-  **The Fix**: Let smart MCs make tactical errors (miscalculation, incomplete info, moral dilemma) rather than logical failures.
+-  **Real Example**: *Defiance of the Fall* book 8-13 reader complaint: "MC is so powerful now that every encounter is trivial. Author had to add abstract stat discussions (cultivation layer theory) instead of actual conflict."
+- | **Story Beat** | **Approximate Page** | **Word Count** | **Bestseller Proof** |
+- | **Character Establishment (Who is MC?)** | Pages 25–75 | 8,000–15,000 words | *Azarinth Healer*: Pages 20–70 establish Ilea's survival instinct, her values, why she matters. By page 70, readers understand her *why* for all future decisions. |
+- | **Rising Action (Complications)** | Pages 350–500 | 60,000–80,000 words | *Primal Hunter*: Pages 400–500 introduce Jake's family situation, faction politics, existential threats. Combat becomes secondary to strategic decision-making. |
+- | **"All Is Lost" Moment (Plot Point 2)** | Pages 500–600 | 80,000–100,000 words | *He Who Fights with Monsters*: Jason faces a cascading series of losses/revelations (~page 550) that forces him to reassess his entire approach. He must fundamentally change strategy for Act 3. |
+- | **Denouement / Emotional Resolution** | Pages 700–750 | 115,000–130,000 words | *Beware of Chicken*: Final chapters (pages 700–750) resolve character arcs (Jin's farm, Bi De's role, Meiling relationship) even as larger threats loom for Book 2. |
+-  **Hard Rule**: No more than 2 consecutive chapters of pure slice-of-life, worldbuilding exposition, or character introspection without a **scene of conflict or discovery**
+-  **Flex Point**: "Quiet" chapters in Act 1 are okay (establishing world); Acts 2–3 require conflict in every 2–3 chapter window
+- | **POV Switching Frequency** | Stay in one POV for minimum 2–3 consecutive chapters; if switching, never mid-scene | Switching POVs mid-chapter = reader disorientation = abandonment |
+- | **Reader Psychology Trigger** | Readers want to experience the system discovery alongside the MC—switching POVs to other characters breaks that **discovery tension** | Example: *He Who Fights with Monsters* stays Jason's POV for 95% of Book 1; this unified lens makes the system feel personally mysterious |
+-  **The Psychology**: Readers emotionally bond to characters facing *together*. A solo protagonist optimizing stats ≠ page-turner
+-  **The Tension**: Readers want strategic character optimization (skill choices, stat allocation) *but* as expressions of personality, not spreadsheet min-maxing
+-  **What Kills Series**: MC who treats character build like Excel formula → feels soulless
+-  "MC has a rare escape ability but doesn't use it in an obvious ambush scenario. Character is just dumb."
+-  **Reader Psychology**: Readers will forgive *hard choices* (moral dilemmas, sacrifices) but NOT *illogical choices* (abilities suddenly not working, character forgetting important info)
+-  *Why*: Readers evaluate the *mechanics* as thoroughly as they evaluate character. A unique magic system can carry a mediocre plot
+-  **Phrase #3**: "Character growth / relationships felt earned / the team dynamic"
+- | **GRIMDARK FATIGUE → SLICE-OF-LIFE RISE** | 2024 readers turning away from grimdark toward "cozy fantasy" subgenre. Reddit r/litrpg requests for "wholesome" and "no dark themes" spike 40% YoY. *Beware of Chicken*, *The Newt and Demon*, *Heretical Fishing* trending. | **EMOTIONAL STAKES ARE ETERNAL** | Whether world is grimdark or wholesome, readers need something they care about losing. *Beware of Chicken* isn't weak because it's slice-of-life; it's beloved because family (found or otherwise) creates stakes. |
+- | **SYSTEM APOCALYPSE SATURATION** | "Everyone suddenly got a system" stories hit saturation in 2024. New authors cramming identical tropes. Publishers now prioritizing *unique system twists* (*Heretical Fishing*'s glitchy mechanics, *Beware of Chicken*'s zen anti-optimization). | **ORIGINALITY BEATS TROPES** | Tropes aren't evil; they're scaffolding. Readers expect isekai/system apocalypse *and* a twist that makes it *yours*. Example: *He Who Fights with Monsters* = standard isekai + protagonist is comedic asshole + system is alien/hostile. That combo = unique. |
+- | **MULTI-POV EXPANSION** | 2024 sees major publishers acquiring multi-POV LitRPGs—*The Wandering Inn*, series with secondary character arcs. Solo-POV series still sell, but multi-POV = broader audience appeal. | **UNIFIED MYSTERY IS ETERNAL** | Multi-POV works only if *each POV reveals different aspects of the same mystery*. Switching POVs to explain system mechanics the protagonist doesn't yet know = head-hopping = confusing. |
+- > "Carl just recently broke up with his unfaithful girlfriend, Beatrice, while she was on vacation. Now, Princess Donut, Beatrice's show cat, jumps out the window, and Carl hurries after her."
+-  **Why It Works**: Personal problem (breakup) becomes absurd action (chasing cat in freezing Seattle). Reader instantly wants to know: *Why does this matter? Where is this going?*
+-  **Why It Works**: Disorientation + humor + specific detail (Darth Vader boxers = character personality in one image). Reader thinks: *How did he get here?*
+-  1–2 sentences of disorientation or absurd action
+- CHARACTER INTRO (Words 50–200 | ~400–600 words on page)**
+- Why This Pacing**: Readers want character-driven stakes, not world-driven exposition. If you spend words 50–200 describing the magic system instead of the character, readers skip ahead.
+-  **Why It Works**: By word 200, readers know Jason is witty, adaptable, and willing to act on incomplete information. We like him before we understand the system.
+-  **Why It Works**: By word 200, readers understand Ilea is a *survivor*—she'll adapt, fight, and endure. That's her character in action, not description.
+- Template for Your Character Intro (150 words max)**:
+-  Sentence 1: Character name + immediate status (confused, injured, safe, etc.)
+-  Sentence 2–3: One personality trait shown in action (dialog, internal monologue, choice)
+-  Sentence 4–5: What does the character want *in this moment*? (Food, understanding, escape, help)
+-  First encounter with system mechanics in action (not explanation—*demonstration*)
+-  Sentence 5–6: First system mechanic in *action* (combat, discovery, limitation)
+-  **The Fix**: Weave world-building into character action: "Sarah had spent her whole life in a world without magic. So when the system notification appeared Tuesday morning, she assumed it was a virus."
+-  **The Exception**: Only if prologue is *mysterious* enough that reader doesn't know outcome (e.g., *Defiance of the Fall* opens with cryptic scene that recontextualizes much later—but most authors fail this)
+-  **The Fix**: First chapter: MC gains one stat point. Feels cool. Reader learns "stats = power" through action. Chapter 2: New stat, different effect. By Chapter 5, reader understands system intuitively.
+- ## 6. YOUR ACTION PLAN (For a BESTSELLING Debut)
+- ### DO THIS: Spend 70% of Act 1 Establishing the System as *Mystery* + MC as *Competent Adapter*
+-  Act 1 is where readers decide if they trust you with their emotional investment
+-  Spending 70% of Act 1 on system discovery = readers trust you're not making it up as you go
+- 1. **Chapters 1–3 (~40% of Act 1)**: MC encounters system mechanics in action; they don't understand but figure things out through trial/error
+- 2. **Chapters 4–7 (~40% of Act 1)**: MC makes intentional choices *within* system rules, proving they understand and can optimize
+- 3. **Chapter 8–10 (~20% of Act 1)**: Midpoint twist reveals system is *more complicated* than MC thought
+-  *Defiance of the Fall* works because Book 1 is about Zac vs. "system integration chaos"; the actual hostile forces aren't clear until midpoint
+-  Act 1: MC vs. environment / immediate threats (monsters, survival, understanding the system)
+-  Act 2: MC vs. this realization; discovers true antagonist (optional: midpoint of Act 2)
+-  Act 3: MC vs. antagonist directly
+-  Book 1, Ch. 36+ (Late Act 2): Carl meets the actual antagonist (Prince Maestro, larger forces)
+-  **This is the viral moment**: Reddit clips of Carl-Donut interactions; BookTok videos of Donut being hilariously catty
+-  Carl doesn't fight with raw power; he exploits bugs, uses unconventional tactics, makes absurd plans
+- 5. Keep emotional beats real even as absurdity escalates
+-  "Wait, did he really just [absurd tactic]?"
+-  "[Character name] is so [personality trait], I would die for them"
+-  "I laughed for 5 minutes at this scene, then felt sad for 5 minutes"
+- 3. **Audiobook Impact on Pacing**: Audible is the #2 consumption format (after ebook), but pacing data is scattered. 3,000-word chapter = 15-minute audiobook = optimal "just one more" loop. Recommendation: Outline for audiobook first; adjust for print second.
+- 4. **System Apocalypse Market Saturation**: 2024 saw explosion of "System awakens on Earth" debuts; Publishers Weekly notes "impossible to differentiate new entries." Your differentiation must be (a) unique system mechanic or (b) unique character/tone. Recommendation: Audit your opening 30 pages against top 10 RoyalRoad hits. If premise is indistinguishable, differentiation *must be character*.
+- Competitive Bar**: High. "Good enough" no longer works. Bestselling debuts must deliver (a) unique system + (b) emotionally real MC + (c) found family stakes + (d) escalating plot tension. Mediocre stats + boring characters = invisible on algorithm.
+- 1. 🎯 NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+- 2024 Example: Dungeon Crawler Carl (Matt Dinniman). The System is an active, antagonistic, and sarcastic character, turning a simple UI into a main driver of plot and humor.
+- ), and see the character use attribute points. The grind is the story.
+- 2024 Example: He Who Fights with Monsters (Shirtaloon). Jason's entire character build (magic, skills, attributes) is the central focus, and every fight exists to progress that build.
+- 3 MUST-HAVE SCENES
+- The First Dopamine Hit (Skill Gain / Level Up): The scene where the MC survives their first true test (e.g., killing a goblin, surviving a tutorial) and is rewarded by the System. This confirms the "rules" of the world and gives the reader their first taste of progression.
+- The "Build" Becomes Clear (The Midpoint Pivot): The scene where the MC must commit to a class, a rare skill, or a unique path that differentiates them from everyone else. This sets their "brand" for the rest of the series.
+- Max Quiet Chapters Before Tension Spike: One (1). A "quiet" chapter must still contain progression (allocating stats, crafting, learning a new schematic). Two sequential chapters with only talking and no System interaction will cause readers to skim.
+- Switching: Do not use multiple POVs in Book 1. The reader is only there for the Main Character's (MC) progression.
+- Readers expect... a detailed stat screen, but hate when it's... a 4-page data-dump that stops the story. Rule: Break up stat screens. Show the "Character Sheet" after a level up, but integrate new skill descriptions into the action.
+- Character Intro (51-200 words): Always show the MC's core flaw OR their hidden "gamer" strength.
+- 6. 🚀 YOUR ACTION PLAN (For a BESTSELLING debut)
+- DO THIS: Spend 70% of Act 1 establishing the addictive feedback loop.
+- AVOID THIS: Don't introduce a complex guild, political faction, or crafting system until after the midpoint. Book 1 breaks the "Zero to Hero" trope if the MC gets "safe" too early. Keep the MC isolated, struggling, and focused on survival and individual progression.
+- STEAL THIS: How Dungeon Crawler Carl (2024's #1) used the "Antagonistic System" trope in Chapter 1 to create viral BookTok moments. The System isn't just a UI; it's a sarcastic, murderous AI game show host. This turns every stat notification and quest log into a high-tension, hilarious character interaction. This is highly 'quote-able' and 'screenshot-able' for social media, driving organic marketing.
+- 1. 🎯 NON-NEGOTIABLE GENRE CONTRACT (MUST HAVE OR READERS QUIT)
+- 2024 Example: Dungeon Crawler Carl (Matt Dinniman). The System is an active, antagonistic, and sarcastic character, turning a simple UI into a main driver of plot and humor.
+- ), and see the character use attribute points. The grind is the story.
+- 2024 Example: He Who Fights with Monsters (Shirtaloon). Jason's entire character build (magic, skills, attributes) is the central focus, and every fight exists to progress that build.
+- 3 MUST-HAVE SCENES
+- The First Dopamine Hit (Skill Gain / Level Up): The scene where the MC survives their first true test (e.g., killing a goblin, surviving a tutorial) and is rewarded by the System. This confirms the "rules" of the world and gives the reader their first taste of progression.
+- The "Build" Becomes Clear (The Midpoint Pivot): The scene where the MC must commit to a class, a rare skill, or a unique path that differentiates them from everyone else. This sets their "brand" for the rest of the series.
+- Max Quiet Chapters Before Tension Spike: One (1). A "quiet" chapter must still contain progression (allocating stats, crafting, learning a new schematic). Two sequential chapters with only talking and no System interaction will cause readers to skim.
+- Switching: Do not use multiple POVs in Book 1. The reader is only there for the Main Character's (MC) progression.
+- Readers expect... a detailed stat screen, but hate when it's... a 4-page data-dump that stops the story. Rule: Break up stat screens. Show the "Character Sheet" after a level up, but integrate new skill descriptions into the action.
+- Character Intro (51-200 words): Always show the MC's core flaw OR their hidden "gamer" strength.
+- 6. 🚀 YOUR ACTION PLAN (For a BESTSELLING debut)
+- DO THIS: Spend 70% of Act 1 establishing the addictive feedback loop.
+- AVOID THIS: Don't introduce a complex guild, political faction, or crafting system until after the midpoint. Book 1 breaks the "Zero to Hero" trope if the MC gets "safe" too early. Keep the MC isolated, struggling, and focused on survival and individual progression.
+- STEAL THIS: How Dungeon Crawler Carl (2024's #1) used the "Antagonistic System" trope in Chapter 1 to create viral BookTok moments. The System isn't just a UI; it's a sarcastic, murderous AI game show host. This turns every stat notification and quest log into a high-tension, hilarious character interaction. This is highly 'quote-able' and 'screenshot-able' for social media, driving organic marketing.

@@ -1,0 +1,44 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- | Do | Don't |
+- | :--- | :--- |
+- | **DO** create a specific, tactile town with named businesses and landmarks. | **DON'T** make the town a generic, flawless paradise with no personality. |
+- | **DO** use secondary characters to reveal community norms, history, and apply gentle pressure. | **DON'T** let secondary characters hijack the central romance plot. |
+- | **DO** ground conflicts in real emotional fears (abandonment, not being enough, loss). | **DON'T** rely on trivial miscommunications that a single conversation could solve. |
+- | **DO** show the protagonist participating in town life (events, chores, local gossip). | **DON'T** have the protagonist remain a detached observer of the town. |
+- | **DO** balance cozy, comforting scenes with moments of sensual tension and emotional risk. | **DON'T** let the tone become so sweet it lacks conflict or so angsty it betrays the genre's warmth. |
+- | **DO** use the physical environment to mirror emotional states (a storm during an argument, cozy fire for intimacy). | **DON'T** forget the seasons—harvest festivals, winter storms, spring blooms add natural pacing. |
+- Flirtatious Banter Template:**
+- > **Character A (Provocative/Teasing Statement or Question).**
+- > **Character B (Witty Retort or Deflection, often with a physical reaction).**
+- > **Character A (Upping the Ante, revealing a hint of genuine interest).**
+- Example:*
+- > "I heard you're the only person in three counties who can fix that old cider press," she said, leaning against the barn door.
+- > He didn't look up from his wrench. "I also heard you're from the city and think 'farm-to-table' is a hashtag."
+- > "Guilty. So, are you going to teach me, or just let the town's apple supply wither on the vine?"
+- Vulnerable Confession Template:**
+- > **Setup (Quiet, private setting).**
+- > **Character A (Starts with a difficult truth, often looking away).**
+- > **Character B (Listens, then responds with empathy, not pity, often with a small touch).**
+- > **Character A (Reveals the core emotional need/fear).**
+- Example:*
+- > The porch swing creaked in the twilight. "I didn't just leave the city," he said, staring at his hands. "I ran away. After the merger, I felt... invisible in my own life."
+- > She stilled the swing with her foot, turning to face him. "And here?"
+- > "Here," he said, finally meeting her eyes, "you see me. And it's terrifying."
+-    **Pitfall:** The town feels like a cardboard backdrop.
+-    **Fix:** Give the town an active role. Have a local business fail, a festival need saving, a town council dispute that affects the protagonists.
+-    **Pitfall:** The conflict is weak or resolved too easily.
+-    **Fix:** Tie the external conflict (e.g., failing business) to the protagonist's deepest internal fear (e.g., "I'm a failure like my dad"). The solution must require emotional growth.
+-    **Pitfall:** Love interest is a bland "nice person" with no edge.
+-    **Fix:** Give them a definitive flaw connected to the town (grumpy from protecting family land, stubborn about tradition, overly invested in town gossip). Their arc is learning to open up/compromise.
+-    **Pitfall:** Secondary characters are all quirky caricatures.
+-    **Fix:** Give at least one secondary character a mini-arc or a secret that impacts the main plot. Make their advice specific and rooted in town history.
+-    **Pitfall: ** The pacing is sluggish with no tension.
+-    **Fix:** Insert deadlines (festival date, project due date, lease expiration). Use weather and town event cycles to create natural urgency.
+- Note: Handle with nuance to avoid stereotypes. These are tendencies, not rules.*
+-    **Multi-Generational Local / Farming Family:** More likely to use regional idioms, practical metaphors ("that's tougher than a two-dollar steak"), speak plainly about money/land, reference family and town history. May view outsiders with initial, polite wariness.
+-    **Professional Transplant (Doctor, Teacher, Remote Worker):** Speech may be more standard, less idiomatic. Might unintentionally use jargon from their old life. Conversational focus might be on ideas or logistics before personal matters.
+-    **Artisan / Small Business Owner (Bakery, Brewery, B&B):** Dialogue often centers on craft, quality, and community support. Can be passionate and persuasive. Might use sensory language ("that's the smell of honest work").
+-    **Town Elder / Historical Society Member:** Speech is often anecdotal, linking present events to the past. May offer advice in the form of stories. Uses formal titles ("Mr. Jenkins") longer than others.

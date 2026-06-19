@@ -1,0 +1,84 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Christian Romance is a subgenre of romantic fiction in which faith, spiritual convictions, and the protagonist's relationship with God are as central to the narrative as the romantic relationship itself. The genre is defined by redemptive narrative arcs, characters shaped by belief, and the structural requirement that spiritual growth and romantic resolution are intertwined.
+- Brief paragraph on the genre's origins and evolution. Include 2-3 seminal works or authors.*
+- Example:** Christian Romance emerged as a distinct commercial category in the 1980s with Harlequin's "Love Inspired" line. Early examples emphasized moral purity and faith as constraint on passion. Contemporary works like [YOUR REFERENCE WORKS] have expanded the genre to include deeper spiritual complexity and diverse character backgrounds.
+-  Protagonist experiences spiritual incompleteness or faith struggle at story's opening
+-  Love interest's faith position (believer/non-believer) becomes plot-central
+-  Secondary characters include faith community members (church, family, mentors)
+-  Climactic moment involves spiritual surrender or faith-driven choice
+-  Romantic resolution follows (or coincides with) spiritual resolution
+-  Physical intimacy aligns with characters' stated faith values
+-  Prose tone carries underlying current of grace and redemption
+- Describe your genre's target reader.*
+- Example:** Women ages 25-65 with active faith commitments; faith-centered identity; seeking romance that reflects their values and worldview. Secondary audience includes men and LGBTQ+ readers seeking romance with Christian worldview representation.
+-  **Contemporary Christian Romance:** Present-day setting; urban/suburban faith community; often includes workplace, family, or church-based conflicts
+-  **Historical Christian Romance:** Period setting (Regency, Victorian, Pioneer, WWII); faith integrated into historical context
+-  **Christian Romantic Suspense:** Crime, mystery, or danger plot parallels faith crisis; dual plot structure
+-  **Amish/Plain Community Romance:** Specialized historical/contemporary blend; focused on distinct faith culture and community dynamics
+-  **Biblical Retelling Romance:** Reimagines biblical narratives or historical biblical figures as romantic stories
+-  **Christian Fantasy/Romantasy:** Fantasy world with Christian worldview and spiritual themes; growing subgenre
+- Describe the spiritual and romantic journey.*
+- Inciting Question:** What spiritual incompleteness or crisis does [CHARACTER] face at story's opening?
+- Example:** Maya grew up in strong Christian faith but drifted through her twenties. At 32, recently promoted to management, she's building a successful career but feels spiritually hollow. She hasn't prayed in months. She's lonely despite professional success.
+- Midpoint Crisis:** What tension emerges between love and conviction?
+- Example:** Maya realizes James attends church out of habit, not conviction. She's rebuilding her faith and it's becoming central to her identity. James is content with a nominal faith. She must decide if they're aligned enough to build a future together.
+- Resolution:** How does spiritual growth enable romantic resolution?
+- Example:** Maya honors her conviction about faith alignment by having an honest conversation with James. He's challenged to examine his own faith. They either grow together spiritually, or Maya must accept that their paths diverge. True resolution respects both her faith and his autonomy.
+-  **Current spiritual state:** [Believer/lapsed/new/searching/non-believer/practicing but doubting]
+-  **Faith tradition:** [Denominational background, if relevant; church attendance/practice; prayer life]
+-  **Spiritual struggle:** [What faith question or conviction challenge drives internal plot?]
+-  **Church/community role:** [Is character plugged into faith community? Member, leader, visitor, resistant?]
+-  **Values connected to faith:** [Sexual ethics, honesty, sacrifice, forgiveness, purpose, family, stewardship, etc.]
+-  **Initial attraction:** [What draws them together?]
+-  **Faith alignment/conflict:** [Do they share faith? If not, what's the tension?]
+-  **Growth potential:** [Can they grow together spiritually? How does romance support or challenge faith?]
+-  **Family:** [Do family members support or challenge protagonist's faith?]
+-  **Church/mentor:** [Who in faith community influences protagonist's growth?]
+-  **Friends:** [How do friendships reinforce or challenge faith perspective?]
+-  **Strengths:** [Both secular and faith-connected; e.g., loyalty, integrity, kindness, faith despite doubt]
+-  **Flaws:** [Both secular and faith-connected; e.g., pride, control, skepticism, hypocrisy, fear of vulnerability]
+-  **Growth Arc:** [How do flaws diminish and strengths develop through romance and faith journey?]
+- How does this character speak? Any distinctive dialogue markers?*
+- Example:** Maya is direct and articulate; she asks questions rather than makes statements. When discussing faith, she becomes more reflective and slower to speak. She uses understatement ("it's fine") when uncomfortable. Her internal monologue is witty and self-aware.
+-  **Appearance:** [Age-appropriate, occupation-appropriate details]
+-  **Mannerisms:** [Distinctive behaviors connected to emotional or spiritual state; e.g., fidgets when anxious, crosses arms when defensive, grips Bible when seeking comfort]
+-  **Symbolic detail:** [Object or habit that reflects spiritual journey; e.g., re-reading specific scripture, wearing faith jewelry, renewed church attendance]
+- 
+- Codex Title:** [STORY TITLE] – Three-Act Structure with Spiritual Turning Point
+- Entry Type:** Story Structure
+- 
+- Narrative Goal:** Introduce protagonist in state of spiritual incompleteness or crisis; present love interest in context revealing their faith position.
+- Key Beats:**
+- 1. [ ] Open with protagonist's faith struggle or spiritual void (not yet met love interest)
+- 2. [ ] Establish protagonist's life, values, and current trajectory
+- 3. [ ] Introduce secondary characters: faith community members, family, friends
+- 4. [ ] Inciting Incident: Protagonist meets love interest [DESCRIBE CONTEXT]
+- 5. [ ] Recognition moment: Something about this person matters; romantic possibility emerges
+- 6. [ ] Closing beat: Protagonist reflects on meeting; attraction + faith question acknowledged
+- Target Page Range:** [e.g., Pages 1-60 for 80,000-word manuscript]
+- Narrative Goal:** Deepen romantic connection while intensifying faith questions. Secondary characters provide pressure and perspective. Reader sees protagonist's internal spiritual work.
+- Key Beats:**
+- 1. [ ] Romantic and emotional intimacy develops through multiple scenes
+- 2. [ ] Characters share backgrounds; faith positions become clearer
+- 3. [ ] Secondary characters offer perspective (church mentor, family member, friend) on relationship
+- 4. [ ] Protagonist recognizes spiritual affinity OR incompatibility with love interest
+- 5. [ ] Small tensions emerge: Different church traditions, family expectations, life goals rooted in faith
+- 6. [ ] Relationship deepens despite (or because of) faith questions
+- 7. [ ] Closing beat: Protagonist realizes this relationship is forcing deeper faith engagement
+- Target Page Range:** [e.g., Pages 61-180]
+- Turning Point Scene:** Protagonist faces realization that faith and romance may be in tension.
+- Example:** [DESCRIBE SPECIFIC SCENE WHERE PROTAGONIST REALIZES FAITH/ROMANCE CONFLICT]
+- Narrative Goal:** Escalate faith stakes; force protagonist to choose between romantic comfort and spiritual conviction. Resolution intertwines romantic and spiritual satisfaction.
+- Key Beats:**
+- 1. [ ] Complications escalate; secondary characters' pressure increases
+- 2. [ ] Protagonist faces internal crisis: "Can I compromise my faith for this person?"
+- 3. [ ] Dark moment: Relationship may rupture; protagonist feels torn between two worlds
+- 4. [ ] Turning point (~75%): Protagonist surrenders outcome to God OR makes a faith-driven choice
+- 5. [ ] Love interest responds; romance deepens into vulnerability OR relationship respectfully ends
+- 6. [ ] Climactic scene: Romantic and spiritual resolutions converge
+- 7. [ ] Resolution: Relationship solidified, faith renewed/deepened, integration with community
+- 8. [ ] Epilogue (optional): Evidence of changed life and deepened faith commitment
+- Target Page Range:** [e.g., Pages 181-240]

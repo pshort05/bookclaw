@@ -1,0 +1,170 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Academy Romance is a subgenre of romance and speculative fiction, typically YA or NA, where the central love story unfolds within a structured, often secretive or magical, educational institution. The academy itself is a crucible—a pressure cooker of magic, politics, talent, and social hierarchy that forces characters into proximity and conflict.
+- Core Promise:** The thrill of first love (or a powerful, formative love) combined with the adventure of mastering extraordinary abilities and navigating a dangerous, wondrous world. It’s about finding your person while finding your power.
+- Key Pillars:**
+-  **The Academy as Character:** The setting is active, not passive. It has rules, secrets, dangers, and a social ecosystem that directly shapes the plot.
+-  **Competence & Growth:** Protagonists are often talented, gifted, or have hidden potential. The romance is intertwined with their journey to mastery.
+-  **Forced Proximity:** Dorms, shared classes, study groups, and mandatory team assignments provide natural, believable reasons for contact.
+-  **High-Stakes Social Dynamics:** Cliques, houses, magical lineages, and political factions create external conflict and social tension.
+-  **Balanced Dual Focus:** 50% relationship development, 50% external plot (curriculum, exams, tournaments, external threats).
+- Overall Tone:** Should be immersive, emotionally vivid, and slightly heightened. The prose should reflect the wonder of the setting and the intensity of adolescent/young adult emotions without becoming overly florid or melodramatic.
+- Pacing:** Fast-paced, with a strong forward momentum driven by both academic deadlines (exams, tournaments) and romantic milestones. Use shorter sentences and paragraphs during action, tension, or sharp emotional exchanges. Allow for slightly more introspection and descriptive passages during moments of discovery, wonder, or deep emotional connection.
+- Point of View:** Primarily **First-Person (Present or Past Tense)** or **Close Third-Person Limited.** Deep POV is highly effective. The reader should feel anchored in the protagonist’s sensory experience and emotional reality. Dual POV (alternating between love interests) is extremely common and effective for building tension and empathy.
+- Descriptive Language:**
+-  **The Academy:** Use specific, evocative details that appeal to multiple senses. Don’t just say “an old castle.” Describe the smell of old parchment and ozone, the feel of cold stone underfoot, the sound of distant chanting echoing in a vaulted hall. Make the magic tangible.
+-  **Magic/Abilities:** Describe the somatic and sensory components. How does casting *feel* to the user? What does it look, sound, smell like? Avoid generic “waves of power.”
+-  **Characters:** Focus on telling details—a character’s posture, the way they wield a wand or tool, a recurring nervous habit, the glint in their eye when they’re about to win. Physical descriptions should be integrated organically, not in block paragraphs.
+-  **Emotions:** **Show, don’t tell.** Instead of “I was nervous,” use physical reactions: “My palms slicked with sweat, and the incantation syllables tangled on my tongue.” Metaphors tied to the magical world are powerful (“My stomach dropped like I’d been hit with a Levitation reversal”).
+- Dialogue in Academy Romance must serve multiple masters: revealing character, advancing the plot, building romantic/antagonistic tension, and world-building.
+- Key Functions:**
+- 1.  **Establish Social Hierarchy:** Word choice, formality, and confidence immediately signal a character’s social standing, house affiliation, or magical prowess.
+- 2.  **Convey Expertise/Specialization:** Use of technical jargon (spell names, potion ingredients, political factions) should feel natural to the characters. The reader can learn through context.
+- 3.  **Create Romantic Tension:** Much of the chemistry is built through verbal sparring, loaded silences, misunderstood intentions, and vulnerable admissions.
+- Stylistic Notes:**
+-  **Witty Banter:** A hallmark of the genre. Quick, intelligent, often competitive exchanges that mask (or reveal) attraction.
+-  **Vulnerable Moments:** Counterbalance banter with scenes of raw, honest dialogue—confessions of fear, failure, or desire. These moments often occur in private, post-crisis, or when characters are physically/emotionally exhausted.
+-  **Academic Context:** Conversations naturally occur *around* shared tasks. “Pass me the powdered moonstone” can be as charged as “I love you” if the subtext is right.
+-  **Antagonist Dialogue:** Should be intelligent and threatening, not mustache-twirling. Their ideology or ambition should pose a credible challenge.
+- Avoid:** Overly modern, anachronistic slang that breaks the world’s tone. Excessive “as you know” info-dumps between students who would logically already know the information.
+- Academy Romance follows a modified romance structure, framed by the academic calendar.
+- Act I: The Summoning & First Semester (25%)**
+-  **Ordinary World (Brief):** Protagonist’s life before the academy, often showing them as an outsider, stifled, or unaware of their true nature.
+-  **The Call & Crossing the Threshold:** Acceptance letter, discovery of power, arrival at the academy. First awe-inspiring view of the setting.
+-  **Meeting the Cast:** Introduction to the love interest(s), friends, rivals, and mentors. Often involves a sorting/placement ceremony.
+-  **Inciting Incident:** A minor magical mishap, a competitive challenge issued, or a first brush with the academy’s secret danger. This directly forces interaction with the love interest.
+-  **Lock-In:** The protagonist is bound to the academy and the central plot (chosen for a special team, given a forbidden task, discovers a personal connection to the mystery).
+- Act IIA: Training & Tension (25%)**
+-  **Rising Stakes:** Academic and magical training montages interspersed with growing romantic tension. Forced proximity scenes (library research, detention, team projects).
+-  **First Kiss/Major Romantic Turn:** A moment of vulnerability leads to a physical expression of attraction, often interrupted or followed by immediate complication.
+-  **Midpoint Revelation or Disaster:** A major plot twist—the villain’s plan is uncovered, a trusted mentor is implicated, the protagonist’s secret is exposed, a friend is hurt. This shatters the protagonist’s relatively safe academic world and raises the personal stakes. The romance often suffers a **false breakup** or serious fracture here.
+- Act IIB: Trials & Tribulations (25%)**
+-  **Reaction & Regrouping:** The characters deal with the fallout of the midpoint. Romantic estrangement. Protagonist focuses on training/skills to face the new threat.
+-  **All Is Lost Moment:** A failure (failing a crucial exam, losing a tournament, being publicly humiliated) that makes the final victory seem impossible. The protagonist feels isolated.
+-  **The Reconciliation:** The love interest provides crucial support, information, or a heartfelt apology. They reunite, stronger and more committed, often declaring their feelings explicitly.
+- Act III: Finals & Finale (25%)**
+-  **Preparation & Plan:** The reunited duo/trio devises a strategy to confront the overarching threat, using everything they’ve learned.
+-  **The Final Confrontation:** Takes place during a major academy event (Final Exam, Grand Tournament, Solstice Ball). Magic, skill, and teamwork are tested.
+-  **Resolution & Aftermath:** The threat is neutralized (not necessarily killed). Public recognition or vindication.
+-  **Denouement – The End of Term:** A quiet moment reflecting on growth. Promises for the future (next term, summer plans). A final, definitive romantic moment (a kiss, a handhold, a spoken “I love you”) that solidifies the HEA (Happy-Ever-After) or HFN (Happy-For-Now). The focus is on the bond forged and the new beginning it represents.
+- 1.  **Start with the Genre Guide:** Fill in the template to solidify your core concept, tropes, and reader expectations.
+- 2.  **Define Your World:** Use the World-Building template to map out your academy's rules, magic, and society. This informs everything.
+- 3.  **Craft Your Protagonists:** Use the Protagonist templates for your MC and Love Interest. Define their skills, flaws, and the core tension between them.
+- 4.  **Plot the Structure:** Use the Story Structure template to lay your plot beats over the academic calendar.
+- 5.  **Refine the Style:** Use the Style Guide template to lock in your narrative voice and dialogue style.
+- Entry Title:** Genre: Academy Romance
+- Category:** Genre Conventions
+- Content:**
+- ```
+- Core Premise:** [A one-sentence logline for your specific story, e.g., "A magically inert scribe must team up with her academy's star duelist to uncover a conspiracy that threatens the school, finding her power in the process."]
+- Central Tension:** [What is the primary conflict driving the story? E.g., Love vs. Duty, Ambition vs. Ethics, Hidden Identity vs. Acceptance.]
+- Reader Expectations (The Promise):**
+-    A fantastical, immersive academic setting.
+-    A slow-burn or enemies-to-lovers romance built on mutual respect and competence.
+-    Exciting magical training, competitions, or mystery-solving.
+-    Protagonists who grow significantly in both power and emotional maturity.
+-    A satisfying HEA or HFN that feels earned.
+- Key Tropes I'm Using:**
+-    [e.g., Magical Academy, Enemies-to-Lovers, Forced Proximity, Chosen One (Subverted), Tournament Arc, Hidden Heir, Mysterious Mentor]
+- Tropes I'm Avoiding or Subverting:**
+-    [e.g., Instalove, Love Triangle, Bully Romance, Overpowered MC with no flaws]
+- Comparable Titles (Comp Titles):**
+-    [2-3 books or series that capture the tone or elements you're aiming for, e.g., "A Deadly Education meets The Atlas Six with the romantic tension of Fourth Wing."]
+- ```
+- Entry Title:** Style: [Your Book Title]
+- Category:** Writing Style
+- Content:**
+- ```
+- Narrative Voice & POV:**
+-    **Primary POV:** [e.g., First-Person Present Tense, dual POV with alternating chapters between MC and LI].
+-    **MC Voice:** [Describe the tone, e.g., "Sarcastic and observant, with a defensive wit masking deep insecurity."]
+-    **LI Voice:** [Describe the tone, e.g., "Formal, precise, and emotionally reserved, with moments of intense passion in their internal monologue."]
+- Prose Style:**
+-    **Pacing:** [e.g., "Fast-paced, with short, punchy sentences for action and magical duels; slower, more lyrical passages for moments of wonder or emotional revelation."]
+-    **Descriptive Focus:** [e.g., "Prioritize sensory details of magic (sounds, smells, textures) and the physicality of emotion. Keep setting descriptions dynamic and integrated with action."]
+-    **Key Metaphor/Theme Link:** [e.g., "Magic is often described in terms of [Themes like 'threads/weaving,' 'storms/weather,' 'chemistry/alchemy'] to tie the prose to the central themes."]
+- Dialogue Style:**
+-    **Formal/Informal Divide:** [e.g., "Professors use archaic, formal language. Students use more contemporary speech but with magical slang. The LI's dialogue starts formal and becomes more relaxed as the relationship progresses."]
+-    **Banter Signature:** [e.g., "Characterized by competitive, intellectually playful jabs that slowly reveal genuine compliments."]
+-    **Vulnerability Cues:** [e.g., "Vulnerable admissions are marked by shorter sentences, pauses (indicated by ellipses or action beats), and a drop in pretense or formality."]
+- ```
+- Entry Title:** Character: [Character Name]
+- Category:** Characters
+- Content:**
+- ```
+- Role:** [Main Protagonist / Love Interest / Rival / Mentor]
+- House/Faction:** [e.g., House of Ravens, Alchemy Track, Non-Magical Binder]
+- Magical Affinity/Skill:** [e.g., "Shadow-weaving. Can manipulate darkness for concealment and minor illusions, but it drains her quickly and is useless in full light."]
+- Appearance & Demeanor:** [2-3 key visual/behavioral tags, e.g., "Always has ink stains on her fingers. Wears her uniform slightly askew. A wary, observant stillness."]
+- Core Motivation:** [What do they want most? E.g., "To prove her intellectual worth in a world that values raw magical power."]
+- Fatal Flaw:** [What habit or belief holds them back? E.g., "Defensive self-sufficiency; refuses to ask for help."]
+- Key Fear:** [What are they secretly afraid of? E.g., "Being exposed as a fraud and sent back to her mundane life."]
+- Romantic Arc (if applicable):**
+-    **Initial View of LI:** [e.g., "An arrogant, privileged prodigy who represents everything she resents."]
+-    **Turning Point(s):** [e.g., "1. Sees him secretly helping a first-year. 2. He defends her theory in class. 3. He admits his power comes with crippling political expectations."]
+-    **Core Need from Relationship:** [e.g., "To learn to trust and be vulnerable."]
+- ```
+- Entry Title:** Structure: [Your Book Title]
+- Category:** Plotting
+- Content:**
+- ```
+- Academic Timeline:** [e.g., "The story spans the Autumn Term of First Year."]
+- Act I: The Summoning (Chapters 1-8)**
+-    **Ch 1-2:** Ordinary World & Call. [Brief scene of MC's old life; letter/manifestation arrives.]
+-    **Ch 3:** Crossing Threshold. Arrival at [Academy Name]. Awe and overwhelm.
+-    **Ch 4:** Sorting/Placement Ceremony. MC placed in [House]. Meets key friends/rivals.
+-    **Ch 5:** First encounter with Love Interest [LI Name]. [Describe the context and tension.]
+-    **Ch 6-7:** Inciting Incident. [e.g., "MC stumbles on a corrupted spell in the library."] Forced to work with LI.
+-    **Ch 8:** Lock-In. [e.g., "Headmaster assigns them to investigate as a team, threatening expulsion if they refuse."]
+- Act IIA: Training & Tension (Chapters 9-18)**
+-    **Ch 9-12:** Training montage & investigation. Forced proximity scenes (detention, library, practicals). Growing, reluctant chemistry.
+-    **Ch 13-14:** First Major Romantic Turn. [e.g., "Shared vulnerability after a failed experiment leads to a charged moment/kiss."]
+-    **Ch 15-16:** Midpoint Disaster. [e.g., "Their investigation is discovered; LI's family is implicated; MC's secret is exposed."]
+-    **Ch 17-18:** Fallout & False Breakup. Public scandal. They are forbidden to associate.
+- Act IIB: Trials & Tribulations (Chapters 19-26)**
+-    **Ch 19-21:** Solo Training & Isolation. MC focuses on improving their unique skill. LI is distant.
+-    **Ch 22-23:** "All is Lost" Failure. [e.g., "MC fails their mid-term practical, faces expulsion."]
+-    **Ch 24-25:** The Reconciliation. LI provides crucial help/info/apology. They reunite, stronger.
+-    **Ch 26:** Declaration of commitment. They formulate a new plan.
+- Act III: Finals & Finale (Chapters 27-32)**
+-    **Ch 27-28:** Preparation for Final Confrontation. Using combined skills in new ways.
+-    **Ch 29-30:** Final Confrontation at [Event e.g., "The Solstice Tournament"]. Victory through teamwork.
+-    **Ch 31:** Resolution & Public Vindication.
+-    **Ch 32:** Denouement. [e.g., "On the last day of term, a quiet moment on the grounds. A definitive romantic promise. Looking ahead to next term."]
+- ```
+- Entry Title:** World: [Academy Name]
+- Category:** Setting
+- Content:**
+- ```
+- The Academy:**
+-    **Name & Appearance:** [e.g., "Aetheram Academy, a floating collection of crystalline spires connected by glowing bridges."]
+-    **Core Philosophy:** [e.g., ""Mens et Manus" (Mind and Hand) – theory and practical application are equally valued."]
+-    **Houses/Tracks:** [List 3-4, with 1-sentence descriptions:
+-    **House of Ravens:** Cunning, strategists, illusionists.
+-    **House of Griffins:** Brave, combat-focused, protectors.
+-    **House of Salamanders:** Passionate, elementalists, artists.
+-    **The Binders (Non-Magical):** Intellectuals, rune-carvers, historians.]
+- The Magic System (Overview):**
+-    **Source:** [e.g., "Internal mana drawn from life force, replenished by rest and specific foci."]
+-    **Limitations:** [e.g., "Spellcasting requires precise verbal, somatic, and material components. Exhaustion leads to physical illness."]
+-    **Specializations:** [e.g., "Elemental, Mental, Temporal, Organic, etc."]
+-    **Social Impact:** [e.g., "Old magical families wield political power. "Newbloods" face prejudice but bring innovation."]
+- Key Locations:**
+-    **The Grand Library:** Endless, ever-shifting stacks; home to sentient books.
+-    **The Atrium:** Central gathering space with a living star-map ceiling.
+-    **The Verdant Hall:** Greenhouse for dangerous magical flora.
+-    **The Crucible:** Practical examination arena.
+-    **[MC/LI's] Dorm Room:** [A few personalizing details.]
+- Major Factions & Politics:**
+-    **The Arcane Council:** Governing body; traditionalist.
+-    **The Innovators' Guild:** Push for new magical tech; controversial.
+-    **The [Family Name] Dynasty:** LI's family; powerful, conservative.
+-    **Student Secret Societies:** [e.g., "The Grey Wardens" – students who police forbidden magic.]
+- Current Year's Major Events:**
+-    **Opening Ceremony:** Week 1.
+-    **Midterm Practicals:** Week 8.
+-    **Starlight Ball:** Week 12.
+-    **Solstice Tournament:** Finals, Week 16.
+- ```

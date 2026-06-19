@@ -1,0 +1,163 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Sensory Detail:** Have I engaged at least 2-3 senses (sight, sound, smell, touch, taste) to describe the environment?
+-  [ ] **Active Setting:** Is the environment affecting the characters in this scene (e.g., heat sapping strength, fog obscuring vision, vines impeding movement)?
+-  [ ] **Threat Manifestation:** Does the scene show a new stage, symptom, or behavior of the ecological threat?
+-  [ ] **Character Reaction:** Do the characters' actions and dialogue reflect the escalating pressure and their changing understanding of the threat?
+-  [ ] **Thematic Link:** Does the scene connect to a core theme (retribution, consequence, loss of control)?
+-  [ ] **Pacing:** Does the sentence length and vocabulary match the scene's tension (short/abrupt for panic, long/flowing for dread)?
+-  [ ] **Futility Check:** Does at least one character action fail or backfire due to the nature of the threat, emphasizing its overwhelming power?
+- 1.  **Start with the Genre Guide:** Populate the template below to define the core principles of your specific Eco-Horror story.
+- 2.  **Create your Style Guide:** Use the template to tailor prose, dialogue, and structure rules to your project's tone.
+- 3.  **Define your Protagonist:** Use the template to ensure your main character is designed to be vulnerable to and reflective of the ecological threat.
+- 4.  **Map your Story Structure:** Fill out the template to plot your version of the Eco-Horror arc.
+- 5.  **Build your World:** Use the World-Building template to detail the environment as a living, antagonistic entity.
+- These entries will create a cohesive framework, ensuring every element of your novel serves the central horror.
+- 
+- Entry Type:** Genre Guide
+- Title:** Eco-Horror: [Your Story Title/Theme] (e.g., Eco-Horror: The Mycorrhizal Retribution)
+- Core Concept:**
+- >A one-sentence logline. (e.g., "A remote logging town is systematically consumed by a rapidly evolving, intelligent fungus that weaponizes the very forest they are destroying.")
+- Primary Antagonist (The Force of Nature):**
+- >*Name/Describe the natural force.*
+-  **Type:** (e.g., Biological/Mutated Organism, Climate/Weather Event, Sentient Ecosystem, Geo-Thermal Anomaly).
+-  **Origin/Cause:** The human action that triggered it. (e.g., Illegal chemical dumping, experimental geo-engineering, relentless deep-sea drilling).
+-  **Mode of Action:** How it attacks/spreads/manifests. (e.g., Releases neurotoxic spores, manipulates animal behavior, causes localized rapid climate shift).
+-  **Core Motivation (from nature's "perspective"):** Not malice, but a principle. (e.g., Restore balance, eliminate a contaminant, consume resources, propagate at any cost).
+- Central Theme & Message:**
+- >(e.g., "Exploitation for short-term gain ensures long-term oblivion." or "Intelligence is not control; nature operates on a scale that dwarfs human understanding.")
+- Mood & Atmosphere Keywords:**
+- >(e.g., Claustrophobic, Decaying, Inevitable, Vast, Uncanny, Tragic, Somber)
+- Inspiration & References:**
+- >- Films: (e.g., *Annihilation*, *The Happening*, *The Bay*)
+- >- Books: (e.g., *The Swarm* by Frank Schätzing, *The Ruins* by Scott Smith, *The Willows* by Algernon Blackwood)
+- >- Real-World Events: (e.g., The Chernobyl Exclusion Zone, Colony Collapse Disorder, Pacific Garbage Patch)
+- 
+- Entry Type:** Style Guide
+- Title:** Prose & Voice: [Your Story Title]
+- Narrative Perspective:**
+- >(e.g., Close Third-Person, limited to [Protagonist's Name]; present tense to enhance immediacy.)
+- Key Prose Rules for This Project:**
+- 1.  **Descriptive Focus:** Prioritize descriptions of **decay, overgrowth, and biological transformation**. Every scene must include one detail of the environment actively changing.
+- 2.  **Sentence Rhythm:** Use long, multi-clause sentences to describe the environment (mirroring its complexity). Use staccato, subject-verb-object sentences for character panic and action.
+- 3.  **Metaphor Bank:** Only use metaphors/similes derived from **biology, geology, and industry**. (e.g., "Fear spread through the group like a mycelial network," "The silence was as dense as permafrost.")
+- 4.  **Dialogue Style:** Professional characters use jargon that becomes increasingly hollow. Non-professionals use sensory, physical language. All dialogue is often **interrupted** by environmental sounds.
+- Forbidden Phrases/Clichés:**
+- >- "It was just nature taking its course."
+- >- "We have to nuke it from orbit." (Unless subverted tragically)
+- >- Any dialogue that fully explains the antagonist's origins in a tidy monologue.
+- Pacing Landmarks:**
+- >- **Act I:** Slow, detailed buildup with subtle wrongness.
+- >- **Act II:** Pacing becomes erratic, matching the environment's attacks—bursts of action followed by dreadful stillness.
+- >- **Act III:** Pace slows to a grim, inevitable march. Sentences become shorter, final images are stark and clean.
+- 
+- Entry Type:** Character / Protagonist
+- Title:** [Protagonist's Full Name]
+- Role in the Genre:** The **Witness-Culprit**. They are both the lens for the horror and partially responsible for it.
+- Core Flaw Linked to the Threat:**
+- >(e.g., **Arrogance** in human technology; **Apathy** towards environmental issues; **Greed** for resource extraction; **Denial** of past mistakes.)
+- Professional/Personal Skills:**
+- >Skills that initially seem useful but ultimately fail against the scale of the threat. (e.g., Biologist (underestimates the intelligence of the swarm), Engineer (solutions are too localized), Journalist (truth is irrelevant to the consuming fog).)
+- Arc in the Eco-Horror Structure:**
+-  **Act I:** [State of flaw]. (e.g., "Arrives to document the 'ecological anomaly' with clinical detachment.")
+-  **Act II:** [Confrontation with flaw]. (e.g., "Discovers their former company's research directly caused the mutation; denial turns to guilt.")
+-  **Act III:** [Transformation/acceptance]. (e.g., "Abandons the attempt to destroy the threat, instead sacrificing themselves to contain it or becoming a reluctant chronicler of the new world.")
+- Relationship to the Antagonistic Environment:**
+- >(e.g., "Has severe allergies, making them hyper-aware of changes in air quality and pollen counts—the first to feel the physical effects of the blight.")
+- 
+- Entry Type:** Plot / Story Structure
+- Title:** Beat Sheet: [Your Story Title]
+- Adapted Eco-Horror Three-Act Structure:**
+- ACT I: THE SEEDING**
+-  **Opening Image:** A landscape that is beautiful but carries a hint of sickness.
+-  **Inciting Anomaly:** (Scene #): [Describe the first undeniable weird event].
+-  **Protagonist's Call:** They decide to [specific investigative action].
+-  **First Collective Dismissal:** Authority figure [Name] says [dismissive line].
+- ACT II: THE GROWTH**
+-  **First Escalation:** (Scene #): The environment directly threatens a life for the first time via [method].
+-  **Discover the Root Cause:** (Scene #): Protagonist finds [evidence] linking the horror to [human cause].
+-  **Midpoint - The Turning Forest:** (Scene #): Set-piece where the natural force reveals its full power, resulting in [major consequence].
+-  **The Failed Solution:** The plan to [fight back/escape] fails because [reason tied to threat's nature].
+-  **All is Lost:** The threat reaches the [seemingly safe haven]. Hope seems extinguished.
+- ACT III: THE HARVEST**
+-  **Climax - The Reckoning:** Protagonist must choose between [destructive, human-centric solution] and [sacrificial/acceptance-based solution]. They choose the latter.
+-  **Resolution - New World:** The final state of the setting. (e.g., "The valley is silent, covered in a crystalline fungal bloom. The river runs clear again, but nothing drinks from it.")
+-  **Final Image:** A mirror or inversion of the Opening Image. (e.g., "The same landscape, now unmistakably and permanently transformed, under an alien but serene sky.")
+- 
+- Entry Type:** World / Setting
+- Title:** The Antagonistic Environment: [Location Name]
+- Overview:**
+- >A paragraph describing the location as a character—its history, mood, and current state of unrest.
+- Pre-Violation State (The "Before"):**
+- >- **Geography & Ecology:**
+- >- **Human Use & Impact:**
+- >- **Dominant Sensory Details:** (Sights, smells, sounds)
+- The Violation (The Cause):**
+- >- **Event:** (e.g., "The 'Silent Spring' pesticide trial, 1985").
+- >- **Perpetrators:**
+- >- **Cover-Up/Misunderstanding:**
+- Post-Violation State (The "Now" - Active Antagonist):**
+- >- **Geographic/Climatic Changes:**
+- >- **Flora & Fauna Changes:** (List 3-5 key mutations/behaviors)
+- >- **New Dominant Sensory Details (The Wrongness):**
+- >- **The Environment's "Tactics":** How it entraps, hunts, or expels humans. (e.g., "Creates localized fog banks that disorient, uses infrasound to induce migraines, rapidly corrodes synthetic materials.")
+- Areas of Interest (Points of Conflict):**
+- 1.  **Ground Zero:** The epicenter of the violation. Current state.
+- 2.  **The Last Redoubt:** The seemingly safest place for humans. Its vulnerabilities.
+- 3.  **The Heart of the New Ecosystem:** Where the transformed nature is strongest/most concentrated.
+- Survival Notes:**
+- >- **What doesn't work:** (e.g., "Fire causes the spores to aerosolize. Radio signals attract swarms.")
+- >- **What *might* work (temporarily/at great cost):** (e.g., "Extreme cold slows growth. Total silence seems to reduce aggression.")
+- Eco-Horror is a subgenre of horror where the primary source of fear arises from nature—or humanity’s violation of it. The antagonist is often an ecosystem, a natural force, or a biological entity (e.g., mutated organisms, vengeful flora/fauna, extreme weather, or the planet itself) reacting against human exploitation, negligence, or arrogance. Unlike traditional horror, the threat is typically impersonal, systemic, and rooted in real-world ecological anxieties (climate change, pollution, deforestation, extinction). The horror stems from the realization that the natural world is not a passive backdrop but an active, often hostile, force that can retaliate.
+- Core Themes:**
+-  **Retribution:** Nature striking back against human encroachment.
+-  **Unseen Consequences:** The unintended fallout of scientific tampering or industrial progress.
+-  **Loss of Control:** Humanity’s technology and rationality failing against primal, chaotic forces.
+-  **Ambiguity:** The line between victim and perpetrator blurs; humans are both the cause and the prey.
+-  **Scale of Threat:** The horror is often vast, slow-moving, and inescapable, reflecting the scale of ecological crises.
+- Tone:** Claustrophobic, atmospheric, dread-filled. It combines the creeping unease of cosmic horror with the tangible, visceral fear of natural disaster. The tone is often solemn, emphasizing tragedy and inevitability rather than mere shock.
+- A. Word Choice & Sentence Structure:**
+-  **Use concrete, sensory language.** Describe nature in vivid, often oppressive detail: the smell of decay, the texture of invasive vines, the sound of unnatural silence in a forest.
+-  **Vary sentence length to control pacing.** Use short, abrupt sentences for sudden threats or moments of panic. Use longer, flowing sentences to build atmosphere and convey the relentless, slow-burn nature of ecological menace.
+-  **Employ metaphors and similes drawn from nature and industry.** Compare a character’s fear to "roots tightening around the heart," or a polluted river to "a vein pumping poison." Avoid overly fantastical comparisons.
+-  **Passive voice can be effective** to emphasize the characters being acted upon by a larger force (e.g., "The town was consumed by the fog").
+- B. Descriptions & Atmosphere:**
+-  **Personify nature.** Give landscapes and weather agency: "the forest watched," "the storm hungered," "the earth groaned."
+-  **Focus on decay and transformation.** Show the process of nature reclaiming or corrupting human spaces. Describe rust, mold, overgrowth, and mutation in meticulous detail.
+-  **Utilize the "Uncanny Valley" of nature.** Describe things that are almost familiar but wrong: a deer with too many eyes, flowers that bloom with the scent of rot, rivers that flow uphill.
+-  **Balance the beautiful and the horrific.** A breathtaking sunset over a toxic algal bloom creates powerful dissonance.
+- C. POV & Narrative Voice:**
+-  **Limited Third-Person or First-Person** is most effective, trapping the reader in the character’s perspective as they grapple with the unfolding horror.
+-  **The narrative voice should reflect the setting’s influence.** A character in a suffocating jungle might have thoughts that feel tangled and humid. A scientist’s POV might start clinical but become increasingly desperate and irrational.
+-  **Avoid omniscient narrators who explain the threat.** The mystery and incomprehensibility of the natural force are key to the horror.
+- A. Character Voice:**
+-  **Scientists/Experts:** Dialogue starts with jargon and confidence, devolving into fragmented, terrified observations as their understanding fails. ("The mycelium network is exhibiting unprecedented predatory intelligence... God, it’s herding us.")
+-  **Locals/Indigenous Characters:** Often possess folk wisdom or historical knowledge dismissed as superstition. Their dialogue uses simpler, metaphorical language rooted in the land. ("The old grove is hungry. We stopped leaving offerings.")
+-  **Corporates/Developers:** Dialogue is filled with euphemisms, profit-focused language, and denial until the very end. ("It’s an anomalous biological event. Contained. The shareholder report is our priority.")
+-  **Victims/Civilians:** Dialogue reveals their direct, sensory experience of the horror. It’s raw, emotional, and focused on immediate survival.
+- B. Dialogue Functions:**
+-  **Exposition through conflict:** Reveal backstory (e.g., the toxic spill, the illegal logging) through arguments between characters with opposing values.
+-  **Show the breakdown of communication:** As the crisis escalates, dialogue becomes more fractured, interrupted by environmental sounds, or devolves into screams and silence.
+-  **Use silence as a tool.** The absence of dialogue—when characters are too terrified to speak, or when nature’s "voice" (wind, animal cries, creaking trees) drowns them out—can be more powerful than words.
+- C. Stylistic Tips:**
+-  Avoid lengthy, explanatory monologues about the threat. Let the environment show, not the characters tell.
+-  Dialogue should often feel futile, highlighting humanity’s impotence against a force that doesn’t negotiate.
+- Eco-Horror often follows a tragic arc, moving from ignorance to devastating realization. The classic three-act structure is effective but should feel inevitable, not triumphant.
+- Act I: The Violation & First Symptoms (Inciting Anomaly)**
+-  **Setup:** Establish the human ecosystem (town, research station, corporate outpost) and its relationship to the natural world (exploitative, ignorant, or in fragile balance).
+-  **Inciting Incident:** The first clear sign that nature is reacting. This is often dismissed as a minor anomaly (a strange animal death, an unusual plant growth, a minor seismic event).
+-  **Character Commitment:** The protagonist(s), often an outsider, a concerned scientist, or a local, decides to investigate despite institutional skepticism.
+- Act II: The Unraveling (Escalating Retribution)**
+-  **Rising Action:** The environment becomes increasingly hostile. The threat escalates from disturbing to directly dangerous. The protagonist’s investigation reveals the cause (human action).
+-  **Midpoint:** A major set-piece where the natural force asserts its power, causing significant destruction or death. The characters realize the true, systemic scale of the threat.
+-  **Downturn:** Attempts to fight back or escape fail, often because the threat is misunderstood (using fire on a creature made of gas) or because it’s everywhere (the very air/water/soil is hostile). Alliances fracture. Hope diminishes.
+- Act III: The Reckoning & New Equilibrium (Acceptance/Transformation)**
+-  **Climax:** The final confrontation is not about defeating the force, but about surviving it or understanding humanity’s place within it. It may involve sacrifice, acceptance of blame, or a desperate attempt to preserve some remnant.
+-  **Resolution:** The natural world establishes a new, altered state. Humanity is reduced, removed, or forced into a subservient role. The ending is typically bleak, bittersweet, or ambiguously hopeful on a planetary scale (nature endures, even if humans don’t).
+-  **Denouement:** A quiet, haunting image of the changed world. The focus returns to the landscape, now permanently marked.
+- Alternative Structures:** Consider episodic or "outbreak" narratives that track the spread of the ecological threat across multiple locations, or slow-burn, atmospheric stories that prioritize psychological dread over plot-driven action.
+- Weave the prose style into the structure. Act I descriptions should hint at wrongness beneath beauty. Act II prose should become more chaotic and visceral. Act III prose often shifts to a stark, elegiac, or awe-filled tone as it observes the new world order.
+- Dialogue in Act I establishes the conflict of worldviews. In Act II, it breaks down. In Act III, it may be replaced entirely by the "voice" of the environment.
+- Remember: In Eco-Horror, the setting is not just a location—it is the antagonist, the plot, and the final judge. Every stylistic and structural choice must serve to make the natural world feel alive, intelligent, and utterly terrifying in its indifference or its vengeance.

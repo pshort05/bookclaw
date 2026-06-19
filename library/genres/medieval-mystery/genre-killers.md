@@ -1,0 +1,69 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- ❌ DON'T
+- Pseudo-archaic (Avoid):
+- COMMON PITFALLS & FIXES
+- Pitfall: Info-dumping history
+- Pitfall: Anachronistic language in narration or dialogue
+- Pitfall: Generic "medieval" setting
+- Pitfall: Modern character sensibilities in medieval person
+- Pitfall: Protagonist with unexplained expertise
+- Pitfall: Mystery solution through luck/coincidence
+- Pitfall: Overexplaining medieval detail
+- Fix: Show, don't tell; let readers infer from context and sensory detail
+- Avoid Shifting Into:
+- Is this detail necessary? (Avoid description for its own sake)
+- Am I showing or telling? (Weave detail into action; avoid stopping narrative)
+- Evolve world-building; don't repeat
+- Historical Plausibility Matters: Research enough to get broad strokes right; readers notice when you don't
+- Contents: At-a-glance rules, Do's/Don'ts, dialogue templates with examples, mystery structure checklist, setting checklist, common pitfalls & fixes, dialogue by social class, scene-writing checklist, research resources
+- Contents: Genre at a glance, prose rules, mystery structure, setting specificity, character voice, historical accuracy, reader expectations, common mistakes/fixes table, pre-writing checklist, dialogue examples, key principles, AI assistance notes
+- Common pitfalls & solutions
+- Avoiding anachronisms
+- Avoiding info-dumping
+- Common mistakes and fixes
+- Check Common Pitfalls section
+- What to Avoid:
+- What to Avoid:
+- Avoid: Pseudo-archaic "thee/thou" in dialogue except in quoted religious texts
+- Metaphors & Idioms: Use period-appropriate comparisons; avoid modern references
+- Avoid: "cutting-edge," "spotlight," "level playing field"
+- Avoid: Extended passages of "period-accurate" dialogue that halts narrative
+- Active Integration: Layer historical details into action/dialogue; don't pause narrative for description
+- Specific Authenticity: Know what actually existed; avoid "generic medieval"
+- Details Serve Story: Don't include research just because you did it; include details that illuminate character/plot/theme
+- Avoid Exposition: Never stop narrative to explain history
+- Embed Thematically: Don't state themes; embed in character choices and mystery resolution
+- Respect Complexity: Avoid simplistic moral stances; show why characters choose as they do
+- Dialogue Don'ts
+- ⚠ Virtuous victim: Make victim complex/interesting; avoid virgin/whore binary
+- ⚠ Convenient witness: Avoid solving mysteries through lucky accident
+- They Don't Want
+- "Translation English": Avoid archaic cheese (no "thee/thou/forsooth"). Instead, use formal grammar and avoid modern contractions in formal speech.
+- 5. Negative Constraints (What to Avoid)
+- Write in a Medieval Mystery style. Create a moody, atmospheric tone with a focus on sensory details (lighting, smells, textures). The narrative should reflect the limitations of the era—using observation, herbalism, and deduction rather than modern forensics. Dialogue should be formal and mindful of feudal hierarchy, avoiding modern slang or psychological terms. Balance the intellectual pursuit of truth with the religious superstition of the setting.
+- Sanctuary: The killer claims "Sanctuary" in a church, creating a legal standoff where the detective cannot arrest them.
+- Shadow and Flame: Scenes lit by flickering torches, candles, or hearths. The darkness is oppressive and hides the killer.
+- Key Trope: The Closed Circle. The killer is one of the brothers.
+- Consequence: Failure means war or execution, not just a killer going free.
+- Upper left (Color Light Red): Low Demand, High Saturation; Label as ‘Avoid These Opportunities’
+- Killer breaks down and confesses, often seeking redemption through religious figures
+- Pure Whodunit Mysteries: Traditional fair-play puzzle mysteries still sell but don't generate blockbuster numbers; solid backlist performers
+- Integration: Best used when protagonist must make choice; resolution isn't "find the killer" but "what to do with knowledge"
+- Successful stories don't soft-pedal gender politics; they integrate gender dynamics into mystery itself
+- Integration: Don't avoid gender; make it real obstacle/advantage; show female protagonist navigating without apology or false modernity
+- Integration: Research period-appropriate weapons; don't make weapons anachronistic unless intentional clue
+- UPPER LEFT: "Avoid These Opportunities" (Low Demand, High Saturation)
+- Strategy: AVOID. Unless you can revolutionize the subgenre, steering clear preserves author energy for better opportunities.
+- Medieval Fantasy-Mystery Hybrids (unclear genre identity) - Books that don't know if they're fantasy or mystery; market favors clear genre identity
+- Red Zone (Upper Left): Avoid; oversaturated with low demand
+- Avoid info-dumping history; trust reader to follow context
+- Layer historical details into action; don't pause narrative for description
+- What to Avoid:
+- Justice/Resolution: [How is justice served? Example: "Perpetrator confesses; faces abbey discipline; victim's legacy honored; institutional failure exposed and corrected."]
+- Anachronisms to Avoid:
+- What to Avoid:
+- [How does institutional structure matter to your mystery? Example: "Killer's motive stems from institutional politics; investigation hampered by abbey loyalty; justice complicated by institutional protection of perpetrator."]
+- Use Research Notes to track historical facts and avoid anachronisms

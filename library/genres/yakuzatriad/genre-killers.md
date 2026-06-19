@@ -1,0 +1,167 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- ✓ **DO establish clear organizational structure early.** Readers need to understand chain of command immediately. Use titles, forms of address, and spatial positioning to show hierarchy.
+- ✓ **DO use restraint in prose.** The most dangerous moments are quiet. Understatement is more powerful than excess.
+- ✓ **DO ground the story in a specific city.** Tokyo, Hong Kong, Osaka—place shapes character and conflict. Use district names, weather, landmarks.
+- ✓ **DO make the protagonist's loyalty real.** Even if they begin to resist, show genuine reasons they're embedded in the organization (family, debt, protection, belief in the code).
+- ✓ **DO vary dialogue by character rank.** Speech patterns should reflect position in hierarchy. Deferential subordinates; commanding superiors; confused civilians.
+- ✓ **DO plant the impossible choice early.** Every yakuza/triad story pivots on a decision where both options violate something the protagonist holds sacred.
+- ✓ **DO show the organization as fragile.** Beneath codes and hierarchy, loyalty is fragile. Rival gangs, police pressure, or personal betrayal can fracture everything.
+- 
+- ✗ **DON'T use exposition dialogue.** Avoid lines like "As you know, I control the Eastern District..." Yakuza characters know their world; this reads false and kills pacing.
+- ✗ **DON'T make violence gratuitous.** Graphic gore without consequence desensitizes readers and suggests the author is indulging rather than serving story.
+- ✗ **DON'T create protagonists with no genuine attachment to the organization.** If the protagonist doesn't care about the yakuza/triad, readers won't either. Make loyalty real before you test it.
+- ✗ **DON'T have all yakuza speak/act identically.** Characters differentiate by age, rank, personal code, and regional origin. Avoid stereotypical "tough guy" speech patterns for everyone.
+- ✗ **DON'T climax with public shootouts.** Yakuza prefer discretion. Climactic confrontations should be intimate (office, home, hospital room), not spectacular.
+- ✗ **DON'T ignore cultural specificity.** If writing yakuza, research Japanese hierarchy terms, tattoo meanings, and modern organizational structure. If writing triads, understand Cantonese honorifics and Hong Kong geography. Accuracy builds reader trust.
+- ✗ **DON'T make the criminal code obviously evil.** The appeal of yakuza/triad fiction is exploring honor in amoral contexts. If the code is transparently corrupt, the tension collapses.
+- 
+- Structure:**
+-  Superior: Short declarative statement, no explanation
+-  Subordinate: Confirmation; no questions unless invited
+-  Superior: Conditional approval or implied threat
+- Example:**
+- ```
+- "You spoke to the Yamamoto-gumi," Nakamura said.
+- "Yes, boss."
+- "Don't again."
+- "I understand."
+- Nakamura turned away. The conversation was finished.
+- ```
+- 
+- Structure:**
+-  Both use indirect language; subtext carries meaning
+-  References to shared history or organizational loyalty
+-  Silence signals agreement or disagreement
+- Example:**
+- ```
+- "Things change," Kenji said.
+- "They do," Tanaka agreed.
+- "The old agreements might not hold."
+- "No. They might not."
+- They drank in silence. The decision was made.
+- ```
+- 
+- Structure:**
+-  Civilian asks direct questions; yakuza responds with indirect answers or silence
+-  Civilian assumes legal/moral frameworks; yakuza operates outside them
+-  Creates reader understanding through outsider bewilderment
+- Example:**
+- ```
+- "Why would you do that? It's illegal," she said.
+- "The boss asked me to."
+- "That's not a reason. That's—why would that matter?"
+- He looked away. "You wouldn't understand."
+- "Then explain it to me."
+- "I can't."
+- ```
+- 
+- Structure:**
+-  Formal address; minimal emotional content
+-  References to organizational rules, not personal grievance
+-  Tension underlies every word; neither person fully trusts the other
+- Example:**
+- ```
+- "Your people crossed the Shinbashi line," the Azuki-kai enforcer said.
+- "A mistake," Hiroshi replied. "It won't happen again."
+- "See that it doesn't."
+- "Is there compensation owed?"
+- "Not if it doesn't happen again."
+- ```
+- 
+- | Pitfall | Symptom | Fix |
+- |---------|---------|-----|
+- | **Weak Organizational Logic** | Plot holes; events feel coincidental | Ensure every major event follows from organizational rules and territorial constraints |
+- | **Protagonist Lacks Real Loyalty** | Reader doesn't care about the stakes | Show genuine reasons protagonist is embedded: debt, family, belief, protection, ambition |
+- | **Exposition in Dialogue** | Dialogue feels false; pacing slows | Cut lines like "As you know..." Let readers infer structure from how characters address each other |
+- | **Graphical Violence Without Purpose** | Desensitizes readers; feels indulgent | Show aftermath and cost; let violence serve character development, not spectacle |
+- | **All Characters Sound Identical** | Flattens the story; loses distinction | Vary speech by rank, age, education, regional origin |
+- | **Climax Is Too Public** | Contradicts yakuza preference for discretion | Move climax to intimate space; emphasize codes over firepower |
+- | **Absence of Impossible Choice** | Story feels like plot summary, not character study | Ensure protagonist must violate something sacred; both options carry cost |
+- 
+- Speech Patterns:**
+-  Declarative; rarely asks questions
+-  Rarely explains decisions
+-  Uses conditional language sparingly: "You will..." not "Will you?"
+-  Strategic silence; lets others speak to break tension
+-  Personal philosophy encoded in oblique references ("A river that moves is clean; a river that stagnates is dead")
+- Form of Address:** Characters use formal title + honorific ("Nakamura-sama," "Oyabun")
+- Example:**
+- ```
+- "There will be no retaliation against the Yamamoto-gumi," the oyabun said.
+- "But boss, they violated—"
+- "I said there will be none."
+- The subordinate bowed and left. He would enforce this decision, though he didn't understand it.
+- ```
+- 
+- Speech Patterns:**
+-  Respectful to superiors; commanding to subordinates
+-  Explains reasoning (unlike oyabun), but briefly
+-  Uses directives ("Do this"; "Don't do that")
+-  Bridges superior and subordinate concerns; often manages organizational politics
+- Example:**
+- ```
+- "The boss wants territorial negotiations with the Azuki-kai," Tanaka told his crew.
+- "They started this—"
+- "The boss has decided. We follow. Understood?"
+- ```
+- 
+- Speech Patterns:**
+-  Deferential; offers choices rarely; answers yes/no primarily
+-  Uses honorifics (san, sama, boss) reflexively
+-  Indirect phrasing: "If the boss permits..." rather than "Can I?"
+-  Concerns center on immediate tasks and survival
+-  Unconsciously uses organizational jargon
+- Example:**
+- ```
+- "Bring the payment to Nakamura-sama by sunset," the wakagashira said.
+- "Yes, I understand."
+- "You know where?"
+- "The usual place?"
+- "Yes."
+- ```
+- 
+- Speech Patterns:**
+-  Direct questions; assume legal/moral frameworks
+-  Confusion at yakuza protocols and non-responses
+-  Ask "why?" reflexively (yakuza rarely answer)
+-  Tend to explain or justify their actions
+-  Provide reader perspective on underworld strangeness
+- Example:**
+- ```
+- "Why didn't you report it to police?" she asked.
+- "I can't."
+- "Why not?"
+- "Because I can't."
+- "That's not an answer. That doesn't make sense."
+- "No," he agreed. "It doesn't."
+- ```
+- 
+-  [Example: "Melodramatic emotional descriptions"]
+-  [Example: "Exposition through dialogue"]
+-  [Example: "Speech tags like 'snarled' or 'gasped'"]
+-  [Example: "Understatement and implication"]
+-  [Example: "Action beats grounding dialogue in physicality"]
+-  [Example: "Silence as a character in conversation"]
+- ```
+- 
+- Purpose:** Define your protagonist's position within the yakuza/triad hierarchy and their relationship to the honor code.
+- ```
+- | Pitfall | Why It Fails | Solution |
+- |---------|-------------|----------|
+- | Exposition through dialogue ("As you know, I'm the oyabun of...") | Yakuza characters know their world; this reads false | Show status through address forms and deference |
+- | Graphic violence without consequence | Desensitizes readers; glorifies brutality | Emphasize aftermath: pain, shame, loss |
+- | Protagonist has no genuine loyalty to organization | Undermines entire premise | Ensure protagonist has real reasons to stay |
+- | All yakuza speak/act identically | Flattens characterization | Differentiate by rank, age, personal code |
+- | Plot driven by coincidence | Weakens structure | Let organizational logic drive events |
+- | Climax involves public shootout | Contradicts yakuza preference for discretion | Keep climax intimate; emphasize codes over firepower |
+- 
+- 1. **Restraint over Excess:** The most powerful moments are quiet. Trust implication.
+- 2. **Loyalty is the True Subject:** Surface plot is crime; real story is what loyalty demands.
+- 3. **Honor is Insufficient:** Every yakuza/triad story tests whether honor suffices in an amoral world. It doesn't. This is the revelation.
+- 4. **Urban Landscapes Matter:** Cities aren't backdrop; they're character, mood, and constraint.
+- 5. **Specificity Demands Research:** Hierarchical terms, cultural protocols, contemporary organizational realities—accuracy serves authenticity.
+- 
+- Document Version:** 1.0 | **Last Updated:** January 2026 | **Word Count:** 1,847

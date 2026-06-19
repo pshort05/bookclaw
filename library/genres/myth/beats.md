@@ -1,0 +1,74 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- The Victorian era witnessed the emergence of fantasy literature as a distinct genre, with George MacDonald's Phantastes (1858) considered the first fantasy novel written for adult audiences. This period also saw the systematic study of mythology as an academic discipline, as scholars began distinguishing between mythological narratives and historical fact. The rise of scientific thinking created a need to categorize traditional stories, leading to the formal concept of "mythology" as separate from empirical history.[2][7][8]
+- The late twentieth and early twenty-first centuries have witnessed an unprecedented renaissance in myth fiction, marked by several key developments. The coining of the term "mythic fiction" by Charles de Lint and Terri Windling provided a framework for understanding stories that drew from mythological sources while maintaining contemporary relevance. This period has been characterized by increasing diversity in both source mythologies and authorial voices, moving beyond the traditional Greco-Roman focus to embrace global mythological traditions.[1][10][11][12]
+- Core Characteristics and Elements
+- Mythic fiction is characterized by several key elements that distinguish it from other fantasy subgenres. The presence of archetypal characters – heroes, mentors, tricksters, and shadow figures – provides readers with instantly recognizable roles while allowing for creative interpretation and subversion. These archetypes tap into what Carl Jung termed the collective unconscious, creating stories that resonate on a deep psychological level.[15][17][16]
+- The integration of mythological motifs serves as another defining characteristic. Common motifs include the hero's journey, creation myths, flood narratives, and descent into the underworld. These recurring patterns provide structural frameworks that authors can either follow or deliberately subvert to create new meanings.[16][18][19]
+- Recent trends in mythic retellings have emphasized feminist perspectives, with authors like Jennifer Saint (Ariadne, 2021), Pat Barker (The Silence of the Girls, 2018), and Natalie Haynes (A Thousand Ships, 2019) centering female experiences in traditionally male-dominated narratives. These retellings often challenge original interpretations, reframing characters previously portrayed as villains or side characters as complex protagonists with agency and depth.[22][24][21]
+- Contemporary mythic fiction places mythological elements in modern settings, creating narratives where ancient gods and creatures navigate the twenty-first century. Rick Riordan's Percy Jackson series revolutionized this subgenre by depicting Greek gods as active participants in modern American life, while Neil Gaiman's American Gods explores how mythological figures adapt to new cultural contexts.[25][26][27][28]
+- Authors working in the mythpunk tradition frequently employ fragmented narratives, unreliable narrators, and genre-blending techniques to create works that are both challenging and illuminating. These stories often focus on marginalized figures from mythology, giving voice to characters who were silenced or simplified in traditional tellings.[14][1]
+- Myth fiction explores fundamental themes that transcend cultural boundaries, addressing universal aspects of human experience through mythological frameworks. The tension between fate and free will appears consistently across mythic narratives, reflecting humanity's ongoing struggle to understand the balance between destiny and personal agency. This theme manifests in contemporary works through characters who must navigate prophetic expectations while asserting individual choice.[15][16][19]
+- Archetypal Characters and Their Evolution
+- Trickster figures have gained particular prominence in contemporary myth fiction, serving as agents of change and challenge to established order. These characters often embody the genre's tendency to question authority and traditional narratives, using humor and subversion to highlight societal contradictions.[32][19][16]
+- Architectural and geographical symbols – mountains, forests, crossroads, and thresholds – create spatial metaphors for psychological and spiritual states. These elements help authors translate internal character development into external narrative action, making abstract concepts tangible for readers.[16][20]
+- Impact on Literature and Popular Culture
+- Myth fiction has significantly influenced broader literary trends, particularly in its approach to narrative structure and character development. The genre's emphasis on archetypal patterns has informed understanding of storytelling mechanics, with Joseph Campbell's analysis of the hero's journey becoming a foundational text for writers across genres.[35][4][36][16]
+- The influence of myth fiction extends far beyond literature into film, television, graphic novels, and interactive media. The success of works like Rick Riordan's Percy Jackson series has led to numerous adaptations and inspired similar mythologically-based properties. Television series like Netflix's KAOS demonstrate ongoing popular interest in mythological narratives adapted for contemporary audiences.[35][4][29][24]
+- Video games and interactive media have increasingly drawn on mythological themes and structures, with many games incorporating mythic narrative patterns and allowing players to engage with mythological content in immersive ways. This trend reflects the genre's adaptability to new storytelling technologies and formats.[9]
+- Several authors have been instrumental in shaping contemporary myth fiction, establishing both artistic standards and popular appeal. Neil Gaiman stands as perhaps the most influential figure in modern mythic fiction, with works like American Gods (2001) and Norse Mythology (2017) demonstrating how mythological content can address contemporary concerns while maintaining cultural authenticity. Gaiman's approach combines scholarly knowledge of mythological traditions with accessible prose and compelling character development.[25][28][38]
+- Madeline Miller has achieved both critical acclaim and popular success with her mythological retellings, particularly The Song of Achilles (2011) and Circe (2018). Miller's work is characterized by psychological depth, beautiful prose, and careful attention to mythological source material while offering fresh perspectives on familiar stories. Her success has helped establish mythic retelling as a major subgenre and influenced numerous subsequent authors.[21][23]
+- The rise of diverse voices in myth fiction reflects broader changes in publishing and reader expectations, with increasing demand for authentic representation of global mythological traditions. This trend suggests that the future of myth fiction will be characterized by even greater cultural diversity and innovative approaches to traditional narratives.[12][34]
+- https://spines.com/character-archetypes/
+- https://www.reddit.com/r/GreekMythology/comments/1es2ptq/what_modern_retelling_books_do_you_actually_like/
+- https://www.rcvielee.com/blog/the-impact-of-mythology-on-modern-fantasy-fiction
+- https://www.facebook.com/groups/FantasyFaction/posts/3661684197474081/
+- Epic & Awe-Inspiring: The scale is grand. The stakes involve gods, mortals, and the fate of the world. Evoke a sense of wonder, terror, and the sublime. The actions of individuals ripple through cosmology.
+- Intimate & Human: Ground the epic scale with visceral, personal emotion. Focus on the internal landscape of the characters—their loves, jealousies, grief, and ambitions. The reader should feel the weight of immortality or the sting of a prophecy.
+- Tragic & Inevitable: Often leans into the conventions of tragedy. A sense of fate or a coming doom should permeate the narrative, even in moments of triumph. Characters struggle against destiny, and their choices have resonant consequences.
+- 3. Characterization
+- Mortals as a Mirror: Mortal characters are essential. They provide the grounding perspective, highlighting the alien nature and terrible power of the gods. Their brief, passionate lives create the stakes.
+- The World is a Character: The setting is alive and infused with divine power. A river is a god, a forest is a sacred domain, a cave can be a passage to the Underworld. The natural world reacts to the emotions and conflicts of the gods.
+- Chosen POV Character(s):
+- Character Tropes
+- Recurring narrative devices, character types, and plot elements that appear consistently across myth fiction literature
+- Character Tropes
+- Category: Character
+- Category: Character
+- Category: Character
+- Character thrust into heroic role against their will; must overcome cowardice or selfishness to embrace destiny
+- Category: Character
+- Character with hidden noble or divine lineage; revelation of true identity drives plot and transformation
+- Category: Character
+- Category: Character
+- Category: Character
+- Category: Character
+- Category: Character
+- Character whose loyalty or nature remains uncertain; literally or figuratively transforms
+- Category: Character
+- Category: Character
+- Category: Character
+- Category: Character
+- Category: Character
+- Prediction driving plot forward; characters attempt to fulfill, avoid, or interpret destiny
+- Conflict between divine generations or factions; younger gods overthrowing elder powers
+- Magical Artifact
+- Story within story; present-day character discovering ancient tale
+- Journey to realm of dead; returning with knowledge, loved one, or proof of heroism
+- Recognition Scene
+- Third Person Limited remains the most common choice for mythic retellings, allowing psychological depth while maintaining mythic scope. This POV enables intimate character exploration while preserving the elevated tone essential to mythological narratives.[5][6]
+- Frame narratives—stories within stories—work exceptionally well for mythic storytelling, creating layering that enhances the sense of ancient wisdom being transmitted. This structure can also serve pacing functions, providing emotional distance after intense scenes.[9][8]
+- Effective myth fiction employs varied sentence length, mixing short, impactful statements with longer, flowing constructions. Deliberate repetition creates mythic rhythm: "Five days he walked... Five days he waited... Five days he was transformed". This parallel structure produces a formal, mythic resonance that echoes oral storytelling traditions.[10][4][1]
+- Myth fiction typically operates in a formal-to-consultative register, avoiding casual or intimate registers unless justified by specific character or setting requirements. However, this formality must maintain contemporary clarity—modern readers should comprehend without constant translation.[3][12][13][5]
+- Myth fiction dialogue should sound natural yet elevated, with characters speaking like real people but with slight formality appropriate to their roles. Gods and divine beings employ more formal, measured speech, sometimes speaking in pronouncements that reflect their power. Mortal characters use more naturalistic patterns, showing awe when addressing the divine.[10][1]
+- Dialogue tags follow general fiction conventions: "said" remains effective and invisible, action beats break up dialogue while revealing character, and emotional weight should reside in the dialogue itself rather than elaborate tags.[15][1]
+- The Hero's Journey provides a natural framework for mythic narratives, while three-act structure works well for longer fiction. Circular structure, where beginning and end mirror each other, reinforces mythic timelessness. Episodic structure, linking multiple adventures through theme rather than tight causality, reflects traditional mythological storytelling.[16][9][1]
+- Ritual pacing—slower, more deliberate prose for sacred or significant moments—honors the weight of mythological events. Strategic scene length variation balances action with reflection, while clear transitions mark boundaries between mortal and divine realms or different time periods.[18][17][8]
+- Natural phenomena often reflect character emotions or plot developments, maintaining the mythological tradition of correspondence between human and cosmic events. Archetypal images—the journey, the threshold, the descent, the return—carry accumulated cultural weight that deepens narrative resonance.[14][19][1]
+- Literary Mythic: Emphasize prose quality and depth with complex characterization, ambiguity, and multiple interpretive layers.[22][2]
+- Avoid info-dumping mythology—integrate background naturally through action and dialogue. Resist passive protagonists; even fated heroes must make meaningful choices. Maintain cultural sensitivity through thorough research and respect for source traditions. Ensure consistent tone, as mixing comedy and tragedy requires considerable skill. Most importantly, never neglect character for plot—readers need emotional connection even with legendary figures.[23][20][19][5][1]
+- Effective myth fiction revision ensures voice feels timeless yet accessible, POV serves story consistently, pacing varies appropriately for mythic scope, symbolism enhances without overwhelming, character voices remain distinct, world-building achieves immersion, themes resonate through multiple layers, cultural elements reflect research and respect, openings hook immediately, and endings provide satisfying closure while maintaining mythic timelessness.[2][1][3]
+- https://reactormag.com/six-distinct-fantasy-voices/
+- https://www.thewordling.com/the-three-act-structure/

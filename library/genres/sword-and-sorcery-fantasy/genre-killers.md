@@ -1,0 +1,41 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- Muscular Verbs: Use aggressive, kinetic verbs (e.g., cleaved, smashed, lurked, erupted). Avoid passive construction.
+- Purple yet Punchy: You may use evocative, slightly archaic adjectives (e.g., stygian, eldritch, cyclopean), but keep sentences rhythmic and driving. Avoid meandering.
+- Negative Constraints (Avoid)
+- Excessive Exposition: Avoid "Info-dumping." If it doesn't try to kill the hero or make them rich, the reader doesn't need to know the history of it.
+- Upper left (Color Light Red): Low Demand, High Saturation; Label as ‘Avoid These Opportunities’
+- Blood and Violence: Rather than euphemizing combat, S&S embraces blood and violent imagery as markers of authentic reality and genuine stakes. Violence is depicted viscerally and meaningfully, avoiding both gratuitous spectacle and sanitized abstraction.[13][14]
+- Dark Romance and Romantasy Ascendance: The 2023-2025 period witnessed explosive growth in romance-fantasy hybrids, with dark romance and dark romantasy establishing dominant market positions. According to Bloomberg data, romantasy achieved $610 million in sales during 2024, up from $454 million in 2023—a 34% year-over-year increase. Leading titles include Rebecca Yarros's Fourth Wing (1.7 million copies sold in 2023, #1 fantasy bestseller), Sarah J. Maas's A Court of Thorns and Roses series (continued dominance through series continuations), and indie crossover success like Brynne Weaver's Butcher and Blackbird (dark rom-com about serial killers). Dark romance experienced 40% year-over-year growth through 2024-2025, representing fantasy's fastest-growing segment.[19][29][20][30][18]
+- Upper Left—Avoid These Opportunities (Low Demand, High Saturation): This quadrant encompasses traditional epic fantasy and high fantasy within the S&S context. These segments experience limited reader appetite and substantial market saturation, creating unattractive investment profiles. Traditional publishers and indie authors should minimize investment in pure traditional/high fantasy S&S variants, recognizing that reader preference has shifted toward grimdark, dark romance, and contemporary indie S&S.[6][7]
+- The strategic positioning matrix indicates that publishers and authors should prioritize development of properties in the "Harvest These Opportunities Now" quadrant—particularly dark romance/dark romantasy integrating grimdark elements, contemporary indie S&S with literary quality matching traditional publishing standards, and diverse S&S variants addressing underserved reader segments. Minimal investment should target the "Avoid These Opportunities" quadrant (traditional high fantasy), while "Niche Opportunities" represent long-term platform-building and leadership establishment potential. The "Crowded" quadrant demands exceptional differentiation and quality to compete successfully against established market leaders.[9][22][7][30][18][6]
+- Diversity & Representation – Incorporating diverse perspectives while avoiding stereotypes
+- Style & Prose – Sentence structure, techniques, and common pitfalls
+- Concise explanations avoiding excessive theory
+- Vocabulary: Mix of contemporary and archaic; avoid flowery fantasy-speak
+- Avoid "As you know..." constructions entirely
+- Animation: Show movement, feints, reactions; avoid "he attacked, she blocked"
+- Avoiding Common Pitfalls
+- Don't choreograph balletic sequences; emphasize brutality
+- Avoid extended combat scenes unless thematically significant
+- Don't use violence gratuitously; justify every fight narratively
+- Don't depict heroes as invincible; injuries and disadvantages matter
+- Authenticity: Ground worlds in cultural/historical realism; avoid monocultures
+- Growth Through Experience: Characters learn through failure and consequence
+- Defeat Without Redemption: Villains don't convert or repent; merely lose
+- Avoiding Stereotypes
+- Don't tokenize; integrate diverse characters fully into narrative
+- Avoid "exotic other" framing; normalize non-European aesthetics
+- Don't reduce complex characters to identity markers
+- Don't apologize for or explain character diversity
+- Avoid exoticizing language; normalize diverse cultural elements
+- Metaphor Use: Employ metaphor for thematic resonance; avoid purple prose
+- Avoiding Common Pitfalls
+- Don't use multiple exclamation marks for emphasis
+- Avoid flowery, ornate descriptions; directness serves S&S better
+- Don't interrupt action for extended worldbuilding exposition
+- Avoid lengthy introspection; keep thoughts tied to immediate circumstances
+- Don't use archaic pronouns (thee, thou) without consistent justification
+- Tropes to Subvert or Avoid

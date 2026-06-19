@@ -1,0 +1,69 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+- Opening (First 10% of narrative)**:
+-  [ ] Character's role within military hierarchy established
+-  [ ] Military organization introduced (unit, ranks, culture)
+-  [ ] Core external conflict established (enemy, impossible orders, etc.)
+-  [ ] Mentor relationship or unit bond introduced (will sustain narrative)
+-  [ ] Character's initial limitation or flaw revealed (will drive progression)
+- Rising Action (Next 40%)**:
+-  [ ] Character advancing through progression (rank, skill, responsibility)
+-  [ ] Military duty creating genuine moral dilemmas
+-  [ ] Unit bonds tested through rising stakes
+-  [ ] Character discovering costs of advancement
+-  [ ] Organizational structure limiting and enabling character action
+- Midpoint (Around 50%)**:
+-  [ ] Major reversal or revelation showing stakes are higher than believed
+-  [ ] Character's loyalty tested (unit vs. duty vs. conscience)
+-  [ ] Point of no return—character committed to path despite costs
+-  [ ] Mentor relationship transformed (death, betrayal, or deepened trust)
+- Second Half (Next 35%)**:
+-  [ ] Consequences of midpoint choice cascading outward
+-  [ ] Organizational pressure increasing
+-  [ ] Unit fragmentation or transformation
+-  [ ] Character forced toward final choice between duty and morality
+-  [ ] Setup for climactic decision with no good options
+- Climax (Final 10%)**:
+-  [ ] Character chooses between military obligation and personal morality
+-  [ ] Choice carries visible organizational consequences
+-  [ ] Unit's response to character's choice shows character arc resolution
+-  [ ] Aftermath establishing new organizational reality
+- 
+-  [ ] Does military hierarchy feel functionally authentic?
+-  [ ] Can reader track organizational relationships without explanation?
+-  [ ] Does dialogue reflect rank differences naturally?
+-  [ ] Are emotional moments earned through character experience?
+-  [ ] Does character voice show military training's effect on thinking?
+-  [ ] Is progression (skill, rank, responsibility) visible and meaningful?
+-  [ ] Do unit bonds feel genuine and worth defending?
+-  [ ] Do characters face genuine moral dilemmas, not simple good-vs-evil?
+-  [ ] Does prose balance procedural clarity with emotional authenticity?
+-  [ ] Is violence shown as consequence, not spectacle?
+- 
+- Military SF-Fantasy succeeds through **authenticity within imagination**. Readers (especially military-experienced ones) detect inauthenticity immediately. Ground fantastical elements in realistic military culture: how organizations function under pressure, how rank constrains agency, how duty creates moral complexity, how shared danger forges bonds deeper than family.
+- The genre's power emerges from tension between individual desire and collective obligation, between personal morality and military duty, between who soldiers were and who they become.
+- Write that tension truthfully.
+- These five templates are designed for NovelCrafter's Codex system. Each template provides structure for organizing critical information about military SF-Fantasy stories.
+- How to Use**:
+- 1. Create a new Codex section for each template type
+- 2. Copy the entire template into your Codex entry
+- 3. Replace bracketed text [like this] with your story-specific information
+- 4. Delete template instructions (text in italics) after filling in content
+- 5. Leave sections blank if not applicable to your story
+- Template Organization**:
+-  **Genre Guide**: Reference for your story's military SF-Fantasy specific parameters
+-  **Style Guide**: Writing voice, dialogue, prose conventions for your story
+-  **Protagonist**: Character detail for your POV character(s)
+-  **Story Structure**: Arc planning using military narrative framework
+-  **World-Building**: Military organization, hierarchy, and functional systems
+- 
+- Codex Entry Type**: Genre Guide | **Story**: [Your Story Title] | **Date Created**: [Date]
+- [Select one or more]:
+-  [ ] Military Progression Fantasy
+-  [ ] Grimdark Military
+-  [ ] Space Opera Military
+-  [ ] LitRPG Military Hybrid
+-  [ ] Military Romance
+-  [ ] Other: [Specify]

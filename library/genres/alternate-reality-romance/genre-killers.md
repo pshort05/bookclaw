@@ -1,0 +1,95 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- | Pitfall | Fix |
+- |---------|-----|
+- | **Info-dump worldbuilding** | Embed rules into conflict and character discovery |
+- | **Underdeveloped alternate world** | Make world feel as real as romantic relationship; use sensory detail |
+- | **Romance feels secondary to world** | Ensure romantic obstacles mirror external stakes; weave them together |
+- | **Love interest lacks agency** | LI must drive plot and relationship; avoid passive dream-love |
+- | **Unclear stakes for staying/leaving** | Make returning to original world narratively possible but emotionally impossible |
+- | **Identical worlds separated by portal** | Differentiate realities through sensory, cultural, and systemic details |
+- 
+- ✓ **Create tangible sensory differences** between worlds (sight, sound, smell, taste, tactile)
+- ✓ **Establish world rules early** and respect them throughout
+- ✓ **Make love interest's world/reality integral** to their personality and motivation
+- ✓ **Interweave romance and worldbuilding** so neither overshadows the other
+- ✓ **Give love interest a reason to resist** the relationship (duty, fear, existing bonds)
+- ✓ **Use the alternate reality as metaphor** for romantic transformation
+- ✓ **Clarify stakes for staying/returning** to original world; make both paths emotionally viable
+- ✓ **Escalate romantic intimacy alongside** external stakes escalation
+- ✓ **Show protagonist learning the world's rules** through discovery, not exposition
+- ✓ **End with definitive answer:** Does protagonist stay? Do they stay together?
+- ✗ **Don't treat worldbuilding and romance as separate tracks**—weave them together
+- ✗ **Don't use love interest as exposition device** ("As you know, in our world...")
+- ✗ **Don't make returning to original world painless** (if it's easy to leave, stakes disappear)
+- ✗ **Don't create identical worlds** (what's the point of the alternate reality?)
+- ✗ **Don't underdevelop the love interest** (they should drive plot, not be driven by it)
+- ✗ **Don't switch POV mid-scene** (limits reader immersion in disorientation)
+- ✗ **Don't front-load exposition** (bury worldbuilding in conflict and character discovery)
+- ✗ **Don't create love interest as "dream" character** (they need flaws, contradictions, agency)
+- ✗ **Don't write ambiguous endings** about romantic commitment or world choice
+- ✗ **Don't use the other world as punishment** (avoid "wrong world = suffering" trope without complexity)
+- 
+- ```
+- [CHARACTER A] initiates / responds with emotional subtext
+- [DIALOGUE LINE - reveals character/world/conflict]
+- [ACTION BEAT - shows physical/emotional state]
+- [CHARACTER B] responds with tension or vulnerability
+- [DIALOGUE LINE - deepens intimacy or conflict]
+- [ACTION BEAT - raises stakes or reveals intention]
+- ```
+- > "You shouldn't be here." Kael's voice carries warning, but her hand doesn't move from his shoulder.
+- >
+- > "And yet." He turns slowly, and the amber of the Veil-light catches in his eyes. "I am."
+- >
+- > She's calculating—he can see it in the set of her jaw. How much to tell. How much to risk. When she finally speaks, it's barely above a whisper.
+- >
+- > "If the Keepers find you harboring a Displaced, they'll take you too."
+- >
+- > "Then don't let them find me." He steps closer, and she doesn't retreat. "Let me help you remember who you were before this world taught you to forget."
+- What this does:** Establishes world stakes (Keepers, Displaced), introduces opposition/conflict, shows attraction through proximity and challenge, hints at backstory mystery.
+- > "I don't know how to be happy here." The words crack from her like a confession. "I don't know if I'm allowed to want this—want you—when staying means everyone I knew stops existing."
+- >
+- > He doesn't rush to comfort her. Instead, he sits with the weight of it. When he speaks, his voice is steady.
+- >
+- > "Then we'll be unhappy together until we figure it out. That's allowed too."
+- What this does:** Raises emotional stakes, shows love interest as emotionally intelligent (not dismissing her fear), creates space for complicated happiness.
+- > "You're leaving." Not a question. His hands have gone white-knuckled on the stone railing.
+- >
+- > "The portal closes at dawn. I have to—"
+- >
+- > "I know what you have to do." His laugh is bitter. "Duty. Obligation. The real world calling. I've heard it all before, and I'll hear it again the moment you cross that threshold. The real world will seem more real. More true. And we'll just be the beautiful lie you told yourself in a place that isn't home."
+- >
+- > She wants to argue. Instead: "It's not a lie."
+- >
+- > "No?" He finally looks at her. "Then prove it. Choose to stay knowing you could leave. Not because the portal closes. But because you want to."
+- What this does:** Shows antagonistic forces (duty vs. love), makes love interest's pain legitimate, raises stakes by demanding genuine choice.
+- 
+- | Pitfall | Symptom | Fix |
+- |---------|---------|-----|
+- | **Worldbuilding-heavy exposition** | Paragraphs of explanation; character confusion feels like reader's confusion | Embed rules into character conflict. "You broke that, so now..." reveals rules through consequence. |
+- | **Generic alternate world** | Could swap world for any fantasy setting; no unique sensory signature | Spend 500 words establishing 2-3 sensory differences specific to this reality (light, air, sound, culture). |
+- | **Love interest as plot device** | LI only appears when protagonist needs information or rescuing; no independent goals | Give LI a goal that conflicts with romance (duty to community, fear of displacement, existing commitment). LI must make hard choices. |
+- | **Romance feels tacked on** | Romantic scenes interrupt worldbuilding; romance and plot exist separately | Weave them: each romantic beat should also advance external plot. Each plot beat should deepen romance or complicate it. |
+- | **Unclear stakes for leaving/staying** | Ending feels arbitrary; reader doesn't understand why protagonist commits | Make both options narratively viable. Show cost of staying AND cost of returning. Protagonist chooses despite cost. |
+- | **Love interest lacks dimension** | LI is perfect, beautiful, supportive without flaws or contradictions | LI needs: conflicting loyalties, fear, past trauma, moral gray areas, things they're wrong about. Make them complex. |
+- | **Slow worldbuilding, rushed romance** | Nothing happens for 200 pages, then romance speeds up in final act | Alternate scenes: one world-revelation scene, one intimate scene, one action scene. Maintain balance. |
+- | **Info-dump dialogue** | Characters explain world to each other despite both knowing it ("As you know, the Keepers...") | Use dialogue for conflict, not information. Embed world-building into sensory details and action. |
+- | **Ambiguous ending** | Reader unsure if protagonist stays, if couple is together, about their future | Final scene must answer: 1) Does protagonist stay in alternate world? 2) Are they together romantically? 3) What's their future? |
+- | **Weak sensory immersion** | Reader forgets they're in alternate world; feels generic | Use specific sensory details: gravity feels different, light has color, air tastes strange, sounds are unfamiliar. Repeat signature details. |
+- 
+- Powerless Character → Powerful Character:**
+- Use formal address, questions, deference mixed with hidden resistance. Short sentences show tension.
+- > "Will you help me, Lord Keeper? Or will you turn me in to the others?"
+- Equal Power, Romantic Interest:**
+- Use wit, challenge, physical proximity. Balance between vulnerability and strength.
+- > "You're infuriating." "And?" "And I can't stop thinking about you." "Then don't."
+- Powerful Character → Powerless Character:**
+- Can afford to be direct, softer (paradoxically), or coldly formal. Show restraint as affection or cruelty.
+- > "You're in danger here. Stay close to me." Or: "You don't belong here. Leave before I'm forced to remove you."
+- Antagonistic Equals:**
+- Sharp exchanges, mutual respect masked as disdain, rapid-fire dialogue, matching wit.
+- > "You always did know how to ruin everything." "Only the things worth ruining."
+- 

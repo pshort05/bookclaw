@@ -1,0 +1,215 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Layer historical details into action naturally
+- Make character motivations authentic to medieval values
+- Project modern sensibilities onto characters
+- Strategic placement (weave into action/dialogue):
+- Know actual layout/geography
+- Show local character (trading city ≠ monastery ≠ forest village)
+- CHARACTER VOICE DEVELOPMENT
+- Rule: Character thinks within their knowledge frame; doesn't know modern concepts
+- How characters interact with protagonist
+- Religious Character:
+- Key: Characters from different classes/professions speak differently through vocabulary/formality, not dialect or accent.
+- Religious practices and authority structure
+- Fix: Weave details into action; trust reader; cut explanation
+- Fix: Make location and time specific; research thoroughly; show local/temporal character
+- Pitfall: Modern character sensibilities in medieval person
+- Fix: Remember medieval values (honor, duty, religious authority, hierarchy); character thinks within their worldview
+- Fix: Plant clues; make solution deducible through logic and character knowledge
+- Character introspection; moral complexity
+- Fair-play structure; puzzle-solving satisfaction
+- Action-adventure tone
+- WHEN WRITING EACH SCENE
+- Does dialogue advance plot/reveal character? (Not exposition or lecture)
+- Am I showing or telling? (Weave detail into action; avoid stopping narrative)
+- Would this character know/do this? (Check against medieval values/knowledge)
+- Does setting feel specific? (Not generic; shows local/temporal character)
+- Develop character relationships across series
+- Let character grow/change while maintaining core identity
+- Religious practices accurate
+- Character voice consistent and authentic
+- Characters have growth/change potential
+- Character is King: Even in mysteries, readers invest in character; develop relationships
+- Setting is Character: Medieval world should feel lived-in, specific, textured
+- Contents: At-a-glance rules, Do's/Don'ts, dialogue templates with examples, mystery structure checklist, setting checklist, common pitfalls & fixes, dialogue by social class, scene-writing checklist, research resources
+- Contents: Genre at a glance, prose rules, mystery structure, setting specificity, character voice, historical accuracy, reader expectations, common mistakes/fixes table, pre-writing checklist, dialogue examples, key principles, AI assistance notes
+- Reflects actual bestselling authors' techniques
+- Practical, actionable guidance throughout
+- Practical & Implementable:
+- Scene-writing guidelines
+- Character Development:
+- Practical Implementation:
+- Specify character dialogue voice from Codex
+- Details: Woven into action, never info-dumped
+- Tone: Atmospheric, intellectual, character-driven
+- ✓ Character they care about
+- ❌ Modern sensibilities in medieval characters
+- Protagonist Entry: Main character development
+- Research Notes Entry: Historical facts and source tracking
+- Dialogue Voice Entry: Character-specific speech patterns (repeat per character)
+- ✓ Practical, actionable guidance
+- Primary Tone: Contemplative, introspective; intellectual rather than action-driven
+- Emotional Register: Character-driven; explores moral complexity and difficult choices; justice is complicated
+- Purely action-driven pacing
+- Characters Speak Naturally: Slight formality and different speech patterns by class/education, not archaic
+- Dialogue Should: Reveal character, advance plot, show relationships; not lecture about history
+- Active Integration: Layer historical details into action/dialogue; don't pause narrative for description
+- Specific Authenticity: Know what actually existed; avoid "generic medieval"
+- Detail Economy: Strategic specificity beats exhaustive listing
+- Choose 2-3 vivid details per scene rather than cataloging everything
+- CHARACTER VOICE
+- Character-Specific: Protagonist's investigation reflects their training/knowledge
+- Internal Logic: Character thinks within their knowledge frame; doesn't know modern forensics or anachronistic concepts
+- Social Position Impact
+- Show female character's intelligence overcoming constraints
+- Intellectual Satisfaction: Reader understands solution; logic is clear
+- Religious Practices: Theological beliefs, monastery/church structure, religious authority
+- Minor Details: Small facts can be adjusted for story if not contradicting established history
+- Specific Characters: Fictional characters; historical figures should be respectfully portrayed but can have imagined thoughts
+- Specific Timeline: Can compress/adjust minor timeline elements if major events intact
+- Details Serve Story: Don't include research just because you did it; include details that illuminate character/plot/theme
+- Specific Beats: Use specific historical details in action/dialogue naturally
+- Character movement should be logical within actual layout
+- Benedictine vs. Cistercian practices differ
+- Local Character: Each place has specific flavor
+- How does context affect characters' concerns/motivations?
+- Duty vs. Conscience: Character torn between loyalty and truth-telling
+- Embed Thematically: Don't state themes; embed in character choices and mystery resolution
+- Respect Complexity: Avoid simplistic moral stances; show why characters choose as they do
+- Formality by Class: Noble/educated characters more formal; laborers/servants more direct
+- Religious Reference: Religious characters naturally reference faith/scripture (not overdone)
+- ❌ No characters explaining history to each other ("As you know...")
+- ✓ Dialogue reveals character and advances plot
+- ✓ Series potential: Relationships/character development across books
+- ⚠ Generic noble detective: Give distinctive characteristics; specific setting/time
+- ⚠ Evil nobleman: Give perpetrator believable motivation; nuanced characterization
+- ✓ Explicitly LGBTQ+ character (matter-of-fact, not plot point)
+- Character they care about; relationships that develop
+- Intellectual satisfaction from puzzle-solving
+- Series continuity; characters/world develop across books
+- Modernized sensibilities/morality in characters
+- Historical details woven into action/dialogue, not exposition
+- Character motivations authentic to era (medieval concerns/values)
+- Confirm character development across scenes
+- Character motivation and suspect development
+- https://www.writersdigest.com/write-better-fiction/6-practical-tips-for-writing-great-historical-fiction
+- https://writershelpingwriters.net/2013/11/mystery-writing-basics-characters-plot/
+- Worldview: Everything is filtered through the lens of the era—God, the Devil, the Saints, and the Feudal Order are real, tangible concepts to the characters, even the skeptics.
+- Deduction vs. Superstition: Characters should encounter "supernatural" explanations for crimes (demons, curses) and use logic to find the human cause behind them.
+- Olfactory: The Medieval world smells strongly. Incorporate the scent of incense, unwashed bodies, woodsmoke, roasting meat, and open sewage.
+- Tactile: Focus on textures—rough wool, cold stone, parchment, greasy tallow, rust.
+- "Translation English": Avoid archaic cheese (no "thee/thou/forsooth"). Instead, use formal grammar and avoid modern contractions in formal speech.
+- Titles & Hierarchy: Address is vital. Characters must show deference to superiors (My Lord, Father, Your Grace) and dismissal to inferiors.
+- Character Archetypes
+- Confessional Seal: The detective learns the truth through Confession but cannot act on it due to religious law.
+- Shadow and Flame: Scenes lit by flickering torches, candles, or hearths. The darkness is oppressive and hides the killer.
+- Key Trope: The Curse. The investigation teases actual supernatural elements before revealing the human trickery (or leaving it ambiguous).
+- Key Market Insight: Medieval mysteries are experiencing steady, sustainable growth driven by diverse protagonist types, understudied historical periods, and the rising demand for literary fiction with substantive female characters. The genre appeals primarily to adult readers aged 35+, though crossover appeal to younger readers is increasing through contemporary narrative voice and diverse cultural perspectives.
+- Defining Characteristics
+- Medieval Setting as Character - The historical period isn't merely backdrop; it shapes motives, evidence, investigation methods, and resolution. Medieval legal systems, religious hierarchies, social stratification, and technological limitations directly affect the mystery.
+- Character development, often romantic subplot
+- Series continuity (characters, relationships, world-building develop across books)
+- Characteristics: Protagonist is monk, nun, or other religious; mystery occurs within or involves religious institution; explores theological and spiritual dimensions.
+- Characteristics: Protagonist is member of nobility or operates within royal court; mysteries involve succession, legitimacy, political power; often includes romance
+- Characteristics: Set in medieval town or city; protagonist often merchant, craftsperson, official; explores merchant class and urban medieval life
+- Characteristics: Protagonist is physician, apothecary, or person with medical/scientific knowledge; mystery involves poison, disease, medical knowledge, or forensic insight
+- Characteristics: Protagonist is lawyer, advocate, judge, or person trained in law; mystery involves legal jurisdiction, testimonial evidence, competing legal traditions
+- Characteristics: Protagonist travels through medieval landscape as minstrel, fool, pilgrim, messenger; encounters mysteries in different towns/courts; episodic structure
+- Exploration of religious conviction, doubt, faith, hypocrisy, and spirituality. Church authority questioned; faith tested by evidence; characters struggle with contradictions between religious teaching and human reality.
+- Exemplars: Candace Robb's characters; Sharon Kay Penman's heroines
+- LGBTQ+ Characters and Relationships
+- Same-sex relationships portrayed; sexual orientation as aspect of character rather than plot point
+- Characters navigating multiple marginalized identities (gender + disability, race + gender, etc.)
+- Still nascent but gaining traction
+- Why Successful: Meticulous historical research; character development over extended series; blend of medicine, mystery, and larger historical events (plague, university politics)
+- Why Successful: Unique cultural/legal perspective; complex female protagonist; intellectual puzzles; series evolves while maintaining core appeal; author's decades-long commitment to character
+- Why Successful: Complex trauma-informed protagonist; rich medieval York setting; female character development; romance elements integrated naturally
+- Ethnic/Cultural Diversity: Medieval mysteries featuring non-Christian characters or non-European cultures are selling better; historically underserved market segment with strong reader appetite
+- Complex Protagonists: Characters with trauma, disability, moral ambiguity, or unconventional backgrounds outperform traditional "wise detective" archetype
+- Publishers actively acquiring
+- Why Trending: Addresses reader appetite for complex female characters; combines feminist revision with historical authenticity
+- LGBTQ+ characters (explicitly, not implied)
+- Characters of color in medieval settings (increasingly recognized as historically plausible)
+- Characters with disabilities navigating medieval world
+- Non-binary or gender-nonconforming characters
+- Why Trending: Crossover with gothic fantasy popularity; reader appetite for darker content; blurs genre boundaries attracting literary fiction readers
+- Official investigation (what authorities seek) vs. hidden truth (what actually happened)
+- Romantic relationship that develops across series; affects character development and motivation
+- Why Effective: Character investment; sustains long-term series reading; appeals to broader audience than pure mystery readers
+- Why Effective: Reflects medieval reality of justice/power dynamics; respects character development; intellectual/moral sophistication
+- The Innocent Wrongly Suspected - Someone obviously guilty appears guilty; investigation reveals actual perpetrator is unexpected
+- The Disabled/Neurodivergent Protagonist - Character functions excellently despite disability (physical, sensory, cognitive); disability is asset not obstacle
+- The Queer Character (explicitly, not subtext) - LGBTQ+ character treated matter-of-factly; orientation doesn't define entire character
+- Integration: Weave class/power into every aspect—not just plot but character motivation, investigation obstacles, and resolution stakes
+- Integration: Establish conflicting duties early; let tension build; resolution shows character's prioritization
+- Integration: Research actual medieval poisons; make identification require protagonist's specialized knowledge
+- Integration: Use river as escape route or crime scene; crossing as metaphor or literal plot element
+- Characteristics: Underexplored subgenres with limited current market presence but genuine reader interest among dedicated segments.
+- Folk Magic Medieval Mysteries - Medieval protagonist with knowledge of folk magic/witchcraft solving mysteries; explores tension between official religion and folk practice
+- LGBTQ+ Medieval Mysteries (explicit, non-subtext) - Medieval setting with LGBTQ+ protagonists as matter-of-fact; allows exploration of sexuality within historical context
+- Disabled/Neurodivergent Medieval Protagonists - Character with disability/neurodivergence as central to protagonist identity; disability as asset in investigation
+- Characteristics: Oversaturated with low reader demand; market has decided these aren't appealing; flooding market with more is futile.
+- Characteristics: Strong reader demand meets limited market supply; goldmine for new authors; first-mover advantage remains available.
+- Specifics: Female-centered monastery mysteries; morally ambiguous monk protagonist; monastery in crisis; reformed/apostate religious character; non-Benedictine monastery traditions
+- Characteristics: Popular subgenres with established bestsellers; market is crowded and competitive; still room for well-executed entries with distinctive angle.
+- Protagonist Innovation: Instead of another male monk detective, try reformed/apostate religious character, woman disguised in monastery, or lay detective investigating monastic crime
+- Publishers actively acquiring diverse medieval mysteries
+- LGBTQ+ characters in medieval settings
+- Merge trending elements: Female protagonist + Non-European setting + Medical mystery + LGBTQ+ character = Unique combination reduces competition
+- Character development across series is expectation
+- Medieval mystery readers are detail-oriented; factual errors destroy credibility
+- Medieval Mystery is a stable, mature genre with modest but consistent growth. The market supports 30-50 new traditionally published medieval mysteries annually, with significant self-publishing activity (much of lower quality). The genre is neither explosive growth (like Romantasy) nor declining (like some thriller subgenres); it occupies a sustainable mid-market position with devoted readership.
+- MODERATE PRIORITY: LGBTQ+ Medieval Mysteries (explicit, matter-of-fact) in underserved settings
+- Medieval Mystery is ultimately about meeting intellectual curiosity across two axes simultaneously. Readers want both the satisfaction of historical immersion AND the intellectual satisfaction of mystery solving. Successful medieval mysteries balance both; they neither privilege history over mystery (which produces history-lite fiction) nor mystery over history (which produces generic mysteries with period window-dressing).
+- Measured pacing; intellectual rather than action-driven
+- Character development and relationships
+- Period-appropriate character motivations
+- Series continuity; world/characters develop across books
+- Medieval mystery prose balances readable modern English with subtle historical flavor. Dialogue has period inflection without archaic constructions. Historical details are woven into action and sensory description, never info-dumped. The style is clear, accessible, and atmospheric.
+- Characters speak naturally; show class/education through vocabulary, not accent
+- Dialogue reveals character and advances plot
+- Layer historical details into action; don't pause narrative for description
+- Strategic specificity beats exhaustive listing
+- Show local character of setting
+- Setting Characteristics:
+- [What attracts readers to this subgenre. Example: "Access to cloistered world; contemplative tone; intellectual/spiritual exploration; combination of monastery politics and mystery puzzle."]
+- [Physical description. Example: "Cambridge at the intersection of rivers and roads. Market square in center. Several parishes; Abbey to the north. Castle as seat of authority. Describe actual layout; character movement should be logical."]
+- Social Character:
+- [Important characters' homes/workplaces]
+- [Crime scene location]
+- PROTAGONIST ENTRY: [Detective Character Name]
+- Name: [Character Name]
+- Location: [Where character operates]
+- [What is character's role that gives them investigation access? Example: "Brother of Shrewsbury Abbey; trained herbalist; respected by abbot for knowledge and judgment."]
+- [What expertise does character bring to investigation? Example: "Herbalism and medicine; knowledge of poisons; understanding of monastery politics and hierarchy."]
+- [Why does character investigate crimes? Example: "Duty to abbey and abbot; responsibility to pursue justice even when inconvenient; respect for human life."]
+- [How does character speak? Example: "Formal, educated; influenced by monastic training but not archaic. References spiritual framework naturally. Addresses others with appropriate titles and respect."]
+- [What constrains character's investigation? Example: "Monastic vows restrict mobility; must defer to abbot's authority; limited access to secular legal system; no authority to compel testimony."]
+- [How does character solve mysteries? Example: "Observation of detail; knowledge of poisons and medicines; understanding of human nature; interview and deduction; access to monastery records."]
+- [How does character grow across series? Example: "Relationships deepen; confidence in judgment grows; tension between duty and conscience increases; spiritual understanding questioned by exposure to human sin."]
+- [Character and their significance. Example: "Brother Oswin, elderly monk respected for wisdom; found dead in herb garden; death appears natural but investigation reveals murder."]
+- [What happened and why it matters. Example: "Poisoning through contaminated herb extract; victim discovered in morning; initial assumption is natural death from age; investigation reveals deliberate murder."]
+- Thematic Resonance: [What does solution reveal about the era/characters? Example: "Explores corruption beneath surface propriety; shows how medieval justice depends on power; reveals spiritual hypocrisy."]
+- [Book 1 - Specific facts learned]
+- [Book 2 - Specific facts learned]
+- [Church authority, monastic structure, religious practices, theology]
+- [Facts you'll use in narrative: poison identification, manuscript authentication, religious procedure, local geography, specific historical figures, etc.]
+- [Checklist of facts confirmed as historically accurate]
+- DIALOGUE VOICE ENTRY: [Character] Speech Patterns
+- Name: [Character Name] - Dialogue Voice
+- Character: [Who]
+- Education Level: [Educated/Literate/Trained/Practical knowledge/Illiterate]
+- Voice Characteristics:
+- "[Full paragraph of dialogue showing this character's typical speech pattern]"
+- [What defines how this character speaks? What shows their position/education/era?]
+- [Anything that would sound wrong for this character - anachronisms, wrong register, wrong vocabulary for their position]
+- [How does institution interact with secular/other religious authority? Example: "Abbot answers to bishop; abbey pays tithes to church; abbey provides refuge for travelers; abbey holds legal authority over surrounding lands."]
+- Protagonist Entry: [Detective character] - Main character details
+- Research Notes Entry: Medieval Research - [Your setting] - Historical facts
+- Dialogue Voice Entries (1 per major character): Character speech patterns
+- Use Research Notes to track historical facts and avoid anachronisms
+- Reference Dialogue Voice entries when writing character scenes
+- Consult World-Building entries when characters interact with institutions

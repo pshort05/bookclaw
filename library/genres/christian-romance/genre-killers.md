@@ -1,0 +1,108 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  ✓ Show characters wrestling with faith questions authentically
+-  ✓ Use dialogue to reveal spiritual maturity or crisis
+-  ✓ Ground story in faith community (church, prayer group, Christian college, faith-based workplace)
+-  ✓ Let spiritual conflict precede and drive romantic conflict
+-  ✓ Use prayer or God's guidance as turning points (not deus ex machina, but earned character choice)
+-  ✓ Include a moment where the protagonist surrenders control to God
+-  ✓ Show secondary characters as faith witnesses or challengers
+-  ✓ Weave biblical principle or passage organically into plot
+-  ✓ Let romance deepen alongside faith growth
+-  ✓ End with evidence of changed character and deepened faith commitment
+-  ✗ Don't preach or sermonize through narrator voice
+-  ✗ Don't make religious characters one-dimensional or stereotypical
+-  ✗ Don't resolve faith crisis in a single scene or conversation
+-  ✗ Don't ignore the protagonist's stated values for romance convenience
+-  ✗ Don't make unbelieving love interests mockingly portrayed or contemptible
+-  ✗ Don't use prayer as a magic fix for plot problems
+-  ✗ Don't isolate protagonist from faith community; it's essential
+-  ✗ Don't depict physical intimacy inconsistent with characters' convictions
+-  ✗ Don't end the romance plot before the spiritual plot resolves
+-  ✗ Don't shy away from showing how faith actually affects daily decisions
+- 
+- Setup:** Two characters discovering faith incompatibility or different spiritual maturity levels.
+- ```
+- "[Character A]: [Statement revealing their faith position or priority]
+- [Character B]: [Response that reveals differing perspective—not agreement]
+- [Character A]: [Double down or defend position; show vulnerability]
+- [Dialogue continues with escalating honesty, not heat]"
+- ```
+- Scene:** Protagonist discovering love interest's church attendance is cultural, not convictional.
+- ```
+- MAYA: "So I've been thinking about next Sunday's service. I want to go to the early one.
+- My small group starts a new study on integrity—it's something I've really been
+- struggling with at work."
+- JAMES: "The early one? Maya, no one our age goes then. The contemporary service at
+- 11 is way better."
+- MAYA: "It's not about what's better entertainment-wise. I need the teaching. The worship
+- is secondary."
+- JAMES: "You're taking this church thing really seriously all of a sudden."
+- MAYA: [pause] "It's not sudden. It's just... I want my faith to matter. Does that
+- bother you?"
+- ```
+- What Works:** Maya states her conviction clearly. James's resistance isn't mockery but reveals his faith is cultural/habitual, not central. Their values divergence is exposed without anger.
+- Scene:** Protagonist learning love interest has a hidden past failure.
+- ```
+- DEREK: "I need to tell you something. Before I became a Christian, I did something
+- I'm ashamed of. Something I've repented for, something God's forgiven, but—"
+- SARAH: "You don't have to—"
+- DEREK: "I do. Because if we're going to be serious, you deserve to know. And I need
+- to know you can accept that God's forgiven me even if you can't immediately."
+- SARAH: "What did you do?"
+- DEREK: [explains past sin—specificity matters; he's not self-flagellating, just honest]
+- SARAH: "I need time to think about this."
+- DEREK: "I understand. But Sarah—I'm not that person anymore."
+- ```
+- What Works:** Derek owns his past without minimizing or over-explaining. He centers God's grace. Sarah's hesitation is respected; growth takes time.
+- Scene:** Protagonist navigating family expectations vs. romantic relationship.
+- ```
+- MOM: "So when are you getting married? [Love interest] seems nice, but is he the one
+- God has for you?"
+- JORDAN: "Mom, we're taking our time. We want to make sure this is right."
+- MOM: "You're not getting any younger. And we raised you to marry a believer. Have
+- you confirmed he's serious about his faith?"
+- JORDAN: "It's more complicated than that. Yes, he believes, but his family's a different
+- denomination and—"
+- MOM: "Different? Jordan, this matters."
+- JORDAN: [quietly firm] "I know it matters. It matters to me too. But it's my choice to make."
+- ```
+- What Works:** Family pressure is real and faith-informed, not petty. Jordan respects her mother while maintaining autonomy.
+- 
+- | Pitfall | Problem | Fix |
+- |---------|---------|-----|
+- | Faith is décor | Religious elements are window dressing; they don't drive plot | Make spiritual conflict the central plot. Faith questions must have narrative weight equal to romantic attraction. |
+- | Protagonist is too perfect | Character never doubts or struggles; feels fake | Give protagonist a real faith crisis, sin struggle, or conviction challenge. Growth requires starting point of incompleteness. |
+- | Prayer as deus ex machina | Character prays and problem instantly solves | Prayer is turning point for character perspective, not plot magic. Problems still require character action and consequence. |
+- | Unbelieving love interest is vilified | Non-Christian character is portrayed as stupid or contemptible | Respect the unbeliever. Show intelligence, kindness, and genuine qualities. The conflict is spiritual, not moral superiority. |
+- | Romance resolves before faith does | Two characters declare love before protagonist's spiritual crisis is resolved | Reverse the order. Spiritual turning point must precede or coincide with romantic consummation. |
+- | Isolation from community | Protagonist removed from church/family influence | Reintegrate community. Faith is not private; it's lived in relationship. Secondary characters challenge and support. |
+- | Physical inconsistency | Characters espouse purity but narrator depicts explicit intimacy | Maintain closed-door convention or fade-to-black if characters value sexual purity. Honor stated convictions. |
+- | Sermon inserted | Narrator or dialogue launches into theological exposition | Show faith through character action, decision consequence, and genuine dialogue. Trust reader to understand implications. |
+- | Conflict too small | Romantic obstacle is minor (moved cities, work stress) | Escalate to faith-level stakes (denominational difference, unbelief, past sin, conviction about life calling). |
+- | Ending without evidence of change | Characters are happy but reader doesn't see spiritual growth manifested | Show how protagonist's renewed/deepened faith changes their daily life, priorities, and relationship dynamics. |
+- 
+-  Asks basic questions about faith, theology, church culture
+-  Uses fewer Christian idioms; may struggle with spiritual language
+-  Doubts are prominent; faith feels fragile or newly discovered
+-  **Dialogue tone:** Curious, somewhat defensive, earnest
+- Example:* "So... do you actually think God answers prayers? Like, specifically your prayers?"
+-  Attends church habitually; faith not deeply examined
+-  Uses Christian language correctly but sometimes without personal conviction
+-  Comfortable with tradition; resistant to faith being *central* to decisions
+-  **Dialogue tone:** Casual, sometimes dismissive of intensity, assumes shared understanding
+- Example:* "Yeah, we'll do the whole church wedding thing. My family would expect it."
+-  Faith shapes daily decisions and priorities
+-  Comfortable discussing doubt alongside conviction
+-  Uses Christian concepts naturally; not defensive
+-  Challenges others toward growth; models grace
+-  **Dialogue tone:** Warm, confident, thoughtful
+- Example:* "My faith isn't perfect, but it's genuine. I've wrestled with some hard questions, and I'm still here. I hope you'll consider that."
+-  Raised in faith but drifted; now grappling with whether to return
+-  Conflicted; may be defensive about faith family
+-  Honest about past hurt or disillusionment
+-  **Dialogue tone:** Raw, self-protective, searching
+- Example:* "The church let me down. I'm not sure I can trust that again. But... I miss believing in something bigger."
+- 

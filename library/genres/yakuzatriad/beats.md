@@ -1,0 +1,63 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Establish Location with Precision**
+-  [ ] Which city? Which district? Which establishment (bar, office, warehouse)?
+-  [ ] Time of day; seasonal details (rain, heat, snow)
+-  [ ] Physical details grounded in place (neon signs, narrow alleyways, corporate architecture)
+-  [ ] **Clarify Rank Before Dialogue**
+-  [ ] Who speaks first? (Higher rank typically controls conversation opening)
+-  [ ] How are characters addressed? (Honorifics signal hierarchy)
+-  [ ] Where are characters positioned? (Physical space reflects rank)
+-  [ ] **Subtext Over Exposition**
+-  [ ] Does dialogue assume shared knowledge? (Good)
+-  [ ] Would yakuza characters explain the obvious? (No)
+-  [ ] Is the real meaning beneath the words? (Essential)
+-  [ ] **Action Beats Ground Conversation**
+-  [ ] Attach actions to dialogue; avoid floating speech
+-  [ ] Actions reveal emotional state without stating it
+-  [ ] Silence and pauses matter; let them breathe
+-  [ ] **Tension Underlies Every Exchange**
+-  [ ] Even casual scenes should hint at danger
+-  [ ] Loyalty is fragile; something could shatter it
+-  [ ] What is *not* being said?
+-  [ ] **Consequences Linger**
+-  [ ] If violence occurred, show injury or pain
+-  [ ] If betrayal threatened, show changed relationship
+-  [ ] If a code was broken, show psychological cost
+- 
+- Document Version:** 1.0 | **Last Updated:** January 2026 | **Word Count:** 1,892
+- Final Scene:** [Protagonist in reflection; new understanding clear]
+- Emotional Truth:** [What has the protagonist learned about loyalty, honor, survival?]
+- By End of Act III:**
+-  [ ] The choice has been made with full awareness of cost
+-  [ ] Consequences are visible and real
+-  [ ] Protagonist's understanding has shifted
+-  [ ] The honor code has been tested and found [insufficient/transcendent/complicated]
+- 
+-  Use "said" and "asked" primarily
+-  Attach action beats to dialogue; they ground conversations in physicality
+-  Avoid speech-related tags ("snarled," "gasped") except for emphasis
+- 
+- ACT I: Integration (25% of novel)**
+-  Establish protagonist's position within organization
+-  Introduce the honor code(s) governing behavior
+-  Plant the coming conflict: a choice that will pit loyalty against survival
+-  Tone: Controlled; readers learn organizational norms through observation
+- ACT II: Fracture (50% of novel)**
+-  External pressure intensifies: rival gang encroachment, police investigation, betrayal
+-  Protagonist's internal conflict escalates
+-  Loyalties tested; the code proves insufficient for new circumstances
+-  Multiple perspectives reveal the organization's fragility
+-  Tone: Escalating tension; subtext becomes visible
+- ACT III: Reckoning (25% of novel)**
+-  Climactic choice: protagonist must act according to personal code or organizational survival
+-  Consequences reveal that honor and survival exist on a spectrum, not in binary opposition
+-  Emotional resolution concerns internal state, not external victory
+-  Tone: Reflective; the story concludes not with triumph but with clarity
+- The Impossible Choice:** Every yakuza/triad narrative pivots on a decision where both options violate a code the protagonist holds sacred. This is the story's spine.
+- Multiple Viewpoints (Advanced):** While third-person limited is standard, consider POV shifts between protagonist, rival, and outsider. Each viewpoint reveals different organizational truths.
+- Temporal Movement:** These stories often use brief time skips (weeks, months) to show accumulating pressure. Avoid chapter-by-chapter linearity; structural gaps mirror psychological distance.
+- Climax Location:** Traditionally, climactic confrontations occur in intimate spaces (back office, private home, hospital room), not public venues. This emphasizes personal codes over spectacle.
+- 

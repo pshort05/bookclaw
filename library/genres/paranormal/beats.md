@@ -1,0 +1,176 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Atmosphere is King: The feeling of your story is paramount. Whether it's spine-chilling dread, forbidden romantic tension, or the thrill of discovery, the atmosphere should be a character in its own right.
+- Dread & Horror: When aiming for horror, focus on psychological fear and vulnerability. The threat shouldn't just be physical; it should challenge the character's sanity, identity, and perception of reality.
+- The Hook: Start with the "inciting incident"—the moment the veil is pierced. This could be a strange event, the arrival of a mysterious character, or the protagonist discovering a hidden ability. Make it personal and immediate.
+- The Escalation: The rising action should involve a gradual immersion into the supernatural world. Introduce lore, allies, and villains piece by piece. Alternate between scenes of investigation/learning and scenes of action/confrontation.
+- IV. Character Archetypes & Development
+- The Outsider/Everyperson: A relatable human who stumbles into the hidden world. Their journey is one of discovery and adaptation. Keep their reactions grounded and believable.
+- The Insider: A character who is already part of the supernatural world (a witch, a half-vampire, etc.). Their conflict comes from their place within that world—navigating its politics, dangers, and moral complexities.
+- Lore & History: Your world should feel lived-in. Create a basic history for the supernatural factions, their ancient wars, alliances, and prophecies. Weave this lore into the narrative through dialogue, artifacts, and old texts—show, don't just tell.
+- The Mundane Interface: How does the supernatural interact with modern technology? Can a ghost be seen on a security camera? Does a vampire's credit card work? These details make your world feel tangible.
+- Active Voice & Visceral Verbs: Use strong, active verbs, especially in action sequences. "Shadows crawled up the walls" is more effective than "There were shadows on the walls."
+- Personification: Make your setting an active participant. "The house groaned in protest." "The fog slithered through the alley."
+- Dialogue: Dialogue should reflect the character's origin and nature. An ancient being might use slightly more formal language, while a street-smart werewolf's speech would be contemporary and sharp.
+- Paranormal fiction blends supernatural elements with recognizable reality, featuring phenomena beyond scientific explanation—ghosts, vampires, werewolves, witches, psychics, demons, and other otherworldly beings. This style guide covers the key conventions, techniques, and best practices for writing compelling paranormal fiction that honors genre expectations while allowing creative innovation.
+- Action-oriented pacing in narrative voice
+- Emphasis on mood over action
+- Reader discovers supernatural world alongside character
+- Limitations become features (reader only knows what POV character knows)
+- Shows different reactions to supernatural elements
+- Can shift between characters chapter-by-chapter or scene-by-scene
+- POV Best Practices
+- Deep POV for emotional resonance: Get inside character's head, showing their immediate reactions to supernatural encounters
+- Filter supernatural through character perception: How does this character experience magic/ghosts/etc.?
+- Use POV to control information: What character doesn't know creates suspense
+- Match POV to intimacy level: Closer POV for character-driven stories, wider for plot-driven
+- Show, don't info-dump: Reveal rules through action and conflict
+- Character discovery: Let character (and reader) learn together
+- Avoid "As you know, Bob": Characters don't explain what they already know unless teaching someone
+- Character Development
+- Supernatural Characters
+- Alpha Male: If using this trope, add unique characteristics; consider gender-swapping
+- Weak Human Heroine: Give human characters agency, intelligence, strategic thinking
+- Perfectly Good/Evil Creatures: Moral complexity makes characters compelling
+- Character Voice in Dialogue
+- Human Characters in Supernatural Worlds
+- Authentic Reactions
+- Psychological impact of learning world is different than believed
+- Use contractions, interruptions, trailing off
+- Character-Specific Voice
+- No exposition dumps: Characters don't explain what they both know
+- No naming emotions: Don't have characters say "I'm terrified"—show through dialogue and action
+- Characters often don't say what they mean
+- Fast action sequences vs. slower character moments
+- Paranormal Romance: Balance relationship beats with supernatural plot; romance arc should parallel external conflict
+- Urban Fantasy: Mystery/thriller pacing with regular action beats
+- Scene-Level Pacing Techniques
+- Action verbs, active voice
+- Jump between scenes quickly
+- Focus on external action
+- Internal character reflection
+- Action: "She ran. Faster. The footsteps behind her grew louder."
+- Character discovery should feel earned
+- Setting as character
+- Filter through character perception:
+- Different characters notice different details
+- Supernatural characters sense things humans don't
+- Setting as Character
+- What does character not know?
+- What does reader know that character doesn't (dramatic irony)?
+- What do both character and reader want to know?
+- What character cares about must be threatened
+- Put character between impossible choices
+- Speed up for scares or action
+- Match pacing to character's emotional state
+- Frantic character = frantic prose
+- Off-stage character builds mystery
+- Approaching danger character doesn't see
+- Character in danger, alone, trapped
+- Something coming character can't stop
+- Action words: Short, visceral verbs for intensity
+- Obsessive character thoughts
+- Short sentences for impact, action, shock
+- Simple sentences for clarity and impact
+- Action sequences
+- Emphasis and impact
+- Character introspection
+- Dramatic beats
+- Character Tropes
+- Ground in character: Tropes serve character, not vice versa
+- Both romantic leads should have character arcs
+- Conflicting supernatural factions
+- Transformation or turning decisions
+- Supernatural elements can enhance romantic scenes
+- Romance Beats
+- Attraction despite obstacles
+- Research closed vs. open practices
+- Use actual cities and landmarks
+- Characters with real jobs, bills, obligations
+- Authentic human reactions and emotions
+- Genre Definition and Core Characteristics
+- The relationship between "paranormal" and "supernatural" is often debated, with some scholars drawing subtle distinctions: paranormal phenomena might potentially be explained by future scientific advances (telepathy, ghosts, UFOs), while supernatural elements exist permanently beyond scientific explanation (gods, the soul, the afterlife). In practice, however, these terms are used interchangeably in publishing and popular discourse.[28][29][30]
+- Paranormal fiction encompasses diverse narrative structures, from standalone novels to extensive series, and spans media including literature, film, television, and comics. The genre's formal characteristics include atmospheric worldbuilding that establishes rules for how supernatural elements function within the story's reality. Authors must balance accessibility with mystery—readers need sufficient understanding of paranormal rules to follow the plot, yet maintaining some inexplicability preserves the sense of wonder and fear central to the genre.[31][4][32][27][33][30][34]
+- Point of view choices significantly impact paranormal storytelling. Urban fantasy typically employs first-person narration from a single protagonist, creating immediacy and allowing readers to discover supernatural elements alongside the character. Paranormal romance more frequently uses dual perspectives, reflecting the relationship-focused nature of romance genre conventions. The pacing of paranormal fiction often alternates between slower worldbuilding passages and intense action or suspense sequences, with supernatural elements serving as catalysts for both external conflict and internal character development.[4][14][15][32][35]
+- Transformation and Identity: Perhaps the most pervasive theme in paranormal fiction explores transformation—physical, psychological, and spiritual. Shapeshifters embody literal transformation, while vampire and werewolf narratives often serve as metaphors for adolescent change, sexual awakening, or the struggle to accept one's true nature. Characters frequently grapple with dual identities, navigating between human and supernatural worlds, or hiding their true nature from loved ones.[36][37][38][20][24]
+- Enemies to Lovers: Adversarial relationships evolving into romance, frequently across species or factional lines[35][43][38]
+- Fish Out of Water: Characters discovering supernatural worlds and navigating unfamiliar rules and dangers[44][43][38]
+- Kick-Ass Heroine: Strong, independent female protagonists who are active participants in their stories rather than passive victims[35][38][43]
+- Secret Identity: Characters concealing supernatural nature from family, friends, or society[36][43][38]
+- Ancient Beings in Modern World: Centuries-old characters adapting to contemporary technology and culture[39][37]
+- Key Subgenres and Their Characteristics
+- Paranormal romance centers romantic relationships involving at least one supernatural being, with the romance constituting the primary plot focus. The defining characteristic distinguishing paranormal romance from urban fantasy is that the romantic relationship's resolution forms the story's climax—readers expect a "happily ever after" or "happy for now" ending. The supernatural elements enhance and complicate the romance rather than overshadowing it.[14][47][1][35]
+- Urban fantasy distinguishes itself through setting—contemporary urban environments where supernatural elements coexist with modern life, often hidden from ordinary humans. The genre emphasizes extensive worldbuilding, establishing how magic functions within cities, how supernatural societies organize themselves, and how they interact with human institutions. Mystery, thriller, and action elements typically drive the plot rather than romance, though romantic subplots frequently appear.[15][32][2][14][47]
+- Urban fantasy protagonists often work as supernatural detectives, enforcers, or investigators, solving crimes or confronting threats within magical communities. First-person narration predominates, creating immediate connection with protagonists navigating dangerous supernatural underworlds. Jim Butcher's Dresden Files, Patricia Briggs's Mercy Thompson series, and Ilona Andrews's Kate Daniels books exemplify the subgenre's focus on mystery-solving and action within detailed supernatural societies.[16][17][2][14][15]
+- Contemporary ghost stories increasingly examine ghosts as complex characters with understandable motivations rather than simply evil entities. Authors explore what it means to be a ghost—the loneliness, the inability to move forward, the obsession with past trauma. Ghost stories often address grief, memory, and the ways the dead continue influencing the living, both literally through hauntings and figuratively through legacy. Notable contemporary examples include Silvia Moreno-Garcia's Mexican Gothic, Grady Hendrix's How to Sell a Haunted House, and Darcy Coates's haunted house novels.[49][46][50][51][52][53][48]
+- Settings play crucial symbolic roles in Gothic fiction—crumbling mansions represent decaying family lines or moral degradation, isolated locations trap characters with their demons, and weather mirrors emotional states. The subgenre has experienced revival through works like Sarah Waters's Victorian Gothic novels and Silvia Moreno-Garcia's Mexican Gothic, which updates traditional Gothic tropes with postcolonial and feminist perspectives.[8][46][13][51][52][54]
+- Dark fantasy merges fantasy worldbuilding with horror elements, creating narratives where fantastical elements coexist with graphic violence, moral ambiguity, and disturbing themes. The subgenre rejects traditional fantasy's clear good-versus-evil dichotomies, instead presenting complex moral landscapes where heroes may commit terrible acts and villains possess comprehensible motivations. Dark fantasy often incorporates occult fiction, monster fiction, and Gothic elements.[55][56][27]
+- The tone distinguishes dark fantasy from traditional fantasy or paranormal romance—these stories embrace darkness, examining humanity's capacity for evil and the costs of power. Authors may employ graphic descriptions of violence or horror that would be toned down in related genres. Series like J.R. Ward's Black Dagger Brotherhood and Lara Adrian's Midnight Breed exemplify dark fantasy's combination of supernatural worldbuilding, intense romance, and violent action.[26][27][55]
+- Occult detective fiction merges detective story structures with supernatural investigation, featuring protagonists who solve crimes involving paranormal elements. These detectives typically possess psychic abilities, magical knowledge, or supernatural awareness that allows them to perceive and combat otherworldly threats ordinary law enforcement cannot address. The subgenre balances mystery plotting—clues, investigation, deduction—with supernatural action and horror elements.[56][2][4][6][36]
+- The Twilight phenomenon significantly influenced vampire literature, emphasizing romance and domesticating vampires into protective romantic partners. However, recent years have seen reactions against this sanitization, with authors returning to vampires as genuinely dangerous predators. Notable contemporary vampire fiction includes Silvia Moreno-Garcia's works, which blend vampire lore with cultural specificity, and various paranormal romance series that continue exploring vampire-human relationships with varying degrees of darkness.[59][20][21][22][52][39][26]
+- J.R. Ward created the massively popular Black Dagger Brotherhood series (2005-present), featuring vampire warriors in contemporary settings with intense romance and action. Nalini Singh's Psy-Changeling series (2006-present) builds intricate worlds featuring psychics, shapeshifters, and complex political dynamics alongside romance. Kelley Armstrong's Women of the Otherworld series (2001-2014) presents diverse supernatural women navigating dangerous situations.[63][55][25][16][26]
+- Kim Harrison's The Hollows series (2004-2014) features witch-detective Rachel Morgan in a world where supernatural beings publicly coexist with humans. Jeaniene Frost's Night Huntress series (2007-present) combines vampire romance with action and humor. Seanan McGuire has become one of urban fantasy's most prolific and acclaimed authors, with multiple series including October Daye (2009-present) and InCryptid (2012-present) showcasing her talent for worldbuilding and character development.[64][57][65][58][25][16]
+- T.J. Klune's The House in the Cerulean Sea (2020) and subsequent works blend paranormal elements with heartwarming narratives and LGBTQ+ representation. Shelly Laurenston's shifter romances continue the paranormal romance tradition with humor and action. Independent authors like K.F. Breene and April L. Moon have built substantial followings in paranormal romance through self-publishing.[76][70][63][71][26]
+- The decade following Twilight's publication (2005-2015) saw paranormal romance and urban fantasy dominate genre fiction, with publishers actively seeking supernatural romance manuscripts. This boom gradually cooled as the market became saturated, leading to a period where paranormal fiction was declared "dead" or "out of fashion" in publishing circles. However, reports of the genre's death proved premature—paranormal fiction never truly disappeared, instead evolving and adapting.[41][80][23][19][20]
+- Digital Revival and Social Media Impact
+- Contemporary paranormal fiction increasingly emphasizes diverse voices and representation. Authors like Silvia Moreno-Garcia bring specific cultural perspectives—Mexican Gothic incorporates Mexican history and folklore, offering alternatives to Euro-centric supernatural traditions. LGBTQ+ representation has expanded significantly, with authors like T.J. Klune creating paranormal worlds where queer characters and relationships are normalized rather than exceptional.[66][52][70][26][51]
+- https://www.reddit.com/r/horrorlit/comments/10ws2cf/authors_who_believe_the_paranormal_is_actually/
+- https://litreactor.com/columns/7-beloved-authors-who-occasionally-dabbled-in-horror
+- Tropes are recognizable narrative patterns, character types, plot devices, or situations that recur across paranormal fiction. They represent shared storytelling conventions that readers expect and authors can either fulfill or subvert.
+- Character Tropes
+- Character destined for greatness or with unique heritage
+- Subversion: Character who rejects destiny; prophecy proves false or misleading
+- Character arc involves accepting role and embracing powers
+- Subversion: Character who eagerly seeks supernatural involvement
+- Active participant in story, not passive victim
+- Leads pack, clan, or supernatural faction
+- Haunted by past actions or losses
+- Examples: Jorg Ancrath (Broken Empire), Simon (Simon's Satisfaction System)
+- Character hiding supernatural nature from world
+- The Cursed/Marked Character
+- Character thrust into supernatural world without knowledge
+- Character who seeks supernatural knowledge
+- Character who becomes part of non-biological family unit
+- Subversion: Characters who reject or break bond
+- Often across species lines or factional divisions
+- Requires significant character growth
+- Variations: immortal-mortal, different supernatural factions
+- Character suddenly develops supernatural abilities
+- Attracts attention of supernatural community
+- Prediction about character destined to save/doom world
+- Creates expectations character must fulfill or subvert
+- The Turning/Transformation
+- Factions, hierarchies, alliances
+- Character makes deal with powerful supernatural entity
+- Searching for loophole or way to break contract
+- MacGuffin may be powerful artifact or ancient relic
+- Physical journey parallels internal character journey
+- Explores what characters will sacrifice to save world
+- Enemies or unlikely characters forced to work together
+- Taboo attractions and relationships
+- Question of turning mortal partner
+- What characters will give up for loved ones
+- Building trust across species/faction lines
+- Betrayal's impact on supernatural bonds
+- Good characters turned evil by power
+- Transformation beyond character's control
+- Impact of life regardless of lifespan length
+- Good characters doing bad things
+- Earning forgiveness through action
+- Environmental factors creating monsters
+- Selfless acts in face of evil
+- Character's true heritage or nature
+- Past actions with present consequences
+- Time of maximum supernatural activity
+- Characters trapped together
+- Retractable vs. permanent
+- Heartbeat
+- Vampires hearing human heartbeats
+- Transformation Scenes
+- Unnatural act with consequences
+- Symbols are objects, images, or concepts that represent abstract ideas or themes within paranormal fiction, carrying meaning beyond their literal presence.
+- Abstract Symbols
+- Brooding immortal who's actually cheerful and well-adjusted
+- Male character as chosen one in typically female role

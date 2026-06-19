@@ -1,0 +1,158 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- NovelCrafter's Codex is an organizational system for tracking story elements, world details, character information, and writing guidelines. Each Codex entry is a structured document that you can reference while drafting and revising.
+- 1–3 Protagonist Entries: One per major POV character
+- 1 Story Structure Entry: Plot outline and major beats
+- During drafting: Reference Style Guide (prose, dialogue) and Codex entries for specific characters/settings
+- ☐ Multiple POV characters
+- ☐ Strong character relationships (type: _______)
+- ☐ Sensory-rich prose emphasizing sound/smell/tactile
+- Prose Qualities: (List key characteristics. Example: "lean, precise, technically grounded, occasionally sardonic")
+- Coded Speech: If resistance/underground elements present, how do characters speak carefully?
+- Primary Senses: Which senses do I emphasize? (Sound, smell, tactile, visual)
+- Narrative Distance: Close (character perspective, emotional) / Distant (objective, observed)
+- POV Switching: By chapter? By scene? Rules for transition?
+- Scene Length: _______ words (average)
+- Pacing Variation: How do I alternate high-tension vs. breathing-room scenes?
+- (Include 2–3 short passages showing your actual prose style—mine these from drafts or write sample paragraphs)
+- Template 3: Protagonist/POV Character Entry
+- Purpose: Deep character profile for each major POV character. Reference while writing scenes from their perspective.
+- Copy for each major character:
+- CHARACTER: [Character Name]
+- Role in Story: ☐ Protagonist ☐ POV secondary character ☐ Antagonist
+- Speech Patterns: (How does this character speak? Reference Style Guide social class templates)
+- Vocabulary Markers: Words/phrases unique to this character?
+- Core Desire: What does this character want?
+- Internal Conflict: What does this character believe that complicates their journey?
+- Moral Ambiguity: What ethically questionable choice might this character make?
+- Book 1 State: How does character begin?
+- Series Trajectory: (If applicable) How does character develop across multiple books?
+- Knowledge Gaps: What does this character NOT know? (Creates vulnerability/plot tension)
+- Visual: How do you typically describe this character's appearance?
+- What This Character Notices: What sensory details does this character register? (Reflects their priorities/background)
+- What They Miss: What is this character blind to?
+- Internal Monologue Style: Philosophical? Practical? Self-deprecating? Observant?
+- Purpose: Map your plot across acts and scenes. Reference during drafting to ensure pacing and escalation.
+- ACT I: SETUP (Target: 25% of narrative)
+- Inciting Incident Location: Chapter ___ / Scene: _______
+- Major Beats:
+- Character Commitment to Action: _______
+- End of Act I: Stakes established. Character committed to path forward.
+- ACT II: ESCALATION (Target: 50% of narrative)
+- Midpoint Location: Chapter ___ / Scene: _______ (Major revelation or betrayal)
+- Major Beats (First Half):
+- Major Beats (Second Half):
+- Escalation Pattern: Each scene raises stakes or reveals complication. Character makes increasingly ethically ambiguous choices.
+- ACT III: RESOLUTION (Target: 25% of narrative)
+- Climax Location: Chapter ___ / Scene: _______
+- Major Beats:
+- Climactic Confrontation/Choice: _______
+- Thematic Resolution: How is the central ethical question answered? How is character transformed?
+- Key Plot Turning Points
+- Turn 1 (End of Act I): _______
+- Tactile Experience: Textures, temperatures, physical sensations
+- ☐ Power structures visible in every scene
+- ☐ Consequences of world rules evident in character choices
+- ☐ Story Structure: Act breakdown, major beats, turning points
+- Keep Style Guide and Character Codex entries visible while writing
+- Update any entries that changed based on actual drafting experience
+- Add fields relevant to your story (magical systems, specific tech details, political factions)
+- Create additional entries as needed (Secondary characters, specific locations, conspiracies, etc.)
+- Technical Description Best Practices
+- Integrate mechanics naturally: Describe technology through character interaction and sensory experience, not exposition dumps.
+- Use active verbs: Machinery "shudders," "whines," "groans"—not simply "is present."
+- The train platform vibrated with the diesel engine's idle—a metallic heartbeat that rattled the copper fittings in the station's Art Deco arch. Reeves kept her grip on the briefcase loose, ready. The engine wasn't groaning with effort; it was calm. That meant the platform would be monitored.
+- Diesel-era worlds should privilege sound, smell, and tactile sensation over pure visual description:
+- Tactile: Vibration, heat from engines, cold metal, worn leather, paper-thin fabric
+- Integrate technical/world-specific terminology organically through dialogue. Characters from this world would naturally use their jargon; don't over-explain.
+- Example: "I find your proposal lacking in both elegance and practicality. Perhaps we might discuss this over brandy?"
+- Practical, efficient speech; workplace-specific jargon
+- Contractions, dropped articles ("the" becomes contextual)
+- Place tags after brief exchanges; use paragraph breaks and action beats for longer dialogue
+- Introduce jargon naturally through context and character knowledge. Don't define every term, but ensure clarity through:
+- Action beats showing what jargon refers to
+- Character reactions indicating understanding/confusion
+- Three-Act Classical Structure (Adapted for Dieselpunk)
+- Act I: Setup & Inciting Incident (25%)
+- Establish world through character perspective
+- Present inciting incident that disrupts character's equilibrium
+- Act II: Confrontation & Escalation (50%)
+- Character(s) navigate systems of control/resistance
+- Act III: Resolution & New Equilibrium (25%)
+- Climactic confrontation or choice
+- Consequences of character decisions made under pressure
+- Thematic resonance: what has the character learned about power/agency?
+- Normality Under Oppression: Character adapts to totalitarian systems
+- Escalation: Actions have consequences beyond initial scope
+- Resolution: Changed by choices made; world transformed or character transformed
+- Established Prosperity: Character embedded in functioning system
+- Investigation/Pursuit: Character navigates glamorous but dangerous world
+- Climactic Achievement: Triumph through ingenuity and determination
+- Turning Points: Mark clear transitions between acts with concrete events (discovery, betrayal, escalation).
+- Pacing Rhythm: Alternate high-tension scenes (action, confrontation, moral crisis) with breathing room (character reflection, technical preparation, relationship building).
+- Subplot Integration: Personal relationships (loyalty, romance, kinship) interweave with primary plot. Not secondary but intrinsic to character motivation.
+- Climactic revelation and choice
+- Character navigates dual threats (military + supernatural)
+- Resolution addresses transformation of character through experience
+- Scene Construction
+- Every scene should advance plot OR reveal character/world. Combine both when possible. End scenes with question/tension that propels reader forward.
+- Technology integrated naturally through action, not exposition
+- Sensory detail emphasizes diesel-era aesthetics (sound, smell, tactile)
+- Dialogue reflects character class/background without caricature
+- Pacing varied; high-tension scenes alternate with breathing room
+- Character relationships interweave with plot without overshadowing it
+- This style guide emphasizes practical application for dieselpunk writers. Use in conjunction with your genre's specific variation (Ottensian, Piecraftian, or Decopunk) and your story's dominant narrative form (spy thriller, noir, weird world war, literary adventure, etc.).
+- Olfactory: The smell of ozone, diesel fumes, stale cigarette smoke, wet pavement, and hydraulic fluid.
+- 4. Action & Combat
+- Vehicular Chaos: Action sequences frequently involve vehicles—dogfights in biplanes/diesel-jets, car chases in heavy sedans, or battles on top of moving trains.
+- Visceral Impact: Violence is gritty. Characters get oil in their wounds; armor dents rather than shatters.
+- ✅ Integrate technology through character action, not exposition
+- ✅ Develop character relationships as integral to plot
+- ❌ Prioritize action over character/thematic depth
+- Character Archetypes
+- Theme: Science acts as a gateway to hell rather than the future.
+- Pulp Adventure (action-driven storytelling, heroic protagonists, exotic settings)
+- Alternative History (speculative divergences from actual historical events)
+- Visual and Material Characteristics:
+- Practical engineering without digital computation
+- Defining Characteristics:
+- Named after scholar "Piecraft," Piecraftian dieselpunk emphasizes the grim realities of warfare and totalitarianism that characterized the actual World War II era and beyond[8].
+- Defining Characteristics:
+- Defining Characteristics:
+- Part III: Genre Characteristics and Narrative Elements
+- War and Conflict: Most dieselpunk narratives engage directly or thematically with warfare—whether depicting actual WWI/WWII conflicts, alternative history wars, or internal conflicts within militaristic societies[12].
+- III.2 Common Tropes and Character Archetypes
+- Character Archetypes:
+- Forbidden Technology: Suppressed innovations that characters must hide or deploy
+- Moral Compromise: Characters forced to make ethically ambiguous choices for survival
+- Pulp Adventure: Action-driven, episodic storytelling in the tradition of 1930s-1940s pulp magazines
+- Literary Fiction: Complex characterization, ambitious prose, and thematic depth (increasingly common in recent publications)
+- The Sunforge (Sascha Stronach, 2024)[10] - The second book in The Endsong series, this queer, Māori-inspired dieselpunk science-fantasy combines advanced magical systems with apocalyptic urban warfare. Features returned-from-death protagonist, nuclear reactor threats, and complex magical politics. Reception: Highly acclaimed (3.98/5 on Goodreads with 209 reviews), won Lambda Literary Award for LGBTQ+ Speculative Fiction (2025) and TFR Readers' Choice Award for Transfeminine Fiction (2024). Strong preorder performance and established reader base from first book.
+- Amberlough (Lara Elena Donnelly, 2017; continuing popularity through 2023-2025) - The definitive Piecraftian dieselpunk text. Set in Weimar-inspired Gedda with three POV characters navigating the rise of fascism. Spy thriller meets literary fiction. Continues as a trilogy with sustained reader engagement and critical respect. The Amberlough Dossier remains a gateway text for new dieselpunk readers.
+- The Last Uncharted Sky (Curtis Craddock) - Described as Jules Verne meets Alexandre Dumas, combining magic, steampunk influences, intrigue, and action
+- Contaminant Six (Joseph R. Lallo, 2024) - Part of Wind Breaker crew series, following characters targeted by dangerous poisons in a steampunk/dieselpunk setting
+- Decopunk: Art Deco aesthetics proving more commercially appealing than anticipated. Visual sophistication and glamorous settings attracting readers seeking beauty alongside conflict.
+- Weird World War II with Supernatural Elements: "Weird World War" categorization gaining traction. Readers seeking fantastical alternatives to pure historical accuracy.
+- Literary Dieselpunk: Move toward sophisticated prose, complex characterization, and thematic depth rather than pure pulp adventure.
+- Personal Stakes Within Large-Scale Conflict: Balance between character development and world-scale events
+- Espionage Operations: Intelligence gathering and clandestine activities
+- Identity and Performance: Characters maintaining false identities or navigating between public/private selves
+- Chosen Family and Loyalty: Bonds between characters transcending biological kinship
+- Character Elements:
+- Protagonists with Complicated Morality: Protagonists who are not purely heroic; characters making ethically ambiguous choices
+- LGBTQ+ Protagonists and Representation: No longer token representation; primary characters and primary relationships
+- Professional Competence: Protagonists skilled in their domains (spies who actually understand tradecraft, pilots with real knowledge, etc.)
+- Disabled/Chronically Ill Characters
+- Characteristics: Low Reader Demand, Low Market Saturation
+- Characteristics: Low Reader Demand, High Market Saturation
+- Characteristics: High Reader Demand, Low Market Saturation
+- Readers actively seeking these stories and likely to buy multiple titles
+- Action Items:
+- Characteristics: High Reader Demand, High Market Saturation
+- Action Items for Consideration:
+- Develop compelling character relationships (mentorship, romance, kinship, loyalty)
+- Use period details without becoming didactic or overwhelming narrative
+- The Reader Demand Matrix clearly identifies highest-opportunity territories: queer dieselpunk, decopunk, weird world war, and non-Western perspectives represent the most attractive market positioning for new projects—high reader demand with low market saturation creates ideal conditions for new author launches and series development.
+- [12] Self-Publishing School. (2023). "How to Write Dieselpunk: A Guide for Writers." Genre writing guidance covering themes, narratives, and character development.

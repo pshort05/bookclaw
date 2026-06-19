@@ -1,0 +1,71 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+- Before using any template in your Codex:
+-  [ ] Have I replaced all [BRACKETED SECTIONS] with story-specific content?
+-  [ ] Have I removed all explanatory notes (in italics)?
+-  [ ] Have I customized examples using scenes from my manuscript?
+-  [ ] Does the entry help me write with more consistency and clarity?
+-  [ ] Is the entry specific enough to be actually useful, not generic?
+- 
+- Codex Templates Version 1.0**
+- Word Count: ~1,480**
+- 
+- Cozy Horror** is a paradoxical subgenre combining the comfort and accessibility of cozy fiction with darker horror elements. Rather than prioritizing terror and gore, cozy horror creates a safe emotional space for readers to engage with supernatural phenomena while maintaining psychological distance from genuine threat.
+- Core Characteristics:**
+-  **Familiarity**: Well-known horror tropes presented in recognizable frameworks
+-  **Sensuousness**: Rich sensory details creating comfort-grounded atmosphere
+-  **Distance**: Supernatural danger feels intellectually acknowledged but emotionally safe
+-  **Fun**: Humor, warmth, and emotional satisfaction balanced against spooky elements
+- Primary Emotional Experience**: Whimsy and dread simultaneously; comfort juxtaposed with creepiness.
+- 
+- Sensory Anchoring**: Ground supernatural scenes in concrete sensory details that create comfort and presence. Use descriptions of texture, temperature, smell, and taste to make readers feel safe even amid unsettling circumstances.
+- ```
+- EFFECTIVE: "The attic was dusty, yes, but dust smelled like autumn and old books—not quite frightening. Sarah ran her fingertips along the cedar beam, warm from afternoon sun through the corner window."
+- INEFFECTIVE: "The attic was dark and menacing. Sarah felt terror grip her heart as she climbed the shadowy stairs."
+- ```
+- Aesthetic Language**: Prioritize cozy, historically-informed, or cottagecore aesthetic descriptions. Use vivid language for comfort elements (kitchens, gardens, libraries, hearths) that anchor the supernatural.
+- Atmosphere Over Gore**: Build tension through atmosphere—shadows, ambiguous sounds, the uncanny—rather than graphic violence or explicit horror. Readers should feel delightful unease, not revulsion.
+- Sensory Details**: ✓ Comfort anchors (warmth, familiar smells, textures) ground supernatural scenes?
+- Pacing**: ✓ Atmosphere develops gradually? Sentence structure varies with tone?
+- Humor Integration**: ✓ Spooky moments followed by humorous beats to manage reader anxiety?
+- Dialogue**: ✓ Natural speech patterns? Distinct character voices? Personality revealed through conversation?
+- Community**: ✓ Secondary characters developed? Found family bonds deepening?
+- Emotional Arc**: ✓ Protagonist's emotional journey clear? Emotional stakes equal or exceed supernatural stakes?
+- Tonal Consistency**: ✓ Overall tone warm and inviting despite spookiness? Unexpected mood shifts justified?
+- Accessibility**: ✓ Prose clear and engaging? Literary quality enhances rather than complicates?
+- 
+-  **Atmosphere**: whisper, shimmer, settle, curl, drift, creep (when used for movement, not threat)
+-  **Light/Shadow**: dappled, pooled, gathered, danced, flickered
+-  **Comfort**: settle, nestle, sink into, curl up, warm, glow
+-  **Ambiguous Wonder**: peculiar, curious, odd, strange, uncanny (in neutral/playful context)
+-  **Emotional Openness**: vulnerable, uncertain, brave, curious, hopeful
+-  **Graphic Horror Terms**: gore, visceral, grotesque, abomination
+-  **Jump-Scare Language**: suddenly, without warning, all at once
+-  **Excessive Fear**: terror, dread, horrified (except in rare, deliberate moments)
+-  **Isolation Language**: alone, abandoned, trapped (without community context)
+- 
+- Weak Cozy Horror Prose:**
+- "Sarah climbed the dark stairs to the attic. It was scary. She heard strange noises. A ghost appeared suddenly. Sarah screamed in terror."
+- Strong Cozy Horror Prose:**
+- "Sarah gathered her cardigan around her shoulders as she climbed toward the attic, the autumn-afternoon light fading with each step. The air grew cooler, carrying the scent of old wood and forgotten seasons.
+- A sound came from above—not quite a knock, not quite a creak. More like someone shifting their weight on an old floorboard. Expectant, somehow.
+- 'Well,' Sarah murmured to the shadows, 'I suppose you want to meet me properly.'
+- The attic warmed slightly, as if in agreement."
+- 
+- Cozy horror succeeds by honoring both its components: genuine supernatural mystery and wonder, anchored in genuine comfort and emotional safety. Your prose should reflect this dual nature—spooky and snug, mysterious and welcoming, darkly funny and genuinely warm.
+- The goal is not to frighten readers into nightmares, but to give them permission to be delightfully unsettled while surrounded by comfort. That's the cozy horror contract with readers.
+- 
+- Style Guide Version 1.0**
+- Prepared for NovelCrafter's Codex**
+- Word Count: ~1,950**
+- 
+-  [ ] Protagonist established in specific, detailed setting with clear personality
+-  [ ] Community/secondary characters introduced with distinct voices
+-  [ ] Setting has history, personality, and appeal (not just backdrop)
+-  [ ] First supernatural occurrence feels like mystery, not threat
+-  [ ] Reader hook is curiosity/wonder, not fear
+-  [ ] Protagonist shows agency in deciding to investigate
+-  [ ] Tone established: warm, possibly funny, not frightening
+-  [ ] Emotional stakes (loneliness, belonging, purpose) introduced

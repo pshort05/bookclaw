@@ -1,0 +1,77 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  **DO** make the Highlands a living presence in every chapter—weather, landscape, and setting should shape mood and action.
+-  **DO** give the hero a code of honor that is tested by love, not abandoned for it.
+-  **DO** create a heroine who earns her place through action, courage, and emotional intelligence—not just beauty.
+-  **DO** use clan culture to generate real conflict (duty vs. desire, arranged marriage, blood feuds).
+-  **DO** let physical intimacy build gradually and carry emotional weight.
+-  **DO** include moments of humor, warmth, and domesticity amid the high-stakes drama.
+-  **DO** ground action scenes in the body—sensory detail, physical consequence, injury.
+-  **DO** let the hero be vulnerable *only* with the heroine. This is the genre's emotional core.
+-  **DO** research period-appropriate details: weapons, clothing, food, clan hierarchy, Highland law.
+-  **DO** write banter. Intellectual and verbal sparring is foreplay in this genre.
+-  **DON'T** write the hero as cruel, abusive, or dismissive and call it alpha behavior. Protective ≠ controlling.
+-  **DON'T** overload dialect until it becomes a parody. One *aye* or *lass* per page is plenty.
+-  **DON'T** use the heroine as a passive observer to the hero's story. She must act.
+-  **DON'T** neglect the external plot. A romance with no stakes beyond "will they kiss" feels thin.
+-  **DON'T** modernize characters' worldviews anachronistically without narrative justification.
+-  **DON'T** use Scotland as mere set dressing. If the story could transpire unchanged in Regency England, it is not Highlander Romance.
+-  **DON'T** sacrifice emotional logic for plot convenience. If characters act out of character, the reader will disengage.
+-  **DON'T** forget the five senses. Every scene should engage at least two.
+-  **DON'T** resolve the black moment too easily. Earn the HEA.
+-  **DON'T** neglect secondary characters. Clan members, friends, and family enrich the world and provide subplots.
+- 
+- Purpose**: Establish immediate tension—attraction, conflict, or both.
+- Structure**:
+-  Hero speaks with authority or blunt observation.
+-  Heroine responds with defiance or challenge.
+-  Subtext: mutual physical awareness beneath verbal sparring.
+- Example**:
+- > "Ye've the look of a woman who's wandered far from where she belongs," he said, arms folded across his broad chest.
+- >
+- > She lifted her chin. "And you've the look of a man who assumes too much."
+- >
+- > A corner of his mouth twitched. "Aye. I've been told."
+- 
+- Purpose**: The hero reveals emotional depth, typically late Act Two.
+- Structure**:
+-  Heroine pushes gently or witnesses his struggle.
+-  Hero deflects, then surrenders a fragment of truth.
+-  The moment is brief, understated, and powerful.
+- Example**:
+- > "You carry this land like it's your own body," she said quietly.
+- >
+- > He was silent for a long moment, staring out across the glen. "It is. Every stone, every life on it. And I have failed it before. I willnae do so again."
+- 
+- | Pitfall | Why It Fails | Fix |
+- |---|---|---|
+- | **Heroine TSTL** (Too Stupid To Live) | Reckless decisions with no logic break reader trust | Give her courage AND intelligence. Her risks should be calculated, driven by character. |
+- | **Dialect Overload** | Exhausting to read; feels like parody | Use 3–5 dialect words per scene max. Rely on syntax, not phonetics. |
+- | **Scotland as Wallpaper** | Story could happen anywhere | Make the setting essential. Weather, terrain, and clan culture must affect plot and character. |
+- | **Insta-Lust Disguised as Love** | Emotional arc feels hollow | Build emotional intimacy alongside physical attraction. Show *why* they fall in love, not just that they do. |
+- | **Passive Heroine** | Reader cannot root for someone who waits | Give her goals, skills, and scenes where she drives action independent of the hero. |
+- | **Weak Black Moment** | Resolution feels unearned | The black moment must strike the deepest wound for both characters—not a simple misunderstanding. |
+- | **Historical Inaccuracy Jarring** | Breaks immersion | Research weapons, clothing, social customs. Anachronisms in dialogue and behavior pull readers out. |
+- | **Secondary Characters as Furniture** | World feels thin | Give key secondary characters (best friend, rival, elder) desires, opinions, and mini-arcs. |
+- | **Rushed Resolution** | Reader feels cheated | After the black moment, take time with the emotional reunion. Do not rush declarations. |
+- | **Cruel Hero as Alpha** | Modern readers reject abuse | Protective, possessive (romantically), and fiercely loyal—never cruel, never dismissive of consent. |
+- 
+-  Commanding but not needlessly verbose.
+-  Uses "I" statements of authority. "I will decide."
+-  May code-switch: formal in council, intimate with heroine.
+-  Example: *"Ye'll not set foot beyond the walls without an escort. I'll no' bury another person I—" He stopped himself.*
+-  Blunt, action-oriented, shorter sentences.
+-  May use dry humor or gallows humor.
+-  Example: *"I've fought worse than English cavalry, lad. At least they bleed proper."
+-  Practical, warm, direct. Comfortable in her world.
+-  Example: *"Och, the laird's got his brooding face on again. Best leave him to it, or he'll snap the head off anyone in reach."
+-  More formal syntax initially; contractions may come later as she relaxes.
+-  Observant, may comment on cultural differences.
+-  Example: *"I confess I do not understand your customs, my lord, but I am not so fragile that I cannot learn."
+-  Precise, polished, condescending undertone.
+-  Example: *"How charming. The Highlanders still believe their little traditions matter in a civilized world."
+-  Proverbial speech, occasional Gaelic, carries authority of experience.
+-  Example: *"The glen remembers what men forget, child. And it repays kindness with shelter, cruelty with storms."
+- 

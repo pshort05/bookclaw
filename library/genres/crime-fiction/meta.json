@@ -1,0 +1,9 @@
+{
+  "name": "crime-fiction",
+  "ratings": {
+    "quality": "A",
+    "heat": "G",
+    "age": "Adult",
+    "content": "R"
+  }
+}

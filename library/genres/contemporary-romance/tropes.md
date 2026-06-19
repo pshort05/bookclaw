@@ -1,30 +1,17 @@
-# Contemporary Romance — Tropes
+Tropes are the recurring patterns that readers expect and enjoy in this genre.
 
-Shared vocabulary, not a shopping list. Pick three to six that serve your central
-relationship conflict; tropes are flavor and marketing hooks, not obligations.
+## Dominant Tropes
 
-A useful split: **external-conflict tropes** want linear, fast, forward momentum (no
-flashbacks); **internal-history tropes** need temporal framing (a prologue or dual
-timeline) to make the reader feel years of history in a few pages. Match the structure to
-the trope or the book reads shallow.
+- MW:  Please build a comprehensive lexicon of Tropes, Themes, Motifs, and Symbols for the Contemporary Romance fiction genre. Point out any important variations in these story devices in key subgenres.
+- AI:  Here is a comprehensive lexicon for Contemporary Romance designed for the NovelCrafter Codex. It categorizes the genre's mechanics into Themes, Tropes, Motifs, and Symbols, with a specific breakdown of how these shift across key subgenres.
+- 2. Tropes (The Narrative Architecture)
+- 3. Motifs (Recurring Narrative Beats)
+- Key Trope variation: The Meet Cute is usually embarrassing (spilling coffee, walking into a glass door). Fake Dating is used for comedic effect (to fool a boss or grandma).
 
-External-conflict tropes (slam the leads together, watch the sparks):
-- **Enemies / Rivals-to-Lovers** — antagonism that masks attraction; the friction *is* the chemistry.
-- **Fake Dating / Fake Relationship** — a pretense for publicity, family, or a bet that becomes real.
-- **Forced Proximity** — snowed-in, one bed, stranded, assigned partners; escape is impossible.
-- **Opposites Attract** — temperaments or worlds that shouldn't fit and do.
-- **Marriage of Convenience** — a deal made for money, status, or safety that grows into love.
-- **Grumpy / Sunshine** — one guarded, one warm; each thaws or grounds the other.
+## Rising Tropes
 
-Internal-history tropes (the past does the heavy lifting):
-- **Friends-to-Lovers** — long platonic history; a catalyst moment forces the romantic shift.
-- **Second-Chance Romance** — former lovers reunited; old wounds and unfinished business.
-- **Brother's Best Friend / forbidden-by-loyalty** — attraction that betrays a bond.
-- **The One That Got Away** — reunion built on regret and changed people.
-
-Setting / situation hooks (overlay onto either kind):
-- **Small-Town**, **Workplace / Office**, **Sports**, **Billionaire**, **Holiday**, **Reunion**.
-
-Be wary of reader-fatigued tropes (use only with a fresh angle): **insta-love**, **love
-triangle**, **secret baby / surprise pregnancy**, **miscommunication-as-plot**, **the big
-misunderstanding**, **step-sibling / close-family** pairings.
+- Key Trope variation: Enemies to Lovers is literal (he might kill her). The Kidnapping/Captive replaces standard Forced Proximity.
+- Key Trope variation: Second Chance. Someone returns to their hometown to save the farm/festival. The Single Dad.
+- Key Trope variation: The Power Imbalance. Boss/Assistant or Billionaire/Nanny. Conflict comes from HR violations or class difference.
+- Key Trope variation: Brother's Best Friend or Off-Limits. The conflict is often social validation or "ruining the team dynamic."
+- Please build a comprehensive guide for the Contemporary Romance fiction genre. Begin with an overview of the field, discussing its history and evolution. Analyze the form, content, and context for the genre, and any key subgenres. Include important themes, motifs, tropes, and symbols.

@@ -1,0 +1,157 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Themes (8 entries) — Central ideas like Corporate Dominance, Loss of Autonomy, High Tech/Low Life, Resistance, Transhumanism, Surveillance, Identity Crisis, and Environmental Collapse. Each theme includes definition, function, characteristics, subgenre variations, and literary examples.
+- Tropes (10 entries) — Recurring character types and plot devices including the Anti-Hero, Hacker/Netrunner, Femme Fatale, Corporate Executive, Fixer, AI, Upgrade Addict, Reluctant Crew, the Heist, and Augmentation Sequences. Each trope entry details how it functions narratively and appears across different punk subgenres.
+- Symbols (7 entries) — Objects and concepts carrying deeper meaning including the Cyborg, Relics/Artifacts, Masks/False Identity, Networks/Webs, Towers/Vertical Space, Water/Fluid Metaphors, and Light/Darkness. Each symbol includes multiple interpretations and narrative functions.
+- Hopepunk: Emphasis on community, collective action, resilience, and hope as radical resistance; symbols like gardens and shared fires
+- Practical Elements:
+- Characteristics:
+- Hopepunk: Corporate power is challenged by grassroots communities; collective action provides resistance
+- Characteristics:
+- Characters question whether they control their thoughts or if external systems do
+- Surveillance becomes ambient and internalized—characters self-censor
+- Choice becomes illusory: characters select from predetermined options
+- Example: Synners (Pat Cadigan) - Characters' consciousnesses merge with networks, blurring identity; The Expanse series - Corporate control strips autonomy from workers across planets
+- Characteristics:
+- Dieselpunk: Working-class machinery contrasts with elite technology; factory workers operate obsolete equipment
+- Characteristics:
+- Characteristics:
+- AIs and humans interact as equals or compete for resources
+- Characteristics:
+- Characteristics:
+- Characters question their own authenticity
+- Hopepunk: Characters assert authentic identity despite external pressures; community validates individuality
+- Characteristics:
+- Hopepunk: Characters work to restore ecosystems and build sustainable communities
+- Tropes are recurring character types, plot devices, and narrative patterns that appear frequently in cyberpunk fiction.
+- Function: Creates complexity and realism; subverts hero-narrative expectations; explores whether marginalized characters deserve moral judgment.
+- Characteristics:
+- Definition: A protagonist or secondary character skilled in infiltrating, manipulating, or creating computer systems and digital networks. They operate in cyberspace and often serve as the party's tech specialist.
+- Characteristics:
+- Characteristics:
+- Relationships are transactional or complicated
+- Characteristics:
+- May genuinely believe their actions benefit society
+- Hopepunk: Executive is flawed but not unsalvageable; may be redeemed through community action
+- Definition: A middleman character who arranges jobs, sells information, connects clients with specialists, and navigates underworld networks. Often amoral and pragmatic.
+- Function: Provides plot propulsion through job assignment; establishes underworld hierarchies; creates moral complexity (the fixer enables both heroic and criminal actions).
+- Characteristics:
+- Neutral party; works with all factions
+- Characteristics:
+- Definition: A character obsessed with obtaining the latest cyberware, genetic modifications, or technological enhancements. The upgrades may be functional or cosmetic; the addiction is primarily psychological.
+- Characteristics:
+- Examples: Various characters in Altered Carbon, augmented NPCs in Cyberpunk 2077
+- Function: Allows exploration of collaboration and interdependence; provides emotional stakes beyond plot; creates opportunities for character development through relationships.
+- Characteristics:
+- Examples: Case's team in Neuromancer, V's crew in Cyberpunk 2077, the Expanse characters
+- Function: Creates narrative tension and pacing; allows exploration of team dynamics; provides climactic sequences.
+- Characteristics:
+- Definition: A narrative sequence focusing on a character receiving new cyberware, genetic modifications, or enhancements. The sequence includes decision-making, installation/transformation, and integration into the body.
+- Function: Marks character development; explores cost of advancement; visually dramatizes transformation; often includes danger or failure.
+- Characteristics:
+- Character must choose between competing modifications
+- Character must adapt to new abilities
+- Characteristics:
+- Characters navigate by neon light rather than natural landmarks
+- Characteristics:
+- Rain provides cover for illegal activities
+- Characters move through rain as essential urban navigation
+- Characteristics:
+- Characters see themselves in chrome and steel
+- Hopepunk: Characters see authentic reflections; chrome is repurposed for community art
+- Function: Provides alternative setting for action sequences; explores consciousness and identity; creates visual contrast between physical and digital.
+- Characteristics:
+- Characteristics:
+- Characteristics:
+- Characters experience disorientation when moving between levels
+- Hopepunk: Characters move freely between levels; barriers are dismantled through collective action
+- Function: Emphasizes the value of information; creates stakes for hacking sequences; allows metaphorical treatment of abstract concepts.
+- Characteristics:
+- Characters possess valuable "data" that others would kill for
+- Characteristics:
+- Characters experience withdrawal symptoms (pain, disorientation, paranoia)
+- Hopepunk: Communities support recovery; addiction is treated as system effect, not character failure
+- Symbols are objects, characters, or concepts that represent deeper meanings. In cyberpunk, symbols often carry multiple, sometimes contradictory interpretations.
+- Character embodies thematic tensions about technology
+- 2. The Relic / Artifact / Macguffin
+- Allows exploration of different factions' agendas
+- Represents what characters are willing to sacrifice for
+- Steampunk: Relic is a mechanical device or historical artifact
+- Character's real identity is revealed, changing everything
+- Character questions which identity is "real"
+- Hopepunk: Character sheds false mask and embraces authentic community identity
+- Characters navigate through network (literal or metaphorical)
+- Character rises within network hierarchy
+- Character is caught or destroyed by network
+- Character falls from height, losing power or life
+- Character navigates through water (literal or metaphorical)
+- Character drowns or is submerged
+- Character learns to swim or adapt
+- Character sees truth when illuminated
+- Character is blinded or loses vision, gaining different perception
+- Collective action and solidarity
+- Hope as radical act
+- Industrial Factories
+- Trope Selection: Choose character archetypes and plot devices that fit your story. Avoid overusing the same tropes; subvert expectations when possible.
+- Symbol Layering: Assign symbolic weight to key objects or characters. Allow symbols to accumulate meaning through repetition and context.
+- Subvert expected outcomes; surprise readers with character choices
+- Develop new motifs specific to your world and characters
+- Cyberpunk doesn't require grimness, only unflinching honesty. Characters can experience joy, connection, and hope while operating within unjust systems. The genre's power lies in complexity, not bleakness.
+- https://cyber-techwear.com/fr/blogs/techwear-blog/understanding-what-is-cyberpunk-key-themes-and-characteristics
+- https://matthewangelobooks.substack.com/p/using-symbolism-and-allegory-in-cyberpunk?action=share
+- Pacing: Frantic and adrenaline-fueled during action; brooding and investigative during downtime.
+- Brevity: Characters speak in clipped sentences. Information is currency; don't give it away for free.
+- Technical Integration: Characters discuss complex tech concepts as mundanely as a mechanic discusses a car engine.
+- This guide provides actionable techniques for achieving cyberpunk voice and style, including:
+- Sensory Description: How to layer tactile details, urban decay, and atmosphere without relying on overused clichés
+- Dialogue & Slang: Character-specific speech patterns, natural slang integration, and efficiency-driven dialogue
+- POV & Perspective: Best practices for close third-person or first-person narrative in cyberpunk fiction
+- Prose Examples: Real-world samples showing dystopian scene-setting, action sequences, internal monologue, and subtext-rich dialogue
+- The guide draws from contemporary master practitioners like T.R. Napper and William Gibson, incorporating insights from modern narrative analysis and linguistic authenticity. It's formatted as clear Markdown for easy import into NovelCrafter's Codex system and includes practical before-and-after examples throughout.
+- Cyberpunk prose embodies a specific aesthetic and voice shaped by the genre's themes of technological saturation, corporate dominance, and marginalized protagonists navigating dystopian worlds. This guide provides practical techniques for achieving authentic cyberpunk narrative voice, style, and atmosphere in your fiction.
+- Cyberpunk voice draws heavily from hardboiled detective fiction—cynical, detached, and unflinching. The narrator (or close POV character) observes the world without sentimentality, often with dark humor or bitter resignation.
+- Key characteristics:
+- Deflection through humor: Characters crack jokes at dangerous moments to mask fear or pain
+- Dropped words/subjects: Characters omit pronouns and articles for efficiency: "Need to jack in," not "I need to jack in"
+- Cyberpunk is kinetic—action sequences demand short, punchy sentences. Quieter moments allow for complexity.
+- Fast-paced (action/tension):
+- Dissociation: Character disconnection from reality
+- Semicolons: Linked clauses suggesting cause-and-effect or serial action
+- Prioritize Tactile & Visceral Details
+- Neon: Don't just describe the color. How does it feel? Does it hurt? Mesmerize? Repel? Use it to evoke emotion, not just scene-setting.
+- Character Voice Through Speech Patterns
+- Different backgrounds speak differently. Use this to characterize:
+- Street characters: Dropped subjects, heavy contractions, local slang, rhythmic cadence
+- Corporate types: Clipped, efficient, jargon-heavy, formal (few contractions), coded language to mask cruelty
+- Nomads/Outsiders: Practical, direct, sparse
+- Street character: "Corpos flatlin' half the district. Don't matter who—just bottom line, yeah?"
+- Slang should feel lived-in, not forced. Characters shouldn't explain it; readers learn through context.
+- Cyberpunk typically employs close third person or first person. The POV character should be:
+- POV-Character Interiority
+- Use the POV character's thoughts to filter the world:
+- ✓ Sensory details (especially tactile, taste, sound)
+- ✓ Character emotion filtered through environment
+- How to make it fresh: Show the planning as a form of intimacy between crew members. Let it fail in unexpected ways. Use it to explore character relationships.
+- How to make it fresh: Describe cyberspace in unique terms. Is it abstract? Dreamlike? Purely sensory? Don't rely on Matrix-style grid descriptions.
+- Establishing Scene (Dystopian Urban Setting)
+- She didn't look up. Eye contact on the street meant trouble, and she'd had enough trouble for one week.
+- Action Sequence
+- Does every sensory detail serve the atmosphere or character emotion?
+- Is dialogue character-specific? Can you tell who's speaking without attribution?
+- Do you use "neon" more than 2-3 times per scene? If so, find alternatives.
+- Is your pacing varied? Are action sequences faster than reflective moments?
+- Does the POV character's perspective filter the description authentically?
+- Does the ending of scenes land with impact, not explanation?
+- Read dialogue-heavy scenes aloud to catch rhythmic inconsistencies
+- Practice writing in terse, efficient dialogue
+- Cyberpunk voice is urban, sharp, and unflinching. It doesn't apologize for the world's harshness; it documents it. Your prose should feel like a transmission from the street—immediate, authentic, slightly dangerous. Let the world's dysfunction speak through your details, your pacing, and your characters' hard-won cynicism.
+- Cyberpunk fiction is a dynamic and influential branch of science fiction, visually defined by its neon-lit cityscapes and thematically grounded in the paradox of high technology and low life. Since its emergence in the 1980s, the genre has not only shaped how we envision dystopian futures dominated by technology but has also inspired a wealth of subgenres and anticipated contemporary anxieties about corporate power, surveillance, and the integration of humanity with machines. In recent years, cyberpunk’s critical lens has expanded to include genetic engineering, hope-driven resistance, and other innovative directions, making it a continuously evolving genre with considerable cultural impact.
+- Character and Plot
+- Hopepunk, emerging in the late 2010s, represents a turn toward optimism, collective action, and the belief in community resilience even in the face of dystopia. Rather than focusing solely on rebellion as destruction, hopepunk celebrates kindness, solidarity, and fighting for a better future—acts of hope as radical resistance.[9][7][10]
+- Nanopunk: Explores nanotechnology’s societal impacts.
+- Mirrors and digital reflections as symbols of fractured identity
+- https://cyber-techwear.com/fr/blogs/techwear-blog/understanding-what-is-cyberpunk-key-themes-and-characteristics
+- https://matthewangelobooks.substack.com/p/using-symbolism-and-allegory-in-cyberpunk?action=share
+- https://www.comicsbeat.com/award-roundup-cyberpunk-2077-big-city-dreams-receives-best-comic-2023-hugo-award/

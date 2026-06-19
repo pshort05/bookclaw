@@ -1,10 +1,19 @@
-# Romantasy — Genre Killers (avoid; these make readers DNF or one-star)
+Avoid these mistakes that can undermine your story.
 
-- **No HEA/HFN.** A tragic or ambiguous romantic ending breaks the core promise.
-- **Killing a love interest** (without a genre-sanctioned return) — a betrayal of trust.
-- **Cheating** by a lead without a fully earned redemption — most readers will not forgive it.
-- **The romance as an afterthought** — leads kept apart for most of the book, or chemistry that never lands.
-- **Bait-and-switch heat** — promising spice and delivering none, or vice versa.
-- **The world ignores the romance** — magic/politics that never intersect with the relationship.
-- **Insta-love with no earned development**, or a love triangle resolved by killing/ignoring one corner.
-- **A passive heroine** with no agency over her own arc, power, or choice of partner.
+## Failure Modes
+
+- To avoid the pitfall of the passive "Strong Female Lead" who is constantly sidelined, implement these editorial commands:
+- 7. Critical Pitfalls: Identifying and Avoiding Toxic Patterns
+- Complex and flawed: Not perfect, making mistakes
+- Examine toxic dynamics - Don't romanticize controlling behavior
+- Avoid meandering - Clear direction and progression
+- Avoid convenient solutions - Develop through character action
+- Refusing to repeat parents' mistakes: Choosing differently
+- Examine toxic patterns - Don't romanticize unhealthy dynamics
+- Avoid purple prose - Clarity alongside beauty
+- Don't repeat phrases - Track descriptive language
+- Avoid building chemistry
+- CRITICAL: Examine toxic patterns - Don't romanticize control, jealousy, violence
+- Critical Pitfalls to Avoid:
+- Avoid repetitive phrases
+- Examine power dynamics, don't just romanticize

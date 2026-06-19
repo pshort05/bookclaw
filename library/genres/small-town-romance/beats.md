@@ -1,0 +1,50 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Setting:** Does the scene take place in a distinct, describable location that feels part of the town (not a generic coffee shop, but *Joe's Diner with the chipped counter*)?
+-  [ ] **Sensory Detail:** Have I included at least one specific sound, smell, or texture native to this place?
+-  [ ] **Character Goal:** What does my POV character want in this scene (information, a reaction, to escape, to connect)?
+-  [ ] **Conflict/Obstacle:** What's in their way (the other person's mood, their own fear, a town custom they don't understand, bad pie)?
+-  [ ] **Emotional Shift:** How does the POV character's emotional state change from the start to the end of the scene? (e.g., hopeful -> disappointed, angry -> confused, wary -> intrigued).
+-  [ ] **Relationship Movement:** Does the interaction with the love interest (or key secondary character) move their relationship forward or backward? Even a step back is movement.
+-  [ ] **Town Integration:** Does the scene include a small detail that roots it in this specific community (a passing mention of a local event, a branded item, a known neighbor)?
+-  [ ] **Dialogue Subtext:** Is there a gap between what the characters say and what they mean/feel? Is this clear to the reader via internal thought or action?
+-  [ ] **Pacing:** Does the sentence length and paragraph structure match the scene's mood (short for tension, longer for reflection)?
+-  [ ] **Hook/Transition:** Does the scene end with a reason to turn the page (an emotional question, a decision, a revelation, a new complication)?
+- Small Town Romance is a contemporary romance subgenre where the setting—a close-knit, often idealized rural or semi-rural community—is a central character that deeply influences the plot, character dynamics, and thematic conflicts. The core appeal lies in the juxtaposition of cozy, familiar community life against the emotional intimacy and personal growth of the central love story. Stories typically feature protagonists seeking connection, healing, or a new start, and explore themes of belonging, family (found and biological), tradition vs. progress, and the simple pleasures of life. While conflicts can be emotionally intense, the tone is ultimately warm, hopeful, and affirming, promising a "happily ever after" (HEA) or "happily for now" (HFN) resolution firmly rooted in the community.
+- Overall Voice:** Accessible, warm, and emotionally resonant. Descriptions should evoke a strong sense of place and feeling without becoming overly literary or purple. Use a close point of view (first person or deep third person) to create immediacy with the protagonist's emotions.
+- Description:**
+-    **Place is Paramount:** Weave sensory details of the town (the smell of fresh bread from the bakery, the sound of a distant train, the feel of a weathered wooden porch railing) throughout the narrative. Descriptions should serve character and mood.
+-    **Show, Don't Tell (The Small-Town Way):** Instead of stating "the town was gossipy," show a barista knowing the protagonist's order before they speak and asking after their sibling by name.
+-    **Evoke Comfort & Nostalgia:** Use concrete, comforting imagery: mismatched mugs, well-worn flannel, the golden light of a sunset over fields, the organized chaos of a fall festival.
+-    **Pacing:** Vary sentence structure. Use shorter, sharper sentences for tension, conflict, and witty banter. Use longer, flowing sentences for introspection, romantic tension, and lush descriptions of setting.
+- Internal Monologue:** Crucial for romance. The narrative should frequently dip into the protagonist's thoughts, fears, hopes, and physical reactions to their love interest. This builds emotional intimacy for the reader. Keep it authentic and avoid overly formal language.
+- POV Conventions:** Dual Point of View (switching between the two romantic leads) is extremely common and popular, as it allows the reader to experience the growing attraction and misunderstandings from both sides. Single POV (almost always the female lead in category romance) is also used. Maintain clear scene or chapter breaks when switching POVs.
+- Dialogue is a primary driver of character and relationship development. It should sound natural and reflect character background.
+- General Dialogue Rules:**
+- 1.  **Authenticity Over Realism:** Dialogue should feel real, not be a transcript of real speech (filled with "um" and "like"). Use contractions.
+- 2.  **Subtext is Key:** Characters often say one thing while meaning another, especially in the early stages of attraction. Use body language and internal thought to highlight the subtext.
+- 3.  **Community Voice:** Secondary characters speak in ways that establish community norms, history, and gossip. They might use local slang, reference town lore, or speak more bluntly.
+- Dialogue by Character Type:**
+-    **The Outsider/Newcomer:** Speech may be more formal, hesitant, or laced with references to the city/their old life. They might not understand local idioms.
+-    **The Town Luminary/Longtime Resident:** Speech is comfortable, familiar, and may include gentle teasing, knowing questions, and local references. They are the voice of the town.
+-    **The Grumpy Love Interest:** Dialogue is often terse, blunt, or sarcastic, but with moments of unexpected, vulnerable eloquence that reveal their true feelings.
+-    **The Sunshine Love Interest:** Dialogue is warm, open, and inviting, often using questions to draw the other person out.
+- Banter:** Witty, playful, and flirtatious exchange is a hallmark. It showcases chemistry and intelligence. It should be a volley, not a monologue. It can be used to mask deeper feelings.
+- Conflict Dialogue:** During arguments, dialogue should remain true to character. Avoid melodramatic pronouncements. Small-town conflicts often involve bruised feelings, family history, and fear of public scrutiny, which should surface in the dialogue.
+- Small Town Romance generally follows a three-act structure adapted for emotional pacing.
+- Act I: The Welcome (or Lack Thereof) – ~25%**
+-    **Setup:** Introduce protagonist in their old life/circumstances, highlighting why they need a change (heartbreak, burnout, inheritance, career move).
+-    **Inciting Incident:** Decision or event that brings them to the small town (arriving in town, taking a new job, inheriting a run-down property).
+-    **Meet-Cute/First Encounter:** Introduction to the love interest. Often involves a misunderstanding, minor conflict, or charming/frustrating interaction that establishes immediate chemistry or friction.
+-    **Lock-In:** The protagonist commits to staying in town for a defined period (fixing the house, running the bookstore for the summer, completing a project).
+- Act II: Building Connections & Complications – ~50%**
+-    **Rising Action/Developing Relationship:** The protagonists are forced into proximity. They share meaningful moments, help each other, and engage in deepening banter. The physical and emotional attraction grows.
+-    **Community Integration:** Protagonist meets key secondary characters, participates in town events (farmer's market, festival, town council meeting), and begins to feel a sense of belonging.
+-    **Midpoint/Turning Point:** A significant shared experience that shifts the relationship from attraction to deeper emotional investment (a successful town event they worked on together, a vulnerable confession, a first kiss or intimate moment).
+-    **Complications & Dark Moment:** External conflicts (business rival, disapproving family, a tempting job offer back in the city) and internal conflicts (fear of commitment, past trauma, feeling like an outsider) converge. A major misunderstanding or crisis forces them apart. This is the "all is lost" moment.
+- Act III: The Heart of the Home – ~25%**
+-    **Climax/Reconciliation:** After a period of anguish, one or both protagonists have a revelation (often aided by a wise secondary character or a literal look at the heart of the town). They confront the true conflict, communicate honestly, and choose each other.
+-    **Resolution:** The external plot is resolved (the business is saved, the festival is a hit, the house is renovated). The protagonist's place in the town is solidified.
+-    **HEA/HFN & Epilogue (Optional):** A concrete scene showing the couple happy and integrated into the fabric of the town. An epilogue (weeks, months, or years later) can show a wedding, a family, or a peaceful life, emphasizing the enduring nature of their love and their place in the community.

@@ -1,0 +1,43 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- | Do | Don't |
+- | :--- | :--- |
+- | **DO** use specific cultural details (food, idioms, rituals). | **DON'T** treat a culture as a monolith or backdrop. |
+- | **DO** give both leads equal agency, flaws, and growth. | **DON'T** create a "Magical Minority" character who only exists to teach. |
+- | **DO** show bidirectional learning and adjustment. | **DON'T** have one character do all the assimilating. |
+- | **DO** use cultural misunderstandings as plot engines. | **DON'T** use laziness or lack of communication as the main conflict. |
+- | **DO** involve family/community pressures authentically. | **DON'T** portray families as villains without nuanced motivations. |
+- | **DO** employ all senses to immerse in cultural experience. | **DON'T** info-dump cultural facts; weave them into action. |
+- Template for a "Teaching/Learning" Moment (Intimate):**
+- 1.  **Character A** shares/does something culturally specific.
+- 2.  **Character B** asks a curious, respectful question OR makes a gentle misstep.
+- 3.  **Character A** explains the personal/emotional significance, not just the facts.
+- 4.  **Character B** responds with emotional understanding, creating closeness.
+-    **Example:**
+- > *He watched her carefully fold the samosa into a perfect triangle. "My mom always said the seal is a prayer for the family," she said, her voice soft. "If it breaks in the oil, you have to make a wish."*
+- > *"What did you wish for?" he asked.*
+- > *She met his eyes, flour dusting her cheek. "Before today? Mostly for patience. Now... I think my wish just walked into the kitchen."*
+- Template for a Cultural Misunderstanding (Conflict):**
+- 1.  **Character A** acts according to their cultural norms.
+- 2.  **Character B** interprets through *their* cultural lens, feeling hurt/angry.
+- 3.  **The Disconnect:** The argument escalates around the action, not the invisible cultural rule.
+- 4.  **The Realization:** One realizes the root cause is a difference in expectation.
+-    **Example:**
+- > *"You didn't tell me your sister was in the hospital!"*
+- > *"It's a family matter," he said, looking away. "We handle these things privately."*
+- > *"Private? I'm supposed to be your partner!"*
+- > *"And telling the whole world our problems is helping?" he snapped, the words echoing with his father's old admonishments about saving face.*
+-    **Pitfall:** "Culture as Quirk" – reducing a character's culture to food, fashion, and festivals.
+-    **Fix:** Tie cultural elements to core values, family dynamics, and the character's internal conflicts (e.g., duty vs. desire, tradition vs. innovation).
+-    **Pitfall:** "The Tour Guide Romance" – the story becomes a sightseeing tour of a culture.
+-    **Fix:** Keep the camera on the emotional journey of the two leads. Cultural details are the landscape, not the destination.
+-    **Pitfall:** **Problematic Power Dynamics** – one character (often from a Western/dominant culture) is positioned as the "savior" or "liberator."
+-    **Fix:** Ensure the character from the marginalized culture has clear agency, goals, and power within the relationship. Their arc cannot be solely about being "saved."
+-    **Pitfall:** **The Insta-Understanding** – resolving deep-seated cultural conflicts too easily.
+-    **Fix:** Let the work be messy. Allow for backsliding, ongoing conversations, and compromises that aren't perfect.
+-    **Within Family/In-Group:** Dialogue may include untranslated terms, insider humor, shared historical references, and a different level of emotional directness. This shows the character in their "home" context.
+-    **With Love Interest (Early):** More explanatory, tentative. Characters may code-switch, search for words, or use metaphors from their own culture to explain feelings.
+-    **With Love Interest (Committed):** Development of shared private jokes that blend cultural references. Use of pet names or terms of endearment from each other's languages. Ability to argue *through* cultural differences, not just about them.
+-    **In Public/Cross-Cultural Settings:** May show characters acting as buffers, translators, or subtly adjusting behavior to mediate between their partner and the outside world.

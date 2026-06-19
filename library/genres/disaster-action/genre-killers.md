@@ -1,0 +1,47 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- DO:**
+-  Start *in media res* or with very brief, telling normalcy.
+-  Use specific, research-backed details (e.g., correct triage colors, structural failure modes).
+-  Create set-pieces that utilize the disaster environment (escaping a flooding subway, navigating a burning high-rise).
+-  Force moral and practical choices under extreme pressure.
+-  Vary tension with brief "lulls" that allow for character moments before the next crisis.
+- DON'T:**
+-  Spend more than 15% of the story pre-disaster.
+-  Let characters be passive victims for long; they must act.
+-  Resolve the disaster with a deus ex machina (sudden, unexplained scientific fix).
+-  Overuse graphic violence for shock; let the disaster's scale provide horror.
+-  Neglect the aftermath; show the cost.
+- Template: [CONTEXT] + [SPEAKER TYPE] + [CONTENT]**
+- 1. The Terse Command (During Impact)**
+- Context:* Immediate physical danger.
+- Speaker:* Anyone.
+- Template:* "[Imperative Verb]!" or "[Name/Noun], [Imperative Verb]!"
+- Example:* "Brace!" "Jenkins, down!"
+- 2. The Gasped Exchange (Immediate Aftermath)**
+- Context:* Shock, injury, assessment.
+- Speaker:* Survivors.
+- Template:* "[Question/Exclamation of pain/shock]." "[Reassurance/Answer/Contradiction]."
+- Example:* "My arm—I think it's broken." "Here, use this as a sling. Look at me. Breathe."
+- 3. The Technical Brief (Planning)**
+- Context:* Strategy session in a relative lull.
+- Speaker:* The Expert.
+- Template:* "If we [Action], the [Disaster Element] will [Likely Reaction]. That gives us [Timeframe] to [Goal]."
+- Example:* "If we trigger the fire suppression in Sector C, it'll create a steam barrier. That gives us ninety seconds to cross the reactor gallery."
+- 4. The Conflict Flashpoint (Under Stress)**
+- Context:* Dispute over resources, leadership, or morality.
+- Speaker:* Opposed characters.
+- Template:* "We have to [Plan A]." "That's suicide. We [Plan B]." "[Emotional accusation/reality check]."
+- Example:* "We have to take the bridge." "It's swarming with them. We go through the flood tunnels." "The tunnels are flooded, Miller! Or did your panic wipe that from your memory?"
+- Pitfall 1: Cardboard Characters.**
+- Fix:* Give them a specific, non-cliché skill (not just "doctor," but "pediatric surgeon with field triage experience") and a personal stake (searching for a daughter, not just "saving everyone").
+- Pitfall 2: Predictable Plot.**
+- Fix:* Subvert expectations. The "safe haven" is a trap. The "heroic sacrifice" fails. The expert's plan backfires. Let the disaster be unpredictable.
+- Pitfall 3: Tech/Info Dump.**
+- Fix:* Distribute technical information. Character A knows part, Character B knows another. Reveal facts as they become immediately relevant to survival.
+- Pitfall 4: Unrelenting Grimness.**
+- Fix:* Insert small human moments—a shared memory, a joke that falls flat, an act of unexpected kindness. These make the darkness more profound.
+- Pitfall 5: Weak Resolution.**
+- Fix:* The ending must be earned by the characters' actions and reflect the disaster's lasting impact. No easy resets.

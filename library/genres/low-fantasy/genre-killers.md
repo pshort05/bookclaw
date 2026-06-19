@@ -1,0 +1,66 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- DO:**
+-  Build tension through slow-burn intrigue and personal stakes.
+-  Describe the physical world (smells, textures, weather) vividly.
+-  Let dialogue carry subtext, threat, and social class distinctions.
+-  Introduce magical elements subtly, with fear or skepticism.
+-  Craft endings that are bittersweet, pyrrhic, or ambiguous.
+- DON'T:**
+-  Use magic as a convenient solution to plot problems.
+-  Create clear-cut “good vs. evil” conflicts.
+-  Write epic, world-saving prophecies or chosen-one narratives.
+-  Over-describe magic with flashy, precise terminology.
+-  Resort to clean, happy endings without cost.
+- Template 1: Negotiation/Threat (Noble vs. Merchant)**
+- Structure:* Pleasant opening -> veiled statement of power -> implied threat -> offer/conclusion.
+- Example:**
+- "Your wines are always a delight, Master Corbin." (Pleasantry)
+- "The roads near your vineyards have been… troubled lately. My guards report strange sightings." (Veiled power: I control the roads)
+- "It would be a shame if such a fine product couldn't reach the city." (Implied threat)
+- "Perhaps a modest increase in your tithe to the lord's peacekeeping fund would clarify matters?" (Offer)
+- Template 2: Soldier's Pragmatic Report**
+- Structure:* Direct statement of fact -> subjective assessment -> personal recommendation.
+- Example:**
+- "The bridge is burned, sir. No crossing." (Fact)
+- "The men are saying it wasn't torches. The wood looked… sick, like it rotted in an hour." (Subjective, skeptical report of weirdness)
+- "We should ford the river upstream. It'll cost us two days, and we'll lose the wagons, but it's ground I understand." (Pragmatic recommendation, rejecting the magical problem)
+- Template 3: Peasant's Superstitious Fear**
+- Structure:* Observation of oddity -> folk explanation -> recommendation based on fear.
+- Example:**
+- "The ewes won't graze on the north hill." (Observation)
+- "Old Man say it's because the ground's dreaming. Bad dreams." (Folk explanation)
+- "We should move the flock. Ain't worth the bad milk." (Fear-driven action)
+- Pitfall 1: Magic becomes a convenient plot device.**
+- Fix:* Establish rigid rules for magic: it requires a terrible sacrifice, it is unreliable, its effects are subtle and slow, or only one character knows a fragment of it and is unwilling to use it.
+- Pitfall 2: The world feels too generic or epic.**
+- Fix:* Anchor the setting in specific, historical-like details: a unique tax system, a particular method of farming, a local religious schism, a trade route dispute. Make the scope small.
+- Pitfall 3: Characters are too heroic or too villainous.**
+- Fix:* Give your “hero” a selfish motive, a cowardly streak, or a willingness to betray. Give your “villain” a logical, understandable goal (security for their family, redress for a past wrong).
+- Pitfall 4: Dialogue is too expositional or formal.**
+- Fix:* Inject subtext. Have characters talk about the weather while meaning a threat. Use interruptions and colloquial language. Let them be inarticulate when frightened.
+- Pitfall 5: The ending feels un-satisfying or nihilistic.**
+- Fix:* Ensure the protagonist’s journey has *meaningful change*. They may lose everything but gain a grim wisdom or a new purpose. The cost should feel earned, not random.
+- Peasant/Lowborn:**
+-  Short, direct sentences.
+-  Concrete concerns (food, shelter, safety).
+-  Superstitious explanations for odd events.
+-  Use of local slang, earthy metaphors.
+-  Often deferential or openly fearful to authority.
+- Merchant/Middle Class:**
+-  Pragmatic, focused on value, cost, and trade.
+-  Polite but probing dialogue, seeking advantage.
+-  More worldly, may reference other towns, goods.
+-  Skilled at veiled negotiation and reading intent.
+- Noble/Gentry:**
+-  Longer, more formal sentences, but can shift to brevity for threats.
+-  Concerns: power, legacy, politics, honor (or its appearance).
+-  Use of subtle irony, layered compliments/critiques.
+-  Dialogue often performs a public role; private speech may be more crude.
+- Soldier/Military:**
+-  Blunt, action-oriented.
+-  Focus on terrain, resources, logistics.
+-  Skeptical of anything not tangible (“magic is just bad terrain”).
+-  Loyalty-based language (to commander, to unit).

@@ -1,0 +1,78 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- Hard-boiled Detective, Amateur Sleuth, Private Investigator, Brilliant Detective, Flawed Detective, Femme Fatale, Corrupt Official, Serial Killer, Wronged Protagonist, Little Old Lady Detective, Partnered Detective
+- Golden Age/Classic Detective Fiction, Noir & Hard-boiled, Psychological Thriller, Cozy Mystery, Scandinavian/Nordic Noir, Police Procedural, Serial Killer/Criminal Profiler, Domestic Thriller, with signature tropes and characteristics for each
+- Confessional Moment, Wrongful Conviction, Ticking Clock, Seemingly Impossible Crime, Breakthrough Evidence, Unexpected Killer, Copycat Killer
+- Wrong Suspect: Detective solves case but identified incorrect perpetrator; true killer emerges
+- Psychological thriller: Multiple murders create compulsive repetition; explores killer psychology
+- Serial killer narratives: Multiple murders committed over time; establishes pattern/signature
+- Criminal Consultants & Killer Collaboration
+- Definition: Protagonist consults with convicted criminal or serial killer; killer willingly aids investigation.
+- Quid Pro Quo: Killer demands favor or benefit in exchange for assistance
+- Intellectual Game: Killer enjoys matching wits with investigator; sees it as competition
+- Romantic/Psychological Bond: Killer develops attachment to investigator; assists from motivation beyond benefit
+- Serial killer narratives: Creates tension between desire for justice and discomfort with collaboration
+- Redemption through justice; atoning for past failures
+- Substance abuse (alcohol, drugs, painkillers)
+- Personal psychology mirrors killer's psychology
+- Haunted by past mistakes; compels them toward justice
+- Represents systemic failure of justice system
+- The Serial Killer/Obsessive Murderer
+- Subgenres: Serial killer narratives, Psychological thriller, Police procedural
+- System's failure drives protagonist toward personal action
+- Cozy mystery: Justice served through legal system; vengeance avoided
+- Definition: Exploration of systemic failure and corruption pervading institutions designed to serve justice.
+- Institutional indifference; systematic failure to investigate
+- Serial killer narratives: Extended analysis of killer's psychology and motivation
+- Protagonist haunted by past failure or moral compromise
+- Disgust at institutional failure
+- Perpetrator Motivation: Killer's true motive different from apparent; reveals psychological pattern
+- Past trauma or secrets unavoidable; nowhere to hide
+- Institutional failure endemic; individual action insufficient
+- Examination of welfare state's failures
+- Social Criticism: Crime reveals systemic failures; societal corruption embedded in plot
+- Serial Killer/Criminal Profiler Tropes
+- Perpetrator's viewpoint included; reader understands killer
+- The Killer's Psychology: Interior monologue or separate narrative reveals killer's thoughts/motivations
+- The Hunter/Hunted Dynamic: Killer and investigator play cat-and-mouse game
+- The Perpetrator as Artist: Killer views murders as creative expression; "signature" elements
+- The Trophy Collection: Killer retains souvenirs of crimes
+- The Psychological Interview: Investigator interviews incarcerated serial killer
+- Definition: Investigation reveals wrong suspect convicted; true perpetrator remains free; justice system failure exposed.
+- Justice system fallibility; wrongful conviction system failures
+- Perpetrator Deadline: Killer threatens specific time for next crime; investigation races clock
+- Increases stakes; failure carries concrete consequences
+- Prevents thorough investigation; mistakes increase under pressure
+- The Unexpected Killer
+- Investigation misdirected; detective's failure to suspect perpetrator
+- The Copycat Killer
+- Definition: New perpetrator deliberately emulates prior known killer's methods; investigation confused by mimicry.
+- Investigation assumes known killer reoffending; realizes different perpetrator mid-investigation
+- Copycat killer's motivation differs from original; desires notoriety or completion
+- Investigation pursues incarcerated killer; reveals current crimes committed by other
+- Original killer and copycat have relationship; mentorship or obsession
+- Copycat's obsession with original killer; study of case leading to emulation
+- Copycat seeks connection with original killer; admiration or rivalry
+- Original killer may aid copycat; provides guidance from prison
+- https://www.reddit.com/r/idahomurders/comments/znpv3g/constructing_a_psychological_profile_of_the_killer/
+- Corruption and institutional failure have become increasingly prominent thematic concerns in contemporary crime fiction. The genre regularly explores how corruption permeates institutions—law enforcement agencies, judicial systems, political offices, and corporate structures—and how individual agents within these institutions must navigate ethical dilemmas where adherence to official procedure may perpetuate injustice. Writers like Attica Locke and S.A. Cosby explicitly engage with systemic racism and the way crime fiction itself can illuminate social inequities.[13][14][12]
+- The cozy mystery subgenre constructs intentionally genteel crime narratives set in small, close-knit communities where violence occurs but graphic depictions are avoided. Cozy mysteries typically feature amateur sleuths—often with unusual professions such as bakers, knitters, or antiquarians—investigating murders that disrupt established community peace. The moral universe of cozy mysteries tends to be more straightforwardly ordered than noir or hard-boiled fiction: justice typically triumphs, the murderer is identified, and social order is restored. The subgenre has experienced significant recent expansion, with contemporary writers including Richard Osman (The Thursday Murder Club) creating cozy mysteries that combine genuine suspense and cleverly plotted mysteries with humor, character development, and warm human relationships.[16][17][18][19][6]
+- Institutional corruption and systemic injustice have become increasingly central thematic preoccupations, with contemporary crime fiction exploring how corruption permeates ostensibly legitimate institutions. This theme encompasses police corruption, judicial bias, political malfeasance, and corporate crime, reflecting real-world anxieties regarding institutional failures.[14][12]
+- The serial killer motif, while popularized in contemporary crime fiction, represents an evolution of earlier criminal archetypes, exploring the psychology of compulsive repetition and the technical challenges of investigating murders spanning extended periods.
+- https://www.killernashville.com/articles/motifs-for-murder
+- Common pitfalls specific to crime fiction
+- Strategic placement: Integrate sensory details throughout—don't dump exposition
+- Avoid purple prose: Sensory details must serve plot, character development, or mood
+- Subtext over exposition: Skilled detectives don't dump case details; let dialogue reveal character while investigating
+- Avoid info-dumping: Don't use dialogue to explain backstory unnecessarily
+- Avoid melodrama: Let events carry weight without overwrought prose
+- Tone balance: Genuine suspense with humor and warmth; avoid gratuitous violence
+- 11. COMMON PITFALLS TO AVOID
+- Info-dump prologues: Avoid lengthy background before engaging narrative begins
+- Coincidental solutions: Avoid convenient clues; detective work should logically progress from initial mystery
+- Narrative distance loss: Don't head-hop; maintain clear POV; multiple POVs require explicit transition
+- Lean and Purposeful: Use economical language. Avoid excessive description or flowery prose unless it directly serves to establish character or a specific, crucial atmosphere. Every word should work.
+- Multiple POV: Can increase suspense by showing the antagonist's actions or a potential victim's peril, but use with caution to avoid revealing the solution too early.
+- Subtext is Everything: What characters don't say is often more important than what they do. Pay attention to evasions, pauses, and body language during interrogations.

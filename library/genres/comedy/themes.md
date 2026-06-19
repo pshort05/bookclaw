@@ -1,0 +1,44 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+-  [List 3-5 specific rules your story must follow]
+-  Example: "Protagonist must successfully execute heist despite overwhelming obstacles"
+-  Example: "No death of major characters, only narrow escapes"
+-  Example: "Humor must emerge from character intelligence, never from stupidity"
+- Primary Humor Type**: [Dark, Situational, Banter, Self-Aware, Absurdist, Physical]
+- Examples from Your Story**: [Write 2-3 sample joke premises or one-liners in your story's voice]
+- Action Frequency**: [Action beat every 8-10 pages / every 5,000 words]
+- Action Intensity**: [Low (espionage, sneaking), Medium (gunfights, chases), High (explosions, combat)]
+- Realism Level**: [Grounded realism / Heightened realism / Fantastical]
+- What's at Risk**: [Financial ruin, death, exposure, loss of agency, etc.]
+- Consequence Clarity**: [Characters understand stakes from Act I / Stakes raise in Act II / Stakes clarified at midpoint]
+- Personal Stakes**: [Protagonist's emotional/psychological investment in outcome]
+- What Character Wants**: [Stated goal—money, justice, survival]
+- What Character Needs**: [Emotional/psychological need—redemption, trust, self-acceptance]
+- Character's Flaw**: [What about protagonist gets them in trouble? Overconfidence? Recklessness? Loyalty?]
+- Key Relationships**:
+-  [Ally Name]: [How does character banter with this person? Are they equals or is one superior?]
+-  [Antagonist Name]: [What's the dynamic? Respect? Hatred? Complex mixture?]
+- Act I**: [Where is character emotionally/psychologically?]
+- Midpoint**: [What realization or reversal changes character?]
+- Climax**: [What choice must character make? How has character grown?]
+- 
+- Title**: [Story Structure: Act {Number} - {Act Title}]
+-  **Act Number & Title**: [e.g., Act II: Rising Complications]
+-  **Page/Word Count**: [Pages {X-Y} / Word count {X-Y}]
+-  **Percentage of Novel**: [{X}% of total]
+- What This Act Accomplishes**:
+-  [Plot advancement]
+-  [Character development]
+-  [Tone/theme establishment]
+- Opening Emotional State**: [How does character feel at start of act?]
+- Closing Emotional State**: [How does character feel at end of act?]
+- Emotional Reversal or Deepening**: [What emotional change occurs?]
+-  [ ] Setup completed by opening of act
+-  [ ] First major development/reversal by 25% through act
+-  [ ] Escalation by 50% through act
+-  [ ] Setup for next act established by 75% through act
+-  [ ] Clean exit momentum pushing into next act
+- 
+- Title**: [World: {Location/Setting Name}]

@@ -1,0 +1,42 @@
+Every book in this genre needs these essential elements.
+
+## Essential Checklist
+
+-  **Name:** [CHARACTER NAME]
+-  **Age/Life Stage:** [e.g., 34, recently divorced; 26, post-college; 45, widow]
+-  **Occupation:** [Profession; consider how workplace reinforces or conflicts with faith]
+-  **Faith Background:** [Raised Christian, lapsed believer, new believer, agnostic, interfaith background, etc.]
+- Scene Name:** [e.g., "The Prayer Scene," "The Conversation at Church"]
+- What Happens:** [DETAIL THE SPIRITUAL TURNING POINT WHERE PROTAGONIST SURRENDERS CONTROL TO GOD OR MAKES A FAITH-DRIVEN CHOICE]
+- Why It Matters:** This is the genre's signature moment. Spiritual resolution precedes and enables romantic resolution.
+- Target length:** 5-10 pages
+- Content:** Show how protagonist's renewed/deepened faith affects daily life, relationship dynamics, and community involvement. Provide reader with sense of settled future.
+- 
+- Codex Title:** [LOCATION/FAITH COMMUNITY] – Setting & World
+- Entry Type:** World-Building
+- 
+- 
+- | Rule | Explanation |
+- |------|-------------|
+- | **Faith is Plot** | Spiritual conflict and growth drive the romance; they are not subplot. |
+- | **Redemption over Judgment** | Characters grow through grace, not punishment. Show transformation. |
+- | **Surrender Precedes Resolution** | Protagonist must release control/outcome to God before romantic resolution is possible. |
+- | **Authenticity over Piety** | Show real faith struggle, doubt, and questions—not perfection. |
+- | **Community Matters** | Church, family, or faith community must be present and influential. |
+- | **Actions Match Convictions** | If characters espouse values (sexual purity, honesty, sacrifice), narrative must honor this or show conscious deviation with consequence. |
+- | **Hope is Non-Negotiable** | Even in darkness, prose conveys that God's grace is available and redemption is possible. |
+- | **Physical Intimacy Aligns with Values** | Closed-door/fade-to-black is standard. Any explicit content must align with characters' stated faith positions. |
+- 
+- Use this to ensure your manuscript hits genre-required beats:
+-  [ ] **Opening:** Protagonist introduced in state of faith struggle, drift, or incomplete spiritual journey
+-  [ ] **Inciting Incident:** Introduction to love interest happens in context that reveals their faith position (or lack thereof)
+-  [ ] **First Connection:** Romantic attraction alongside recognition of spiritual affinity or conflict
+-  [ ] **Rising Action:** Relationship deepens; secondary characters (church, family, friends) emerge; faith questions intensify
+-  [ ] **Midpoint Crisis:** Protagonist realizes faith and romance may be in tension; conflict is now explicitly spiritual, not just romantic
+-  [ ] **Complications:** Obstacles increase; faith incompatibility or unresolved sin becomes central; secondary characters provide pressure
+-  [ ] **Dark Moment:** Protagonist faces a choice between romantic comfort and faith fidelity; relationship may rupture
+-  [ ] **Turning Point:** Protagonist surrenders to God or makes a faith-driven choice, often at personal cost
+-  [ ] **Climax:** Romantic and spiritual resolutions converge; protagonist's choice honors both love and faith
+-  [ ] **Resolution:** Relationship solidifies; spiritual growth is evident in character change; integration with faith community
+-  [ ] **Epilogue (optional):** Glimpse of changed life—marriage, family, church involvement, deepened faith practice
+- 

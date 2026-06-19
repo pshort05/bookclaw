@@ -1,0 +1,11 @@
+*Readers expect original fantasy worlds with magic systems where romance is equally central to worldbuilding and plot.*
+
+Unlike retellings, romantasy-fiction delivers original secondary-world fantasy where romance and fantasy elements are inseparable—removing either collapses the story. Readers want immersive magical systems with internal logic: distinct fae courts, dragon-bonding mechanics, vampire hierarchies, or witch-magic traditions that feel lived-in and credible. Worldbuilding should prioritize settings facilitating romance: academies creating forced proximity and hierarchy, courts enabling political intrigue and forbidden dynamics, or isolated locations requiring partnership.
+
+Expect fast-paced narratives with constant momentum. Short chapters (10-20 pages), frequent POV switches, cliffhanger endings, and escalating romantic or plot tension maintain propulsive reading. Pacing should feel "unputdownable"—readers should struggle to set the book down. Multiple intimate scenes throughout demonstrate deepening physical and emotional connection; readers anticipate explicit sexual content (high spice) as genre standard.
+
+Protagonists should be powerful and morally complex. Heroines are physically capable (warriors, riders, mages), magically gifted, and mentally resilient. Male leads are often morally gray or villainous—dangerous, with dark pasts and questionable ethics who soften through love but retain complexity. Readers expect dynamic romantic tension built on genuine antagonism, forced proximity, or fated bonds pushing characters together despite obstacles.
+
+Worldbuilding should create exotic sensory experience. Beautiful, atmospheric settings matter—lush forests, glittering courts, soaring dragon aeries. Readers want to inhabit these worlds, experiencing magic viscerally through sensation and emotion. Magic tied to feeling (desire triggering power, emotion fueling spells, bonds felt physically) creates intimate connection between romance and fantasy systems.
+
+Series structure is expected. Readers anticipate extended relationship development across multiple books, with each installment providing satisfaction while launching continuing threads. Alternatively, interconnected standalones in shared universes appeal to readers wanting variety while remaining in familiar magic systems.

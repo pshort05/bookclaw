@@ -1,0 +1,42 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- | DO ✔️                                                         | DON'T ❌                                                              |
+- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+- | **Research your chosen culture** (religion, daily life, military). | **Treat the setting as just a cool aesthetic.**                             |
+- | **Describe sci-fi from a native POV** (e.g., "glowing shard"). | **Use modern technical jargon** (e.g., "nanite-based alloy").         |
+- | **Show characters acting on their beliefs** (fate, gods, honor). | **Write modern characters who just happen to be wearing togas.**      |
+- | **Use formal address and titles** ("Centurion," "My Lord").   | **Use "thee," "thou," and "hath" unless you're a linguistics expert.** |
+- | **Focus on the societal consequences of the technology.**       | **Write a generic action plot that just happens to have Romans.**       |
+- 
+- A good line of dialogue in this genre often has three parts: **[Formal Address]** + **[Action/Observation]** + **[Worldview Interpretation]**.
+- Template:**
+- > `[Title of person being addressed]`, `[observation about the sci-fi element]`. `[Interpretation based on myth/religion/superstition]`.
+- Example 1: A Soldier sees a security drone.**
+-    **Bad (Modern):** "Hey boss, look! It's a flying robot eyeball. It must be scanning us."
+-    **Good (Ancient World):** "Legate, look to the sky! A bronze hornet with a single eye of obsidian follows our march. It is a bad omen—an unblinking spy of Pluto himself."
+- Example 2: A Physician examines a self-healing wound.**
+-    **Bad (Modern):** "The nanites are healing the tissue at an accelerated rate."
+-    **Good (Ancient World):** "By Asclepius... I have seen no poultice or suture that can command the flesh to knit itself thus. The wound closes as if woven by the Fates' own hands. This is either a divine blessing or the blackest sorcery."
+- 
+- 1. Pitfall: Ancients with Lasers**
+-    *The Problem:* The story is just a standard action/military plot where swords are replaced with sci-fi weapons, with no real cultural impact.
+-    *The Fix:* Focus on the *implications*. How does a single plasma rifle, which can melt a shield wall, destabilize the entire military and political structure of the legion? The story is about the man with the rifle being a god among men, and what that does to him and society.
+- 2. Pitfall: Modern People in Togas**
+-    *The Problem:* Characters think and behave like 21st-century people. They question religion easily, have modern ethics, and understand concepts like 'rights' or 'science' in a modern way.
+-    *The Fix:* Immerse yourself in the ancient mindset. For them, gods are real, slavery is a normal part of life (though perhaps lamented), honor is a tangible force, and personal destiny is tied to fate and omens. Their decisions *must* flow from this worldview.
+- 3. Pitfall: The Info-Dump**
+-    *The Problem:* The author explains the sci-fi technology or the history of the period in long, dry paragraphs.
+-    *The Fix:* Filter everything through character. Show the history through a character's biases and actions. Reveal the technology through a character's flawed, myth-based understanding. Let the reader piece it together alongside the protagonist.
+- 
+-    **Patrician/Senator:** Eloquent, uses rhetorical devices, may drop Latin phrases for effect. Speaks with authority and assumes deference. Expects to be obeyed.
+- > *"Quintus, your argument is as dull as a rusted gladius. The Republic demands decisive action, not this plebeian hand-wringing."
+-    **Equestrian/Merchant:** Pragmatic, focused on commerce, law, and profit. Respectful to Patricians, but more direct than them. Less concerned with lofty ideals, more with practical outcomes.
+- > *"The Praetor's tax is one thing, but this... this 'glowing metal' has disrupted the grain shipments for a week. What is the Senate doing to restore trade?"*
+-    **Military (Centurion):** Direct, professional, gruff. Uses military analogies. Concerned with discipline, logistics, and the chain of command.
+- > *"I don't care if it's a gift from Mars himself. It's in my sector, and it's not on my muster roll. My orders are to secure this position. That means we form a testudo and see if it bleeds."
+-    **Plebeian/Slave:** Varies from educated to simple. Language is often simpler, more direct. Highly deferential and cautious when speaking to superiors. Among peers, concerns are about survival, food, family, and local gossip.
+- > *(To a superior)* "Yes, Dominus. Right away, Dominus."
+- > *(To a peer)* "Did you hear? The priests say the new star in the west is a bad sign. I just pray it doesn't mean the price of bread will rise again."
+- 

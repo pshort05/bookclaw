@@ -1,0 +1,145 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Core Concept:** The Apocalyptic (Dystopian) Coming of Age (ADCoA) novel charts the brutal transition from childhood to adulthood within a collapsed or oppressive societal framework. The protagonist’s internal journey of self-discovery is inextricably linked to their struggle against, and within, a broken world. This is not just a story about surviving a wasteland or a tyranny; it is about forging an identity and moral code in a context where traditional rites of passage are impossible or perverted.
+- Key Pillars:**
+-    **Identity vs. System:** The protagonist must define who they are against a system that seeks to categorize, control, or erase individuality. Their ‘coming of age’ is the act of claiming that identity.
+-    **Loss of Innocence as Survival:** Naivety is lethal. The protagonist’s growth is measured by the hard truths they must accept—about human nature, morality, and the cost of living.
+-    **Foundational Morality:** The central question is often, “What do I believe in, when everything tells me to believe in nothing?” The protagonist must build a personal ethical system from the rubble.
+-    **The Weight of Legacy:** The protagonist grapples with the sins/collapse of the “Before” generation while deciding what, if anything, is worth preserving or rebuilding.
+- Voice & POV:** First-person present tense is highly effective for immediacy and immersion, allowing readers to experience the protagonist’s confusion, fear, and discoveries in real-time. Limited third-person past tense is also common, keeping a tight focus on the protagonist’s perspective. The narrative voice must mature alongside the character, starting with simpler, more reactive observations and evolving toward greater analysis, cynicism, or resolve.
+- Descriptive Language:**
+-    **The World:** Use stark, sensory, and utilitarian language. Focus on texture, smell, sound, and taste—the grit, the rust, the taste of stale water, the smell of decay versus antiseptic sterility. Beauty is often found in starkness, resilience, or fleeting moments, not in traditional aesthetics.
+-    **Metaphor & Simile:** Draw comparisons from the fallen world. “The silence was as thick as radiation fog.” “Her smile was a rare commodity, like a canned peach.” Avoid lyrical, pastoral, or overly ornate metaphors unrelated to the setting.
+-    **Pacing:** Action and survival sequences should be punchy, using short, clipped sentences and paragraphs. Moments of reflection or discovery can slow the pace, using longer, more fluid sentences to contrast internal processing with external chaos.
+- Showing vs. Telling:**
+-    **SHOW:** The character’s development through their actions (e.g., hesitating to share food vs. doing it automatically, repairing a tool their parent once used).
+-    **SHOW:** The horror of the world through specific, sensory details, not general statements.
+-    **TELL SPARINGLY:** Internal monologue is crucial for moral quandaries and identity formation, but it should be direct and raw, not philosophically abstract.
+- Dialogue in this genre is a tool for survival, revelation, and power dynamics. It is rarely just chat.
+- General Principles:**
+- 1.  **Economy & Subtext:** Characters speak to get needs met, share vital information, or assert dominance. What is *not* said is often as important as what is. Trust is scarce, so words are weighed.
+- 2.  **Idioms from the World:** Replace common idioms with ones born of the setting. Instead of “It’s raining cats and dogs,” try “It’s a real acid-drizzle out there.”
+- 3.  **Jargon & Slang:** Use carefully to denote factions, professions (Scavengers, Enforcers, Techs) or ideologies. Ensure it is understandable from context.
+- Dialogue Functions:**
+-    **Exposition Delivery:** Must be organic. A veteran explaining the rules of the Safe-Zone to a newcomer; a character reading a fragment of a pre-collapse diary.
+-    **Relationship Forging:** Terse, guarded exchanges that slowly thaw into longer, more vulnerable conversations mark key relationship milestones.
+-    **Moral Debates:** Arguments about survival vs. humanity, the value of the past, what a “good life” means now. These are core to the protagonist’s coming of age.
+- While flexible, the ADCoA story typically follows a modified hero’s journey, where the “call to adventure” is often a threat to basic survival or autonomy.
+- Act I: The Constricted World & The Catalyst**
+-    **Establish the “Cage”:** Show the protagonist’s limited life within the dystopian system or apocalyptic enclave. Reveal their coping mechanisms, desires, and naïve worldview.
+-    **The Flaw in the Cage:** A personal or systemic event shatters their fragile stability (e.g., a loved one taken, a resource crisis, discovery of a lie).
+-    **The Reluctant Choice:** The protagonist is forced to act, often against their instincts to stay safe/hidden. They commit to a dangerous course.
+- Act II: The Descent & Education**
+-    **Journey into the Unknown:** The protagonist navigates the wider, more dangerous world. They encounter allies, enemies, and mentors of varying morality.
+-    **The Cost of Knowledge:** Each lesson about the world—how to fight, who to trust, the true history—comes at a price (betrayal, injury, moral compromise).
+-    **The False Victory / Major Setback:** A seeming success leads to a catastrophic failure, often rooted in the protagonist’s remaining naivety or flaw. They lose something or someone critical.
+- Act III: The Forged Self & The Reckoning**
+-    **The Choice of Self:** In the aftermath of the setback, the protagonist must decide what kind of person they will be. This is the core “coming of age” moment—embracing agency and a hardened, but hopefully not wholly lost, moral core.
+-    **The Confrontation:** The protagonist, now operating from their new identity, confronts the central antagonistic force (a tyrant, a rival faction, the systemic evil itself). The conflict tests their new philosophy.
+-    **The Resolution & New State:** The immediate conflict is resolved, but the world is not magically fixed. The focus is on the protagonist’s new role within it. Have they become a leader? A guardian? A wanderer? The ending should feel earned, bittersweet, and focused on the character’s changed state, not just plot closure.
+- Key Structural Beat:** The protagonist’s agency must progressively increase. They move from being *acted upon* by the world to *acting upon* the world, defining their own path.
+- 1.  **Start with Genre Guide:** Populate the template below to define your novel's core pillars and tone.
+- 2.  **Define the Protagonist:** Use the Protagonist template to solidify your MC's starting point, core conflict, and arc.
+- 3.  **Sketch the World:** Use the World-Building template to create the specific, lived-in details of your setting.
+- 4.  **Map the Journey:** Use the Story Structure template to plot key beats, ensuring the internal and external journeys are linked.
+- 5.  **Polish the Voice:** Use the Style Guide template to document prose, dialogue, and descriptive rules unique to your story.
+- 
+- Entry Name:** Genre: Apocalyptic (Dystopian) Coming of Age
+- Core Concept:** [A one-sentence elevator pitch for your specific novel.]
+- My Novel’s Pillars:**
+-    **Identity vs. System:** How will my protagonist’s search for self clash with the world’s rules? (e.g., “Kael must choose between the Collective’s assigned ‘Purpose’ and his own desire to create art from scrap.”)
+-    **Loss of Innocence:** What specific naive belief will my protagonist be forced to abandon, and what event will shatter it? (e.g., “The belief that the Enclave’s leaders are benevolent guardians, shattered when she witnesses a ‘Recycling’.”)
+-    **Foundational Morality:** What central moral question will my protagonist grapple with? (e.g., “Is it better to protect a few fiercely or try to save the many?”)
+-    **The Weight of Legacy:** What aspect of the ‘Before’ world or the fallen generation will my protagonist have to confront? (e.g., “Her father’s journal reveals he helped cause the collapse while trying to prevent it.”)
+- Tone & Mood Keywords:** [e.g., Gritty, Desperate, Cautiously Hopeful, Claustrophobic, Wry]
+- Comparative Titles/Inspirations:** [2-3 books/films that inspire the feel of your story.]
+- Entry Name:** Protagonist: [Character Name]
+- The Constricted Self (Start):**
+-    **Role in the Cage:** [e.g., Scavenger’s apprentice, Lower-Tier Citizen, Bio-dome maintenance tech]
+-    **Coping Mechanism:** How do they get by? [e.g., Obedience, Daydreaming, Isolating, Sarcasm]
+-    **Flawed Worldview:** What do they incorrectly believe? [e.g., “The rules keep us safe,” “My worth is defined by my productivity score,” “Nothing exists beyond the Wall.”]
+-    **Yearning:** What do they secretly want? [e.g., Connection, Freedom, Answers, To be remembered.]
+- The Catalyst:** What specific event forces them to act? [e.g., Discovery of a hidden map, death of a protector, witnessing an injustice, being selected for a frightening duty.]
+- The Forging (Arc):**
+-    **Major Lesson 1:** [e.g., Trust is earned, never given.]
+-    **Cost of Lesson 1:** [e.g., Betrayed by a seeming ally, loses a resource.]
+-    **Major Lesson 2:** [e.g., Mercy can be a strength, not just a weakness.]
+-    **Cost of Lesson 2:** [e.g., Must protect the person who wronged them, risking own goal.]
+-    **The Defining Choice:** At the story’s climax, what internal choice will they face? [e.g., “To destroy the system and risk chaos, or seize control of it and risk becoming the oppressor?”]
+- The Forged Self (End):** What new role/identity do they embody? [e.g., The reluctant leader of a new community, the wandering guardian of knowledge, the bridge between two factions.]
+- Entry Name:** World: [Your World’s Name/Descriptor]
+- The Big Picture:**
+-    **Category:** [Post-Apocalyptic / Dystopian / Hybrid]
+-    **The Catastrophe/Shift:** [What happened? e.g., “The Searing” (atmospheric burn), “The Quiet” (neurological plague), “The Ascendancy” (corporate takeover).]
+-    **Current Era Name:** [What do people call now? e.g., The After, The New Order, The Long Thirst.]
+- The Lived-In Details:**
+-    **Key Locations (3):**
+- 1.  **[Location Name]:** [Descriptor & Purpose. e.g., *The Rust Market:* A trading post in a scuttled freighter; barter only, lawless.]
+- 2.  **[Location Name]:** [Descriptor & Purpose.]
+- 3.  **[Location Name]:** [Descriptor & Purpose.]
+-    **Power & Factions:**
+-    **The Holders of Power:** [Who’s in charge? e.g., The Directorate, The Church of the Last Sun, The Clan Chiefs.]
+-    **The Oppressed/Outsiders:** [Who’s at the bottom? e.g., The Unregistered, Scavengers, Mutants.]
+-    **Daily Life & Survival:**
+-    **Currency:** [e.g., Water credits, ammunition, skill-trade, reputation.]
+-    **Key Resources (Scarce & Plentiful):** [e.g., Scarce: antibiotics, fertile soil. Plentiful: scrap metal, fungal growth.]
+-    **A Daily Danger:** [e.g., Patrol sweeps, acid rain, psychic static zones.]
+- Rules & Lore (Known to Protagonist at Start):**
+-    **One Sacred Rule:** [e.g., “Never speak of the Before.”]
+-    **One Practical Rule:** [e.g., “Check all seals twice before nightfall.”]
+-    **One Fragment of History/Myth:** [e.g., “They say the old city is drowned and haunted by the Glow.”]
+- Entry Name:** Structure: [Your Novel’s Title] Arc
+- Act I: The Constricted World**
+-    **Opening Image:** [The protagonist in their ‘cage,’ demonstrating their normal.]
+-    **The Flaw Revealed:** [Scene where their worldview/lifestyle is shown to be fragile.]
+-    **The Catalyst:** [Specific event that breaks the status quo.]
+-    **The Reluctant Choice:** [The decision that launches the journey.]
+- Act II: The Descent & Education**
+-    **Crossing the Threshold:** [Entering the new, dangerous zone.]
+-    **Allies & Enemies (1):** [First major encounter; what is learned?]
+-    **The Price Paid:** [First significant cost/loss.]
+-    **Allies & Enemies (2):** [Second major encounter; shifts the goal.]
+-    **The False Victory / Major Setback:** [A success that leads to a catastrophic failure.]
+- Act III: The Forged Self & Reckoning**
+-    **The Darkest Moment / Choice of Self:** [Where they define their new identity/morality.]
+-    **Gathering for Confrontation:** [Preparing based on new resolve.]
+-    **The Final Confrontation:** [Climax testing their new self.]
+-    **The Return/New State:** [Final image showing their changed role in the world.]
+- Connecting Thread:** For each major plot beat above, note the **corresponding internal step** in the protagonist’s coming-of-age. (e.g., “False Victory” correlates with “Clings to old belief in simple justice, leading to betrayal.”)
+- Entry Name:** Style: [Your Novel’s Title]
+- Narrative Voice:**
+-    **POV & Tense:** [e.g., First-Person, Present Tense]
+-    **Voice at Start:** [3 adjectives, e.g., Naive, Observant, Fearful]
+-    **Voice at End:** [3 adjectives, e.g., Resolute, Weary, Determined]
+- Descriptive Rules:**
+-    **Metaphor/Simile Source:** [What will comparisons draw from? e.g., Machinery, decay, old tech, bodily harm, stark nature.]
+-    **Sensory Priority:** [Rank these for emphasis: Sight, Sound, Smell, Touch, Taste.]
+-    **Taboo Words/Phrases:** [Words to avoid because they don’t fit the world, e.g., “beautiful,” “peaceful,” modern slang.]
+- Dialogue Rules:**
+-    **Faction Slang:**
+-    **[Faction A]:** [e.g., “sparked” = killed, “glow” = radiation]
+-    **[Faction B]:** [e.g., “cleansed” = executed, “the Word” = law]
+-    **Common World Idioms:** [List 2-3, e.g., “Don’t count raindrops before the storm.” (Don’t celebrate early.)]
+-    **Dialogue Tics:** [Any character-specific speech patterns for the protagonist? e.g., Uses “I guess” when uncertain, curses in technical terms.]
+- Pacing Guidance:**
+-    **For Action/Survival Scenes:** [e.g., Ultra-short sentences. Fragments okay. Focus on physical sensations.]
+-    **For Reflection/Discovery Scenes:** [e.g., Allow longer sentences. Use more internal monologue. Contrast with flash sensory memories.]
+- 1.  **The World is a Character:** The setting actively challenges, shapes, and opposes the protagonist.
+- 2.  **Innocence is a Liability:** Growth is measured by the shedding of naivety and the acceptance of harsh truths.
+- 3.  **Morality is DIY:** The protagonist must construct their own ethical code from the rubble; there are no handed-down answers.
+- 4.  **Action Reveals Character:** In crisis, what a person *does* defines them more than what they *say*.
+- 5.  **The Past Haunts, The Future is Unwritten:** Legacy and history are burdens; the protagonist decides what to carry forward.
+- | Do | Don’t |
+- | :--- | :--- |
+- | **DO** ground the story in visceral, sensory detail. | **DON’T** rely on generic, tell-don’t-show world-building (e.g., “the world was a terrible place”). |
+- | **DO** let the protagonist’s voice mature with their experiences. | **DON’T** keep the protagonist passive or whiny for too long; survival requires agency. |
+- | **DO** make dialogue purposeful, with layers of subtext and threat. | **DON’T** use dialogue for lengthy, unnatural info-dumps. |
+- | **DO** make costs and consequences real and lasting. | **DON’T** solve major problems with deus ex machina or luck. |
+- | **DO** focus the climax on the protagonist’s internal choice, not just the external battle. | **DON’T** end with a perfectly restored utopia; the focus is on the character’s new place in a flawed world. |
+- Template:** [Character State/Goal] + [Obstacle/Subtext] + [Setting-Specific Language]
+- Examples:**
+-    **Information Exchange (Guarded):** “The pump at the old depot… still work?” (Goal: Find water. Subtext: I don’t trust you with my need. Language: Specific location.)
+-    **Threat/Violence:** “That ration bar has City-Green stamps. You’re a long way from the spire, worm.” (Goal: Establish dominance. Subtext: I know you don’t belong here. Language: Faction-specific markings.)
+-    **Moment of Vulnerability:** “My brother… he used to say stars were holes in the dark. Stupid. But I miss stupid.” (Goal: Connect. Subtext: I am grieving and human. Language: Personal, nostalgic idiom.)

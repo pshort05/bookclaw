@@ -1,0 +1,75 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- [What emotional journey drives this romance? Example: "Learning to belong after displacement" or "Trusting vulnerability with a being from an alien world"]
+- What does Protagonist want most?** [Primary goal at story's start. Example: "To return home"]
+- What do they actually need?** [Deeper need they don't recognize. Example: "To belong somewhere, even if that somewhere is unfamiliar"]
+- What will they sacrifice?** [What costs are they willing to pay? Example: "Their old life, their former identity, their safety"]
+- [List 2-3 genuine character flaws that complicate the romance. Example: "Emotionally guarded from past betrayal; assumes love interest will abandon her; defaults to running when scared"]
+- How do they meet?** [Inciting romantic moment. Example: "He's the Keeper tasked with capturing her as an illegal Displaced"]
+- Initial Attraction:** [What draws them together? Avoid "instant love." Example: "His unexpected gentleness; her refusal to be afraid"]
+- Primary Conflict:** [What keeps them apart? Example: "His duty to the realm vs. his feelings for her"]
+- Transformation Arc:** [How does this person change through loving the LI? Example: "Learns to trust vulnerability; chooses active love over passive self-protection"]
+-  [ ] First meeting with LI (disoriented, unaware of attraction)
+-  [ ] First vulnerability with LI (shares fear/secret)
+-  [ ] Romantic turning point (acknowledges feelings)
+-  [ ] Darkest moment (relationship threatened or broken)
+-  [ ] Recommitment (chooses LI/world despite cost)
+-  [ ] Final transformation (new identity in new world)
+- [Quirks, vocabulary, emotional tells. Example: "Starts sentences with 'I don't know' when uncertain; uses 'actually' frequently when defensive; eyes go soft when looking at LI"]
+- 
+- Entry Title:** [Your Story Title] – Three-Act Breakdown
+- Purpose:** Track plot milestones and ensure romance/worldbuilding are integrated
+- 
+- Opening Scene:** [What's the very first image/moment? Example: "Portal tears open in midnight apartment; protagonist reaches through before fear stops her"]
+- Inciting Incident:** [What forces protagonist into the alternate world? Example: "Pulled through portal by LI; can't find way back"]
+- Love Interest Introduction:** [When and how do they meet? What's their first interaction? Example: "He's waiting on the other side; she assumes he's a captor"]
+- World Establishment (minimum 3 rules):**
+- 1. [Example: "Time moves differently; one day here = one week in origin world"]
+- 2. [Example: "Magical systems require bloodline power; she has none"]
+- 3. [Example: "Crossing the Veil has physical cost; can only survive 3 months before death"]
+- Act One Ending:** [What commits protagonist to the alternate world? Example: "Portal closes; she has 3 months before return is physically impossible"]
+- 
+- Key World-Building Scenes:**
+-  Scene at [location]: [What is learned?]
+-  Scene at [location]: [What is learned?]
+-  Scene at [location]: [What is learned?]
+- Romantic Progression Milestones:**
+-  First intimate conversation: [What's shared? What's vulnerable?]
+-  First physical touch/kiss: [What triggers this? What does it mean?]
+-  First night together (physical or emotional): [What's revealed?]
+-  Midpoint revelation: [What information raises stakes? Who reveals it and why?]
+- External Stakes Introduction:** [What's the inciting antagonist/conflict? Example: "The Keepers are hunting her; they don't allow Displaced in the realm"]
+- 
+- Romantic Obstacle:** [What comes between them? Example: "LI reveals he was tasked with capturing her; she feels betrayed"]
+- External Pressure:** [How does worldbuilding complication threaten romance? Example: "Portal reopens; she can return home, but LI cannot cross"]
+- Separation/Heartbreak (around 60-70% mark):** [Do they break up? Separate? What's the lowest point?]
+- Recommitment Point:** [When does protagonist choose LI/world? What costs this choice? Example: "Chooses to close portal permanently, sealing herself in alternate world"]
+- 
+- Final Antagonist Confrontation:** [How is external conflict resolved? Example: "Faces the Head Keeper; proves her right to exist in this world through magical trial"]
+- Romantic Resolution (HEA or HFN):** [How is romance concluded? Example: "LI proposes marriage/bonding in their world's tradition; she accepts"]
+- World Integration:** [How is protagonist's place in the world established? Example: "Named as official Human Ambassador; given land and title"]
+- Final Scene:** [What's the last image? Example: "Standing at the edge of the portal site, looking back one final time before walking forward into her new world"]
+- 
+- Entry Title:** [Alternate World Name] – Environment, Rules & Culture
+- Purpose:** Maintain world consistency and ensure sensory immersion
+- 
+- Name of World:** [What's it called by inhabitants?]
+- Access Points:** [How does protagonist enter? Example: "Portal at [location]. Opens [frequency]. Stays open [duration]"]
+- Physical Laws:** [How does this world differ? Example: "Gravity 15% weaker; time moves at different rate; magic is tangible force"]
+- Rule 1:** [Example: "Magic requires verbal incantation and bloodline power"]
+- Rule 2:** [Example: "Keepers are immortal but cannot cross the Veil"]
+- Rule 3:** [Example: "Displaced (those from other worlds) are hunted as threats to realm stability"]
+- Consequences of Breaking Rules:**
+-  If Rule 1 broken: [Example: "Magic backfires, causing injury to caster"]
+-  If Rule 2 broken: [Example: "Keeper loses immortality and ages rapidly"]
+-  If Rule 3 broken: [Example: "Entire family unit faces exile or execution"]
+- Governing Structure:** [Who's in charge? How are decisions made?]
+- Social Hierarchy:** [What determines rank? Example: "Magical ability, bloodline, age"]
+- Class/Status of Love Interest:** [How much power/privilege does LI have? Example: "Head Keeper's chosen successor; highest status aside from royal"]
+- Class/Status of Protagonist:** [What's their starting position? Example: "Illegal Displaced; lowest status; threatened with execution"]
+-  [Location name]: [Purpose in story, sensory details, rules specific to location]
+-  [Location name]: [Purpose in story, sensory details, rules specific to location]
+-  [Location name]: [Purpose in story, sensory details, rules specific to location]
+- [Where on spectrum from medieval to futuristic? How does this affect romance logistics?]

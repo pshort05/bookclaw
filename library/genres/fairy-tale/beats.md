@@ -1,0 +1,142 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+- Sales Impact: Featured titles see 500-800% sales spikes within days
+- Content Strategy: Sophisticated blend of aesthetics, emotional reactions, detailed analysis
+- Moral Complexity - Gray characters replacing simple good vs. evil
+- Agency & Resistance - Characters must act on their world, not be swept along
+- ⬆️ Vulnerable Male Characters - Emotional depth now attractive
+- ⬆️ Power Reversal - Female characters with agency/power
+- ❌ Damsel-in-Distress - Actively avoided by readers
+- ❌ Passive Female Characters - Readers demand action/agency
+- Danger and peril that feel authentic, not manufactured
+- Character Development:
+- Supporting characters with depth and agency
+- Morally gray characters readers love despite questionable decisions
+- Settings that feel as important as characters
+- Emotional intimacy emphasized equally with physical attraction
+- Characteristic: Combines commercial appeal with literary quality
+- Success Factors: Strong differentiation, emotional authenticity
+- Market Signal: Actively rejected by modern readers
+- Recommendation: Strongly avoid; readers demand active protagonists
+- ✅ Morally complex characters - Flawed protagonists readers care about
+- ❌ Flat characterization - Generic, interchangeable protagonists
+- ❌ Passive heroines - Characters swept along by events
+- ❌ Predictable plots - Readers anticipate every beat
+- ❌ Perfect protagonists - Characters without believable flaws
+- ❌ Manufactured stakes - Danger that doesn't feel authentic
+- Differentiation Tactics
+- Invest in rich characterization of flawed, complex protagonists
+- Create content around characters, emotional journeys, themes
+- Engage with reader communities, respond to theories/reactions
+- Key Success Factors:
+- The most successful 2023-2025 releases combine literary quality with popular appeal, emotional depth with imaginative worldbuilding. Readers increasingly reject sanitized narratives in favor of morally complex characters and paranormal/dark elements.
+- For maximum market impact: Position your work in high-demand/low-saturation segments (LGBTQ+ fairy tales, non-European folklore, literary dark romantasy), or bring exceptional emotional authenticity to crowded high-demand segments (core romantasy, dark romantasy, paranormal romance).
+- https://www.facebook.com/groups/FantasyFaction/posts/3493586020950567/
+- Primary audience, tone range, core emotional beats
+- Essential voice characteristics (lyrical but accessible, character-driven, sensory-rich)
+- Scene pacing and structure
+- Integration approach (reveal through character experience)
+- 5. Character Development & Archetypes
+- Modern heroine expectations (flawed, active, complex, vulnerable)
+- Supporting character integration requirements
+- Organized by category (prose, character, plot, worldbuilding, dialogue)
+- ✅ Specific, actionable guidance (not vague principles)
+- The file is ready for download and immediate use in your writing practice.
+- Core Emotional Beat: Transformation, wonder, belonging, obsessive connection
+- Creates sense of discovery as readers uncover world alongside character
+- Alternating chapters/sections between 2-3 POV characters
+- Creates dramatic irony when characters don't understand each other's motivations
+- Creates immediate, visceral intimacy but limits external action scenes
+- Voice Characteristics
+- Character-driven internal processing: Explicit emotional exploration and self-reflection
+- Witty banter capability: Dialogue carries emotional weight and character development
+- Vary sentence length deliberately: short for tension/impact, longer for atmosphere
+- Use active voice as default; passive voice for specific narrative effect only
+- Employ present participles sparingly for vivid action beats
+- Build emotional scenes with shorter, punchier sentences
+- Describe through character perception (what they notice) rather than omniscient observation
+- Use metaphor/simile cautiously—one powerful image beats three mediocre ones
+- Poor: "She was beautiful, with long dark hair and bright blue eyes. He felt attracted to her immediately."
+- Characteristics:
+- Carries emotional and character information simultaneously
+- Avoids exposition dumps; characters don't explain things one already knows
+- Uses contraction naturally (reflects modern speech patterns)
+- Reflects character voice through word choice and speech patterns
+- Action beats to ground dialogue in physical world
+- Pacing & Scene Structure
+- Scene Pacing Guidelines:
+- Action/tension scenes: Shorter paragraphs, tighter prose, faster pacing
+- Emotional/romantic scenes: Longer, more introspective, lingering on details
+- Dialogue-heavy scenes: More white space, visible emotional beats
+- Exposition/worldbuilding: Woven through dialogue and character observation, not info-dumped
+- Scene Components (Romantasy Standard):
+- Character emotional state/internal conflict
+- External action/dialogue/interaction
+- Internal processing (what it means, emotional impact)
+- Transition to next beat
+- Reveal world details through character experience, not exposition
+- Social structures shown through character interaction
+- Environmental details anchored in character perception
+- Use magic to reveal character (how they use/relate to magic shows their nature)
+- Paranormal element integrated throughout, not isolated to certain scenes
+- CHARACTER DEVELOPMENT & ARCHETYPES
+- Flawed, not perfect: Clear character arcs showing growth; visible internal conflicts
+- Active, not passive: Make decisions that drive plot forward; agency essential
+- Supporting Character Integration
+- Essential: Secondary characters must have depth, agency, clear motivations
+- Have own subplots and character arcs
+- Emotional Intimacy: Prioritized equally with physical attraction
+- Vulnerability: Essential—characters reveal true selves through romance
+- Scene placement serves narrative/character purposes, not titillation
+- Sexual scenes reveal character (desires, vulnerabilities, dynamics)
+- Intimacy scenes show emotional growth and relationship evolution
+- Can use italics, line breaks, or scene transitions
+- Purpose: Creates emotional rhythm, reveals character compatibility
+- Execution: Witty without being precious; feels natural to characters
+- Agency & Resistance: Characters act on their world rather than being swept along by events
+- Character-Based Motifs:
+- Theme emerges from character choices, not authorial lecture
+- Avoid didactic messaging or heavy-handed morals
+- Let readers draw conclusions from character arcs
+- Setting Integration: Paranormal elements throughout (not isolated scenes)
+- Perspective Shift: Often villain/secondary character POV; fresh angle essential
+- ❌ Telling emotions instead of showing through action/reaction
+- ❌ Inconsistent character voice
+- Character Issues:
+- ❌ Cardboard supporting characters
+- ❌ Predictable, formulaic plot beats
+- ❌ Unearned happily-ever-after without character growth
+- ❌ All characters sounding identical
+- ❌ Dialogue that doesn't move plot or reveal character
+- Nettle & Bone by T. Kingfisher (character-driven, morally gray protagonist, witch perspective)
+- Character voice distinguishable from narrator voice
+- Sensory details ground scenes in physical reality
+- Active voice is default; passive voice used purposefully
+- Sentence variety creates rhythm appropriate to scene
+- No info-dumping; world revealed through character experience
+- Character Development:
+- Supporting characters have depth and agency
+- All characters have stakes in outcome
+- Emotional intimacy prioritized equally with physical attraction
+- Sexual content (if present) serves narrative and character purposes
+- Social/cultural structures visible through scenes
+- Each character has distinct voice
+- Dialogue moves plot and reveals character
+- Subtext present; not all emotional beats stated directly
+- Themes emerge from character choices, not authorial lecture
+- Serve the story and characters first. Genre conventions are guidelines, not rules. The most successful fairy tale fiction breaks conventional boundaries while honoring what readers love about the genre: transformation, wonder, obsessive connection, and emotional authenticity.
+- Recurrent narrative devices and character archetypes.
+- Character Archetypes
+- The Wicked Stepmother: Represents domestic jealousy and the anxiety of a fractured family unit.
+- The Forest (The Wilds): Represents the subconscious, danger, lack of societal rules, and magic. Characters enter the forest to get lost or find themselves.
+- The Exchange/Bargain: Magic is transactional. "I will give you this, but you must give me your firstborn."
+- Objects and settings representing abstract ideas.
+- Tone: Didactic, whimsical, ominous, or matter-of-fact. Events—even magical ones—are stated as absolute truths without scientific explanation.
+- Structure: Use paratactic syntax (linking clauses with "and" rather than complex subordination).
+- 4. Characterization
+- Archetypes: Characters are defined by roles or single traits (The Youngest Son, The Wicked Stepmother, The Wise Crone).
+- Lack of Internal Monologue: Show emotion through action. Do not psychoanalyze the characters.
+- Soft Magic: Magic is unexplained, contractual, and often carries a heavy cost.
+- Input: Write a scene where a girl enters a witch's hut.

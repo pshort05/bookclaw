@@ -1,0 +1,46 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  Use "said" and "asked" primarily. Avoid excessive alternatives.
+-  Incorporate character action that reveals emotional or spiritual state: hesitation before speaking truth, hands gripping a Bible, eyes closing in prayer, voice wavering when admitting doubt.
+-  **Dialogue by relationship:** Conversations between romantic partners deepen over the arc. Early dialogue is guarded; later dialogue reveals vulnerability and shared vision.
+-  **Church/faith community:** Characters interact with pastors, church leaders, small group members. These conversations expose community values and challenge individual perspective.
+-  **Family dialogue:** Religious family dynamics (believing vs. non-believing family members, denominational differences, generational faith shifts) create stakes.
+-  **Romantic partner conversations:** Discussions about faith commitments, values alignment, prayer life, and spiritual leadership become crucial turning points.
+- 
+- ACT I: Setup & Inciting Incident** (25% of manuscript)
+-  Introduce protagonist in a state of *spiritual incompleteness* or *faith struggle.* Perhaps they've drifted from their beliefs, face a crisis of faith, or struggle with a specific sin or conviction.
+-  Present romantic prospect. The meet-cute or introduction should naturally reveal something about the character's faith commitment or lack thereof.
+-  Inciting incident: A choice or event that forces the protagonist to engage their faith more deeply, often because the love interest either shares or challenges their spiritual values.
+- ACT II: Rising Action & Midpoint** (50% of manuscript)
+-  Deepening romantic connection parallels spiritual growth. As the relationship develops, faith questions intensify. The romance becomes the crucible in which the protagonist's real spiritual work happens.
+-  *The Midpoint Crisis:* A moment when the protagonist's faith and romantic desires seem to conflict. This is the genre's signature moment. Perhaps they must choose between comfort with their partner and fidelity to their convictions, or they realize their partner's faith (or lack thereof) is not aligned with their own.
+-  Secondary characters (church community, family, friends) challenge and support the protagonist's spiritual journey.
+- ACT III: Climax & Resolution** (25% of manuscript)
+-  Climactic scene in which the protagonist makes a faith-driven choice, often at cost to romance. They surrender an outcome to God or commit fully to their values.
+-  This surrender or commitment paradoxically *resolves* the romantic conflict. When the protagonist trusts God (not their own control), the romantic resolution becomes possible—and more meaningful.
+-  Resolution includes: reconciliation or consummation of romance, spiritual growth evidenced in changed behavior or perspective, and integration into a faith community or renewed faith commitment.
+- 1. **Introduce protagonist's faith struggle** (not a sermon; a lived challenge)
+- 2. **Love interest enters** (reveals their own faith position immediately or through implication)
+- 3. **Attraction and connection begin** (emotional/romantic development)
+- 4. **Faith incompatibility or challenge emerges** (the real plot)
+- 5. **Secondary characters provide pressure and perspective** (church, family, friends)
+- 6. **Protagonist faces a faith crisis or choice** (usually at 75% mark)
+- 7. **Romantic relationship temporarily ruptures or deepens into vulnerability**
+- 8. **Protagonist surrenders control/doubt to faith** (internal turning point)
+- 9. **Romantic resolution follows spiritual resolution** (not the reverse)
+- 10. **Epilogue: Evidence of changed life, faith deepened, relationship solid**
+- 
+- For each scene, ask:
+-  [ ] **Does this scene advance romantic plot AND spiritual plot?** (Not just one)
+-  [ ] **What is the character's faith state at the start? At the end?** (Even small shifts matter)
+-  [ ] **If dialogue is present, does it reveal spiritual position or crisis?**
+-  [ ] **Is secondary character present who challenges or supports faith?**
+-  [ ] **Are sensory details grounded in the character's spiritual reality?** (Not just pretty description)
+-  [ ] **Does this scene escalate faith stakes?** (Conflict deepens between love and conviction)
+-  [ ] **Is there a moment of vulnerability or honesty?**
+-  [ ] **Does the tone match genre (hopeful/meaningful, even in conflict)?**
+-  [ ] **Would a reader of Christian romance find this scene earning its pages?** (No filler)
+- 
+- Document Length:** ~1,900 words

@@ -1,0 +1,95 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Sensory Foundation:** Have I engaged at least two non-visual senses (texture, sound, scent, taste)?
+-  [ ] **Tech Integration:** Is any technology present described organically? Does it feel grown/crafted, not assembled?
+-  [ ] **Social Nuance:** Do character interactions reflect status, familiarity, or tension through formality/indirectness?
+-  [ ] **Philosophical Thread:** Does the scene's conflict, dialogue, or imagery connect to a larger theme (balance, innovation, nature)?
+-  [ ] **Punk Element:** Is there a challenge to authority, convention, or stagnant knowledge, however small?
+-  [ ] **Purpose:** Does the scene advance plot, deepen character expertise, or reveal world-building in an integrated way?
+- 1.  **Copy the desired template** into a new Codex entry in your NovelCrafter project.
+- 2.  **Fill in the bracketed `[ ]` sections** with details specific to your story.
+- 3.  **Use the prompts and questions** to brainstorm and refine your ideas.
+- 4.  **Link entries together** (e.g., link your Protagonist entry to the relevant Story Structure and World-Building entries) to create a cohesive reference web.
+- 
+- Entry Title:** Genre: Silkpunk - [Your Story's Title/Setting Name]
+- Type:** Genre Guide
+- Linked To:** [Style Guide, World-Building]
+- Core Definition:**
+- A brief summary of Silkpunk as applied to YOUR story. E.g., "A fusion of Song Dynasty-inspired aesthetics and bioluminescent fungal technology, where rebellion takes the form of poetic sabotage and architectural subversion."
+- My Story's Key Pillars:**
+-    **Primary Tech/Material Palette:** [e.g., Silk-crystal composites, clockwork powered by engineered koi, memory-laden perfumes]
+-    **Central Philosophical Conflict:** [e.g., The Dao of Adaptive Growth vs. The Doctrine of Permanent Perfection]
+-    **Punk Expression:** [e.g., Rebel cartographers distributing maps that show the empire's "forgotten" lands; artisans creating tech that only responds to cooperative use.]
+-    **Aesthetic Mood Board:** [List 3-5 key visual/textural notes: e.g., "Jade-green light filtering through paper screens," "The gritty feel of peat and moss in ancient machine foundations," "Flowing robes stained with engine grease."]
+- Inspiration & Touchstones:**
+- [List historical periods, myths, art forms, or other media that directly inspire your take.]
+- 
+- Entry Title:** Style: [Your Story's Title]
+- Type:** Style Guide
+- Linked To:** [Genre Guide, Protagonists, Key Locations]
+- Prose Voice:**
+-    **Target Tone:** [e.g., Lyrical but precise, like a technical manual written by a poet.][Example sentence demonstrating this tone.]
+-    **Metaphor Source:** [Where will similes/metaphors be drawn from? e.g., "Weaving, fermentation processes, seasonal changes, classical poetry."]
+- Dialogue Conventions:**
+-    **Key Honorifics/Titles in Use:** [List 3-5 in-world titles and their meanings/usage rules.]
+-    **Formality Spectrum:** [Describe how characters from different factions/classes typically speak. E.g., "The Glass-Binders Guild uses highly technical, clipped speech. Village elders speak in proverbs about rivers and stones."]
+-    **Forbidden Speech:** [What is considered deeply rude or revolutionary to say directly? E.g., "Directly accusing someone of greed. Claiming an ancient master's design is flawed."]
+- Descriptive Priorities:**
+- 1.  Always describe the **texture** and **source** of materials.
+- 2.  When describing emotion, tie it to a **physical sensation** or **natural phenomenon** from the world.
+- 3.  Use **asymmetry** and **slightly imperfect beauty** in descriptions of objects and places.
+- 
+- Entry Title:** Character: [Protagonist Name]
+- Type:** Character
+- Linked To:** [Style Guide, Story Structure, Faction: [Their Guild/Faction]]
+- Core Identity:** [Name], the [Artisan Title/Role], who seeks [External Goal] because of [Internal Belief/Value].
+- Expertise & Craft:**
+-    **Specialization:** [e.g., Mycological Architect, Nerve-Silk Surgeon, Lacquerware Circuitry Designer]
+-    **Signature Techniques/Tools:** [List 2-3]
+-    **Philosophy of Craft:** [What principle guides their work? E.g., "Technology should mimic the resilience of bamboo, not the rigidity of iron."]
+- Punk Motivation:**
+-    **What They Rebel Against:** [The specific stagnation, injustice, or lie.]
+-    **How They Rebel:** [Through their craft: e.g., "By designing buildings that collapse if used tyrannically."]
+-    **Greatest Fear (related to craft):** [e.g., "That their innovation will cause unforeseen ecological harm," or "That their art will be co-opted to solidify the very hierarchy they oppose."]
+- Speech Patterns:**
+-    **Typical Formality Level:** [High/Low/Variable]
+-    **Go-To Metaphors:** [What do they compare things to?]
+-    **When They Break Convention:** [Under what emotional or ethical strain do they become blunt or poetic in an unconventional way?]
+- 
+- Entry Title:** Structure: [Your Story's Title]
+- Type:** Plot
+- Linked To:** [Protagonist, Antagonist, Key Locations]
+- Three-Act Silkpunk Framework:**
+-    **Act I: The Unbalanced Thread**
+-    **Opening Image:** [A scene showcasing the world's beauty and its hidden flaw.]
+-    **Inciting Incident:** [The specific discovery, demand, or failure.]
+-    **Protagonist's Commitment:** [The craft/ethics-based reason they can't refuse.]
+-    **Act II: The Loom of Conflict**
+-    **Knowledge Quest:** [What specific old technique, principle, or master do they seek?]
+-    **Major Setback:** [An intellectual/artistic failure, e.g., a prototype that works but violates an ethical principle.]
+-    **Midpoint Fusion:** [The old insight + new observation that changes everything.]
+-    **Ally Assembly:** [Which other specialists join them, and what niche expertise do they bring?]
+-    **Act III: The Woven Resolution**
+-    **Final Craft:** [What are they literally or metaphorically building/preparing?]
+-    **Climax Format:** [Duel of designs? Public demonstration? Ritual of re-weaving?]
+-    **Resolution Principle:** [How is balance restored or a new synthesis achieved? Name the philosophical/technical principle used.]
+-    **Changed World:** [One concrete way the protagonist's world is different post-story.]
+- 
+- Entry Title:** World: [Setting/Region Name]
+- Type:** World
+- Linked To:** [Genre Guide, Key Factions, Technology]
+- Core Principle (Dao/Li):** [The fundamental natural or philosophical law that the most advanced tech in this region tries to emulate. E.g., "The Principle of Fluid Adaptation," "The Law of Resonant Sympathy."]
+- Technology Tiers:**
+-    **Common Tech:** [Used daily by many. E.g., Glaze-lamps (bioluminescent algae in ceramic pots), message-kites with silk-string tethers.]
+-    **Guild/Imperial Tech:** [Specialized, controlled. E.g., Thought-Mirrors (jade discs that require trained focus to record memories), River-Dragon drawn barges.]
+-    **Forbidden/Lost Tech:** [Rumored or taboo. E.g., Spirit-Grafting, Geomantic Engines that can induce earthquakes.]
+- Social Hierarchy & Conflict:**
+-    **Major Power Groups:** [List 2-3, e.g., The Jade Syndicate (controls mining/energy crystals), The Weavers' Epiphany (rebel artisans), The Ministry of Resonant Harmony (orthodox tech regulators).]
+-    **Primary Tension:** [What is the main societal disagreement? E.g., "Should biotech be used to perfect humanity, or to better harmonize with non-human nature?"]
+- Key Location & Its Purpose:**
+-    **Name:** [e.g., The Vernal Quarter]
+-    **Function:** [e.g., The decaying artisan district where illegal tech innovations are bartered.]
+-    **Silkpunk Detail:** [One unique biotech or aesthetic feature. E.g., "Streets are illuminated by genetically stabilized fireflies in blown-glass lanterns that pulse in response to crowd density."]
+-    **Source of Conflict:** [What tension exists here? E.g., "Guild enforcers conduct raids, but the narrow alleys are re-engineered overnight to confuse them."]

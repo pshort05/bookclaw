@@ -1,0 +1,47 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Ground the Scene:** Start with a concrete sensory detail (place, weather, physical state).
+-  [ ] **Clear Purpose:** Does the scene advance plot, reveal character, or build atmosphere?
+-  [ ] **Dialogue Subtext:** Are characters saying more or less than they mean?
+-  [ ] **Class/Role Appropriate:** Does dialogue and action fit the characters’ social positions?
+-  [ ] **Magic Handling:** If the scene involves magic, is it treated with fear, cost, or ambiguity?
+-  [ ] **Consequence Shown:** Does the scene end with a change in situation, knowledge, or relationship?
+-  [ ] **Pacing Fit:** Is the scene’s length and tension appropriate for its place in the story arc?
+-  [ ] **Link Forward:** Does the scene create a natural hook or question for the next scene?
+- 1. **Start with the Genre Guide**: Use the template to define your novel's specific take on Low Fantasy.
+- 2. **Fill the Style Guide**: Customize the prose, dialogue, and structure rules to match your voice.
+- 3. **Define the Protagonist**: Use the protagonist template to establish a flawed, grounded main character.
+- 4. **Plot the Structure**: Use the story structure template to outline your personal, consequential plot.
+- 5. **Build the World**: Use the world-building template to create a gritty, limited setting with subtle magic.
+- Import these templates as new Codex entries in NovelCrafter and fill in the bracketed details.
+- 
+- Entry Type:** Genre Guide
+- Title:** Low Fantasy: [Your Novel's Title/Project Name]
+-  **Scene Opening:** Start with [e.g., a character's physical action or a stark environmental detail].
+-  **Scene Closing:** End with [e.g., a line of dialogue that implies unspoken tension, or a minor decision made].
+-  **Pacing:** Slow build over [e.g., chapters] toward brief, violent climaxes.
+- 
+- Entry Type:** Character (Protagonist)
+- Title:** [Protagonist Name]
+-  **Lean Tags**: Use simple tags (“said,” “asked,” “replied”) most often. The genre’s realism favors unobtrusive tags.
+-  **Action Beats**: Frequently use small actions between or during lines to convey tension, hesitation, or unspoken thoughts. “He studied the map while she spoke. ‘And the price?’”
+- Low Fantasy often adapts common structures to its gritty, personal ethos.
+- 1. **The Personal Quest**: Not a grand hero’s journey, but a flawed individual’s struggle for a tangible goal (revenge, survival, saving a family, gaining a title). The arc is about the character’s moral degradation or costly triumph.
+-  *Act 1*: The protagonist’s normal, gritty life is disrupted by a personal loss or opportunity.
+-  *Act 2*: The pursuit forces them into morally ambiguous choices, alliances with dubious people, and encounters with the faint, disturbing magic of the world. They pay a price.
+-  *Act 3*: The resolution is bittersweet or pyrrhic. The goal may be achieved, but at a terrible personal cost, or it may be lost, leaving the character changed.
+- 2. **The Political Intrigue**: A plot driven by power struggles, betrayal, and negotiation, with magic as a hidden variable.
+-  *Act 1*: Introduction to a tense political landscape and the protagonist’s position within it.
+-  *Act 2*: Schemes unfold, alliances shift, secrets (including magical ones) are discovered and used as leverage. The focus is on dialogue, strategy, and sudden, shocking betrayals.
+-  *Act 3*: A climax often involving a confrontation, coup, or exposed conspiracy. Magic, if present, might tip the balance unexpectedly, but the core resolution is political.
+- 3. **The Survival Horror**: The fantastical element is a threat (a curse, a monster, a haunting) that a group must endure.
+-  *Act 1*: Introduction to a confined, grounded setting and the emergence of the subtle, terrifying fantastical threat.
+-  *Act 2*: The group’s dynamics fracture under stress. Their attempts to understand or combat the threat fail or backfire. The magic/entity is never fully explained.
+-  *Act 3*: Resolution through escape, costly sacrifice, or destruction. Survival, not victory, is the goal.
+-  **Anti-Clichés**: Avoid prophecy-driven plots, chosen ones, easy redemption arcs, and clean victories.
+-  **Pacing the Fantastic**: Introduce magical elements sparingly. The first act may have only hints or rumors. The second act might contain one concrete, disturbing magical event. The third act could see a final, costly magical application or revelation.
+-  **Endings**: Are often ambiguous, bleak, or bittersweet. The “status quo” is usually permanently damaged. Focus on the character’s changed state, not a restored world.
+-  **Scene Purpose**: Every scene should either advance the plot through character decision/action, deepen characterization through conflict or revelation, or build the grounded atmosphere.
+-  **Chapter Endings**: Aim for a minor revelation, a tense line of dialogue, or a turning point in a character’s understanding. Keep momentum through intrigue rather than constant action.

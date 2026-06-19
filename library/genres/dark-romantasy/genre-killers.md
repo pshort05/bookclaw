@@ -1,0 +1,45 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- 1) **Pitfall:** “Dark” is just rain, candles, and black cloaks.
+-  **Fix:** add systemic cruelty: laws, taxes, inquisitors, famine, magic corruption.
+- 2) **Pitfall:** The love interest is only “hot + dangerous.”
+-  **Fix:** give a consistent *code* (what they will/won’t do) and make it tested.
+- 3) **Pitfall:** Romance pauses the plot.
+-  **Fix:** make romance moments create complications (exposure, jealousy, leverage).
+- 4) **Pitfall:** Stakes escalate but emotions stay flat.
+-  **Fix:** after each escalation, add a *reckoning beat* (treat wound, confess fear, set boundary).
+- 5) **Pitfall:** Consent ambiguity that reads unintentional.
+-  **Fix:** add clear verbal check-ins or clear internal intention; show consequence if coercion occurs.
+- 
+-  [no love triangles]
+-  [no pregnancy]
+-  [no miscommunication-only conflict]
+- 
+- Entry Name:** Dark Romantasy — Style Guide
+-  Default POV: [tight 3rd / 1st]
+-  Tense: [past / present]
+-  POV rule: [one POV per scene / limited head-hops]
+-  Keyword palette (10 words): [velvet, iron, salt, ash, …]
+-  Motifs (3–5): [thorns] [blood] [candles] [storms]
+-  Sentence rhythm: [lyrical descriptions + sharp action lines]
+-  Always include: 1 sensory anchor + 1 world detail + 1 emotional tell
+-  Darkness is functional: describe what it *does* (smothers/muffles/stains)
+-  Tags: [said/asked] preferred; limit adverbs
+-  Subtext requirement: each exchange hides one want
+-  Consent language allowed list: [“Tell me to stop,” “Ask,” “Are you sure?”]
+-  Explicitness level: [1–5]
+-  Aftermath rule: any harm triggers a recovery beat within [X] scenes
+-  Chapter end pattern: [decision / revelation / threat]
+-  Romance beat pattern: [power shift → honesty → cost]
+- 
+- Entry Name:** Protagonist — [Name]
+-  Age / role: [ ]
+-  Archetype: [cursed heir / witch on the run / assassin-turned-saint]
+-  External goal: [ ]
+-  Internal need: [ ]
+-  Fatal temptation: [power, vengeance, oblivion, devotion]
+-  Past wound: [event]
+-  Lie they believe: [“Love is a trap.”]
+-  Truth they must learn: [“Vulnerability can be chosen.”]

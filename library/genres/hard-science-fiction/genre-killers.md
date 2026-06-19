@@ -1,14 +1,31 @@
-# Hard Science Fiction — Genre Killers (avoid; these make readers DNF or one-star)
+Avoid these mistakes that can undermine your story.
 
-- **"Because plot" logic** — anything that happens solely because the narrative needs it, in defiance of established rules. The cardinal sin; detail-obsessed readers catch it and never forgive it.
-- **Breaking your own rules** — a technology that behaves one way in chapter 3 and another in chapter 15; constraints that quietly lapse when inconvenient.
-- **Bad science dressed up** — a core premise built on demonstrably wrong physics or biology, or "Rule of Cool" deviations that ignore scientific law for a dramatic shot.
-- **Hand-waving / "do the math" failures** — exotic tech with no specified mechanism, fuel cycle, or failure mode; infinite energy; magic nanotech; an FTL or AGI introduced with no traced consequences.
-- **The info-dump** — multi-paragraph technical lectures that stall momentum; research the author was excited about, pasted in raw.
-- **Timeline that doesn't add up** — impossible travel times, characters aging backwards, a tech roadmap whose dates contradict the plot.
-- **The unused tool** — characters who possess working AGI, QC, or a reactor that would solve the crisis and inexplicably never use it (give a reason it's unavailable, or remove it).
-- **Decorative world-building** — elaborate rules and systems that never actually constrain or drive the plot; complexity as set dressing instead of as a source of problems.
-- **Ignored consequences** — nations collapse but daily life, food, and infrastructure continue unchanged; a demographic or resource crisis that's stated but never shown.
-- **Plodding pace** — sprawling 15-page chapters, no cliffhangers, no ticking clock; slow enough that readers stop to interrogate plausibility and find the holes.
-- **Cartoon villainy** — a mustache-twirling antagonist instead of a misguided technocrat or a realistic societal pressure; it cheapens the intellectual stakes.
-- **AI-default names** — Sarah Chen, Marcus Chen, Dr. Chen, an all-"-a" female cast, rhyming names: instant "nobody revised this" tells.
+## Failure Modes
+
+- Avoiding information dumps
+- Common Pitfalls and Solutions:
+- Info-dumping avoidance strategies
+- Pseudo-science pitfalls
+- Avoid:
+- Avoid:
+- Avoid:
+- Balance: Use hard worldbuilding for elements directly relevant to your plot and character arcs. Use softer worldbuilding for peripheral world details to avoid overwhelming readers with unnecessary complexity.
+- Don't:
+- Avoiding Information Dumps
+- Avoid:
+- Avoid:
+- Avoid:
+- Avoid depicting consciousness/intelligence as inevitable
+- Common Pitfalls and Solutions
+- Pitfall 1: Info-Dumping
+- Pitfall 2: Neglecting Human Element
+- Pitfall 3: Over-Explanation
+- Pitfall 4: Inconsistent Rules
+- Pitfall 5: Pseudo-Science
+- Avoid:
+- Avoid: Point of view shifts solely for exposition purposes.
+- Avoidance of "enabling devices"—plot conveniences without scientific basis—that soft SF frequently employs
+- Hard SF avoids fantasy elements and magical explanations, instead seeking explanations grounded in extrapolation from known or theoretically possible science.[21]
+- Avoid: " The ship moved very fast."
+- Avoid Technobabble: Do not invent nonsense words to explain magic. Explain the actual theoretical physics (or a grounded extrapolation) briefly, then move on.
+- No Humanoid Aliens (Unless Explained): If life exists, it is likely microbial or vastly different from humans (silicon-based, aquatic). Avoid "Star Trek" forehead prosthetics.

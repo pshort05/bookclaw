@@ -1,0 +1,72 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Military SF-Fantasy hybrid fiction centers organized military structures within speculative settings, prioritizing character-driven narratives within large-scale conflict. This genre combines disciplined military hierarchy and strategic organization with fantastical worldbuilding, magical systems, and imaginative wonder. The essential tension: *individual agency within collective obligation*.
+- Unlike traditional military SF (technology-focused proceduralism) or epic fantasy (lone heroes), this hybrid emphasizes how power systems enable or constrain organizational structures, how military duty conflicts with personal morality, and how organizational bonds sustain characters through extremity.
+-  Military hierarchy as primary structural framework (not backdrop)
+-  Character growth tied to rank advancement, skill mastery, or organizational responsibility
+-  Strategic/tactical challenges featuring organized forces
+-  Thematic emphasis on duty, loyalty, sacrifice, and costs of warfare
+-  High emotional stakes through unit bonds and personal relationships
+-  Moral complexity: characters ordered to do questionable things
+- 
+- In 2-3 sentences, define what makes your story's military SF-Fantasy approach distinct*
+- My story's primary military element is: [e.g., "A rising mage struggling within rigid military hierarchy that values traditional swordcraft over magic"]
+- The central tension in my story is: [e.g., "Character's individual power vs. organizational necessity to follow orders and conform to hierarchy"]
+- My story's emotional core is: [e.g., "How military bonds sustain characters through moral compromises they never anticipated making"]
+- Organizational Name/Type**: [e.g., "Imperial Legion," "Fleet Command," "Magical Corps"]
+- Hierarchy Structure**: [Briefly describe ranks from lowest to highest, how advancement works]
+- Unit Size**: [Squad/Company/Battalion/Fleet level? How many characters in primary unit?]
+- Governing Principle**: [What holds this military together? Honor code? Professional pride? Fear of leadership? Ideological commitment?]
+- Key Organizational Conflict**: [What organizational problem drives your plot? Internal corruption? Impossible orders? Outdated tactics? Resource scarcity?]
+- [Select 3-5 that define your story's focus]:
+-  [ ] Duty vs. Personal Morality
+-  [ ] Individual Growth Within Hierarchy
+-  [ ] Brotherhood/Sisterhood & Unit Bonds
+-  [ ] Leadership & Command Responsibility
+-  [ ] Cost of Power & Advancement
+-  [ ] Redemption Through Service
+-  [ ] Systemic Change via Military Force
+-  [ ] Identity Transformation
+-  [ ] Trauma & Recovery
+-  [ ] Other: [Specify]
+- [How does your magic/technology system integrate with military organization?]
+- Power Type**: [Magic, Technology, Hybrid, Supernatural]
+- Who Controls Power**: [Elite specialists? All soldiers? Rare individuals?]
+- Organizational Integration**: [How does the military organize around this power? Special corps? Force multipliers? Constraint on tactics?]
+- Power Limitations**: [What are realistic limits? How do these limits shape military organization?]
+- 
+- Codex Entry Type**: Style Guide | **Story**: [Your Story Title]
+- Your story's prose should feel like [description]*
+- My prose style should be: [e.g., "Spare and direct like military communications, but with moments of lyrical depth when showing character trauma or wonder. No flowery descriptions of violence—violence is shown as consequence and cost."]
+- Avoid in my prose:
+-  [ ] Overly ornate language
+-  [ ] Tactical jargon used to show expertise
+-  [ ] Flowery descriptions of violence
+-  [ ] Melodramatic emotions
+-  [ ] Excessive internal monologue
+-  [ ] Other: [Specify]
+- Military training shapes how characters think and speak. Define markers for your story's voices.*
+- POV Character's Voice Markers**:
+-  Verbal tic/phrase they repeat: [e.g., "yeah?" as a question tag]
+-  Thinking style: [e.g., "Strategic problem-solving, notices hierarchy and position immediately"]
+-  Emotional regulation pattern: [e.g., "Suppresses fear through humor; sarcasm indicates stress"]
+-  Military terminology they naturally use: [e.g., "Stands, fallback position, hold the line"]
+- Secondary Character Voices** (if applicable):
+-  [Character Name] speaks with: [Voice markers—rank, personality, background]
+-  [Character Name] speaks with: [Voice markers]
+- Formality in Official Contexts**: [How formal does dialogue become in briefings/command situations? Show example]
+- Example*: "Sir, third battalion's exposed." / "Hold position, Captain."
+- Informality in Unit/Off-Duty**: [How relaxed does dialogue become between close unit-mates? Show example]
+- Example*: "Torres actually picked night watch?" / "Better than listening to you snore, honestly."
+- Rank Markers**: [How do characters show rank in dialogue? Specific rank usage? First names vs. titles? Show example]
+- Example*: Superiors use full rank ("Captain, report") while peers use first names ("Torres, we need to talk")
+- Character-Specific Dialogue Quirk**: [What makes each POV character's speech distinctive? Accent? Jargon? Humor?]
+-  [POV Character]: [Specific dialogue marker]
+-  [Secondary Character]: [Specific dialogue marker]
+- Military Context Sensory Details** (what grounds your reader in military setting):
+-  Sound: [e.g., "Command voices cutting through formation noise; quiet whispered instructions during stealth"]
+-  Smell: [e.g., "Ozone from magic discharge; metal polish and fear-sweat"]
+-  Physical sensation: [e.g., "Weight of armor shifting; exhaustion tremors in hands before combat"]
+-  Spatial: [e.g., "How formation constrains movement; rank positions mapping to physical space"]

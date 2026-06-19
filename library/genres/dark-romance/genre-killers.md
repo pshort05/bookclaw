@@ -1,11 +1,6 @@
-# Dark Romance — Genre Killers (avoid; these make readers DNF or one-star)
+Avoid these mistakes that can undermine your story.
 
-The negative space of the genre — broken promises, clichés played straight, and tonal
-betrayals that earn scathing reviews.
+## Failure Modes
 
-- **The tragic ending (no HEA/HFN)** — killing off a protagonist or ending on a permanent, unresolved breakup. Subverting the happy ending isn't clever here; it's a fundamental breach of the romance contract and destroys author brand trust.
-- **The sanitized "fake" villain** — marketing a ruthless don, assassin, or stalker, then revealing he runs a charity, commits no crimes, and secretly works for the FBI. The hero must commit to his moral greyness — readers want the actual villain to get the girl, not a golden retriever in a dark suit.
-- **The "too stupid to live" (TSTL) heroine** — walking into obvious traps or ignoring survival instincts to advance the plot. Her vulnerability must stem from her enemies' power and resources, never from her own incompetence.
-- **Superficial, easily resolved misunderstandings** — a third-act breakup driven by a miscommunication a five-minute conversation would fix. Separation must come from trauma triggers, life-threatening betrayal, or inescapable syndicate politics.
-- **Unearned insta-love** — resolving enemies-to-lovers or captor/captive dynamics in the first twenty pages, before trust is earned or resilience proven. The psychological tension evaporates and the rest reads hollow.
-- **Romanticizing abuse without providing agency** — portraying the hero's cruelty as desirable while denying the heroine power to push back and force a shift in the dynamic. Unrelenting, unreciprocated cruelty that's never addressed crosses into misery porn and breaks reader trust.
+- Don't yuck the yum: Do not have the narrative judge the characters for their kinks or desires.
+- Dark romance has primarily attracted predominantly young, female, and highly engaged readers, though the demographic encompasses significant diversity. Social media platforms, particularly BookTok, have become central to the genre's cultural dominance, with digital reading communities driving visibility and sales through user-generated content. Unlike YA/NA romance demographics, which draw readers across age ranges, dark romance skews toward mature readers with more targeted engagement from younger audiences. The genre appeals to readers seeking intellectual and emotional complexity alongside erotic content, with many explicitly drawn to narratives featuring antiheroes and morally complex protagonists they were taught to avoid.[44][45][16]

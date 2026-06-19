@@ -1,0 +1,44 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- Upper left (Color Light Red): Low Demand, High Saturation; Label as ‘Avoid These Opportunities’
+- Hard Paranormal (True Supernatural Horror Blended with Mystery): While paranormal elements enhance cozies, stories that genuinely prioritize horror scares over mystery-solving don't perform well as "cozies." The market distinguishes clearly between paranormal cozies (spooky but cozy) and horror-mysteries (genuinely frightening).[7][39]
+- Quadrant 4: Avoid These Opportunities (Low Demand, High Saturation)
+- 4. Sensory Detail and Atmosphere: Successful paranormal cozies ground readers in specific, detailed sensory experiences—the smell of baking, the feel of tea warmth, the atmosphere of a haunted shop. These sensory details create comfort that paranormal elements don't undermine.[14][15][10][19]
+- Restorative Justice: The goal isn't just to catch the killer, but to put a restless spirit to peace or cleanse a cursed location. Order is restored to both the physical and spiritual planes.
+- Violence & Horror Boundaries – Clear content guidelines, what to include/avoid, and age-appropriateness ratings
+- Common Pitfalls – 10 frequent mistakes with solutions (paranormal power solves mystery, inconsistent rules, etc.)
+- Climactic confrontation: Confrontation with killer, not with paranormal force (the supernatural complicates mystery, doesn't replace human motivation)
+- Antagonist/Killer Positioning
+- Paranormal investigation methods are fair: If protagonist's psychic power identifies killer, show the paranormal method worked on lesser mysteries first; establish its reliability
+- Killer revealed through converged evidence (paranormal investigation + human detective work = identity)
+- Confrontation with killer focused on human motivation, not paranormal battle
+- Example: Witch's ex-lover is found dead with spell residue; witch didn't do it; protagonist must find real killer
+- Suspect defense sounds believable: Killer should sound innocent to reader; truth should surprise
+- Paranormal threat: "If we don't break this curse, someone else dies" (low stakes: inconvenience; medium stakes: danger; high stakes: death—but no graphic description)
+- What to Avoid
+- Detailed descriptions of paranormal horror (don't describe the ghost's corpse, the demon's appearance, the curse victim's transformation in visceral detail)
+- Avoid:
+- Don't use as info-dumping mechanism
+- 10. COMMON PITFALLS & HOW TO AVOID THEM
+- Pitfall #1: Paranormal Power Solves Mystery
+- Problem: Protagonist's paranormal ability reveals killer without investigation
+- ✗ "Her psychic power identified the killer—it was always accurate"
+- Pitfall #2: Paranormal Elements Override Mystery
+- Pitfall #3: Inconsistent Paranormal Rules
+- Pitfall #4: Victim Not Humanized
+- Pitfall #5: Paranormal Humor Becomes Unintentional
+- Solution: Lean into paranormal humor intentionally. Make paranormal mishaps part of voice, not mistakes.
+- Pitfall #6: Mystery Has No Fair Play
+- Problem: Killer's identity and motivation unclear until reveal; reader feels cheated
+- ✗ Killer's motivation revealed only in final chapter
+- ✓ Killer's motivation hinted throughout; paranormal method used to investigate established as accurate
+- Pitfall #7: Paranormal Worldbuilding Becomes Confusing
+- Pitfall #8: All Secondary Characters Feel the Same
+- Pitfall #9: Investigation Stalls
+- Pitfall #10: Romantic Element Overwhelms Mystery (in Romance-Mystery Blend)
+- Tone: Humor through spell failure, paranormal frustration, magical learning curve
+- What's the killer's human motivation?
+- Ensure paranormal elements complicate, don't solve mystery
+- No Hopelessness: Avoid nihilism. The world is spooky, but good ultimately triumphs.

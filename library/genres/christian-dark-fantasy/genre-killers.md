@@ -1,0 +1,70 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+-  ✅ Ground spiritual realities in sensory, visceral experience
+-  ✅ Let characters struggle with doubt authentically
+-  ✅ Show evil's intelligence and patience
+-  ✅ Use subtext—what characters avoid saying reveals as much as speech
+-  ✅ Make redemption cost something tangible
+-  ✅ Treat the supernatural with biblical gravity and mystery
+-  ✅ Vary sentence structure to control pacing and atmosphere
+-  ✅ End with honest hope, not sanitized resolution
+-  ✅ Research the theology you reference; treat it with integrity
+-  ✅ Let darkness accumulate gradually; pace your revelations
+-  ❌ Preach through character monologues disguised as dialogue
+-  ❌ Reduce demons to generic monsters or villains to evil caricatures
+-  ❌ Resolve conflict through convenient miracles without cost
+-  ❌ Shield readers from consequences of sin and evil
+-  ❌ Make faith easy, automatic, or without doubt
+-  ❌ Use scripture as a magic incantation without context
+-  ❌ Indulge in graphic violence for shock value alone
+-  ❌ Create protagonists who are already spiritually complete
+-  ❌ Neglect physical setting in favor of spiritual abstraction
+-  ❌ End with "and they lived happily ever after"
+- 
+- Structure:** Character A expresses doubt or fear → Character B responds with imperfect faith → Subtext reveals unspoken tension → Scene ends in unresolved friction.
+- Example 1 — Two Survivors:**
+- > "You still pray? After everything?"
+- > "I don't know what else to do."
+- > "That's not faith. That's habit."
+- > She lit the candle anyway. The flame trembled but held.
+- Example 2 — Confessor and Penitent:**
+- > "I need to confess, Father."
+- > "The confessional is closed. Has been for months."
+- > "I know. That's why I'm here at your door."
+- > He opened it. He shouldn't have. But he did.
+- Example 3 — Facing the Supernatural:**
+- > "It knows your name."
+- > "I know."
+- > "And you're still going in there?"
+- > "Someone has to call it by its real one."
+- Dialogue should reveal character through what is spoken, what is withheld, and what is risked in the exchange.
+- 
+- | Pitfall | Why It Fails | Fix |
+- |---|---|---|
+- | **Preaching protagonist** | Breaks immersion; feels like author tract | Let faith emerge through action, sacrifice, and reluctant speech |
+- | **Demonic cartoon villain** | Eliminates genuine threat; reduces tension | Give evil intelligence, patience, and seductive logic |
+- | **Instant redemption** | Cheapens grace; removes emotional weight | Show the cost: relationships broken, scars earned, trust rebuilt slowly |
+- | **Spiritual bypassing** | Characters pray and problems vanish | Prayer sustains through suffering; it does not remove consequences |
+- | **Darkness for darkness sake** | Gratuitous; readers disengage | Every dark moment must illuminate theme or develop character |
+- | **Theology dump** | Stops narrative; feels like lecture | Weave theology into action, conflict, and lived experience |
+- | **Flat antagonist** | No tension; predictable resolution | Antagonist believes they are right; their logic should challenge the protagonist |
+- | **Hopeless ending** | Betrays genre promise of light in darkness | End with credible hope—even if costly, fractured, and hard-won |
+- 
+-  Formal syntax; liturgical or scriptural allusions
+-  Dignity masking doubt or corruption
+-  *"The Lord gives. We are merely stewards of the taking."*
+-  Simple, direct language; proverb and folk wisdom
+-  Faith expressed through routine and inherited tradition
+-  *"We light the candle. We say the words. What comes after dark, comes after dark."*
+-  Polished, strategic speech; faith weaponized for political ends
+-  Subtext-heavy; what is not said carries the threat
+-  *"My faith is my counsel's faith. That should comfort you."*
+-  Terse, practical; faith compressed to action
+-  Dark humor; fatalistic acceptance
+-  *"God sees. God judges. I just make sure they meet Him first."*
+-  Raw, unpolished; faith as last resort or desperate plea
+-  Profanity intermixed with fragments of prayer
+-  *"Don't—don't pray for me. Just... don't let me die out here alone."*
+- 

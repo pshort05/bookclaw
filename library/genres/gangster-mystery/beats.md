@@ -1,0 +1,133 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Goal**: What does the POV character want in this scene (information, intimidation, survival)?
+-  [ ] **Conflict**: What/who is actively opposing them getting it?
+-  [ ] **Power Dynamic**: Who has the upper hand at the START of the scene? Does it shift by the END?
+-  [ ] **Stakes**: What does the character stand to lose or gain? (Not just life, but respect, leverage, an ally).
+-  [ ] **Setting Detail**: Include 1-2 telling sensory details that set mood (e.g., smell of stale beer, echo in a parking garage).
+-  [ ] **Subtext**: What is being said *beneath* the dialogue?
+-  [ ] **Action Beat**: Use at least one character action to replace a dialogue tag and reveal emotion.
+-  [ ] **Turning Point**: The scene must end in a way that changes the story situation (new clue, raised threat, broken alliance).
+-  [ ] **Consequence Foreshadowing**: Hint (subtly) at a possible negative outcome of this interaction.
+-  [ ] **Economy**: Can any sentence be shortened? Any line of dialogue cut without losing meaning?
+- 1.  **Start with Genre Guide:** Populate the Genre Guide template first to define your core blend and expectations.
+- 2.  **Define Your World:** Use the World-Building template to establish the rules, factions, and atmosphere of your criminal landscape.
+- 3.  **Craft Your Investigator:** Fill out the Protagonist template, defining their connection to the world and their flaw.
+- 4.  **Plot the Structure:** Use the Story Structure template to map your mystery's major beats onto the gangster power struggle.
+- 5.  **Refine the Style:** Finally, tailor the Style Guide template to match the specific voice and tone of your story.
+- 
+- Entry Name:** Genre: Gangster Mystery
+- Category:** Story Foundations
+- Content:**
+- Core Concept:** [A 1-2 sentence elevator pitch for your specific Gangster Mystery story, e.g., "A compromised FBI agent must investigate a murder inside the mafia family he's been protecting, forcing him to choose between the law and the only community he knows."]
+- Genre Blend Ratio:**
+-  **Gangster Elements:** ___% (Focus: Power structures, loyalty, criminal enterprise, violent consequences)
+-  **Mystery Elements:** ___% (Focus: Investigation, clues, red herrings, solving a puzzle)
+- Central Tension:** The conflict between the need for ________ [e.g., order, truth, justice] and the reality of ________ [e.g., corrupt systems, brutal codes, personal survival].
+- Reader Promise:** This story will deliver:
+-  A solvable mystery rooted in the logic of organized crime.
+-  Tense, subtext-heavy dialogue and negotiations.
+-  A gritty, atmospheric setting that feels lived-in.
+-  Morally complex characters navigating impossible choices.
+-  A climax where the truth reshapes the power structure.
+- Tone & Mood Keywords:** [Select 3-5, e.g., Paranoia, Gritty, Cynical, Claustrophobic, Relentless]
+- Comparable Titles/Inspiration:** [List 2-3 books/films, e.g., *The Black Echo* (Connelly), *The Friends of Eddie Coyle* (Higgins), *Layer Cake*]
+- 
+- Entry Name:** Style: [Your Story Title] Voice
+- Category:** Writing Style
+- Content:**
+- Narrative Perspective:** [First-person / Close Third-Person Limited from ________'s POV]
+- Prose Mandates:**
+-  **Sentence Length:** Predominantly ________ [Short/Medium], varying for effect. Action scenes use staccato fragments.
+-  **Descriptive Focus:** Prioritize ________ and ________ details. [e.g., tactile, auditory]
+-  **Metaphor Source:** Draw comparisons from ________. [e.g., machinery, weather, decaying urbanity]
+-  **Internal Monologue:** Should be ________. [e.g., pragmatic, deductive, distrustful]
+- Dialogue Rules for This Story:**
+- 1.  Characters of higher rank speak ________.
+- 2.  The phrase "________" is a direct threat.
+- 3.  Lies are often signaled by ________.
+- 4.  Period-specific slang to use sparingly: [List 3-5 terms]
+- Pacing Guide:**
+-  **Slow-Burn Tension:** Use for ________ scenes. [e.g., surveillance, planning]
+-  **Medium-Pressure Investigation:** Use for ________ scenes. [e.g., interviews, clue analysis]
+-  **High-Stakes Confrontation:** Use for ________ scenes. [e.g., sit-downs, betrayals]
+- Forbidden Words/Phrases:** [List overly cliché or anachronistic terms to avoid, e.g., "fuggedaboutit," "see?"]
+- 
+- Entry Name:** Character: [Investigator's Name]
+- Category:** Characters
+- Content:**
+- Role:** [e.g., Corrupt Cop, Reluctant Heir, Dogged Reporter, Seeking FBI Agent]
+- Connection to the Criminal World:** [e.g., Born into it, Works adjacent to it, Hired by it, Hunting it]
+- Surface Goal:** To solve the mystery of ________.
+- True Need:** To achieve ________. [e.g., redemption, freedom from debt, real justice, belonging]
+- Fatal Flaw:** ________. [e.g., A debt of honor, Naiveté about the life, Addictive tendencies, Uncontrollable rage]
+- Investigation Method:**
+-  **Primary Tool:** [e.g., Charm, Intimidation, Logic, Forgery]
+-  **Weakness:** [e.g., Too trusting of old loyalties, Underestimates bureaucracy, Physical limitations]
+- Key Relationship to Power Structure:** [e.g., Owes a favor to Boss Marconi, Is the estranged son of Underboss Moretti, Has blackmail material on Captain Ricci.]
+- Moral Line They Will/Won't Cross:** They will ________ but they will never ________.
+- Arc:** From ________ to ________. [e.g., From believing in the code to enforcing their own justice; From an outsider looking in to a marked man trapped inside.]
+- 
+- Entry Name:** Structure: [Your Story Title] Beats
+- Category:** Plot & Structure
+- Content:**
+- The Mystery:** ________ is dead/missing/stolen. The twist is: ________.
+- The Hook (Ch. 1-3):** The investigator is drawn in when ________.
+- Act I: Penetration (Ch. 4-10)**
+-  **First Clue:** Found at ________, it suggests ________.
+-  **Key Interview #1:** With ________, who reveals ________.
+-  **First Retaliation:** The organization responds by ________.
+- Act II: Pressure (Ch. 11-20)**
+-  **False Lead/Red Herring:** ________ seems guilty because of ________.
+-  **Midpoint Setback:** ________ happens, costing the investigator ________.
+-  **Alliance Shift:** ________ bethelps/________ betrays.
+-  **Darkest Moment:** The investigator realizes ________ and is left with ________.
+- Act III: The Sit-Down (Ch. 21-25+)**
+-  **Breakthrough:** Re-examining ________ reveals ________.
+-  **Confrontation Location:** The truth is revealed at ________.
+-  **The Accusation:** The investigator confronts ________, proving guilt by revealing ________.
+-  **The Motive:** The culprit did it because ________ [tie to mob values: greed, revenge, power].
+-  **The Fallout:** In the aftermath, ________ is dead, ________ is in charge, and the investigator is left ________.
+- Final Image:** [A single, telling image that encapsulates the new status quo, e.g., "The investigator watches from a rainy street as a new name is painted on the social club door."]
+- 
+- Entry Name:** World: [Crew/Family/City Name]
+- Category:** Setting & World
+- Content:**
+- The Organization:**
+-  **Name & Insignia:** [e.g., The Moretti Crew, symbol is a sparrow]
+-  **Leadership:** Boss ________, Underboss ________, Consigliere ________.
+-  **Territory & Rackets:** Controls ________ neighborhood. Primary income from ________. [e.g., docks, construction, gambling]
+-  **Code of Conduct:** The two unforgivable sins are 1) ________ and 2) ________.
+- The Setting (City/Neighborhood):**
+-  **Visual Vibe:** [e.g., 1970s Rust Belt decay, 1990s neon-soaked strip malls]
+-  **Key Locations:**
+-  **The Social Club:** ________. [e.g., "Luna's Cafe," front for meetings]
+-  **The Neutral Ground:** ________. [e.g., "Giovanni's Funeral Home," for sit-downs]
+-  **The Lair:** ________. [e.g., "The Vault," a backroom casino]
+-  **Soundtrack:** The ambient sounds are ________. [e.g., distant sirens, arguing neighbors, televisions through walls]
+- Rival Factions & External Forces:**
+-  **Main Rival:** The ________ Crew, led by ________, currently feuding over ________.
+-  **Law Enforcement:** Detective ________ is ________. [e.g., "on the take," "dangerously honest"]
+-  **The Straights:** The legitimate world is represented by ________, who wants ________.
+- Technology & Era Specifics:**
+-  **Communication:** Characters use ________. [e.g., pay phones, burners, pagers]
+-  **Surveillance:** Methods include ________. [e.g., physical tails, wiretaps (specify type)]
+-  **Forensics Limitation:** Investigators are hampered by ________. [e.g., lack of DNA databases, corrupt evidence lockers]
+- The "Life" Glossary:**
+-  **A "Button":** ________
+-  **"Going to the Mattresses":** ________
+-  **"Making Your Bones":** ________
+-  **[Story-Specific Term]:** ________
+- Gangster Mystery is a hybrid genre that combines the organized crime elements of gangster fiction with the investigative framework of mystery. The core premise revolves around criminal investigations within or targeting criminal organizations, where the investigator may be law enforcement, a journalist, or someone embedded in the criminal world. Unlike pure crime thrillers, the focus is on solving a specific mystery (murder, theft, betrayal) within the complex, rules-driven hierarchy of organized crime.
+- Key characteristics:
+-  **Dual Loyalties**: Characters often navigate conflicting loyalties between family, organization, and personal ethics.
+-  **Insider/Outsider Dynamic**: The investigator operates either as an outsider trying to penetrate the criminal world or an insider investigating betrayal from within.
+-  **Power Structures**: Clear hierarchies with bosses, underbosses, captains, soldiers, and associates dictate behavior and conflict.
+-  **Moral Ambiguity**: Clear-cut good vs. evil is rare; protagonists often employ questionable methods.
+-  **Consequences**: Violence, betrayal, and investigation carry severe, often fatal, repercussions.
+-  **Atmosphere**: Gritty, tense, paranoid, with a sense of inevitable doom or hard-won survival.
+-  **Clues & Red Herrings**: Clues should be organic to the world (a ledger entry, a specific brand of cigar ash, a switched license plate). Red herrings should arise from the organization's inherent secrecy and treachery.
+-  **Withholding Information**: The reader learns as the investigator learns. The closed nature of the mob world naturally limits information flow.
+-  **The Twist**: The best twists feel inevitable in hindsight, born from the characters' established motivations and the rules of their world.

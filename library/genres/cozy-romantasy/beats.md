@@ -1,0 +1,127 @@
+Obligatory scenes and key beats drive this genre forward.
+
+## Obligatory Scenes
+
+-  [ ] **Mood:** Does the scene contribute to an overall feeling of warmth, whimsy, or gentle tension?
+-  [ ] **Senses:** Have I included at least 2-3 comforting or enchanting sensory details (smell of herbs, warmth of sun, soft light, taste of tea)?
+-  [ ] **Character Goal:** What does the POV character want in this scene (practical & emotional)?
+-  [ ] **Romantic/Emotional Beat:** What changes in the relationship or character's self-understanding by scene end? (e.g., "They move from annoyed to curious").
+-  [ ] **Magic/Mundane Blend:** Is a magical element woven naturally into the action or setting?
+-  [ ] **Dialogue Purpose:** Does each line reveal character, advance rapport, or provide cozy humor?
+-  [ ] **Community Touch:** Is there a hint or presence of the wider supportive community?
+-  [ ] **Pacing:** Is the scene's rhythm comfortable, slowing for emotional moments and moving for activity?
+-  [ ] **Ending Hook:** Does the scene end with a subtle question, emotion, or decision that makes the reader want to continue?
+- 1.  **Create a New Codex** for your project in NovelCrafter.
+- 2.  **Copy and paste** each template below into a new Codex Entry.
+- 3.  **Fill in the bracketed `[ ]` sections** with details specific to your novel.
+- 4.  **Link entries** where relevant (e.g., link your Protagonist entry in the Story Structure template).
+- 5.  Use these as living documents; update them as your story develops.
+- 
+- Entry Name:** Genre: Cozy Romantasy
+- Type:** Genre / Master Guide
+- Core Promise:** This story promises a warm, comforting escape into a magical world where a heartfelt romantic relationship blossoms against a backdrop of low-stakes, charming conflict, culminating in a guaranteed happy ending.
+- Target Reader's Mood:** Seeking comfort, hope, and delightful escapism. They want to feel nestled in a blanket with a cup of tea, smiling at gentle humor and swooning at tender moments.
+- Key Comparables (Comps):**
+-    *Legends & Lattes* by Travis Baldree (vibe & low stakes)
+-    *The House in the Cerulean Sea* by TJ Klune (found family & warmth)
+-    *Half a Soul* by Olivia Atwater (gentle romance + whimsical magic)
+-    [Insert 2-3 specific recent Cozy Romantasy titles]
+- My Novel's Unique Spin:**
+-    In my novel, the cozy magical setting is `[e.g., a sentient bookshop in a rainy city, a witch's cottage in a valley of perpetual autumn]`.
+-    The central romantic dynamic is `[e.g., a sunshine baker x grumpy magical historian]`.
+-    The primary internal conflict stems from `[e.g., the protagonist's fear of abandonment vs. the love interest's fear of failure]`.
+-    The magic system is characterized by `[e.g., hearth-based, plant-based, or runic magic focused on comfort and small crafts]`.
+- Reader Expectations to Meet:**
+-  [ ] Low-stakes, personal-scale conflict.
+-  [ ] A warm, inviting, and often whimsical tone.
+-  [ ] A strong, supportive community of secondary characters.
+-  [ ] Magic intertwined with daily life and domesticity.
+-  [ ] A central, developing romantic relationship with strong chemistry.
+-  [ ] An emotionally satisfying HEA/HFN.
+-  [ ] No graphic violence, horror, or intense peril.
+- 
+- Entry Name:** Style: Cozy Romantasy Voice
+- Type:** Style Guide
+- Narrative POV:** `[e.g., Close Third-Person Limited from FMC's perspective, with occasional deep dips into MMC's perspective in key chapters]`
+- Overall Voice:** The narrative voice should feel like `[e.g., a warm, witty friend sharing a secret story; a cozy, observant chronicler of small wonders]`.
+- Descriptive Priorities:**
+- 1.  **Sensory & Comforting:** Prioritize descriptions of taste, smell, touch, and comforting visuals (soft light, warm textures).
+- 2.  **Blend Mundane & Magic:** Describe magical elements as part of the everyday fabric. Example: `[e.g., "The kettle, enchanted to whistle her favorite tune, began to chirp a sprightly sea shanty."]`
+- 3.  **Emotional Resonance:** Anchor descriptions to the POV character's emotional state. A room feels "welcoming" or "lonely" based on their mood.
+- Dialogue Style:**
+-    **General Tone:** Natural, modern-adjacent, leaning into wit, gentle teasing, and heartfelt sincerity.
+-    **Banter Template:** Set-up (playful challenge) → Counter (amusing deflection) → Softening (subtact shift to warmth).
+-    **Love Interest's Arc:** Dialogue evolves from `[e.g., short, practical statements]` to `[e.g., longer, more vulnerable, and playful sentences]`.
+- Prose Rhythm:**
+-    Use longer, flowing sentences for descriptive passages and introspection.
+-    Use shorter, snappier sentences for dialogue tags and moments of action or surprise.
+-    **Pace for comfort, not urgency.**
+- Words to Use Often:** `[e.g., warm, soft, glow, nestled, fragrant, bustling, hummed, chuckled, gentle, whimsical, tender, hearth, kindly]`
+- Words to Avoid:** `[e.g., grim, brutal, gore, terror, scream (unless of delight), slaughter, oppressive, decaying (unless being charmingly fixed)]`
+- 
+- Entry Name:** Character: [Character Name]
+- Type:** Character
+- Role:** `[e.g., The Sunshine Baker / The Grumpy Librarian]`
+- Core Identity:** `[A one-sentence summary: e.g., A people-pleasing witch who uses baking magic to make everyone feel at home, while secretly longing for a home of her own.]`
+- External Goal:** `[e.g., To save her grandmother's enchanted tea shop from a corporate buyout.]`
+- Internal Wound/Need:**
+-    **Wound:** `[e.g., Abandoned by her itinerant parents, she fears being too much trouble to stay for.]`
+-    **False Belief:** `[e.g., "I must be endlessly useful and never needy to be loved."]`
+-    **True Need:** `[e.g., To learn that she is worthy of love simply for being herself.]`
+- Magic/Skill & Quirk:**
+-    **Ability:** `[e.g., Hearth Magic: Can enchant food/drink to evoke specific emotions or memories.]`
+-    **Quirky Limitation:** `[e.g., The magic only works if she's genuinely caring for the person. It fails if she's faking it.]`
+- Romantic Growth Arc:**
+- 1.  **Initial Stance:** `[e.g., Friendly but guarded, uses humor and service to keep people at a safe emotional distance.]`
+- 2.  **Attraction Point:** `[e.g., Drawn to the love interest's quiet competence and surprising kindness beneath his reserve.]`
+- 3.  **Fear Point:** `[e.g., Panics and pushes away when she needs help, fearing it will make her a burden.]`
+- 4.  **Breakthrough:** `[e.g., Accepts help during the crisis, realizing love means mutual care, not just giving.]`
+- Key Relationships:**
+-    **Love Interest:** `[Link to Love Interest's Codex Entry].` Dynamic: `[e.g., Sunshine x Grump; she melts his frost, he grounds her whimsy.]`
+-    **Found Family:** `[e.g., The elderly potion-seller next door who is her surrogate grandparent; the chatty dryad who runs the flower stall.]`
+- 
+- Entry Name:** Structure: Cozy Romantasy Beat Sheet
+- Type:** Plot / Structure
+- Based On:** Adapted from Romance story structure with Cozy Fantasy pacing.
+- Act 1: The Cozy Setup & Spark**
+-    **Opening Image:** `[Describe the first scene establishing the cozy normal.]`
+-    **Protagonist's Normal:** `[Their daily life, community, and hidden longing.]`
+-    **Inciting Spark (Meet-Cute):** `[How/where do they meet the love interest? Make it charmingly awkward or magically inconvenient.]`
+-    **Forced Proximity Hook:** `[What minor problem or community event forces them to work together?]`
+- Act 2A: Building Warmth**
+-    **First Collaboration:** `[Their initial successful teamwork on a small task.]`
+-    **Community Integration:** `[Scene where the love interest is welcomed by protagonist's friends/family.]`
+-    **Intimacy Milestone:** `[The first quiet, vulnerable moment where walls begin to drop. Location: `[e.g., a cozy kitchen, a garden at dusk]`.]`
+-    **Cozy Turning Point:** `[The moment the relationship shifts from friendly to romantic. E.g., a near-kiss, a heartfelt admission.]`
+- Act 2B: The Gentle Break**
+-    **Internal Conflict Emerges:** `[How do their respective wounds/fears start to cause tension?]`
+-    **External Catalyst:** `[The minor external event that exacerbates the internal conflict (e.g., a rival's offer, a magical mishap, a family letter).]`
+-    **The Cozy Dark Moment:** `[The misunderstanding or emotional rupture. What cold thing is said or done?]`
+-    **The Chill:** `[A scene showing the protagonist's world feeling emptier and less magical without the love interest.]`
+- Act 3: Heartfelt Resolution**
+-    **Realization:** `[What does the protagonist understand about themselves and their fear? Who helps them see it?]`
+-    **Grand Gesture (Cozy Style):** `[The personal, meaningful act the protagonist (or love interest) performs. It must be tailored to the other's love language/wound.]`
+-    **Emotional Resolution/Climax:** `[The conversation where vulnerabilities are shared, apologies given, and love is declared.]`
+-    **HEA/HFN Epilogue:** `[The final snapshot of their happy future. Show them integrated, using their combined magic/strengths, and surrounded by their cozy community.]`
+- 
+- Entry Name:** World: [Your World/Setting Name]
+- Type:** World / Setting
+- Core Aesthetic:** `[e.g., Cottagecore with benevolent magic; Magical Edwardian Village; Sentient-Shop Urban Fantasy.]`
+- The Cozy Scale:** The story takes place primarily in `[e.g., the village of Willowbeck and its immediate enchanted forest]`. The conflicts and concerns are local to this community.
+- Magic in Daily Life:**
+-    **Nature of Magic:** `[e.g., Hearth Magic, Green Witchery, Artisan Craft Magic, Runic Convenience Magic]`. It is generally `[soft/hard]` and used for `[practical tasks, emotional enhancement, artistic expression]`.
+-    **Commonplace Uses:** `[e.g., Heating stones, self-knitting needles, message-carrying sparrows, glow-orbs in lanterns, tea that helps memory.]`
+-    **Limitations/Quirks:** `[e.g., Magic is tied to intention and emotion; it fades if used selfishly. Or, it requires a trade of effort—grow a flower, lose a memory.]`
+- Key Locations:**
+- 1.  **The Heart (Primary Setting):** `[e.g., The Sentient Bookshop "The Quill & Crumpet." Describe its smells, sounds, magical features, and cozy corners.]`
+- 2.  **The Community Hub:** `[e.g., The village square with its weekly market and talking well.]`
+- 3.  **The Love Interest's Space:** `[e.g., The apothecary's cluttered, herb-scented workshop.]`
+- 4.  **The Intimate Spot:** `[e.g., A secluded grove with a glowing pond, used for private conversations.]`
+- Society & Community:**
+-    **Governance:** `[e.g., A benign Village Council of elders and guild masters.]`
+-    **Economy:** `[e.g., Based on trade of magical and artisanal goods. Barter is common.]`
+-    **Social Dynamics:** Generally kind and supportive. Gossip exists but is more curious than malicious. Outsiders are welcomed if they respect the community's ways.
+- Non-Human Elements (if any):**
+-    **Creatures:** `[e.g., House dragons (cat-sized), messenger pixies, grumpy but helpful brownies, memory-keeping ghosts.]` Treat them as part of the community.
+-    **Cultural Attitude:** Magic and magical beings are woven into daily life, viewed with familiarity and mild amusement, not awe or fear.
+- Rule of Cozy:** This world, while not perfect, is fundamentally **safe**. Danger is limited to mild peril (a small fire, a lost pet, a spoiled batch of potions). The overall feeling is one of security and belonging.

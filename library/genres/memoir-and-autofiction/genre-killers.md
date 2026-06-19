@@ -1,0 +1,44 @@
+Avoid these mistakes that can undermine your story.
+
+## Failure Modes
+
+- Show complexity and humanity; avoid characterizations that are purely exploitative
+- Allow narrator to misunderstand, misremember, or misinterpret; don't always correct these errors
+- Avoid purely exploitative characterizations; show complexity and humanity
+- Authenticity: The voice must be honest, consistent, and uniquely yours. Avoid academic or overly formal prose unless it is intrinsic to your personality. Vulnerability is a strength.
+- Show, Don't Tell: Instead of stating "I was terrified," describe the pounding heart, the sweat on your palms, the way the world seemed to shrink to a pinpoint. Immerse the reader in the moment.
+- Render, Don't Judge: Portray people through their specific actions, words, and mannerisms. Allow the reader to form their own conclusions.
+- Grant Complexity: Avoid creating one-dimensional heroes or villains. Real people are complex; grant the other "characters" in your life the same nuance you grant yourself.
+- Voice & Tone — Guidelines for establishing authentic voice, avoiding common pitfalls like melodrama or affected language, and balancing emotional accessibility with credibility
+- Dialogue — Best practices for authentic-sounding dialogue that reveals character and avoids exposition, including when to use hypothetical dialogue
+- Avoid affected registers: Don't adopt a voice that feels inauthentic to protect your credibility with readers
+- Balance emotional and reflective distance: Don't veer into pure visceral overwhelm or detached sterility; find the emotional truth between extremes
+- Avoid melodrama: Even when describing trauma or pain, let the events speak for themselves; understatement often resonates more powerfully than heightened emotion
+- Avoid: "I was nervous about the interview"
+- Avoid excessive exposition ("As you know, I grew up in poverty...")
+- Smell: Often most evocative for memory; avoid cliché descriptions
+- Acknowledge memory's fallibility; don't claim omniscience about other people's inner lives
+- Avoid embellishing emotions to make story more dramatic
+- Avoid deflecting responsibility or blaming others to appear blameless
+- Confess failures, mistakes, and limitations
+- Don't perform suffering or seek sympathy; trust readers to respond authentically
+- Avoid: "went quickly"; use: "rushed," "sprinted," "bolted"
+- Avoid over-explaining symbols; let readers discover meaning
+- Don't speculate as fact about others' thoughts/motivations without evidence
+- Trust reader intelligence; avoid over-explaining
+- Show, don't tell: Scenes create intimacy and allow readers to draw conclusions
+- Family memoirs center on intergenerational dynamics and inherited trauma. Alexandra Fuller's Don't Let's Go to the Dogs Tonight recounts growing up amid colonial adventure and family dysfunction in Africa, while Mary Karr's The Liars' Club depicts her turbulent childhood and family relationships. Grief memoirs have emerged as a significant contemporary subgenre, with Michelle Zauner's Crying in H Mart, exploring her mother's death through food and cultural memory, exemplifying how loss narratives can achieve artistic sophistication.[21][22][17]
+- Other significant autofictional works include Jack Kerouac's On the Road, based directly on Kerouac's travels with real friends portrayed under fictional names; James Joyce's A Portrait of the Artist as a Young Man, an exploration of Joyce's spiritual development through quasi-fictional narration; and Sylvia Plath's The Bell Jar, which Plath labeled fiction despite its biographical basis, likely to avoid embarrassing real people affected by her revelations. Graphic memoirs like Alison Bechdel's Fun Home operate in this ambiguous space, combining documentary detail (traced from photographs and archival materials) with interpretive visual framing that inevitably fictionalizes experience through artistic choices.[13][23][24]
+- Professional memoir: Identity shaped by career achievement, failure, or transition
+- Unflattering self-revelation; admission of failures and moral compromise
+- Complicated grief: Unresolved conflicts with deceased; ambiguous feelings; failure to achieve "closure"
+- The disease concept: Understanding addiction as illness rather than moral failure; navigating shame
+- Career achievement & failure: Ascent, plateau, or fall; meaning derived from work
+- Failure: Firing, demotion, closure; trauma and potential liberation
+- Key Work: Rachel Cusk's autofictional trilogy interrogates whether the confessions are authentic or performed, whether vulnerability itself can avoid becoming narcissistic performance.
+- Episodic rather than unified narratives; stories that don't cohere
+- Language as problem: Words' inability to capture experience; linguistic failure as theme
+- Function: Rejects redemptive narrative; emphasizes ongoing struggle; accepts that some wounds don't heal.
+- Variation: Illness that doesn't remit; relationships that don't resolve; identity that won't cohere.
+- Significance: Words that don't convey intended meaning; language as barrier.
+- Meaning: Language's failure; words stopping short of completing meaning; incompleteness as fundamental.

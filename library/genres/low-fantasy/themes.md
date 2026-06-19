@@ -1,0 +1,75 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- This story is Low Fantasy because:
+-  **Magic/Supernatural Presence:** [Describe the rare, subtle, and dangerous form magic takes in your story. e.g., "Only exists as ancestral curses that manifest as physical decay; no active spellcasting."]
+-  **Primary Conflict:** [Describe the human-driven central conflict. e.g., "A blood feud between two mining families over a collapsed tunnel, exacerbated by a rumored curse."]
+-  **Setting Scope & Feel:** [Describe the limited, grounded setting. e.g., "A single rain-swept peninsula with three rival towns, mimicking 14th-century Scandinavian economics and social strife."]
+-  **Moral Landscape:** [Describe the grey morality. e.g., "Both families have legitimate grievances and commit atrocities; the 'hero' is motivated by revenge, not justice."]
+-  No [e.g., wizard characters, magical items, clear divine intervention].
+-  The fantastical element is treated as [e.g., a disease, a geological anomaly, a psychological phenomenon].
+-  Victory will be measured by [e.g., personal survival, familial continuity, not saving the world].
+- 
+- Entry Type:** Style Guide
+- Title:** Prose & Style for [Your Novel's Title]
+-  **Primary Perspective:** [e.g., Limited third-person, following the protagonist's sensory and emotional experience].
+-  **Tone Goal:** [e.g., Cynical and weary, with bursts of desperate hope].
+-  **Concrete Details Priority:** Always describe [e.g., the texture of materials, the quality of light, the specific sounds of the environment] first.
+-  **Magic Description Rule:** When describing [your magical element], use language of [e.g., sensory distortion, emotional dread, biological decay]. Never clearly explain it.
+-  **Avoid:** Overly lyrical nature descriptions, unless from a character momentarily escaping their gloom.
+-  **Subtext Level:** High. Characters often [e.g., threaten through offers of help, express love through criticism].
+-  **Tag Style:** Primarily simple tags (`said`, `asked`). Use action beats to convey [e.g., hesitation, hidden weapons, fleeting glances].
+-  **Class Speech:** Nobles speak with [e.g., formal syntax and layered insults]; peasants speak with [e.g., short, literal statements and folk metaphors].
+-  **Role:** [e.g., Disgraced guardsman, struggling miller, ambitious minor noble].
+-  **Primary Motivator:** [e.g., Guilt over a brother's death, desire for land ownership, fear of familial extinction]. NOT a noble quest for good.
+-  **Central Flaw:** [e.g., Apathy, cowardice, pride, short-sighted ruthlessness].
+-  **Belief about Magic:** [e.g., "A dangerous fraud used by the powerful to scare the weak."]
+-  **First Encounter:** Will occur at [e.g., Chapter 7], and will result in [e.g., a lingering physical illness, not a mastery of power].
+-  **Final Stance:** By the end, will believe [e.g., "It is real, and it is a tax on the soul."].
+-  **Dialogue Style:** [e.g., Terse, prone to sarcasm, uses few metaphors].
+-  **Key Action Habit:** [e.g., Always checks door latches, refuses to look people in the eye, hoards small useful objects].
+-  **Start:** [e.g., Believing they can outsmart their rivals without sinking to their level.]
+-  **Middle:** [e.g., Will commit a betrayal they rationalize as necessary, and witness a magical event that shakes their worldview.]
+-  **End:** [e.g., Will achieve their goal but be physically broken and spiritually isolated, having become what they hated.]
+- 
+- Entry Type:** Story Structure
+- Title:** Plot Structure for [Your Novel's Title]
+-  **Establish:** [Protagonist's name]'s life in [Setting location] as [their role].
+-  **Key Normal Details:** Show [e.g., the daily grind of the mill, the tension with the neighboring family, the poor harvest].
+-  **Disruption:** [Event e.g., the mill pond drains inexplicably] occurs, blamed on [rival family/ bad luck].
+-  **Protagonist's Decision:** [Protagonist name] decides to [e.g., investigate the dry pond bed secretly].
+-  **First Magic Hint:** [e.g., Finds a perfectly preserved, dead frog in the dry mud, feeling unnaturally cold].
+-  **Morally Grey Alliance:** [Protagonist name] partners with [dubious character name] who offers [practical help] for a price of [moral compromise].
+-  **Political/Social Intrigue:** Uncover that [e.g., the land dispute is tied to a historical treaty violation].
+-  **Significant Magical Encounter:** At [location], [protagonist name] experiences [e.g., a night where all sounds cease and the stars appear to bleed red]; consequence is [e.g., a week of profound deafness].
+-  **Betrayal/Reversal:** [Dubious character name] reveals they are [e.g., agent of the rival family], costing [protagonist name] [e.g., their remaining trust].
+-  **Climax - Human Confrontation:** [Protagonist name] forces a meeting with [rival leader] at [location] to [e.g., negotiate a land split].
+-  **Magic's Role:** [Protagonist name] uses the knowledge of [the magical phenomenon] as a threat, but it [e.g., manifests physically on them during the talk, horrifying both parties].
+-  **Resolution of Primary Goal:** The [land dispute] is resolved by [e.g., the protagonist gaining the land, but the rival family gaining their mill].
+-  **Protagonist's Final State:** [Protagonist name] is now [e.g., owner of the cursed land, physically marked by the magic, and universally shunned].
+- 
+- Entry Type:** World-Building
+- Title:** The World of [Your Setting Name]
+-  **Geographic Scope:** [e.g., The Peninsula of Three Towns: Haford, Millshore, and Stonecross].
+-  **Historical Analogue:** Mirrors [e.g., late Medieval Scandinavia] in terms of [technology, social structure, religion].
+-  **Key Economics:** Driven by [e.g., sheep herding, peat mining, limited coastal trade].
+-  **Social Tensions:** Between [e.g., free farmers (Haford) and titled lord's tenants (Millshore) over grazing rights].
+-  **What is 'Magic'?:** It is the phenomenon of [e.g., "The Bleeding"].
+-  **Manifestation:** Occurs as [e.g., localized silence, unnatural preservation of dead matter, and a visible red stain on living things after exposure].
+-  **Common Belief:** Viewed by most as [e.g., "a land sickness" or "a curse on greedy places"].
+-  **Actual (Hidden) Rules:** It is [e.g., tied to places where blood was spilled under oath-breaking circumstances; it draws life from the present to preserve the past].
+-  **Who Can 'Use' It?:** No one uses it. It is an **affliction**. Those who understand its triggers can try to avoid or attract it, but with severe risk.
+-  **The Price:** Exposure causes [e.g., progressive sensory loss (first hearing, then touch) and a red staining of the skin that marks the individual as "tainted."]
+-  **The Bleeding's Role in the Story:** It is the physical manifestation of the [historical oath-breaking] that underlies the land dispute. The protagonist's investigation literally unearths it.
+- Low Fantasy is a subgenre of fantasy where magical or supernatural elements are sparse, subtle, and often integrated into a grounded, realistic world. Unlike High Fantasy with its epic scale, clear-cut evil, and ubiquitous magic, Low Fantasy focuses on:
+- 1. **Subtle Magic**: Magic is rare, poorly understood, often dangerous or costly, and not a reliable solution to problems. It operates more like a force of nature—unpredictable and seldom controlled.
+- 2. **Grounded World**: The setting is often historical, pseudo-historical, or closely mirrors our own world’s logic, with familiar social structures, economics, and physical laws. The fantastical elements are intrusions into this normality.
+- 3. **Moral Ambiguity**: Characters operate in grey areas. Heroes are flawed and pragmatic; villains may have understandable motives. The central conflicts are often human: political intrigue, survival, personal ambition, or societal pressure.
+- 4. **Consequences Over Spectacle**: The focus is on the consequences of fantastical elements—the psychological toll, the social disruption, the physical cost—rather than the spectacle of magic itself.
+- 5. **Limited Scope**: Stories are often personal, regional, or confined to a single city or kingdom, avoiding world-spanning prophecies and wars of pure good vs. evil.
+- Key Influences & Comparisons**:
+-  *High Fantasy*: Tolkien’s Middle-earth—clear magic, epic destiny.
+-  *Low Fantasy*: George R.R. Martin’s Westeros (magic is rare and frightening), Robin Hobb’s Realm of the Elderlings (magic is costly and traumatizing), Joe Abercrombie’s First Law world (brutally realistic with faint magic).
+-  **Not** Urban Fantasy (which places fantasy elements explicitly within a modern city framework).
+- The prose should reinforce the genre’s grounded, often grim, and consequential nature.

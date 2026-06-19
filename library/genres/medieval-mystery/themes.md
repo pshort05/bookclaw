@@ -1,0 +1,52 @@
+Core themes and ideas central to this genre.
+
+## Central Themes
+
+- Core Balance: Historical authenticity + Fair-play puzzle
+- Let character grow/change while maintaining core identity
+- Contents: Comprehensive genre definition, prose style guidance, dialogue conventions, mystery structure, historical accuracy, setting specificity, themes, tropes, writing checklist, references
+- Core Principles:
+- Core Promise to Reader: Immersive historical world + intellectually satisfying mystery puzzle
+- Emotional Register: Character-driven; explores moral complexity and difficult choices; justice is complicated
+- Thematic Resonance: Solution relates to story's themes; mystery revelation illuminates something about era or human nature
+- Details Serve Story: Don't include research just because you did it; include details that illuminate character/plot/theme
+- Common Themes in Medieval Mystery
+- Embed Thematically: Don't state themes; embed in character choices and mystery resolution
+- Resolution Resonates: Mystery solution connects to theme; final revelation illuminates something about era/humanity
+- MW:  Please build a comprehensive lexicon of Tropes, Themes, Motifs, and Symbols for the Medieval Mystery fiction genre. Point out any important variations in these story devices in key subgenres.
+- Description: A categorized list of tropes, themes, motifs, and symbols common to Medieval Mystery fiction, focusing on the tension between historical reality, religious dogma, and the pursuit of truth.
+- 2. Themes (Central Arguments)
+- Faith vs. Reason: The core conflict. Is the plague a punishment from God, or a sickness spread by rats?
+- MW:  Please build a comprehensive guide for the [GENRE] fiction genre. Begin with an overview of the field, discussing its history and evolution. Analyze the form, content, and context for the genre, and any key subgenres. Include important themes, motifs, tropes, and symbols.
+- Complete a market analysis by researching market leaders and best-selling titles in this genre over the past three years (2023-2025). Identify the top-performing properties, hot trends, subgenres that are trending up, and subgenres that are trending down. Discover and discuss the popular story elements of these properties. Classify the dominant tropes, tropes on the rise, and tropes that are fading. Include any other story devices (themes, motifs, symbols) that are crucial to this genre’s success with readers.
+- Core Elements of Medieval Mystery:
+- Puzzle-Driven Plot - Central mystery with solvable puzzle; clues are planted fairly; reader can theoretically deduce solution before revelation.
+- Characteristics: Protagonist is monk, nun, or other religious; mystery occurs within or involves religious institution; explores theological and spiritual dimensions.
+- Characteristics: Set in medieval town or city; protagonist often merchant, craftsperson, official; explores merchant class and urban medieval life
+- Key Themes, Motifs, Tropes, and Symbols
+- Dominant Themes
+- The central tension in many medieval mysteries: secular law vs. moral justice; institutional power vs. individual conscience. Protagonists often navigate between "the truth" and "the just outcome."
+- Female protagonists navigating male-dominated professions and institutions; tensions between traditional role expectations and intellectual capability. Increasingly central to contemporary entries.
+- Why Successful: Unique cultural/legal perspective; complex female protagonist; intellectual puzzles; series evolves while maintaining core appeal; author's decades-long commitment to character
+- Central Europe
+- Why Effective: Explores themes of power and justice; creates moral complexity
+- Story Devices: Themes, Motifs, Symbols Crucial to Genre Success
+- Themes Essential to Successful Medieval Mysteries
+- Theme 1: Justice vs. Mercy vs. Law
+- Central to genre; medieval mysteries examine tension between legal justice, moral justice, and personal/institutional consequences
+- Theme 2: Authority, Hierarchy, and Power
+- Theme 3: Knowledge, Truth, and Secrets
+- Theme 4: Duty, Obligation, and Conscience
+- Theme 5: Community and Belonging
+- Theme 6: Gender, Authority, and Intellect
+- Integration: Relic should connect to theme (faith, authority, truth)
+- Examples: The Name of the Rose (library as central mystery)
+- Folk Magic Medieval Mysteries - Medieval protagonist with knowledge of folk magic/witchcraft solving mysteries; explores tension between official religion and folk practice
+- Medieval Mysteries in Marginal Communities (Jewish, Islamic, Moorish, Indigenous) - Set in non-Christian medieval communities; explores alternative legal/social systems
+- Disabled/Neurodivergent Medieval Protagonists - Character with disability/neurodivergence as central to protagonist identity; disability as asset in investigation
+- Non-European Medieval Settings (particularly Spain/Iberian Peninsula, Italy, Scandinavia, Central Europe) - Very high reader demand for geographic diversity; very few titles available
+- Offer better execution/deeper research/more complex themes than category average
+- Core Elements:
+- [Fill in specific subgenre focus. Example: "Monastic mysteries set in abbeys and convents where religious protagonists investigate crimes within cloistered communities. The subgenre explores theological dimensions alongside crime-solving."]
+- Central Question: Who killed [victim] and why?
+- Thematic Resonance: [What does solution reveal about the era/characters? Example: "Explores corruption beneath surface propriety; shows how medieval justice depends on power; reveals spiritual hypocrisy."]
