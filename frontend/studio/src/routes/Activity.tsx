@@ -5,7 +5,6 @@ import styles from './Activity.module.css';
 
 /** Map an entry to a display category (label + the CSS color var name). */
 function category(e: ActivityEntry): { label: string; varName: string } {
-  if (typeof e.metadata?.cost === 'number') return { label: 'Cost', varName: '--gold' };
   switch (e.type) {
     case 'step_started': case 'step_completed': case 'step_failed':
     case 'project_created': case 'project_planned':
@@ -20,6 +19,7 @@ function category(e: ActivityEntry): { label: string; varName: string } {
     case 'error':
       return { label: 'Error', varName: '--alert' };
     default:
+      if (typeof e.metadata?.cost === 'number') return { label: 'Cost', varName: '--gold' };
       return { label: 'System', varName: '--ph-fmt' };
   }
 }

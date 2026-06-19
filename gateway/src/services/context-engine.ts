@@ -167,6 +167,33 @@ export class ContextEngine {
 
   // ── AI JSON Parsing ──────────────────────────────────────
 
+  /**
+   * Index of the '}' that closes the object opened at `start`, matching braces
+   * while skipping any that appear inside string literals. Returns -1 if the
+   * object never balances (truncated output).
+   */
+  private findObjectEnd(s: string, start: number): number {
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    for (let i = start; i < s.length; i++) {
+      const c = s[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === '\\') esc = true;
+        else if (c === '"') inStr = false;
+      } else if (c === '"') {
+        inStr = true;
+      } else if (c === '{') {
+        depth++;
+      } else if (c === '}') {
+        depth--;
+        if (depth === 0) return i;
+      }
+    }
+    return -1;
+  }
+
   private parseAIJson(text: string): any {
     // Empty / whitespace-only response — bail with a clear error rather than
     // letting JSON.parse('{}') succeed silently.
@@ -174,21 +201,22 @@ export class ContextEngine {
       throw new Error('AI returned empty content');
     }
 
-    // Strip markdown code fences. Some models wrap output in ```json ... ```
-    // even when system prompt forbids it.
-    let cleaned = text
-      .replace(/^[\s\S]*?```(?:json|JSON)?\s*/i, (match) => match.includes('```') ? '' : match)
-      .replace(/```[\s\S]*$/, '')
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/gi, '')
-      .trim();
+    // Some models wrap output in ```json ... ``` even when the system prompt
+    // forbids it, or append commentary after the JSON. Bound the object by the
+    // first '{' and its MATCHING '}' (skipping braces inside string values), so
+    // neither fence markers (no braces) nor trailing prose containing a stray
+    // '}' can extend the candidate past the real object.
+    const cleaned = text.trim();
 
     const start = cleaned.indexOf('{');
     if (start < 0) {
       const preview = text.substring(0, 200).replace(/\s+/g, ' ');
       throw new Error(`No valid JSON object found in AI response. First 200 chars: "${preview}"`);
     }
-    const end = cleaned.lastIndexOf('}');
+    // Matching close brace, or lastIndexOf as a fallback when none balances
+    // (truncated output — Stage 2 recovery then takes over).
+    const matchedEnd = this.findObjectEnd(cleaned, start);
+    const end = matchedEnd >= 0 ? matchedEnd : cleaned.lastIndexOf('}');
 
     // Stage 1: well-formed response — extract substring between first { and last }.
     if (end > start) {
@@ -372,7 +400,9 @@ export class ContextEngine {
     const timer = setTimeout(async () => {
       this.writeTimers.delete(projectId);
       this.pendingWrites.delete(projectId);
-      await this.persistContext(projectId).catch(() => {});
+      await this.persistContext(projectId).catch((err) => {
+        console.log(`  ⚠ ContextEngine: failed to persist context for ${projectId}: ${err?.message ?? err}`);
+      });
     }, 2000);
     this.writeTimers.set(projectId, timer);
   }
@@ -483,6 +513,10 @@ export class ContextEngine {
 
     // Merge with existing entities
     for (const ne of newEntities) {
+      // Guard against malformed-but-parseable AI output that omits `name`
+      // (or returns name:null) — dereferencing it would throw and discard the
+      // entire batch.
+      if (!ne?.name || typeof ne.name !== 'string') continue;
       const normalizedName = ne.name.toLowerCase().trim();
       const existing = ctx.entities.find(
         e =>
@@ -566,6 +600,16 @@ export class ContextEngine {
       return true;
     };
 
+    // Like addPart, but truncates to the remaining budget rather than dropping
+    // the whole block — used for priority-1 context that must not be silently
+    // omitted just because it overflows maxChars.
+    const addPartTruncated = (text: string): void => {
+      if (charBudget <= 0) return;
+      const slice = text.length > charBudget ? text.substring(0, charBudget) : text;
+      parts.push(slice);
+      charBudget -= slice.length;
+    };
+
     // Find current chapter index
     const currentIdx = ctx.summaries.findIndex(s => s.chapterId === currentStepId);
 
@@ -578,7 +622,7 @@ export class ContextEngine {
           : null;
 
     if (prevChapter) {
-      addPart(
+      addPartTruncated(
         `## Story Context\n\n### Previous Chapter: ${prevChapter.title}\n${prevChapter.summary}\n\n**Where things stand:** ${prevChapter.endingState}`,
       );
     } else {

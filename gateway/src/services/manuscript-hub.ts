@@ -143,9 +143,10 @@ export class ManuscriptHubService {
       return sum + s.result.split(/\s+/).filter(Boolean).length;
     }, 0);
 
-    const chaptersWritten = writingSteps.filter(s => /write chapter/i.test(s.label)).length
-      || writingSteps.length;
-    const chapterTarget = p.steps.filter(s => /write chapter/i.test(s.label)).length;
+    const chaptersWritten = writingSteps.length;
+    const chapterTarget = p.steps.filter(s =>
+      s.phase === 'writing' || /chapter/i.test(s.label)
+    ).length;
 
     return {
       id: p.id,

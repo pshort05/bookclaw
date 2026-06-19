@@ -709,7 +709,7 @@ export class HeartbeatService {
     goalPercent: number; enableReminders: boolean;
     sessionMinutes: number; sessionWords: number;
   } {
-    const goalPercent = Math.min(100, Math.round((this.todayWords / this.config.dailyWordGoal) * 100));
+    const goalPercent = this.config.dailyWordGoal > 0 ? Math.min(100, Math.round((this.todayWords / this.config.dailyWordGoal) * 100)) : 0;
     let sessionMinutes = 0, sessionWords = 0;
     if (this.currentSession) {
       sessionMinutes = Math.round((Date.now() - this.currentSession.startTime.getTime()) / 60000);
@@ -730,7 +730,7 @@ export class HeartbeatService {
     const parts: string[] = [];
 
     // Daily goal progress
-    const goalPercent = Math.min(100, Math.round((this.todayWords / this.config.dailyWordGoal) * 100));
+    const goalPercent = this.config.dailyWordGoal > 0 ? Math.min(100, Math.round((this.todayWords / this.config.dailyWordGoal) * 100)) : 0;
     parts.push(`Daily word goal: ${this.todayWords}/${this.config.dailyWordGoal} (${goalPercent}%)`);
 
     // Streak

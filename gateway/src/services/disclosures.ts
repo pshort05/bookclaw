@@ -189,7 +189,7 @@ export class DisclosuresService {
       scopes.includes(r.scope) &&
       (r.platform === 'Any' || lower.includes(r.platform.toLowerCase()) ||
        // Platform string is looser: "Amazon KDP" should match rules for "Amazon KDP" or "Amazon".
-       r.platform.toLowerCase().split(/[\s/]/).some(w => lower.includes(w))
+       r.platform.toLowerCase().split(/[\s/]/).filter(Boolean).some(w => lower.includes(w))
       )
     );
   }

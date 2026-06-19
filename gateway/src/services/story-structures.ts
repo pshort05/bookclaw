@@ -346,10 +346,12 @@ export class StoryStructureService {
         const reasons: string[] = [];
 
         // Strong genre match (+0.6)
-        const genreMatch = s.recommendedFor.some(g =>
-          genreLower.includes(g.toLowerCase()) || g.toLowerCase().includes(genreLower) ||
-          subgenreLower.includes(g.toLowerCase()) || g.toLowerCase().includes(subgenreLower)
-        );
+        const matchesGenre = (needle: string, hay: string): boolean =>
+          needle.length >= 3 && (needle.includes(hay) || hay.includes(needle));
+        const genreMatch = s.recommendedFor.some(g => {
+          const gLower = g.toLowerCase();
+          return matchesGenre(genreLower, gLower) || matchesGenre(subgenreLower, gLower);
+        });
         if (genreMatch) {
           score += 0.6;
           reasons.push(`built for ${input.subgenre || input.genre}`);

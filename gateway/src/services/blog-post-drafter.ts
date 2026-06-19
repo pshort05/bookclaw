@@ -334,8 +334,11 @@ export class BlogPostDrafterService {
     html = html.replace(/_([^_]+?)_/g, '<em>$1</em>');
     // Inline code
     html = html.replace(/`([^`]+?)`/g, '<code>$1</code>');
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener" target="_blank">$1</a>');
+    // Links — only allow safe schemes; drop the link (keep the text) otherwise.
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, url) => {
+      if (!/^(?:https?:|mailto:|\/|#)/i.test(url)) return text;
+      return `<a href="${url.replace(/"/g, '&quot;')}" rel="noopener" target="_blank">${text}</a>`;
+    });
     // Paragraphs — wrap remaining text blocks
     html = html.split(/\n\s*\n+/).map(block => {
       const t = block.trim();

@@ -74,6 +74,7 @@ export interface LaunchMetadata {
 export interface LaunchPlan {
   state: LaunchState;
   timeline: Array<{
+    stepId: string;                   // Unique within the plan (phase can repeat)
     dayOffset: number;                // Days from target release (negative = pre)
     date: string;                     // ISO
     phase: LaunchPhase;
@@ -193,6 +194,7 @@ export class LaunchOrchestratorService {
     const addStep = (dayOffset: number, phase: LaunchPhase, action: string, platform: string,
       risk: LaunchPlan['timeline'][0]['riskLevel'], disclosures: DisclosureScope[] = []) => {
       timeline.push({
+        stepId: `${phase}@${dayOffset}:${action.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`,
         dayOffset,
         date: new Date(release + dayOffset * 86400000).toISOString(),
         phase,
@@ -249,14 +251,24 @@ export class LaunchOrchestratorService {
    * itself — creates a ConfirmationRequest and returns its ID. Caller
    * polls / awaits the gate before doing anything external.
    */
-  async proposeStep(launchId: string, phase: LaunchPhase): Promise<{ confirmationId?: string; state: LaunchState; message: string }> {
+  async proposeStep(launchId: string, phase: LaunchPhase, stepId?: string): Promise<{ confirmationId?: string; state: LaunchState; message: string }> {
     const state = this.states.get(launchId);
     if (!state) throw new Error('Launch not found');
     if (!this.gate || !this.disclosures) throw new Error('Launch orchestrator not fully wired (missing gate or disclosures)');
 
     const plan = this.buildPlan(state);
-    const step = plan.timeline.find(s => s.phase === phase);
-    if (!step) throw new Error(`Phase ${phase} not in the plan for this launch`);
+    const matches = plan.timeline.filter(s => s.phase === phase);
+    if (matches.length === 0) throw new Error(`Phase ${phase} not in the plan for this launch`);
+    let step: LaunchPlan['timeline'][0];
+    if (stepId) {
+      const found = matches.find(s => s.stepId === stepId);
+      if (!found) throw new Error(`Step ${stepId} not in phase ${phase} for this launch`);
+      step = found;
+    } else {
+      // Backward-compatible: phase-only callers get the first step of the phase
+      // (stepId is opt-in for disambiguating a multi-step phase).
+      step = matches[0];
+    }
 
     // Check disclosures.
     const check = this.disclosures.checkCompliance({

@@ -47,6 +47,12 @@ export async function initChatHttp(gw: BookClawGateway): Promise<void> {
     console.log('  ℹ Chat app: source-IP allowlist not set (all source IPs allowed)');
   }
 
+  // Escape the (possibly operator-supplied) auth token so it can't break out of
+  // the single-quoted JS string it is injected into in the chat index.html — a
+  // quote/backslash/newline would corrupt the token-bridge script and '</script>'
+  // could inject markup. Mirrors the studio fix in phase-11-http.ts.
+  const safeToken = (gw.authToken ?? '').replace(/[\\'<\r\n]/g, (c) => '\\x' + c.charCodeAt(0).toString(16));
+
   // Per-request: derive the gateway origin from the Host the browser used (validated
   // against the allowlist — Fix A), set a chat-specific CSP that allows calling the
   // gateway (http + ws), and serve the SPA index with the token + API base injected.
@@ -67,7 +73,7 @@ export async function initChatHttp(gw: BookClawGateway): Promise<void> {
       const html = await fs.readFile(indexHtml, 'utf-8');
       res.type('html').send(
         html
-          .replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? '')
+          .replaceAll('__BOOKCLAW_AUTH_TOKEN__', safeToken)
           // Placeholder deliberately differs from the window.__BOOKCLAW_API_BASE__
           // variable name — replaceAll on the variable's own name rewrote the
           // assignment target and syntax-errored the whole token-bridge script.
@@ -84,7 +90,15 @@ export async function initChatHttp(gw: BookClawGateway): Promise<void> {
   });
 
   const chatServer = createServer(chatApp);
-  await new Promise<void>((resolve) => chatServer.listen(chatPort, process.env.BOOKCLAW_BIND || '0.0.0.0', resolve));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      chatServer.once('error', reject);
+      chatServer.listen(chatPort, process.env.BOOKCLAW_BIND || '0.0.0.0', () => resolve());
+    });
+  } catch (err) {
+    console.log(`  ⚠ Chat app: failed to listen on :${chatPort} (${(err as Error).message}) — chat disabled`);
+    return;
+  }
   gw.chatServer = chatServer;                 // hold a ref (field declared in the gateway class)
   console.log(`  ✓ Chat app: serving on :${chatPort} (API → :${gatewayPort})`);
 }

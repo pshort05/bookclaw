@@ -183,7 +183,11 @@ export class SoulService {
   }
 
   async updateVoiceProfile(analysis: string): Promise<void> {
-    const voicePath = join(this.voiceDir ?? this.soulDir, 'VOICE-PROFILE.md');
+    // Always write the learned voice to the canonical global location, never to
+    // a book's (possibly read-only) Author snapshot that useBook() may have
+    // re-pointed soulDir/voiceDir at — otherwise the profile is scoped to one
+    // book's frozen template and lost on the next book switch.
+    const voicePath = join(this.initialSoulDir, 'VOICE-PROFILE.md');
     const { writeFile } = await import('fs/promises');
     await writeFile(voicePath, analysis);
     this.voiceProfile = analysis;

@@ -310,8 +310,11 @@ export class ImageGenService {
       variants[variant] = result;
       if (result.success) {
         successful.push(variant);
-        const sizeKey = `${spec.width}x${spec.height}`;
-        estimatedCost += (costMap[sizeKey] || 0.2) * qualityMult;
+        // The cost table is gpt-image-1 specific; gemini/together don't bill it.
+        if (result.provider === 'openai') {
+          const sizeKey = `${spec.width}x${spec.height}`;
+          estimatedCost += (costMap[sizeKey] || 0.2) * qualityMult;
+        }
       }
     }
 

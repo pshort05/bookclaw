@@ -59,6 +59,9 @@ export function mountBackups(app: Application, gateway: any, _baseDir: string): 
       return { ok: false, error: 'cloud.destinations must be non-empty strings' };
     }
     if (cfg.cloud.hook !== null && typeof cfg.cloud.hook !== 'string') return { ok: false, error: 'cloud.hook must be a path or null' };
+    if (cfg.cloud.enabled && cfg.cloud.destinations.length === 0 && !cfg.cloud.hook) {
+      return { ok: false, error: 'cloud.enabled requires at least one destination or a hook' };
+    }
     return { ok: true, cfg };
   }
 

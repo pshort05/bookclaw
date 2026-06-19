@@ -356,6 +356,7 @@ export class OrchestratorService extends EventEmitter {
   private configPath: string;
   private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
   private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingPersistResolvers: Array<() => void> = [];
 
   constructor(workspaceDir: string) {
     super();
@@ -501,6 +502,9 @@ export class OrchestratorService extends EventEmitter {
     }
     await this.stopAll();
     await this.persistConfig();
+    const resolvers = this.pendingPersistResolvers;
+    this.pendingPersistResolvers = [];
+    for (const r of resolvers) r();
   }
 
   // ── Persistence ──
@@ -508,10 +512,13 @@ export class OrchestratorService extends EventEmitter {
   private async debouncedPersist(): Promise<void> {
     if (this.persistTimer) clearTimeout(this.persistTimer);
     return new Promise<void>((resolve) => {
+      this.pendingPersistResolvers.push(resolve);
       this.persistTimer = setTimeout(async () => {
         this.persistTimer = null;
+        const resolvers = this.pendingPersistResolvers;
+        this.pendingPersistResolvers = [];
         await this.persistConfig();
-        resolve();
+        for (const r of resolvers) r();
       }, 2000);
     });
   }

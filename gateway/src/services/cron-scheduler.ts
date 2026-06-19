@@ -118,11 +118,17 @@ class CronParser {
 
   static matches(d: Date, parsed: ReturnType<typeof CronParser.parse>): boolean {
     if (!parsed) return false;
-    return parsed.minute.values.has(d.getUTCMinutes())
-      && parsed.hour.values.has(d.getUTCHours())
-      && parsed.dom.values.has(d.getUTCDate())
-      && parsed.month.values.has(d.getUTCMonth() + 1)
-      && parsed.dow.values.has(d.getUTCDay());
+    if (!parsed.minute.values.has(d.getUTCMinutes())) return false;
+    if (!parsed.hour.values.has(d.getUTCHours())) return false;
+    if (!parsed.month.values.has(d.getUTCMonth() + 1)) return false;
+    const domMatch = parsed.dom.values.has(d.getUTCDate());
+    const dowMatch = parsed.dow.values.has(d.getUTCDay());
+    // POSIX cron: when both day-of-month and day-of-week are restricted
+    // (neither is the full '*' set), match if EITHER matches; otherwise AND.
+    const domRestricted = parsed.dom.values.size < 31;
+    const dowRestricted = parsed.dow.values.size < 7;
+    if (domRestricted && dowRestricted) return domMatch || dowMatch;
+    return domMatch && dowMatch;
   }
 
   /** Compute next match starting from `from` (inclusive of next minute). */
@@ -168,8 +174,19 @@ export class CronSchedulerService {
         this.state.jobs = Array.isArray(parsed.jobs) ? parsed.jobs : [];
       } catch { /* corrupted — start fresh */ }
     }
-    // Recompute nextRunAt on every job (clock may have moved).
+    // Recompute nextRunAt on every job (clock may have moved). If a run was
+    // due while the server was down, leave nextRunAt in the past so the
+    // immediate tick in start() fires the missed slot once (catch-up).
+    const now = new Date();
     for (const job of this.state.jobs) {
+      if (job.lastRunAt) {
+        const parsed = CronParser.parse(job.schedule);
+        const missed = CronParser.nextRun(parsed, new Date(job.lastRunAt));
+        if (missed && missed.getTime() <= now.getTime()) {
+          job.nextRunAt = missed.toISOString();
+          continue;
+        }
+      }
       this.recomputeNextRun(job);
     }
   }
@@ -270,10 +287,28 @@ export class CronSchedulerService {
   async runNow(id: string): Promise<{ success: boolean; message?: string }> {
     const job = this.state.jobs.find(j => j.id === id);
     if (!job) return { success: false, message: 'Job not found' };
-    return this.executeJob(job);
+    // Share the running-set guard with tick() so a manual run can't execute
+    // concurrently with (or alongside) a scheduled fire of the same job, which
+    // would double-count runs and race recomputeNextRun on the shared job object.
+    if (this.running.has(job.id)) return { success: false, message: 'Job already running' };
+    this.running.add(job.id);
+    try {
+      return await this.executeJob(job);
+    } finally {
+      this.running.delete(job.id);
+      this.finishRun(job);
+    }
   }
 
   // ── Internal ──
+
+  /** Post-run bookkeeping shared by tick() and runNow() so the two paths can't drift. */
+  private finishRun(job: CronJob): void {
+    job.lastRunAt = new Date().toISOString();
+    job.runCount++;
+    this.recomputeNextRun(job);
+    this.schedulePersist();
+  }
 
   private recomputeNextRun(job: CronJob): void {
     const parsed = CronParser.parse(job.schedule);
@@ -297,10 +332,7 @@ export class CronSchedulerService {
         })
         .finally(() => {
           this.running.delete(job.id);
-          job.lastRunAt = new Date().toISOString();
-          job.runCount++;
-          this.recomputeNextRun(job);
-          this.schedulePersist();
+          this.finishRun(job);
         });
     }
   }

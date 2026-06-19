@@ -180,7 +180,7 @@ export class WebsiteBuilderService {
 
   private buildIndex(input: WebsiteBuildInput): string {
     const { config, books } = input;
-    const latestBook = books[0];
+    const latestBook = [...books].sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''))[0];
     const content = `
 <section class="hero">
   <h1>${this.esc(config.siteName)}</h1>
@@ -254,7 +254,7 @@ ${affiliatePresent ? `<p class="ftc-disclosure">${FTC_DISCLOSURE}</p>` : ''}
 </article>
 <p><a href="../books.html">← All books</a></p>
 `;
-    return this.shell(input.config, book.title, content, affiliatePresent);
+    return this.shell(input.config, book.title, content, affiliatePresent, '../');
   }
 
   private buildBlogIndex(input: WebsiteBuildInput): string {
@@ -268,7 +268,7 @@ ${affiliatePresent ? `<p class="ftc-disclosure">${FTC_DISCLOSURE}</p>` : ''}
   ${p.tags?.length ? `<div class="tags">${p.tags.map(t => `<span class="tag">${this.esc(t)}</span>`).join('')}</div>` : ''}
 </article>`).join('\n');
 
-    return this.shell(input.config, 'Blog', `<h1>Blog</h1><div class="post-list">${cards || '<p>No posts yet.</p>'}</div>`, false);
+    return this.shell(input.config, 'Blog', `<h1>Blog</h1><div class="post-list">${cards || '<p>No posts yet.</p>'}</div>`, false, '../');
   }
 
   private buildBlogPost(post: WebsiteBlogPost, input: WebsiteBuildInput): string {
@@ -283,7 +283,7 @@ ${affiliatePresent ? `<p class="ftc-disclosure">${FTC_DISCLOSURE}</p>` : ''}
 </article>
 <p><a href="index.html">← All posts</a></p>
 `;
-    return this.shell(input.config, post.title, content, !!post.includesAffiliateLinks);
+    return this.shell(input.config, post.title, content, !!post.includesAffiliateLinks, '../');
   }
 
   private buildAboutPage(input: WebsiteBuildInput): string {
@@ -335,15 +335,15 @@ ${entries}
 
   // ── Shell / theme ──
 
-  private shell(config: WebsiteSiteConfig, pageTitle: string, content: string, hasAffiliateLinks: boolean): string {
+  private shell(config: WebsiteSiteConfig, pageTitle: string, content: string, hasAffiliateLinks: boolean, prefix: string = ''): string {
     const nav = `
 <nav class="main-nav" aria-label="Primary">
-  <a href="index.html" class="brand">${this.esc(config.siteName)}</a>
+  <a href="${prefix}index.html" class="brand">${this.esc(config.siteName)}</a>
   <ul>
-    <li><a href="books.html">Books</a></li>
-    <li><a href="blog/index.html">Blog</a></li>
-    <li><a href="about.html">About</a></li>
-    <li><a href="contact.html">Contact</a></li>
+    <li><a href="${prefix}books.html">Books</a></li>
+    <li><a href="${prefix}blog/index.html">Blog</a></li>
+    <li><a href="${prefix}about.html">About</a></li>
+    <li><a href="${prefix}contact.html">Contact</a></li>
   </ul>
 </nav>`;
 
@@ -369,8 +369,8 @@ ${entries}
 <title>${this.esc(pageTitle)} — ${this.esc(config.siteName)}</title>
 ${config.tagline ? `<meta name="description" content="${this.esc(config.tagline)}">` : ''}
 <meta name="generator" content="BookClaw">
-<link rel="stylesheet" href="${pageTitle === 'Home' || pageTitle === 'About' || pageTitle === 'Books' || pageTitle === 'Contact' ? 'styles.css' : '../styles.css'}">
-<link rel="alternate" type="application/rss+xml" title="${this.esc(config.siteName)} RSS" href="${pageTitle === 'Home' || pageTitle === 'About' || pageTitle === 'Books' || pageTitle === 'Contact' ? 'feed.xml' : '../feed.xml'}">
+<link rel="stylesheet" href="${prefix}styles.css">
+<link rel="alternate" type="application/rss+xml" title="${this.esc(config.siteName)} RSS" href="${prefix}feed.xml">
 </head>
 <body>
 ${nav}

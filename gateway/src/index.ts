@@ -14,7 +14,7 @@ import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { timingSafeEqual } from 'crypto';
@@ -180,6 +180,9 @@ class BookClawGateway {
   public rateLimitWindowMs = 60000;
   public rateLimitSummary = '';
   private apiRateLimits: Map<string, { count: number; resetAt: number }> = new Map();
+  // Next time we sweep expired rate-limit buckets, so the Map can't grow without
+  // bound when source keys vary every request (e.g. attacker-rotated XFF).
+  private apiRateLimitsNextSweep = 0;
 
   // Skills, goals & bridges
   public skills!: SkillLoader;
@@ -391,6 +394,14 @@ class BookClawGateway {
       if (limit === 0) return next(); // this bucket disabled
       const key = `${ip}|${authed ? 'auth' : 'anon'}`;
       const now = Date.now();
+      // Opportunistically prune expired buckets (at most once per window) so the
+      // Map doesn't accumulate one stale entry per never-repeated key.
+      if (now >= this.apiRateLimitsNextSweep) {
+        for (const [k, v] of this.apiRateLimits) {
+          if (v.resetAt <= now) this.apiRateLimits.delete(k);
+        }
+        this.apiRateLimitsNextSweep = now + this.rateLimitWindowMs;
+      }
       const entry = this.apiRateLimits.get(key);
       if (!entry || entry.resetAt <= now) {
         this.apiRateLimits.set(key, { count: 1, resetAt: now + this.rateLimitWindowMs });
@@ -1424,6 +1435,12 @@ class BookClawGateway {
           if (args) {
             // Show files in specific directory
             const targetDir = join(projectsDir, args);
+            // Reject traversal out of workspace/projects before reading.
+            const projectsWithSep = projectsDir.endsWith(sep) ? projectsDir : projectsDir + sep;
+            const resolvedTarget = resolve(targetDir);
+            if (resolvedTarget !== projectsDir && !resolvedTarget.startsWith(projectsWithSep)) {
+              return `Folder "${args}" not found.`;
+            }
             if (!existsSync(targetDir)) return `Folder "${args}" not found.`;
             const files = readdirSync(targetDir).filter(f => !statSync(join(targetDir, f)).isDirectory());
             files.forEach(f => {
@@ -1496,7 +1513,8 @@ class BookClawGateway {
             .replace(/[-_]/g, ' ')
             .replace(/\b\w/g, c => c.toUpperCase());
 
-          const exportRes = await fetch('http://localhost:3847/api/author-os/format', {
+          const exportPort = this.config.get('server.port', 3847);
+          const exportRes = await fetch(`http://localhost:${exportPort}/api/author-os/format`, {
             method: 'POST',
             // Self-call to our own /api/* — must pass the bearer-auth gate. Token
             // is absent when auth is disabled, in which case no header is sent.
@@ -2446,6 +2464,10 @@ class BookClawGateway {
 
       async readFile(filename: string): Promise<{ content: string; error?: string }> {
         const cleanName = filename.replace(/^[📁📄\s]+/, '').trim();
+        // Reject path traversal — cleanName must stay inside the workspace sandbox.
+        if (!gateway.sandbox.validatePath(cleanName).valid) {
+          return { content: '', error: `File not found: ${filename}` };
+        }
         let filePath = join(workspaceDir, cleanName);
         if (!existsSync(filePath)) {
           // Phase 3 read-path: prefer the active book's data/ dir; fall back to legacy projects/.

@@ -58,7 +58,7 @@ export function SkillEditor({ name, displayName }: Props) {
   });
 
   const phasesValid = phases.every((p) => p.model.trim() && p.prompt.trim());
-  const contentValid = /^---\n[\s\S]*?\n---/.test(content) && /\bdescription\s*:/.test(content) && /\btriggers\s*:/.test(content);
+  const contentValid = /^---\r?\n[\s\S]*?\r?\n---/.test(content) && /\bdescription\s*:/.test(content) && /\btriggers\s*:/.test(content);
   const canSave = !saving && contentValid && phasesValid;
 
   const save = async () => {

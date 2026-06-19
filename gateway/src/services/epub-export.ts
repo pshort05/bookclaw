@@ -68,7 +68,7 @@ export async function generateEpubBuffer(options: EpubExportOptions): Promise<Bu
     <dc:identifier id="bookid">${escapeXml(bookId)}</dc:identifier>
     <dc:title>${escapeXml(title)}${subtitle ? ': ' + escapeXml(subtitle) : ''}</dc:title>
     <dc:creator>${escapeXml(author)}</dc:creator>
-    <dc:language>${language}</dc:language>
+    <dc:language>${escapeXml(language)}</dc:language>
     ${description ? `<dc:description>${escapeXml(description)}</dc:description>` : ''}
     <dc:date>${new Date().toISOString().split('T')[0]}</dc:date>
     <meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</meta>

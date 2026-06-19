@@ -37,7 +37,7 @@ export class TelegramBridge {
   private lastUpdateId = 0;
   public pauseRequested = false;
   private knownChatIds: Set<number> = new Set(); // Track chat IDs for broadcasting
-  private lastFileList: string[] = []; // For /read # file picker
+  private lastFileList: Map<number, string[]> = new Map(); // chatId → file list for /read # picker
   private voiceMode: Map<number, string | boolean> = new Map(); // chatId → voice preset or false
   private lastResponse: Map<number, string> = new Map(); // chatId → last AI response for "read that back"
 
@@ -94,7 +94,7 @@ export class TelegramBridge {
       for (const update of data.result || []) {
         this.lastUpdateId = update.update_id;
         const message = update.message;
-        if (!message?.text) continue;
+        if (!message?.text || !message.from) continue;
 
         const userId = String(message.from.id);
         const chatId = message.chat.id;
@@ -164,6 +164,11 @@ export class TelegramBridge {
           // Auto-run the pipeline
           this.commandHandlers.autoRunProject(result.id, async (msg: string) => {
             await this.sendMessage(chatId, msg);
+          }).catch(async (e: any) => {
+            // Swallow a failed error-notification too — if the Telegram send
+            // also fails (likely, on the same network error), don't let the
+            // catch handler's own rejection escape as an unhandledRejection.
+            await this.sendMessage(chatId, `❌ Error: ${String(e)}`).catch(() => {});
           });
         } catch (e) {
           await this.sendMessage(chatId, `❌ ${String(e)}`);
@@ -342,9 +347,9 @@ export class TelegramBridge {
             await this.sendMessage(chatId, `📁 No files found${subdir ? ` in ${subdir}` : ''}.\n\nFiles are saved to workspace/projects/ when you use /goal or /write.\nResearch goes to workspace/research/.`);
           } else {
             // Store file list for /read # selection
-            this.lastFileList = files
+            this.lastFileList.set(chatId, files
               .filter(f => !f.includes('📁'))  // Only actual files, not directories
-              .map(f => f.replace(/^[\s📄]+/, '').trim());
+              .map(f => f.replace(/^[\s📄]+/, '').trim()));
 
             let msg = `📁 *Files${subdir ? ` in ${subdir}` : ''}:*\n`;
             let fileNum = 1;
@@ -379,8 +384,9 @@ export class TelegramBridge {
           // Check if input is a number (file picker)
           let filename = input;
           const num = parseInt(input, 10);
-          if (!isNaN(num) && this.lastFileList && num >= 1 && num <= this.lastFileList.length) {
-            filename = this.lastFileList[num - 1];
+          const fileList = this.lastFileList.get(chatId);
+          if (!isNaN(num) && input === String(num) && fileList && num >= 1 && num <= fileList.length) {
+            filename = fileList[num - 1];
           }
 
           const result = await this.commandHandlers.readFile(filename);
@@ -426,8 +432,9 @@ export class TelegramBridge {
 
         // Check if it's a number from the file picker
         const num = parseInt(filename, 10);
-        if (!isNaN(num) && this.lastFileList && num >= 1 && num <= this.lastFileList.length) {
-          filename = this.lastFileList[num - 1];
+        const fileList = this.lastFileList.get(chatId);
+        if (!isNaN(num) && filename === String(num) && fileList && num >= 1 && num <= fileList.length) {
+          filename = fileList[num - 1];
         }
 
         // Derive title from filename
@@ -558,8 +565,9 @@ export class TelegramBridge {
 
         // Check if it's a file number from /files
         const num = parseInt(speakText, 10);
-        if (!isNaN(num) && speakText === String(num) && this.lastFileList && num >= 1 && num <= this.lastFileList.length) {
-          const filename = this.lastFileList[num - 1];
+        const fileList = this.lastFileList.get(chatId);
+        if (!isNaN(num) && speakText === String(num) && fileList && num >= 1 && num <= fileList.length) {
+          const filename = fileList[num - 1];
           await this.sendMessage(chatId, `🔊 Reading file #${num} aloud...`);
           if (this.commandHandlers) {
             const fileResult = await this.commandHandlers.readFile(filename);
@@ -592,7 +600,7 @@ export class TelegramBridge {
         }
 
         // Send as Telegram voice message
-        const wordCount = speakText.split(/\s+/).length;
+        const wordCount = speakText.trim().split(/\s+/).filter(Boolean).length;
         const caption = `🔊 ${wordCount} words • ${ttsData.duration ? Math.round(ttsData.duration / 60) + ' min' : ''}`;
         const sent = await this.sendVoice(chatId, ttsData.file, caption);
 

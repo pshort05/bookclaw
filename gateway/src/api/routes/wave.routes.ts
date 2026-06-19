@@ -26,7 +26,7 @@ export function mountWave(app: Application, gateway: any, baseDir: string): void
     const goals = services.goals;
     if (!goals) return res.status(503).json({ error: 'Goals service not initialized' });
     const { type, title, description, target, unit, deadline, projectIds } = req.body || {};
-    if (!type || !title || !target || !unit || !deadline) {
+    if (!type || !title || typeof target !== 'number' || !unit || !deadline) {
       return res.status(400).json({ error: 'type, title, target, unit, deadline required' });
     }
     try {
@@ -195,7 +195,7 @@ export function mountWave(app: Application, gateway: any, baseDir: string): void
       if (chapters.length === 0) return res.status(400).json({ error: 'No completed chapters found.' });
 
       const targetCh = req.body?.chapterNumber;
-      const filtered = targetCh ? chapters.filter((c: any) => c.number === targetCh) : chapters;
+      const filtered = typeof targetCh === 'number' ? chapters.filter((c: any) => c.number === targetCh) : chapters;
 
       const scripts = filtered.map((c: any) =>
         prep.attributeMultiVoice({

@@ -217,12 +217,6 @@ export class UserModelService {
     for (const o of obs) {
       const date = o.timestamp.split('T')[0];
       dayCounts.set(date, (dayCounts.get(date) || 0) + 1);
-      const d = new Date(o.timestamp);
-      const hour = d.getUTCHours();
-      hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1);
-      const dow = d.getUTCDay();
-      dowCounts.set(dow, (dowCounts.get(dow) || 0) + 1);
-
       if (o.type === 'message_sent') {
         totalMessages++;
         const len = Number(o.metadata?.length) || 0;
@@ -231,6 +225,11 @@ export class UserModelService {
         totalWords += Number(o.metadata?.words) || 0;
       } else if (o.type === 'session_start') {
         sessionsStarted++;
+        const d = new Date(o.timestamp);
+        const hour = d.getUTCHours();
+        hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1);
+        const dow = d.getUTCDay();
+        dowCounts.set(dow, (dowCounts.get(dow) || 0) + 1);
       } else if (o.type === 'project_completed') {
         completedProjects++;
       } else if (o.type === 'project_failed') {
@@ -246,7 +245,7 @@ export class UserModelService {
     const avgWordsPerSession = sessionsStarted > 0
       ? Math.round(totalWords / sessionsStarted) : 0;
 
-    // Mode of hour-of-day across observations
+    // Mode of session-start hour-of-day
     let preferredHourOfDay: number | null = null;
     let maxHour = 0;
     for (const [hour, count] of hourCounts) {

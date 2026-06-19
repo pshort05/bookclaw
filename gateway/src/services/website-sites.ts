@@ -142,12 +142,17 @@ export class WebsiteSiteService {
     return site;
   }
 
-  async update(siteId: string, patch: Partial<Omit<PersistedSite, 'id' | 'createdAt'>>): Promise<PersistedSite | null> {
+  async update(siteId: string, patch: Partial<Pick<PersistedSite, 'config' | 'linkedProjectIds' | 'aboutHTML' | 'contactHTML' | 'deploy'>>): Promise<PersistedSite | null> {
     const site = this.state.sites[siteId];
     if (!site) return null;
-    Object.assign(site, patch);
+    let changedContent = false;
+    if (patch.config !== undefined) { site.config = patch.config; changedContent = true; }
+    if (patch.linkedProjectIds !== undefined) { site.linkedProjectIds = patch.linkedProjectIds; changedContent = true; }
+    if (patch.aboutHTML !== undefined) { site.aboutHTML = patch.aboutHTML; changedContent = true; }
+    if (patch.contactHTML !== undefined) { site.contactHTML = patch.contactHTML; changedContent = true; }
+    if (patch.deploy !== undefined) { site.deploy = patch.deploy; changedContent = true; }
     site.updatedAt = new Date().toISOString();
-    site.pendingChanges = (site.pendingChanges ?? 0) + 1;
+    if (changedContent) site.pendingChanges = (site.pendingChanges ?? 0) + 1;
     await this.persist();
     return site;
   }

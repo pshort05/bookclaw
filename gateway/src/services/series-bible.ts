@@ -444,13 +444,15 @@ export class SeriesBibleService {
 
     // Merge aliases
     for (const alias of incoming.aliases || []) {
+      if (typeof alias !== 'string') continue;
       if (!canonical.aliases.some(a => a.toLowerCase() === alias.toLowerCase())) {
         canonical.aliases.push(alias);
       }
     }
 
     // Check attribute contradictions and merge.
-    for (const [key, value] of Object.entries(incoming.attributes || {})) {
+    for (const [key, rawValue] of Object.entries(incoming.attributes || {})) {
+      const value = String(rawValue ?? '');
       const canonicalValue = canonical.canonicalAttributes[key];
       if (canonicalValue && canonicalValue.toLowerCase().trim() !== value.toLowerCase().trim()) {
         // Soft-contradiction: flag it, but accept the newer value as a delta.

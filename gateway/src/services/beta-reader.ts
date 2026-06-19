@@ -132,7 +132,7 @@ export class BetaReaderService {
     }
 
     const clampTension = (n: any) => Math.max(1, Math.min(10, Number(n) || 5));
-    const clampContinue = (n: any) => Math.max(0, Math.min(100, Number(n) || 50));
+    const clampContinue = (n: any) => { const x = Number(n); return Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : 50; };
     const asArray = (v: any) => Array.isArray(v) ? v.map(String) : (v ? [String(v)] : []);
     const validPacing = ['too slow', 'slow', 'good', 'fast', 'too fast'];
     const pacing = validPacing.includes(parsed.pacing) ? parsed.pacing : 'good';

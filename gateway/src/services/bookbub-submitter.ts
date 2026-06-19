@@ -138,9 +138,9 @@ export class BookBubSubmitterService {
     if (!prior || prior.length === 0) return 'First BookBub Featured Deal submission for this title.';
     const sorted = [...prior].sort((a, b) => b.date.localeCompare(a.date));
     const lastDeal = sorted[0];
-    const monthsSince = Math.floor((Date.now() - new Date(lastDeal.date).getTime()) / (30 * 86400000));
+    const monthsSince = Math.max(0, Math.round((Date.now() - new Date(lastDeal.date).getTime()) / (30 * 86400000)));
     if (monthsSince < 6) {
-      warnings.push(`Last deal was only ${monthsSince} months ago. BookBub typically requires 6+ months between deals on the same title.`);
+      warnings.push(`Last deal was only ${monthsSince} ${monthsSince === 1 ? 'month' : 'months'} ago. BookBub typically requires 6+ months between deals on the same title.`);
     }
     return `Prior deals: ${sorted.length}. Most recent: ${lastDeal.date} at $${lastDeal.priceUSD.toFixed(2)}.`;
   }

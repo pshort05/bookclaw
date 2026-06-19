@@ -417,10 +417,14 @@ export class MemorySearchService {
     timestamp: string;
     personaId?: string | null;
     projectId?: string | null;
+    file: string;
+    lineIndex: number;
   }): void {
     if (!this.db) return;
-    const date = input.timestamp.split('T')[0];
-    const sourceRef = `${date}.jsonl#live-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    // Deterministic sourceRef matching reindexAll's `${file}#${i}` so the live
+    // insert and a later full reindex collide on UNIQUE(source, source_ref) and
+    // upsert dedups, rather than producing two rows for the same turn.
+    const sourceRef = `${input.file}#${input.lineIndex}`;
     this.upsert({
       source: 'conversation',
       sourceType: 'jsonl-line',

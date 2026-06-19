@@ -108,7 +108,7 @@ export function Series() {
   const pull = async (slug: string) => {
     if (!sel) return;
     try {
-      const r = await api<{ confirmationId?: string; pulled?: string }>(`/api/series/${sel.id}/pull/${slug}`, { method: 'POST', body: JSON.stringify({}) });
+      const r = await api<{ confirmationId?: string; pulled?: string }>(`/api/series/${sel.id}/pull/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify({}) });
       if (r.confirmationId) { setPending((p) => ({ ...p, [slug]: r.confirmationId! })); setMsg('Approve the pull in Confirmations, then Finalize.'); }
       else { setMsg(`Pulled series assets into ${slug}.`); }
     } catch (e) { setMsg(`Pull failed — ${String(e)}`); }
@@ -118,7 +118,7 @@ export function Series() {
     const confirmationId = pending[slug];
     if (!confirmationId) return;
     try {
-      await api(`/api/series/${sel.id}/pull/${slug}`, { method: 'POST', body: JSON.stringify({ confirmationId }) });
+      await api(`/api/series/${sel.id}/pull/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify({ confirmationId }) });
       setPending((p) => { const n = { ...p }; delete n[slug]; return n; });
       setMsg(`Pulled series assets into ${slug}.`);
     } catch (e) {

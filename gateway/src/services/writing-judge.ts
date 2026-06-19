@@ -495,9 +495,9 @@ export class WritingJudgeService {
     const overall = dims.reduce((sum, d) => sum + Math.max(1, Math.min(10, d.score)), 0) / dims.length;
     // Top issues = lowest-scoring dimensions' first issue, capped at 3.
     const topIssues = [...dims]
-      .sort((a, b) => a.score - b.score)
+      .sort((a, b) => Math.max(1, Math.min(10, a.score)) - Math.max(1, Math.min(10, b.score)))
       .slice(0, 3)
-      .map(d => `[${d.name} ${d.score}/10] ${d.issues[0] || ''}`)
+      .map(d => `[${d.name} ${Math.max(1, Math.min(10, d.score))}/10] ${d.issues[0] || ''}`)
       .filter(s => s.length > 5);
 
     return {

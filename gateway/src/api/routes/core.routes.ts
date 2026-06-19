@@ -169,7 +169,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
   // ═══════════════════════════════════════════════════════════
 
   // Get recent activity entries
-  app.get('/api/activity', async (req: Request, res: Response) => {
+  app.get('/api/activity', asyncHandler(async (req: Request, res: Response) => {
     const activityLog = gateway.getActivityLog?.();
     if (!activityLog) {
       return res.json({ entries: [] });
@@ -178,7 +178,7 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     const goalId = req.query.goalId as string | undefined;
     const entries = await activityLog.getRecent(count, goalId);
     res.json({ entries });
-  });
+  }));
 
   // SSE stream for real-time activity updates
   app.get('/api/activity/stream', (req: Request, res: Response) => {

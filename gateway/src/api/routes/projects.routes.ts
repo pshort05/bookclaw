@@ -548,7 +548,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             // book data/ is shared across this book's projects — scope deletion
             // to this project's own step files, never siblings'.
             if (activeDataDir && !f.startsWith(`${project.id}-`)) continue;
-            if (keepCompleted && (f === 'manuscript.md' || f === 'compiled-output.md' || f === 'revised-manuscript.md' || f === 'revision-report.md')) continue;
+            const base = activeDataDir ? f.replace(new RegExp(`^${project.id}-`), '') : f;
+            if (keepCompleted && (base === 'manuscript.md' || base === 'compiled-output.md' || base === 'revised-manuscript.md' || base === 'revision-report.md')) continue;
             await rm(jp(projectDir, f)).catch(() => {});
           }
         }
@@ -721,7 +722,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const isQualityCandidate = stepSkill === 'write' || stepPhase === 'polish';
           const qualityLoopEnabled = currentProject.context?.qualityLoopEnabled !== false;
           const qualityThreshold = Number(currentProject.context?.qualityThreshold) || 70;
-          const maxRetries = Number(currentProject.context?.qualityMaxRetries) ?? 1;
+          const rawMaxRetries = Number(currentProject.context?.qualityMaxRetries);
+          const maxRetries = Number.isFinite(rawMaxRetries) ? rawMaxRetries : 1;
           // Per-project flag for the dual Craft + Market judge mode.
           // Doubles the judge AI cost (one extra call per attempt) but
           // surfaces craft↔market disagreement, which is the most

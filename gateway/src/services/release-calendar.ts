@@ -55,9 +55,9 @@ export class ReleaseCalendarService {
 
   async createEvent(input: Omit<CalendarEvent, 'id' | 'status'> & { status?: CalendarEvent['status'] }): Promise<CalendarEvent> {
     const event: CalendarEvent = {
+      ...input,
       id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       status: input.status ?? 'upcoming',
-      ...input,
     };
     this.events.set(event.id, event);
     await this.persist();
@@ -115,8 +115,8 @@ export class ReleaseCalendarService {
       { dayOffset: 60, price: tail, note: 'Day 60 — tail price' },
     ];
 
-    return schedule.map(s => ({
-      id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    return schedule.map((s, i) => ({
+      id: `event-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
       projectId: input.projectId,
       bookTitle: input.bookTitle,
       date: new Date(releaseMs + s.dayOffset * 86400000).toISOString(),

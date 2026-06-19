@@ -227,7 +227,7 @@ export class GoalsService {
     const pctComplete = Math.min(100, Math.round((goal.current / goal.target) * 100));
     const remaining = Math.max(0, goal.target - goal.current);
 
-    // Actual pace: units per day since goal start.
+    // Actual pace: units per day since goal start (goals always start at current=0).
     const pace = goal.current / daysElapsed;
     // Required pace: remaining units / days left.
     const paceRequired = daysRemaining > 0 ? remaining / daysRemaining : remaining;

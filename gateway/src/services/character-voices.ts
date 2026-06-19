@@ -232,6 +232,11 @@ export class CharacterVoicesService {
         }
         voice.dialogueCorpus = reversed;
         voice.dialogueWordCount = total;
+        // Trimming can drop the running total below the count recorded at the
+        // last fingerprint build; clamp so wordsSinceLastBuild stays >= 0.
+        if (voice.fingerprintBuiltAtWordCount > voice.dialogueWordCount) {
+          voice.fingerprintBuiltAtWordCount = voice.dialogueWordCount;
+        }
       }
     }
 
@@ -431,7 +436,7 @@ export class CharacterVoicesService {
     let lastSpeaker: string | null = null;
 
     const explicitTagRe = /["”]\s*[,.?!]?\s*([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)\s+(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed|stammered)\b/i;
-    const reverseTagRe = /\b(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)/i;
+    const reverseTagRe = /["”]\s*[,.?!]?\s*(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)/i;
 
     for (const para of paragraphs) {
       const trimmed = para.trim();
@@ -443,10 +448,15 @@ export class CharacterVoicesService {
 
       // Extract just the spoken portion(s) — text inside quotes
       const spokenMatches = trimmed.match(/["“]([^"“”]+)["”]/g) || [];
-      const spoken = spokenMatches
+      let spoken = spokenMatches
         .map(m => m.replace(/^["“]/, '').replace(/["”]$/, '').trim())
         .filter(s => s.length > 0)
         .join(' ');
+      if (!spoken) {
+        // No full quote pair (mismatched/unclosed quote, e.g. multi-paragraph
+        // speech). Fall back to the text after the leading quote.
+        spoken = trimmed.replace(/^["“]/, '').replace(/["”]$/, '').trim();
+      }
       if (!spoken) continue;
 
       let speakerName: string | null = null;

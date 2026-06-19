@@ -347,7 +347,7 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
   app.post('/api/audio/config', async (req: Request, res: Response) => {
     if (!services.tts) return res.status(503).json({ error: 'TTS service not initialized' });
     const { voice, provider } = req.body || {};
-    if (voice) await services.tts.setVoice(voice);
+    if (voice) await services.tts.setVoice(services.tts.resolveVoice(voice));
     if (provider === 'edge' || provider === 'elevenlabs') {
       await services.tts.setProvider(provider);
     }

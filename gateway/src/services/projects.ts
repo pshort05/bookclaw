@@ -832,6 +832,7 @@ Description: ${description}`;
       next.status = 'active';
       // Enrich the next prompt with results from completed steps
       next.prompt = this.enrichWithPriorResults(next.prompt, project);
+      this.persistState();
       return next;
     }
 
@@ -1703,6 +1704,12 @@ Description: ${description}`;
     if (prompt.includes('we developed') || prompt.includes('we created')) {
       return prompt;
     }
+
+    // Strip any marker a prior enrich pass prepended (the enriched prompt is
+    // persisted on the step, so it may already carry one). Recomputing from the
+    // bare prompt avoids both cumulative prefixing AND a stale label on
+    // re-advance — the reference is rebuilt against the latest completed step.
+    prompt = prompt.replace(/^\[Build on the work from "[^"]*" — see system context for details\.\]\n\n/, '');
 
     const lastCompleted = [...project.steps].reverse().find(s => s.status === 'completed' && s.result);
     if (lastCompleted) {

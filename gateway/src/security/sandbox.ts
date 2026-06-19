@@ -45,7 +45,7 @@ export class SandboxGuard {
 
     // Check forbidden patterns
     for (const pattern of this.forbiddenPatterns) {
-      if (pattern.test(targetPath) || pattern.test(resolved)) {
+      if (pattern.test(targetPath) || pattern.test(rel)) {
         return { valid: false, reason: `Path matches forbidden pattern: ${pattern}` };
       }
     }

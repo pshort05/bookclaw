@@ -109,14 +109,14 @@ export class CostTracker {
 
   getStatus(): { daily: number; monthly: number; total: number; overBudget: boolean; dailyLimit: number; monthlyLimit: number; byBook: Record<string, number> } {
     this.checkReset();
-    // Round the lifetime/per-book figures to 4 decimals to match the money()
-    // renderer's $0.0001 resolution — 2dp would floor cheap-model spend to $0.00
-    // and hide it in the Rail lifetime line and the BookDrawer per-book row.
+    // Round all figures to 4 decimals to match the money() renderer's $0.0001
+    // resolution — 2dp would floor cheap-model spend to $0.00 and hide it in the
+    // Rail lifetime/daily/monthly lines and the BookDrawer per-book row.
     const byBook: Record<string, number> = {};
     for (const [k, v] of Object.entries(this.byBook)) byBook[k] = Math.round(v * 1e4) / 1e4;
     return {
-      daily: Math.round(this.dailySpend * 100) / 100,
-      monthly: Math.round(this.monthlySpend * 100) / 100,
+      daily: Math.round(this.dailySpend * 1e4) / 1e4,
+      monthly: Math.round(this.monthlySpend * 1e4) / 1e4,
       total: Math.round(this.totalSpend * 1e4) / 1e4,
       overBudget: this.isOverBudget(),
       dailyLimit: this.dailyLimit,

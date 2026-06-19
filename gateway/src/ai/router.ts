@@ -336,9 +336,10 @@ export class AIRouter {
       if (pref?.available) {
         return pref;
       }
-      // For Ollama, re-check availability in case it came online after startup
+      // Selection is synchronous; if Ollama came online after startup its
+      // availability is only refreshed by an explicit reinitialize() call.
       if (effectivePref === 'ollama' && !pref) {
-        console.warn(`[router] Ollama preferred but not in provider list — will be checked on next reinitialize`);
+        console.warn(`[router] Ollama preferred but not in provider list — call reinitialize() to re-check availability`);
       } else {
         console.warn(`[router] Preferred provider '${effectivePref}' not available, falling back to tier routing`);
       }
@@ -715,9 +716,11 @@ export class AIRouter {
         // It accepts the same Chat Completions API but produces a reasoning_content block.
         effectiveModel = 'deepseek-reasoner';
       } else if (provider.id === 'openai') {
-        // OpenAI: only the o-series (o1, o3, o4, gpt-5*) supports reasoning_effort.
-        // gpt-4o silently ignores it. Send the param only when the model name suggests support.
-        const isReasoningModel = /^(o[1-9]|o\d+|gpt-5|gpt-5\.\d+)/i.test(provider.model);
+        // OpenAI: only the o-series (o1, o3, o4) and reasoning gpt-5 variants
+        // support reasoning_effort. gpt-4o silently ignores it, and the
+        // non-reasoning gpt-5*-chat variants reject it (and reject dropping
+        // max_tokens). Send the param only when the model name suggests support.
+        const isReasoningModel = /^(o\d+|gpt-5(?!-chat))/i.test(provider.model);
         if (isReasoningModel) reasoningEffort = request.thinking;
       } else if (provider.id === 'openrouter') {
         // OpenRouter: thinking support depends on the underlying model. The

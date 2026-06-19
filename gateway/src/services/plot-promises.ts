@@ -332,7 +332,7 @@ export class PlotPromisesService {
     const project = await this.load(projectId);
     const promise: PlotPromise = {
       id: `promise-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      touchedAtChapters: input.introducedAtChapter ? [input.introducedAtChapter] : [],
+      touchedAtChapters: typeof input.introducedAtChapter === 'number' ? [input.introducedAtChapter] : [],
       ...input,
     } as PlotPromise;
     project.promises.push(promise);
@@ -487,6 +487,7 @@ export class PlotPromisesService {
       'world_revelation', 'consequence', 'reunion', 'magic_rule',
       'red_herring', 'other',
     ];
-    return allowed.includes(value) ? value : 'other';
+    const v = String(value || '').toLowerCase().trim();
+    return allowed.includes(v as PromiseCategory) ? (v as PromiseCategory) : 'other';
   }
 }

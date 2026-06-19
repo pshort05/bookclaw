@@ -568,7 +568,8 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     if (!services.plotPromises) return res.status(503).json({ error: 'Not initialized' });
     const engine = gateway.getProjectEngine?.();
     const project = engine?.getProject(req.params.id);
-    const progressPct = project?.progress ?? Number(req.query.progress) ?? 100;
+    const q = Number(req.query.progress);
+    const progressPct = project?.progress ?? (Number.isFinite(q) ? q : 100);
     const riskThreshold = Number(req.query.riskThreshold) || 80;
     res.json(await services.plotPromises.audit(req.params.id, progressPct, riskThreshold));
   });
@@ -771,10 +772,10 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
   app.post('/api/launches/:id/propose-step', async (req: Request, res: Response) => {
     const l = services.launchOrchestrator;
     if (!l) return res.status(503).json({ error: 'Launch orchestrator not initialized' });
-    const { phase } = req.body || {};
+    const { phase, stepId } = req.body || {};
     if (!phase) return res.status(400).json({ error: 'phase required' });
     try {
-      const result = await l.proposeStep(req.params.id, phase);
+      const result = await l.proposeStep(req.params.id, phase, stepId);
       addWaveDisclaimer(res);
       res.json(result);
     } catch (err: any) {

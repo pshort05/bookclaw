@@ -56,6 +56,8 @@ export function ResetSpendModal({ onClose }: { onClose: () => void }) {
       });
       await loadCosts().catch(() => {});
       setResult('Lifetime total reset.');
+    } catch (e) {
+      setResult(`Reset failed — ${String(e)}`);
     } finally {
       setBusy(false);
     }

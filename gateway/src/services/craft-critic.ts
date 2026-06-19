@@ -424,7 +424,7 @@ export class CraftCriticService {
     // Check middle dip for "classic" shape
     const midThird = metrics.slice(Math.floor(metrics.length / 3), Math.ceil(2 * metrics.length / 3));
     const midAvg = avg(midThird);
-    if (midAvg < firstAvg * 0.9 && midAvg < lastAvg * 0.9) return 'classic';
+    if (midAvg < ((firstAvg + lastAvg) / 2) * 0.9) return 'classic';
     return 'flat';
   }
 

@@ -142,7 +142,10 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const filePath = safePath(dataDir, filename);
     if (!filePath) return res.status(403).json({ error: 'Path traversal blocked' });
     if (!existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
-    void serveFile(res, filePath, filename, !!req.query.download);
+    // serveFile streams the file; a read error after the existsSync check (delete/
+    // permission race) rejects the promise — catch it so it isn't unhandled, and
+    // tear down the (possibly half-written) response.
+    serveFile(res, filePath, filename, !!req.query.download).catch(() => res.destroy());
   });
 
   // Write-back a book data/ file, snapshotting the prior content (Prompt Runner Replace).

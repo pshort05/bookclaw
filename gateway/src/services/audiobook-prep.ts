@@ -250,7 +250,7 @@ export class AudiobookPrepService {
       for (const [name, ipa] of ipaMap) {
         const pattern = new RegExp(`\\b${this.escapeRegex(name)}\\b`, 'gi');
         body = body.replace(pattern, (match) =>
-          `<phoneme alphabet="ipa" ph="${ipa}">${match}</phoneme>`
+          `<phoneme alphabet="ipa" ph="${this.escapeXml(ipa)}">${match}</phoneme>`
         );
       }
 

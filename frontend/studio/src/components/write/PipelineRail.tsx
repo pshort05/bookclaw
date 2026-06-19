@@ -199,10 +199,10 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
   // Status helper for the static (plan-based) path only.
   const planStepStatus = (planStep: typeof planSteps[number], i: number): 'done' | 'cur' | 'queued' => {
     // Match by id first (most reliable), then label, then fall back to index.
-    const ps = (planStep as { id?: string }).id
-      ? projectSteps.find((s) => s.id === (planStep as { id?: string }).id)
-      : (planStep.label ? projectSteps.find((s) => s.label === planStep.label) : undefined)
-        ?? projectSteps[i];
+    const id = (planStep as { id?: string }).id;
+    const byId = id ? projectSteps.find((s) => s.id === id) : undefined;
+    const byLabel = planStep.label ? projectSteps.find((s) => s.label === planStep.label) : undefined;
+    const ps = byId ?? byLabel ?? projectSteps[i];
     if (!ps) return 'queued';
     if (ps.status === 'completed') return 'done';
     if (ps.status === 'active') return 'cur';
@@ -210,11 +210,12 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
   };
 
   // Matching project step for model-override display in the static path.
-  const matchedProjectStep = (planStep: typeof planSteps[number], i: number): ProjectStep | undefined =>
-    (planStep as { id?: string }).id
-      ? projectSteps.find((s) => s.id === (planStep as { id?: string }).id)
-      : (planStep.label ? projectSteps.find((s) => s.label === planStep.label) : undefined)
-        ?? projectSteps[i];
+  const matchedProjectStep = (planStep: typeof planSteps[number], i: number): ProjectStep | undefined => {
+    const id = (planStep as { id?: string }).id;
+    const byId = id ? projectSteps.find((s) => s.id === id) : undefined;
+    const byLabel = planStep.label ? projectSteps.find((s) => s.label === planStep.label) : undefined;
+    return byId ?? byLabel ?? projectSteps[i];
+  };
 
   const currentStep = projectSteps.find((s) => s.status === 'active');
 

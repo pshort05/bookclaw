@@ -79,11 +79,14 @@ export class ResearchGate {
       return false;
     }
 
-    // IPv6 literals
+    // IPv6 literals (only actual IPv6 literals contain ':'; a normal DNS name
+    // like 'fda.gov' must not be matched by the ULA/link-local prefix checks)
     if (host === '::1') return true;                       // loopback
-    if (host.startsWith('fc') || host.startsWith('fd')) return true; // fc00::/7 ULA
-    if (host.startsWith('fe8') || host.startsWith('fe9') ||
-        host.startsWith('fea') || host.startsWith('feb')) return true; // fe80::/10 link-local
+    if (host.includes(':')) {
+      if (host.startsWith('fc') || host.startsWith('fd')) return true; // fc00::/7 ULA
+      if (host.startsWith('fe8') || host.startsWith('fe9') ||
+          host.startsWith('fea') || host.startsWith('feb')) return true; // fe80::/10 link-local
+    }
 
     return false;
   }

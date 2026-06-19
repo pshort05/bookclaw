@@ -45,8 +45,11 @@ export function Write() {
       const d = await api<{ book: BookManifest }>(`/api/books/${encodeURIComponent(slug)}`).catch(() => null);
       if (cancelled) return;
       if (d) setBook(d.book);
-      // Only reveal the panes once activation + book fetch are complete AND the
-      // resolved active book matches the target slug (guards superseded effects).
+      // Reveal the panes now that activation + book fetch are complete. Activation
+      // already succeeded server-side above, so reveal even if the store mirror
+      // (activeSlug) hasn't caught up — a failed loadBooks() would otherwise leave
+      // the page stuck on "Loading…" forever. Superseded effects are handled by
+      // the `cancelled` guard, not the slug comparison.
       setReady(true);
     })();
     return () => { cancelled = true; };

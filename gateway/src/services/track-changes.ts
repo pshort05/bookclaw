@@ -68,12 +68,12 @@ export class TrackChangesService {
       const paraText = this.extractParagraphText(paraXml);
 
       // Inserts
-      const insRe = /<w:ins\b[^>]*?(?:w:author="([^"]*)")?[^>]*?(?:w:date="([^"]*)")?[^>]*>([\s\S]*?)<\/w:ins>/g;
+      const insRe = /<w:ins\b([^>]*)>([\s\S]*?)<\/w:ins>/g;
       let m: RegExpExecArray | null;
       while ((m = insRe.exec(paraXml)) !== null) {
-        const author = m[1] || 'Unknown';
-        const date = m[2] || '';
-        const insertedText = this.extractRunsText(m[3]);
+        const author = m[1].match(/w:author="([^"]*)"/)?.[1] || 'Unknown';
+        const date = m[1].match(/w:date="([^"]*)"/)?.[1] || '';
+        const insertedText = this.extractRunsText(m[2]);
         if (!insertedText) continue;
         authors.add(author);
         changes.push({
@@ -89,11 +89,11 @@ export class TrackChangesService {
       }
 
       // Deletes (<w:del>…<w:delText>…</w:delText></w:del>)
-      const delRe = /<w:del\b[^>]*?(?:w:author="([^"]*)")?[^>]*?(?:w:date="([^"]*)")?[^>]*>([\s\S]*?)<\/w:del>/g;
+      const delRe = /<w:del\b([^>]*)>([\s\S]*?)<\/w:del>/g;
       while ((m = delRe.exec(paraXml)) !== null) {
-        const author = m[1] || 'Unknown';
-        const date = m[2] || '';
-        const deletedText = this.extractDelText(m[3]);
+        const author = m[1].match(/w:author="([^"]*)"/)?.[1] || 'Unknown';
+        const date = m[1].match(/w:date="([^"]*)"/)?.[1] || '';
+        const deletedText = this.extractDelText(m[2]);
         if (!deletedText) continue;
         authors.add(author);
         changes.push({
@@ -109,10 +109,10 @@ export class TrackChangesService {
       }
 
       // Formatting changes (<w:rPrChange>)
-      const fmtRe = /<w:rPrChange\b[^>]*?(?:w:author="([^"]*)")?[^>]*?(?:w:date="([^"]*)")?[^>]*\/>/g;
+      const fmtRe = /<w:rPrChange\b([^>]*)\/>/g;
       while ((m = fmtRe.exec(paraXml)) !== null) {
-        const author = m[1] || 'Unknown';
-        const date = m[2] || '';
+        const author = m[1].match(/w:author="([^"]*)"/)?.[1] || 'Unknown';
+        const date = m[1].match(/w:date="([^"]*)"/)?.[1] || '';
         authors.add(author);
         changes.push({
           id: `fmt-${paraIdx}-${changes.length}`,
@@ -129,22 +129,24 @@ export class TrackChangesService {
 
     // Comments
     if (commentsXml) {
-      const commentRe = /<w:comment\b[^>]*?w:id="([^"]*)"[^>]*?(?:w:author="([^"]*)")?[^>]*?(?:w:date="([^"]*)")?[^>]*>([\s\S]*?)<\/w:comment>/g;
+      const commentRe = /<w:comment\b([^>]*)>([\s\S]*?)<\/w:comment>/g;
       let m: RegExpExecArray | null;
       while ((m = commentRe.exec(commentsXml)) !== null) {
-        const author = m[2] || 'Unknown';
-        const date = m[3] || '';
-        const commentText = this.extractRunsText(m[4]);
+        const id = m[1].match(/w:id="([^"]*)"/)?.[1];
+        if (!id) continue;
+        const author = m[1].match(/w:author="([^"]*)"/)?.[1] || 'Unknown';
+        const date = m[1].match(/w:date="([^"]*)"/)?.[1] || '';
+        const commentText = this.extractRunsText(m[2]);
         if (!commentText) continue;
         authors.add(author);
         changes.push({
-          id: `comment-${m[1]}`,
+          id: `comment-${id}`,
           type: 'comment',
           author,
           date,
           text: commentText,
           paragraphIndex: -1,
-          commentRef: m[1],
+          commentRef: id,
           status: 'pending',
         });
       }
@@ -189,6 +191,8 @@ export class TrackChangesService {
       processedXml = processedXml.replace(
         /<w:ins\b[^>]*>([\s\S]*?)<\/w:ins>/g,
         (_, inner) => {
+          // parseDocx skips empty inserts, so don't advance the index for them.
+          if (!this.extractRunsText(inner)) return '';
           const changeId = `ins-${paraIdx}-${this.findChangeIndex(report.changes, 'insert', paraIdx, insIdx++)}`;
           const decision = decisions.get(changeId) || 'pending';
           if (decision === 'accepted') return inner;
@@ -201,6 +205,10 @@ export class TrackChangesService {
       processedXml = processedXml.replace(
         /<w:del\b[^>]*>([\s\S]*?)<\/w:del>/g,
         (_, inner) => {
+          // parseDocx skips empty deletes, so don't advance the index for them.
+          if (!this.extractDelText(inner)) {
+            return inner.replace(/<w:delText[^>]*>([\s\S]*?)<\/w:delText>/g, '$1');
+          }
           const changeId = `del-${paraIdx}-${this.findChangeIndex(report.changes, 'delete', paraIdx, delIdx++)}`;
           const decision = decisions.get(changeId) || 'pending';
           if (decision === 'accepted') return ''; // deletion confirmed → drop

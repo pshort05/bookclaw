@@ -44,7 +44,7 @@ export class MemoryService {
     // Check for active project
     const activePath = join(this.memoryDir, 'active-project.txt');
     if (existsSync(activePath)) {
-      this.activeProjectPath = (await readFile(activePath, 'utf-8')).trim();
+      this.activeProjectPath = this.sanitizeSegment((await readFile(activePath, 'utf-8')).trim(), 'project');
     }
 
     // Active persona — every conversation turn is tagged with this so each
@@ -139,11 +139,18 @@ export class MemoryService {
     timestamp: string;
     personaId?: string | null;
     projectId?: string | null;
+    file: string;
+    lineIndex: number;
   }) => void) | null = null;
 
   setLiveIndexHook(fn: typeof this.liveIndexHook): void {
     this.liveIndexHook = fn;
   }
+
+  // Per-day-file next-line-index counter. Seeded from disk on the first turn of
+  // a day, then incremented in memory so we don't re-read the whole conversation
+  // log on every turn. Keyed by the absolute log path.
+  private lineCounts = new Map<string, number>();
 
   async process(
     userMessage: string,
@@ -167,7 +174,25 @@ export class MemoryService {
       personaId,
       projectId,
     }) + '\n';
-    const { appendFile } = await import('fs/promises');
+    const { appendFile, readFile } = await import('fs/promises');
+    // Determine the zero-based JSONL line index this turn will occupy so the
+    // live index and a later reindexAll() produce an identical sourceRef
+    // (`<date>.jsonl#<i>`) and dedup on the UNIQUE(source, source_ref) constraint.
+    // reindexAll counts non-empty lines after trim()+filter(Boolean); match that.
+    // Seed the counter from disk once per day-file, then reserve this turn's
+    // index synchronously (before the append await) so near-simultaneous turns
+    // get distinct indices rather than colliding on the same sourceRef.
+    let lineIndex = this.lineCounts.get(logPath);
+    if (lineIndex === undefined) {
+      try {
+        const existing = await readFile(logPath, 'utf-8');
+        lineIndex = existing.trim() ? existing.trim().split('\n').filter(Boolean).length : 0;
+      } catch { lineIndex = 0; /* file doesn't exist yet — first line, index 0 */ }
+      // A concurrent cold-start turn may have seeded a higher count while we awaited.
+      const concurrent = this.lineCounts.get(logPath);
+      if (concurrent !== undefined && concurrent > lineIndex) lineIndex = concurrent;
+    }
+    this.lineCounts.set(logPath, lineIndex + 1);
     await appendFile(logPath, entry);
 
     // Live FTS index (no-op if search service unavailable)
@@ -178,6 +203,8 @@ export class MemoryService {
         timestamp,
         personaId,
         projectId,
+        file: `${today}.jsonl`,
+        lineIndex,
       });
     } catch { /* search indexing failures should never block memory writes */ }
   }
@@ -241,6 +268,14 @@ export class MemoryService {
       await rm(activePath);
       this.activeProjectPath = null;
       cleared.push('active-project');
+    }
+
+    // Clear active persona reference
+    const personaPath = join(this.memoryDir, 'active-persona.txt');
+    if (existsSync(personaPath)) {
+      await rm(personaPath);
+      this.activePersonaId = null;
+      cleared.push('active-persona');
     }
 
     // Optionally clear book-bible and voice-data

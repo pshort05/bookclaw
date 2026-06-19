@@ -33,8 +33,12 @@ export function subscribeChat({ onReply, onError, onDisconnect, onNotice, isWait
   const disc = onDisconnect ?? (() => {});
   const connErr = (e: { message?: string }) => {
     const msg = e?.message || 'connection failed';
-    onError(msg);
-    if (isTerminalHandshake(msg)) s.disconnect(); // stop the reconnect storm
+    const terminal = isTerminalHandshake(msg);
+    // Only surface a transient connect_error if the user is awaiting a reply —
+    // an idle network blip shouldn't append a spurious error to the thread.
+    // Terminal handshake rejections always surface (we're about to stop retrying).
+    if (terminal || !isWaiting || isWaiting()) onError(msg);
+    if (terminal) s.disconnect(); // stop the reconnect storm
   };
   // Only announce a (re)connect once the socket has connected at least once —
   // the very first `connect` is the normal handshake, not a recovery.

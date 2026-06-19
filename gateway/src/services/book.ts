@@ -335,7 +335,11 @@ export class BookService {
     try {
       const legacy = join(dir, 'templates', 'pipeline.json');
       let name = 'pipeline';
-      if (existsSync(legacy)) {
+      // Only a book with a real legacy pipeline.json can be wrapped into the v2
+      // layout; without one there is no snapshot to point pipelineSequence at, so
+      // leave the book unmigrated rather than claiming a nonexistent 'pipeline'.
+      if (!existsSync(legacy)) return;
+      {
         const legacyContent = readFileSync(legacy, 'utf-8');
         const parsed = JSON.parse(legacyContent) as { name?: unknown };
         if (typeof parsed.name === 'string' && parsed.name.trim()) name = parsed.name.trim();
@@ -902,7 +906,10 @@ export class BookService {
       for (const root of ['templates', '.baseline'] as const) {
         const rel = this.assetRel(kind, ref.name);
         const target = rel ? join(dir, root, rel) : join(dir, root);
-        if (rel) { try { await rm(target, { recursive: true, force: true }); } catch { /* fresh */ } }
+        // pipeline shares one dir across a book's whole sequence; rm'ing it would
+        // wipe the other sequence pipelines. Mirror repull's writeMap: mkdir +
+        // overwrite only the single <name>.json (done in the writeFile below).
+        if (rel && kind !== 'pipeline') { try { await rm(target, { recursive: true, force: true }); } catch { /* fresh */ } }
         await mkdir(target, { recursive: true });
         for (const [libName, content] of Object.entries(files)) {
           await writeFile(join(target, this.assetFileName(kind, libName, ref.name)), content, 'utf-8');

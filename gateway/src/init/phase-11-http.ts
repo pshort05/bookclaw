@@ -35,16 +35,23 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   // The chat app runs on its own port (BOOKCLAW_CHAT_PORT); inject it so the
   // studio's "Chat" link can target it instead of hardcoding a port. Empty when
   // chat is disabled (port unset) — the studio then hides the Chat link.
-  // Digits-only: a port is numeric (phase-12 coerces it via Number()), and this
-  // also guarantees the value can't break out of the single-quoted JS string it
-  // is injected into in the served HTML.
-  const chatPort = String(process.env.BOOKCLAW_CHAT_PORT || '').replace(/\D/g, '');
+  // Match phase-12's coercion (Number()): a non-numeric value (e.g. '8080x') means
+  // chat is disabled there, so inject an empty port here too — otherwise the studio
+  // would show a Chat link pointing at a port nothing is listening on. A valid port
+  // is numeric, so the injected value also can't break out of the single-quoted JS
+  // string it lands in.
+  const chatPortNum = Number(process.env.BOOKCLAW_CHAT_PORT || 0);
+  const chatPort = chatPortNum ? String(chatPortNum) : '';
+  // Escape so the token (which may be operator-supplied) can't break out of the
+  // single-quoted JS string it is injected into — a quote/backslash would corrupt
+  // the token-bridge script and '</script>' could inject markup.
+  const safeToken = (gw.authToken ?? '').replace(/[\\'<\r\n]/g, (c) => '\\x' + c.charCodeAt(0).toString(16));
   const serveDashboard = async (_req: any, res: any) => {
     try {
       const html = await fs.readFile(uiHtml, 'utf-8');
       res.type('html').send(
         html
-          .replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? '')
+          .replaceAll('__BOOKCLAW_AUTH_TOKEN__', safeToken)
           .replaceAll('__BOOKCLAW_CHAT_PORT_VALUE__', chatPort),
       );
     } catch {

@@ -93,7 +93,11 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const docsDir = j(baseDir, 'workspace', 'documents');
     await mkd(docsDir, { recursive: true });
 
-    const filename = req.file.originalname;
+    // Sanitize filename to prevent path traversal — reuse the shared SandboxGuard
+    // policy (path chars + ".." collapse), then strip leading dots (no dotfiles)
+    // and cap length, so the rules live in one place.
+    const rawName = req.file.originalname || 'upload';
+    const filename = gateway.sandbox.sanitizeFilename(rawName).replace(/^\.+/, '').slice(0, 200) || 'upload';
     const ext = filename.split('.').pop()?.toLowerCase();
 
     // Save the raw file
@@ -234,14 +238,11 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const { existsSync: ex } = await import('fs');
 
     let textContent = '';
-    // Sanitize filename to prevent path traversal (strip path separators, .., null bytes)
+    // Sanitize filename to prevent path traversal — reuse the shared SandboxGuard
+    // policy (path chars + ".." collapse), then strip leading dots (no dotfiles)
+    // and cap length, so the rules live in one place.
     const rawName = req.file.originalname || 'upload';
-    const filename = rawName
-      .replace(/[\x00-\x1f]/g, '')
-      .replace(/[\\/:*?"<>|]/g, '_')
-      .replace(/\.\.+/g, '_')
-      .replace(/^\.+/, '')
-      .slice(0, 200) || 'upload';
+    const filename = gateway.sandbox.sanitizeFilename(rawName).replace(/^\.+/, '').slice(0, 200) || 'upload';
     const ext = filename.split('.').pop()?.toLowerCase();
 
     if (ext === 'txt' || ext === 'md') {
@@ -389,8 +390,8 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       scanDir('research', j(workspaceDir, 'research')),
       scanDir('exports', j(workspaceDir, 'exports')),
       scanDir('agent', j(workspaceDir, '.agent'), false),
-      scanDir('memory', j(workspaceDir, '.memory'), false),
-      scanDir('audio', j(workspaceDir, '.audio')),
+      scanDir('memory', j(workspaceDir, 'memory'), false),
+      scanDir('audio', j(workspaceDir, 'audio')),
     ]);
 
     const totalFiles = Object.values(stats).reduce((sum, s) => sum + s.files, 0);
@@ -410,8 +411,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       return res.status(400).json({ error: `Target must be one of: ${allowed.join(', ')}` });
     }
 
-    const dirName = target === 'audio' ? '.audio' : target;
-    const targetDir = j(workspaceDir, dirName);
+    const targetDir = j(workspaceDir, target);
     let deleted = 0;
 
     if (ex(targetDir)) {

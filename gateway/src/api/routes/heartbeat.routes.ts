@@ -150,7 +150,7 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
       if (!existsSync(configPath)) return res.status(404).json({ error: 'No idle tasks configured' });
 
       const tasks: any[] = JSON.parse(await readFile(configPath, 'utf-8')).tasks || [];
-      if (idx < 0 || idx >= tasks.length) return res.status(404).json({ error: 'Task index out of range' });
+      if (!Number.isInteger(idx) || idx < 0 || idx >= tasks.length) return res.status(404).json({ error: 'Task index out of range' });
       const removed = tasks.splice(idx, 1);
       await writeFile(configPath, JSON.stringify({ tasks }, null, 2), 'utf-8');
       res.json({ success: true, removed: removed[0], remaining: tasks.length });
@@ -281,11 +281,12 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
 
       // ── HTML Export (native) ──
       if (requestedFormats.includes('html') || requestedFormats.includes('all')) {
-        let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${docTitle}</title>`;
+        const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(docTitle)}</title>`;
         html += `<style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 20px;line-height:1.8;color:#333;}h1{text-align:center;border-bottom:2px solid #333;padding-bottom:10px;}h2{margin-top:2em;border-bottom:1px solid #ccc;}</style></head><body>`;
-        html += `<h1>${docTitle}</h1><p style="text-align:center;"><em>by ${docAuthor}</em></p><hr>`;
-        // Basic markdown → HTML
-        const htmlContent = content
+        html += `<h1>${esc(docTitle)}</h1><p style="text-align:center;"><em>by ${esc(docAuthor)}</em></p><hr>`;
+        // Basic markdown → HTML (escape text first, then apply markup)
+        const htmlContent = esc(content)
           .replace(/^### (.*$)/gm, '<h3>$1</h3>')
           .replace(/^## (.*$)/gm, '<h2>$1</h2>')
           .replace(/^# (.*$)/gm, '<h1>$1</h1>')

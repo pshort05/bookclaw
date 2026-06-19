@@ -210,7 +210,7 @@ export class SkillLoader {
       if (trimmed.startsWith('- ')) {
         const value = trimmed.replace(/^- ["']?|["']$/g, '').trim();
         if (currentSection === 'triggers') {
-          triggers.push(value);
+          if (value) triggers.push(value);
         } else if (currentSection === 'permissions') {
           permissions.push(value);
         }

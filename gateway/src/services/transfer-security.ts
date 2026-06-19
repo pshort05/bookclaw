@@ -10,22 +10,30 @@ import type { InjectionDetector } from '../security/injection.js';
 
 export interface ImportFinding { path: string; type: string; confidence: number; pattern: string; }
 
-/** Extensions whose content is scanned for injection (text only). */
-export const SCAN_EXTS: readonly string[] = ['.md', '.txt', '.json'];
+/**
+ * Extensions whose content is scanned for injection + HTML payloads (text only).
+ * Includes the markup formats (.html/.htm/.xml/.svg) that could carry an
+ * executable payload and be rendered in the studio origin — binaries (docx,
+ * epub, images) are intentionally excluded. Findings are advisory (surfaced for
+ * import review), so flagging a legitimate markup file is acceptable.
+ */
+export const SCAN_EXTS: readonly string[] = ['.md', '.markdown', '.txt', '.json', '.html', '.htm', '.xml', '.svg'];
 
 // Detects raw HTML/script payloads that the prompt-injection detector doesn't cover.
 // These could execute in the studio origin (which holds the auth token) via the
 // markdown preview's dangerouslySetInnerHTML, even after DOMPurify — defense-in-depth.
 export const HTML_RE = /<\s*(script|iframe|object|embed|svg|base|form|link|meta)\b/i;
-export const EVENT_RE = /\son\w+\s*=/i;
+export const EVENT_RE = /[\s/]on\w+\s*=/i;
 
 // Zip-bomb / disk-exhaustion budget. Checked against the central-directory
-// declared sizes BEFORE any entry is inflated to memory or written to disk.
+// declared sizes BEFORE any entry is inflated to memory or written to disk —
+// so a decompression bomb is rejected on its cheap declared size, never by
+// allocating the inflated payload first.
 export const MAX_ZIP_ENTRIES = 500;
 export const MAX_ENTRY_BYTES = 25 * 1024 * 1024;          // 25MB/entry
 export const MAX_TOTAL_UNCOMPRESSED = 100 * 1024 * 1024;  // 100MB total
 
-/** Returns an error string if the zip's declared sizes/count exceed budget, else null. Checks BEFORE extraction. */
+/** Returns an error string if the zip's declared sizes/count exceed budget, else null. Checks the cheap central-directory header.size BEFORE any entry is inflated, so a decompression bomb is rejected without allocating its payload. */
 export function checkZipBudget(entries: Array<{ isDirectory: boolean; header: { size: number } }>): string | null {
   if (entries.length > MAX_ZIP_ENTRIES) return `too many entries (${entries.length} > ${MAX_ZIP_ENTRIES})`;
   let total = 0;

@@ -11,6 +11,7 @@ import { createHash } from 'crypto';
 export class AuditLog {
   private logDir: string;
   private lastHash = '0';
+  private writeChain: Promise<void> = Promise.resolve();
 
   constructor(logDir: string) {
     this.logDir = logDir;
@@ -36,21 +37,30 @@ export class AuditLog {
   }
 
   async log(category: string, action: string, data: Record<string, any>): Promise<void> {
-    const entry = {
-      timestamp: new Date().toISOString(),
-      category,
-      action,
-      data,
-      previousHash: this.lastHash,
-    };
+    // Serialize hash-chain mutation + append so concurrent (often unawaited)
+    // log() calls cannot interleave previousHash links or reorder JSONL lines.
+    const result = this.writeChain.then(async () => {
+      const entry = {
+        timestamp: new Date().toISOString(),
+        category,
+        action,
+        data,
+        previousHash: this.lastHash,
+      };
 
-    // Chain hashes for tamper detection
-    const entryStr = JSON.stringify(entry);
-    this.lastHash = createHash('sha256').update(entryStr).digest('hex').substring(0, 16);
+      // Chain hashes for tamper detection
+      const entryStr = JSON.stringify(entry);
+      this.lastHash = createHash('sha256').update(entryStr).digest('hex').substring(0, 16);
 
-    const logLine = JSON.stringify({ ...entry, hash: this.lastHash }) + '\n';
-    const logFile = join(this.logDir, `${new Date().toISOString().split('T')[0]}.jsonl`);
+      const logLine = JSON.stringify({ ...entry, hash: this.lastHash }) + '\n';
+      const logFile = join(this.logDir, `${new Date().toISOString().split('T')[0]}.jsonl`);
 
-    await appendFile(logFile, logLine);
+      await appendFile(logFile, logLine);
+    });
+
+    // Keep the queue alive even if one append fails, so a single error doesn't
+    // poison all subsequent log() calls; awaited callers still see the rejection.
+    this.writeChain = result.catch(() => {});
+    return result;
   }
 }
