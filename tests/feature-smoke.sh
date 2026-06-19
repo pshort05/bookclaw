@@ -1766,5 +1766,31 @@ else
   fi
 fi
 
-# Tier D teardown is the EXIT trap. exit code = number of FAILed features.
+# ── Tier E — config-not-code pipeline follow-ups (2026-06-18) ──
+# F1 (sequence advance) + F2 (passive-skill injection on the studio path) ship
+# their own self-contained, self-cleaning sub-smokes; run them against the SAME
+# target and fold their result in. F3 (migrated-book pipeline baseline) migrates
+# legacy on-disk state, so it needs filesystem control and runs LOCALLY only
+# (tests/migration-baseline-smoke.sh) — it is covered by unit tests for a remote.
+echo ""
+echo "### Tier E — config-not-code follow-ups (F1 advance, F2 skill-injection)"
+TIER_E_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+run_sub_smoke(){
+  local label="$1" script="$2"
+  if [ ! -f "$TIER_E_DIR/$script" ]; then skip "$label" "(sub-smoke $script missing)"; return; fi
+  local log; log="$(mktemp)"
+  if BASE_URL="$BASE_URL" BOOKCLAW_AUTH_TOKEN="$TOKEN" SMOKE_OR_MODEL="$SMOKE_OR_MODEL" CONTAINER="$CONTAINER" \
+       bash "$TIER_E_DIR/$script" >"$log" 2>&1; then
+    pass "$label" "$(grep -m1 SUMMARY "$log" | sed 's/^[[:space:]]*//')"
+  else
+    fail "$label" "$(grep -m1 SUMMARY "$log" | sed 's/^[[:space:]]*//')"
+    grep -E "\[FAIL\]" "$log" | head -5 | sed 's/^/      /'
+  fi
+  rm -f "$log"
+}
+run_sub_smoke "F1 sequence advance"        "pipeline-advance-smoke.sh"
+run_sub_smoke "F2 passive-skill injection" "skill-injection-smoke.sh"
+echo "  [info] F3 migrated-book baseline: covered by tests/migration-baseline-smoke.sh (LOCAL) + tests/unit/book-migration-v2.test.ts (a remote has only v2 books)"
+
+# Tier D/E teardown is the EXIT trap. exit code = number of FAILed features.
 exit "$FAILS"
