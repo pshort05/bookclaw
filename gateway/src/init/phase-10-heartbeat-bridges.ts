@@ -21,16 +21,21 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
   gw.heartbeat.setAutonomous(
     // Run one project step (reuses the same logic as Telegram /project command)
     async (projectId: string) => commandHandlers.startAndRunProject(projectId),
-    // List projects with remaining step counts
-    () => gw.projectEngine.listProjects().map(g => ({
-      id: g.id,
-      title: g.title,
-      status: g.status,
-      progress: `${g.progress}%`,
-      progressNum: g.progress,
-      stepsRemaining: g.steps.filter(s => s.status === 'pending' || s.status === 'active').length,
-      type: g.type,
-    })),
+    // List projects with remaining step counts. Sequence phase-ordering gate
+    // (config-not-code pipelines): drop a pending phase whose earlier sequence
+    // phases haven't completed, so autonomous mode never runs a later phase ahead
+    // of an unfinished earlier one. Active (already-running) projects always pass.
+    () => gw.projectEngine.listProjects()
+      .filter(g => g.status !== 'pending' || gw.projectEngine.sequencePredecessorsComplete(g))
+      .map(g => ({
+        id: g.id,
+        title: g.title,
+        status: g.status,
+        progress: `${g.progress}%`,
+        progressNum: g.progress,
+        stepsRemaining: g.steps.filter(s => s.status === 'pending' || s.status === 'active').length,
+        type: g.type,
+      })),
     // Broadcast status to dashboard (WebSocket) and Telegram
     (message: string) => {
       gw.io.emit('autonomous-status', { message, timestamp: new Date().toISOString() });

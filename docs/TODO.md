@@ -66,10 +66,6 @@ Eight items the owner queued on 2026-06-12. **#1 (versioning format) and #2 (REA
 
 - [ ] **Update the documentation.** General docs refresh across `README.md`, `docs/ARCHITECTURE.md`, `docs/QUICKSTART.md`, `docs/SECURITY.md`, and the book-container/glossary docs to reflect the now-complete Phases 0–12, the code-review hardening (2026-06-12), the new CalVer versioning, and the features above as they land. (Several SECURITY.md / README localhost-only statements are already flagged stale in CLAUDE.md.)
 
-## Config-not-code pipelines — follow-ups (from the 2026-06-14 review)
-
-- [ ] **Sequence phase ordering under autonomous mode (surfaced 2026-06-18 by the F1 review).** The F1 sequence auto-advance (`ProjectEngine.advancePipeline` + the `onProjectCompleted` hook) enforces phase order for the default/bridge/poller paths. But the autonomous **heartbeat** selects projects by score over `(active||pending) && stepsRemaining>0` (`heartbeat.ts` ~444), with no awareness of `pipelineId`/`pipelinePhase` — so with autonomous mode ON it can run a later sequence phase before an earlier one completes. Pre-existing (the chained phase projects were already all `pending` and heartbeat-eligible at creation). Fix: teach the heartbeat selector to skip a sequence phase whose predecessors aren't `completed` (reuse the `advancePipeline` readiness gate), or only surface the sequence's current advanceable phase to it.
-
 ## Quick cleanups (minutes)
 
 ## Investigations (under an hour each)

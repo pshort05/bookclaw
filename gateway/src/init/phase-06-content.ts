@@ -59,9 +59,10 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   // without this the sequence would stall). advancePipeline runs no AI itself — it
   // only marks the next project active — so in the default posture advancement is
   // free and generation stays user/poller-driven. (With autonomous mode ON, the
-  // heartbeat then runs the now-active phase, exactly as it already runs pending
-  // sequence projects — see heartbeat.ts project selection. Phase ordering across
-  // a sequence is NOT yet enforced in autonomous mode; tracked in docs/TODO.md.)
+  // heartbeat then runs the now-active phase. Phase ordering across a sequence is
+  // enforced for autonomous mode too: the heartbeat's project list is filtered
+  // through ProjectEngine.sequencePredecessorsComplete — see phase-10-heartbeat-
+  // bridges.ts — so a later pending phase is never run ahead of an earlier one.)
   gw.projectEngine.onProjectCompleted((project: any) => {
     if (project.pipelineId) gw.projectEngine.advancePipeline(project.pipelineId);
   });

@@ -1609,13 +1609,24 @@ Description: ${description}`;
     if (phases.length === 0) return null;
     const next = phases.find(p => p.status === 'pending');
     if (!next) return null;
-    // Gate: every project ordered before `next` must be completed.
-    const ready = phases
-      .filter(p => (p.pipelinePhase || 0) < (next.pipelinePhase || 0))
-      .every(p => p.status === 'completed');
-    if (!ready) return null;
+    if (!this.sequencePredecessorsComplete(next)) return null;
     this.startProject(next.id);
     return this.getProject(next.id) ?? null;
+  }
+
+  /**
+   * Sequence phase-ordering gate (single source of truth, reused by
+   * advancePipeline and the autonomous heartbeat's project selection). A pipeline
+   * phase is runnable only once every earlier phase in the same pipeline has
+   * `completed` — a `failed`/`paused`/still-running predecessor blocks it, so the
+   * sequence halts visibly rather than letting a later phase jump ahead. A project
+   * with no pipelineId (a standalone project) is always runnable.
+   */
+  sequencePredecessorsComplete(project: Project): boolean {
+    if (!project.pipelineId) return true;
+    return this.getPipelineProjects(project.pipelineId)
+      .filter(p => (p.pipelinePhase || 0) < (project.pipelinePhase || 0))
+      .every(p => p.status === 'completed');
   }
 
   // ── Core Lessons (self-improvement feedback loop) ──
