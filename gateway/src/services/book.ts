@@ -21,6 +21,7 @@ import {
   type BookManifest, type BookSummary, type PulledRef, type NextStep,
 } from './book-types.js';
 import { pipelinePhases, type LibraryPipeline } from './library-types.js';
+import { listRunnerFiles as listRunnerFilesAt } from './runner-files.js';
 
 export interface BookSelection {
   title: string;
@@ -584,6 +585,16 @@ export class BookService {
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Prompt Runner file listing: a book's data/ outputs + templates/ snapshots,
+   * with book-root-relative paths + group. Null if the book is missing.
+   */
+  listRunnerFiles(slug: string): import('./runner-files.js').RunnerFile[] | null {
+    const dir = this.bookDir(slug);
+    if (!dir || !existsSync(join(dir, 'book.json'))) return null;
+    return listRunnerFilesAt(dir);
   }
 
   /**

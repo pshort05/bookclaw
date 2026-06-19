@@ -1,10 +1,12 @@
 import { Application, Request, Response } from 'express';
 import { existsSync } from 'fs';
+import { join } from 'path';
 import { uploadZip, requireApprovedConfirmation, safePath, serveFile } from './_shared.js';
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
 import { writeWithVersion, listVersions, restoreVersion } from '../../services/file-versions.js';
+import { mapRunnerPath } from '../../services/runner-files.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -188,6 +190,79 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       const msg = String(err?.message || err);
       // Only the deliberate "not found" / "invalid id" throws are 404; a real
       // write/IO failure must surface as 500, not masquerade as a bad version id.
+      const notFound = msg === 'version not found' || msg === 'invalid version id';
+      res.status(notFound ? 404 : 500).json({ error: msg });
+    }
+  });
+
+  // ── Prompt Runner: book-root file API (data/ outputs + templates/ snapshots) ──
+  // Lets the runner target any file under data/ or templates/ by a book-root path
+  // (e.g. "templates/genre/world.md"). mapRunnerPath confines access to those two
+  // subtrees (book.json/.baseline/dotfiles unreachable) and matches the per-subtree
+  // version-sidecar location so data files keep their existing history.
+
+  // List a book's runnable files (data/ + templates/).
+  app.get('/api/books/:slug/runner-files', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const files = services.books.listRunnerFiles(slug);
+    if (files === null) return res.status(404).json({ error: 'Book not found' });
+    res.json({ files });
+  });
+
+  /** Resolve ?path / body.path against a book's data|templates subtrees, or send an error. */
+  const resolveRunnerFile = (slug: string, rel: string, res: Response): { baseDir: string; filename: string } | null => {
+    if (!SLUG_RE.test(slug)) { res.status(400).json({ error: 'invalid slug' }); return null; }
+    const bookDir = services.books.bookDir(slug);
+    if (!bookDir || !existsSync(join(bookDir, 'book.json'))) { res.status(404).json({ error: 'Book not found' }); return null; }
+    const mapped = mapRunnerPath(bookDir, rel);
+    if (!mapped) { res.status(400).json({ error: 'path must be under data/ or templates/' }); return null; }
+    return mapped;
+  };
+
+  // Read any data/ or templates/ file by book-root path.
+  app.get('/api/books/:slug/file', (req: Request, res: Response) => {
+    const rel = String(req.query.path ?? '');
+    const mapped = resolveRunnerFile(String(req.params.slug), rel, res);
+    if (!mapped) return;
+    const filePath = safePath(mapped.baseDir, mapped.filename);
+    if (!filePath) return res.status(403).json({ error: 'Path traversal blocked' });
+    if (!existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+    serveFile(res, filePath, mapped.filename.split('/').pop() || 'file', !!req.query.download).catch(() => res.destroy());
+  });
+
+  // Write-back any data/ or templates/ file by book-root path (snapshots the prior content).
+  app.put('/api/books/:slug/file', async (req: Request, res: Response) => {
+    const rel = String(req.body?.path ?? '');
+    const mapped = resolveRunnerFile(String(req.params.slug), rel, res);
+    if (!mapped) return;
+    if (!safePath(mapped.baseDir, mapped.filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    const { content } = req.body ?? {};
+    if (typeof content !== 'string') return res.status(400).json({ error: 'content required' });
+    await writeWithVersion(mapped.baseDir, mapped.filename, content);
+    res.json({ ok: true });
+  });
+
+  // List prior versions of any data/ or templates/ file.
+  app.get('/api/books/:slug/file/versions', async (req: Request, res: Response) => {
+    const rel = String(req.query.path ?? '');
+    const mapped = resolveRunnerFile(String(req.params.slug), rel, res);
+    if (!mapped) return;
+    if (!safePath(mapped.baseDir, mapped.filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    res.json({ versions: await listVersions(mapped.baseDir, mapped.filename) });
+  });
+
+  // Restore a prior version of any data/ or templates/ file (current content snapshotted first).
+  app.post('/api/books/:slug/file/restore', async (req: Request, res: Response) => {
+    const rel = String(req.body?.path ?? '');
+    const mapped = resolveRunnerFile(String(req.params.slug), rel, res);
+    if (!mapped) return;
+    if (!safePath(mapped.baseDir, mapped.filename)) return res.status(403).json({ error: 'Path traversal blocked' });
+    const { id } = req.body ?? {};
+    if (typeof id !== 'string' || !id) return res.status(400).json({ error: 'id required' });
+    try { await restoreVersion(mapped.baseDir, mapped.filename, id); res.json({ ok: true }); }
+    catch (err: any) {
+      const msg = String(err?.message || err);
       const notFound = msg === 'version not found' || msg === 'invalid version id';
       res.status(notFound ? 404 : 500).json({ error: msg });
     }

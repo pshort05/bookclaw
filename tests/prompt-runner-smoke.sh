@@ -69,6 +69,28 @@ fi
 VID=$(req GET "/api/books/$SLUG/files/probe.md/versions" | jget versions[0].id)
 [ -n "$VID" ] && pass "prior content snapshotted as a restorable version" "$VID" || fail "no version recorded after save-back"
 
+# ── 5. Book-root file API: runner-files lists data/ + templates/ ──
+RF=$(req GET "/api/books/$SLUG/runner-files")
+case "$RF" in *'data/probe.md'*) pass "runner-files lists the data/ output" ;; *) fail "runner-files missing data/probe.md" "$(printf '%s' "$RF" | head -c 160)" ;; esac
+TPL=$(printf '%s' "$RF" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const f=(JSON.parse(s).files||[]).find(x=>x.group==="Templates");if(f)console.log(f.path)}catch(e){}})')
+[ -n "$TPL" ] && pass "runner-files lists a templates/ snapshot" "$TPL" || fail "runner-files has no templates/ entry"
+
+# ── 6. Read + write-back + version + restore a TEMPLATE file via /file?path= ──
+if [ -n "$TPL" ]; then
+  ORIG=$(req GET "/api/books/$SLUG/file?path=$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$TPL")")
+  [ -n "$ORIG" ] && pass "read a template file by path" || fail "GET /file?path=$TPL empty"
+  [ "$(code PUT "/api/books/$SLUG/file" "$(node -e 'console.log(JSON.stringify({path:process.argv[1],content:process.argv[2]+"\n<!-- runner smoke -->"}))' "$TPL" "$ORIG")")" = "200" ] \
+    && pass "wrote back to a template file" || fail "PUT /file (template) failed"
+  TVID=$(req GET "/api/books/$SLUG/file/versions?path=$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$TPL")" | jget versions[0].id)
+  [ -n "$TVID" ] && pass "template write-back snapshotted a version" "$TVID" || fail "no template version recorded"
+  [ "$(code POST "/api/books/$SLUG/file/restore" "$(node -e 'console.log(JSON.stringify({path:process.argv[1],id:process.argv[2]}))' "$TPL" "$TVID")")" = "200" ] \
+    && pass "restored the template version" || fail "template restore failed"
+fi
+
+# ── 7. Path guard: book.json / traversal are rejected ──
+[ "$(code GET "/api/books/$SLUG/file?path=book.json")" = "400" ] \
+  && pass "path outside data/|templates/ rejected (400)" || fail "book.json was not rejected"
+
 echo ""; echo "  ── cleanup ──"; clean
 echo "  SUMMARY: $PASSES passed, $FAILS failed"
 exit "$FAILS"
