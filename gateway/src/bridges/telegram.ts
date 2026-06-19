@@ -4,6 +4,8 @@
  * Users give orders via Telegram, BookClaw executes in the VM
  */
 
+import { DISPLAY_VERSION, BREAKING_VERSION, formatVersionInfo } from '../version.js';
+
 interface TelegramConfig {
   allowedUsers: string[];
   pairingEnabled: boolean;
@@ -140,7 +142,8 @@ export class TelegramBridge {
         `/export [# or name] — Export to Word/HTML/TXT\n` +
         `/speak [text or #] — Send voice message\n` +
         `/voice — Toggle voice chat responses\n` +
-        `/clean — Workspace usage & cleanup\n\n` +
+        `/clean — Workspace usage & cleanup\n` +
+        `/version — Show the running version + build time\n\n` +
         `Or just chat with me naturally.`);
       return;
     }
@@ -250,6 +253,17 @@ export class TelegramBridge {
           await this.sendMessage(chatId, `❌ ${String(e)}`);
         }
       }
+      return;
+    }
+
+    // ── /version — running version + build/boot time ──
+    if (text.startsWith('/version')) {
+      await this.sendMessage(chatId, formatVersionInfo({
+        version: DISPLAY_VERSION,
+        breakingVersion: BREAKING_VERSION,
+        uptimeSeconds: process.uptime(),
+        now: new Date(),
+      }));
       return;
     }
 

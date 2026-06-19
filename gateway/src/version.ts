@@ -34,3 +34,34 @@ export const DISPLAY_VERSION = process.env.BOOKCLAW_VERSION || bootVersion();
  * WORKSPACE_SCHEMA_VERSION (workspace-version.ts).
  */
 export const BREAKING_VERSION = 1;
+
+/** Humanize an uptime in seconds, e.g. 90061 → "1d 1h 1m 1s" (zero units omitted). */
+export function formatUptime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const parts: string[] = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  if (sec || parts.length === 0) parts.push(`${sec}s`);
+  return parts.join(' ');
+}
+
+/**
+ * Build the /version message body: version + breaking marker + server boot time
+ * (derived from uptime) + uptime. The boot time changes on every redeploy/restart,
+ * so it disambiguates same-day builds that share the date-stamped DISPLAY_VERSION.
+ */
+export function formatVersionInfo(opts: { version: string; breakingVersion: number; uptimeSeconds: number; now: Date }): string {
+  const boot = new Date(opts.now.getTime() - Math.round(opts.uptimeSeconds * 1000));
+  const p = (n: number) => String(n).padStart(2, '0');
+  const started = `${boot.getFullYear()}-${p(boot.getMonth() + 1)}-${p(boot.getDate())} ${p(boot.getHours())}:${p(boot.getMinutes())}:${p(boot.getSeconds())}`;
+  return [
+    `**BookClaw ${opts.version}**`,
+    `Breaking version: ${opts.breakingVersion}`,
+    `Started: ${started} (up ${formatUptime(opts.uptimeSeconds)})`,
+  ].join('\n');
+}

@@ -40,7 +40,7 @@ import { EditorService } from './services/editor.js';
 import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
 import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
 import { isChatCommand } from './services/chat-command.js';
-import { DISPLAY_VERSION } from './version.js';
+import { DISPLAY_VERSION, BREAKING_VERSION, formatVersionInfo } from './version.js';
 import { AuthorOSService } from './services/author-os.js';
 import { TTSService } from './services/tts.js';
 import { ImageGenService } from './services/image-gen.js';
@@ -1380,7 +1380,16 @@ class BookClawGateway {
           '',
           '🧹 **Workspace**',
           '`/clean` — View workspace usage',
+          '`/version` — Show the running version + build time',
         ].join('\n');
+
+      case '/version':
+        return formatVersionInfo({
+          version: DISPLAY_VERSION,
+          breakingVersion: BREAKING_VERSION,
+          uptimeSeconds: process.uptime(),
+          now: new Date(),
+        });
 
       case '/editors':
         return handlers.editorsCommand(dashboardChannel);
