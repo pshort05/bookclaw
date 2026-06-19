@@ -130,6 +130,15 @@ case "$HTML" in
   *)                             fail "dashboard / missing injected token" ;;
 esac
 
+# Chat-app port injection (F46): the studio HTML carries BOOKCLAW_CHAT_PORT so the
+# Rail's Chat link targets the right port. start_server sets it to PORT+1; the
+# placeholder VALUE must be substituted while the global name is left intact.
+case "$HTML" in
+  *"__BOOKCLAW_CHAT_PORT_VALUE__"*)                   fail "dashboard still contains the unsubstituted chat-port placeholder" ;;
+  *"window.__BOOKCLAW_CHAT_PORT__='$((PORT + 1))'"*)  pass "dashboard / serves with chat port injected" ;;
+  *)                                                  fail "dashboard / missing injected chat port ($((PORT + 1)))" ;;
+esac
+
 # Workspace schema marker: phase-01-config stamps .bookclaw/workspace.json on boot.
 MARKER="$ROOT_DIR/workspace/.bookclaw/workspace.json"
 { [ -f "$MARKER" ] && grep -q '"schemaVersion"' "$MARKER"; } \

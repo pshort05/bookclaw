@@ -4,6 +4,7 @@ import { api, Button } from '@bookclaw/shared';
 import type { Status } from '@bookclaw/shared';
 import { DeleteBooksModal } from '../components/DeleteBooksModal.js';
 import { ResetSpendModal } from '../components/ResetSpendModal.js';
+import { useDialog } from '../components/Dialog.js';
 import styles from './Settings.module.css';
 
 type BackupSnapshot = { name: string; at: string; reason: string; scope: string; books: string[] };
@@ -42,6 +43,7 @@ export function Settings() {
   const [costs, setCosts] = useState<{ dailyLimit?: number; monthlyLimit?: number }>({});
   const [showDelete, setShowDelete] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const { confirm } = useDialog();
 
   const loadKeys = () =>
     api<{ keys: string[] }>('/api/vault/keys')
@@ -82,7 +84,7 @@ export function Settings() {
   };
 
   const delKey = async (k: string) => {
-    if (!confirm(`Delete ${k} from the vault?`)) return;
+    if (!(await confirm(`Delete ${k} from the vault?`))) return;
     await api(`/api/vault/${encodeURIComponent(k)}`, { method: 'DELETE' }).catch(() => {});
     await loadKeys();
   };

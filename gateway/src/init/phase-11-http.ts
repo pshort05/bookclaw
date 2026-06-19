@@ -32,10 +32,21 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   // authenticate. The __BOOKCLAW_AUTH_TOKEN__ placeholder is replaced at serve
   // time (empty string when auth is disabled). index:false on express.static below
   // ensures "/" reaches this handler instead of the raw file.
+  // The chat app runs on its own port (BOOKCLAW_CHAT_PORT); inject it so the
+  // studio's "Chat" link can target it instead of hardcoding a port. Empty when
+  // chat is disabled (port unset) — the studio then hides the Chat link.
+  // Digits-only: a port is numeric (phase-12 coerces it via Number()), and this
+  // also guarantees the value can't break out of the single-quoted JS string it
+  // is injected into in the served HTML.
+  const chatPort = String(process.env.BOOKCLAW_CHAT_PORT || '').replace(/\D/g, '');
   const serveDashboard = async (_req: any, res: any) => {
     try {
       const html = await fs.readFile(uiHtml, 'utf-8');
-      res.type('html').send(html.replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? ''));
+      res.type('html').send(
+        html
+          .replaceAll('__BOOKCLAW_AUTH_TOKEN__', gw.authToken ?? '')
+          .replaceAll('__BOOKCLAW_CHAT_PORT_VALUE__', chatPort),
+      );
     } catch {
       if (!res.headersSent) {
         res.status(500).json({ status: 'error', message: 'BookClaw running but UI HTML not found.' });

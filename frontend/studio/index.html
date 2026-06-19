@@ -8,6 +8,11 @@
      global name yields silent 401s. (Keep this comment free of the placeholder literal
      so the serve-time replace doesn't copy the token into it.) -->
 <script>window.__BOOKCLAW_TOKEN__='__BOOKCLAW_AUTH_TOKEN__';</script>
+<!-- Chat-app port bridge — the gateway replaces the placeholder VALUE at serve time
+     with BOOKCLAW_CHAT_PORT (empty when chat is disabled); Rail reads the global to
+     build the Chat link. The placeholder differs from the global name (as the token
+     bridge does) so the serve-time replaceAll substitutes only the value. -->
+<script>window.__BOOKCLAW_CHAT_PORT__='__BOOKCLAW_CHAT_PORT_VALUE__';</script>
 </head><body><div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 </body></html>

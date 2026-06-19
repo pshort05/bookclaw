@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shared';
 import type { LibraryEntry } from '@bookclaw/shared';
+import { useDialog } from '../components/Dialog.js';
 import styles from './PromptRunner.module.css';
 
 interface FileRow { name: string; bytes: number; modified?: string }
@@ -33,6 +34,7 @@ export function PromptRunner() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const { prompt, confirm } = useDialog();
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
 
@@ -103,7 +105,7 @@ export function PromptRunner() {
 
   async function saveAsNew() {
     if (output === null) return;
-    const name = window.prompt('Save output as new file (e.g. chapter-1-revised.md):');
+    const name = await prompt('Save output as new file (e.g. chapter-1-revised.md):');
     if (!name) return;
     try {
       await writeFile(name, output);
@@ -119,7 +121,7 @@ export function PromptRunner() {
   }
 
   async function restore(id: string) {
-    if (!window.confirm('Restore this version? The current file is snapshotted first.')) return;
+    if (!(await confirm('Restore this version? The current file is snapshotted first.'))) return;
     try {
       await api(`/api/books/${encodeURIComponent(slug)}/files/${encodeURIComponent(file)}/restore`, {
         method: 'POST', body: JSON.stringify({ id }),

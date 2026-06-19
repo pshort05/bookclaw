@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { subscribeChat, sendChat, useActiveBook } from '@bookclaw/shared';
+import { subscribeChat, sendChat, useActiveBook, renderMarkdown } from '@bookclaw/shared';
 import { Suggest } from './Suggest.js';
 import styles from '../App.module.css';
 
@@ -114,9 +114,16 @@ export function ChatPane() {
             </div>
             <div className={styles.body}>
               <div className={styles.who}>{msg.role === 'assistant' ? 'BookClaw' : 'You'}</div>
-              <div className={`${styles.bubble} ${msg.role === 'assistant' ? styles.bubbleAi : ''}`}>
-                {msg.content}
-              </div>
+              {/* Assistant replies are Markdown → sanitized HTML (shared renderMarkdown).
+                  User messages stay plain text — never render user input as HTML. */}
+              {msg.role === 'assistant' ? (
+                <div
+                  className={`${styles.bubble} ${styles.bubbleAi}`}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                />
+              ) : (
+                <div className={styles.bubble}>{msg.content}</div>
+              )}
             </div>
           </div>
         ))}

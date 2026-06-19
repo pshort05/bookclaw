@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, useStore, usePendingConfirmations, Button, money } from '@bookclaw/shared';
 import type { ConfirmationRequest } from '@bookclaw/shared';
+import { useDialog } from '../components/Dialog.js';
 import styles from './Confirmations.module.css';
 
 export function Confirmations() {
@@ -8,6 +9,7 @@ export function Confirmations() {
   const loadConfirmations = useStore((s) => s.loadConfirmations);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const { prompt } = useDialog();
 
   useEffect(() => {
     loadConfirmations().catch(() => {});
@@ -16,7 +18,7 @@ export function Confirmations() {
   const decide = async (id: string, decision: 'approve' | 'reject') => {
     let body: string | undefined;
     if (decision === 'reject') {
-      const reason = prompt('Reason (optional)?');
+      const reason = await prompt('Reason (optional)?');
       // Cancel (null) aborts the reject; an empty string is a valid "no reason".
       if (reason === null) return;
       body = JSON.stringify({ reason });

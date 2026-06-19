@@ -6,6 +6,7 @@ import type { Scope } from '../../lib/assetApi.js';
 import { listEntries, createLibraryEntry, deleteLibraryEntry, readEntry } from '../../lib/assetApi.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
 import { GLOSSARY } from '../../lib/glossary.js';
+import { useDialog } from '../Dialog.js';
 import styles from '../../routes/AssetStudio.module.css';
 
 // Plural display labels for the list header (local to this component).
@@ -74,6 +75,7 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
   const [importPending, setImportPending] = useState<{ id: string; findings: ImportFinding[] } | null>(null);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { confirm, prompt, alert } = useDialog();
 
   const meta = KIND_DEFS[kind];
 
@@ -106,7 +108,7 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
 
   async function handleAdd() {
     if (scope !== 'library') return;
-    const name = window.prompt(`New ${meta.canon.toLowerCase()} name (lowercase, hyphens only):`);
+    const name = await prompt(`New ${meta.canon.toLowerCase()} name (lowercase, hyphens only):`);
     if (!name) return;
     try {
       if (kind === 'pipeline') {
@@ -125,20 +127,20 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
       load();
       onSelect(name);
     } catch (e) {
-      alert(`Could not create: ${e}`);
+      await alert(`Could not create: ${e}`);
     }
   }
 
   async function handleDelete(entry: LibraryEntry, ev: React.MouseEvent) {
     ev.stopPropagation();
     if (scope !== 'library' || entry.source !== 'workspace') return;
-    if (!window.confirm(`Delete ${entry.name}? This will revert to the built-in if one exists.`)) return;
+    if (!(await confirm(`Delete ${entry.name}? This will revert to the built-in if one exists.`))) return;
     try {
       await deleteLibraryEntry(kind, entry.name);
       load();
       if (selectedName === entry.name) onSelect(null);
     } catch (e) {
-      alert(`Could not delete: ${e}`);
+      await alert(`Could not delete: ${e}`);
     }
   }
 

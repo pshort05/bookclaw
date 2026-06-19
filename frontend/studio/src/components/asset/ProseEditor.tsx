@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { renderMarkdown } from '@bookclaw/shared';
 import type { LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
 import { readEntry, writeEntry, createLibraryEntry } from '../../lib/assetApi.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
+import { useDialog } from '../Dialog.js';
 import styles from '../../routes/AssetStudio.module.css';
 
 interface Props {
@@ -25,6 +25,7 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<string>('');
+  const { prompt, alert } = useDialog();
 
   useEffect(() => {
     setError(null);
@@ -50,7 +51,7 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
   const isReadOnly = kind === 'skill';
   const fileNames = Object.keys(files);
   const currentContent = files[selectedFile] ?? '';
-  const preview = selectedFile ? DOMPurify.sanitize(marked.parse(currentContent, { async: false }) as string) : '';
+  const preview = selectedFile ? renderMarkdown(currentContent) : '';
 
   function handleContentChange(value: string) {
     setFiles((prev) => ({ ...prev, [selectedFile]: value }));
@@ -87,7 +88,7 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
 
   async function handleDuplicate() {
     if (scope !== 'library') return;
-    const newName = window.prompt('Name for the duplicate (lowercase, hyphens only):', `${name}-copy`);
+    const newName = await prompt({ message: 'Name for the duplicate (lowercase, hyphens only):', defaultValue: `${name}-copy` });
     if (!newName) return;
     try {
       const isSingleFile = SINGLE_FILE_KINDS.includes(kind);
@@ -97,7 +98,7 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
         await createLibraryEntry(kind, newName, { files, description });
       }
     } catch (e) {
-      alert(`Could not duplicate: ${e}`);
+      await alert(`Could not duplicate: ${e}`);
     }
   }
 

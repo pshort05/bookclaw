@@ -1,9 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { useStore, useCosts, usePendingConfirmations, useBooks, useStatus, money } from '@bookclaw/shared';
+import { useStore, useCosts, usePendingConfirmations, useBooks, useStatus, money, chatPort } from '@bookclaw/shared';
 import { useEffect } from 'react';
 import styles from './Rail.module.css';
 
 export function Rail() {
+  // The Chat app runs on BOOKCLAW_CHAT_PORT, injected into the studio HTML at
+  // serve time. Empty means chat is disabled — hide the link rather than point
+  // at a dead port.
+  const chatHref = chatPort() ? `${location.protocol}//${location.hostname}:${chatPort()}/` : '';
   const costs = useCosts();
   const pending = usePendingConfirmations();
   const books = useBooks();
@@ -65,24 +69,25 @@ export function Rail() {
           Write
         </NavLink>
 
-        {/* Chat — external link to the standalone Chat app on port 3848.
-            Known limitation: hardcodes port 3848 (the default BOOKCLAW_CHAT_PORT).
-            If the operator sets a different chat port, they must open it manually. */}
-        <a
-          href={`${location.protocol}//${location.hostname}:3848/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.navLink}
-          title="Open the Chat app"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/>
-          </svg>
-          Chat
-          <svg className={styles.ext} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 17L17 7M9 7h8v8"/>
-          </svg>
-        </a>
+        {/* Chat — external link to the standalone Chat app on BOOKCLAW_CHAT_PORT
+            (injected at serve time). Hidden when chat is disabled (port unset). */}
+        {chatHref && (
+          <a
+            href={chatHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.navLink}
+            title="Open the Chat app"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.3A8 8 0 1121 12z"/>
+            </svg>
+            Chat
+            <svg className={styles.ext} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17L17 7M9 7h8v8"/>
+            </svg>
+          </a>
+        )}
 
         {/* Series — live route */}
         <NavLink

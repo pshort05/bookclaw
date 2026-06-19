@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, Button, useBooks, useStore } from '@bookclaw/shared';
 import type { LibraryEntry, LibraryKind } from '@bookclaw/shared';
+import { useDialog } from '../components/Dialog.js';
 import styles from './Series.module.css';
 
 interface SeriesRef { name: string; source: string }
@@ -25,6 +26,7 @@ export function Series() {
   const [series, setSeries] = useState<Series[]>([]);
   const [opts, setOpts] = useState<Partial<Record<LibraryKind, LibraryEntry[]>>>({});
   const [selId, setSelId] = useState<string | null>(null);
+  const { confirm } = useDialog();
   const [wb, setWb] = useState<Worldbuilding>({ characters: '', places: '', lore: '' });
   const [report, setReport] = useState<Report | null>(null);
   const [newTitle, setNewTitle] = useState('');
@@ -125,7 +127,7 @@ export function Series() {
   };
   const del = async () => {
     if (!sel) return;
-    if (!confirm(`Delete series "${sel.title}"? Member books are NOT deleted.`)) return;
+    if (!(await confirm(`Delete series "${sel.title}"? Member books are NOT deleted.`))) return;
     await api(`/api/series/${sel.id}`, { method: 'DELETE' }).catch((e) => setMsg(String(e)));
     setSelId(null);
     await loadSeries();

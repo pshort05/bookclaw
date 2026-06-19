@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
-import { api, apiBase, authToken, Button, useBooks, useStore } from '@bookclaw/shared';
+import { api, apiBase, authToken, Button, renderMarkdown, useBooks, useStore } from '@bookclaw/shared';
+import { useDialog } from '../components/Dialog.js';
 import styles from './Files.module.css';
 
 type Tab = 'documents' | 'books';
@@ -36,6 +35,7 @@ async function fetchText(path: string): Promise<string> {
 export function Files() {
   const books = useBooks();
   const loadBooks = useStore((s) => s.loadBooks);
+  const { confirm } = useDialog();
   const [tab, setTab] = useState<Tab>('documents');
 
   const [docs, setDocs] = useState<FileRow[]>([]);
@@ -75,7 +75,7 @@ export function Files() {
     try {
       const text = await fetchText(path);
       setPreviewMd(MD_RE.test(name));
-      setPreview(MD_RE.test(name) ? DOMPurify.sanitize(marked.parse(text, { async: false }) as string) : text);
+      setPreview(MD_RE.test(name) ? renderMarkdown(text) : text);
     } catch (e) {
       setPreview(null); setErr(`Couldn't load preview — ${String(e)}`);
     }
@@ -133,7 +133,7 @@ export function Files() {
 
   const del = async () => {
     if (!sel || !sel.canDelete) return;
-    if (!confirm(`Delete ${sel.name}? This removes it from disk.`)) return;
+    if (!(await confirm(`Delete ${sel.name}? This removes it from disk.`))) return;
     try {
       await api(sel.path, { method: 'DELETE' });
       setSel(null); setPreview(null);

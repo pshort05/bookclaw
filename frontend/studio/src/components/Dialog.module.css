@@ -1,0 +1,74 @@
+/* Generic in-app dialog (confirm / prompt / alert). Matches DeleteBooksModal:
+   a centered card over a dimmed scrim, using the shared design tokens. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(8, 5, 2, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  position: fixed;
+  z-index: 61;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(460px, calc(100vw - 48px));
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  padding: 22px 22px 16px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
+}
+
+.h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 420;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.msg {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+}
+
+.msg code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--ember);
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  margin-bottom: 18px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ember);
+}
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+}
