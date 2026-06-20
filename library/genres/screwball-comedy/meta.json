@@ -1,5 +1,6 @@
 {
   "description": "Fast, farcical romantic comedy of mismatched leads and madcap mishaps.",
+  "groups": ["comedy-satire", "romance"],
   "ratings": {
     "heat": "PG-13",
     "age": "NA",

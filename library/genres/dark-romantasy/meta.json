@@ -1,6 +1,7 @@
 {
   "description": "Romantasy with teeth — morally grey love interests, danger, and high heat amid the magic.",
   "name": "dark-romantasy",
+  "groups": ["romance", "fantasy"],
   "ratings": {
     "quality": "A",
     "heat": "NC-17",

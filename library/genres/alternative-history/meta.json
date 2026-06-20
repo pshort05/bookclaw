@@ -1,3 +1,7 @@
 {
-  "description": "Speculative history that asks 'what if' a pivotal event had gone differently."
+  "description": "Speculative history that asks 'what if' a pivotal event had gone differently.",
+  "groups": [
+    "speculative-dystopian",
+    "historical"
+  ]
 }

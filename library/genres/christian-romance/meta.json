@@ -1,3 +1,6 @@
 {
-  "description": "Faith-centered romance where shared belief and clean courtship guide the love story."
+  "description": "Faith-centered romance where shared belief and clean courtship guide the love story.",
+  "groups": [
+    "romance"
+  ]
 }

@@ -1,6 +1,7 @@
 {
   "description": "Sweeping frontier sagas of land, legacy, and the closing of the West.",
   "name": "epic-western",
+  "groups": ["western", "historical"],
   "ratings": {
     "quality": "A",
     "heat": "R",

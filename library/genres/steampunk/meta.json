@@ -3,5 +3,10 @@
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "PG-13",
-  "Quality": "Commercial"
+  "Quality": "Commercial",
+  "groups": [
+    "fantasy",
+    "science-fiction",
+    "historical"
+  ]
 }

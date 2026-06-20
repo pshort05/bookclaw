@@ -1,3 +1,7 @@
 {
-  "description": "Science fiction set in or drawing on the ancient world, blending antiquity with speculative tech."
+  "description": "Science fiction set in or drawing on the ancient world, blending antiquity with speculative tech.",
+  "groups": [
+    "science-fiction",
+    "historical"
+  ]
 }

@@ -1,6 +1,7 @@
 {
   "description": "Gothic atmosphere meets dark fantasy — ruined grandeur, curses, and creeping horror.",
   "name": "dark-gothic-fantasy",
+  "groups": ["fantasy", "horror"],
   "ratings": {
     "quality": "A",
     "heat": "R",

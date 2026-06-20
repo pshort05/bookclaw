@@ -1,5 +1,6 @@
 {
   "description": "Fantasy centered on a hero's relentless growth in power and skill.",
+  "groups": ["fantasy"],
   "ratings": {
     "heat": "G",
     "age": "YA",

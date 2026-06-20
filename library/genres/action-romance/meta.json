@@ -1,3 +1,7 @@
 {
-  "description": "Romance forged under fire, where danger and adrenaline accelerate the bond."
+  "description": "Romance forged under fire, where danger and adrenaline accelerate the bond.",
+  "groups": [
+    "romance",
+    "action-adventure"
+  ]
 }

@@ -3,5 +3,8 @@
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "PG-13",
-  "Quality": "Commercial"
+  "Quality": "Commercial",
+  "groups": [
+    "romance"
+  ]
 }

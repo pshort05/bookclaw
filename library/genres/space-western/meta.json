@@ -5,5 +5,9 @@
     "age": "NA",
     "content": "PG-13",
     "quality": "High"
-  }
+  },
+  "groups": [
+    "science-fiction",
+    "western"
+  ]
 }

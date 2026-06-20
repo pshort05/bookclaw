@@ -1,5 +1,6 @@
 {
   "description": "Characters cross from our world into a magical one through a portal.",
+  "groups": ["fantasy"],
   "ratings": {
     "heat": "G",
     "age": "YA",

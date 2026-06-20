@@ -3,5 +3,8 @@
   "Heat": "G",
   "Age": "NA",
   "Content": "PG",
-  "Quality": "Commercial"
+  "Quality": "Commercial",
+  "groups": [
+    "action-adventure"
+  ]
 }

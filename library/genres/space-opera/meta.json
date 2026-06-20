@@ -1,5 +1,6 @@
 {
   "description": "Sweeping, character-driven adventure across galaxies, empires, and the stars.",
+  "groups": ["science-fiction", "action-adventure"],
   "ratings": {
     "heat": "G",
     "age": "YA",

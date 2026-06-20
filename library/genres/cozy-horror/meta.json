@@ -1,10 +1,13 @@
 {
-  "description": "Horror with the dread dialed soft — eerie and atmospheric, but comforting and contained.",
+  "description": "Horror with the dread dialed soft \u2014 eerie and atmospheric, but comforting and contained.",
   "name": "cozy-horror",
   "ratings": {
     "quality": "A-",
     "heat": "G",
     "age": "YA/Adult",
     "content": "PG"
-  }
+  },
+  "groups": [
+    "horror"
+  ]
 }

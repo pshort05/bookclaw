@@ -1,5 +1,8 @@
 {
   "description": "Crime fiction of organized rackets, loyalty, and the rise and fall of mobsters.",
+  "groups": [
+    "mystery-crime"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "NC-17",

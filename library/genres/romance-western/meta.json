@@ -1,5 +1,6 @@
 {
   "description": "Frontier romance where love blooms against the hardship of the Old West.",
+  "groups": ["romance", "western"],
   "ratings": {
     "heat": "R",
     "age": "Adult",

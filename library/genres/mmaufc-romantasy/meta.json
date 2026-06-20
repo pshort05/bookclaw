@@ -1,3 +1,7 @@
 {
-  "description": "Fighter romantasy where cage-fighting grit meets magic and high heat."
+  "description": "Fighter romantasy where cage-fighting grit meets magic and high heat.",
+  "groups": [
+    "romance",
+    "fantasy"
+  ]
 }

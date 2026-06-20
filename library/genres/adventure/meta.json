@@ -1,3 +1,6 @@
 {
-  "description": "Journey-driven storytelling of exploration, peril, and discovery in the wider world."
+  "description": "Journey-driven storytelling of exploration, peril, and discovery in the wider world.",
+  "groups": [
+    "action-adventure"
+  ]
 }

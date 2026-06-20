@@ -1,5 +1,8 @@
 {
   "description": "A mystery woven through organized crime, where loyalty and betrayal hide the truth.",
+  "groups": [
+    "mystery-crime"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "R",

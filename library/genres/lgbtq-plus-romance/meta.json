@@ -1,1 +1,6 @@
-{"description":"Romance centered on LGBTQ+ protagonists (gay, lesbian, bisexual, trans, queer, non-binary, asexual-spectrum) with authentic representation and emotional depth across any romance subgenre."}
+{
+  "description": "Romance centered on LGBTQ+ protagonists (gay, lesbian, bisexual, trans, queer, non-binary, asexual-spectrum) with authentic representation and emotional depth across any romance subgenre.",
+  "groups": [
+    "romance"
+  ]
+}

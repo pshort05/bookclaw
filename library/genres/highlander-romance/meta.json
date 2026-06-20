@@ -3,5 +3,9 @@
   "Heat": "R",
   "Age": "Adult",
   "Content": "PG-13",
-  "Quality": "High"
+  "Quality": "High",
+  "groups": [
+    "romance",
+    "historical"
+  ]
 }

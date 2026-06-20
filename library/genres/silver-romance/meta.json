@@ -1,5 +1,6 @@
 {
   "description": "Romance featuring older protagonists finding love in their later years.",
+  "groups": ["romance"],
   "ratings": {
     "heat": "R",
     "age": "Adult",

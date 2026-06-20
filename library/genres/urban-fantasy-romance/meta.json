@@ -1,5 +1,9 @@
 {
   "description": "Romance amid hidden magic in a contemporary urban world.",
+  "groups": [
+    "fantasy",
+    "romance"
+  ],
   "Heat": "R",
   "Age": "Adult",
   "Content": "PG-13",

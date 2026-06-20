@@ -1,6 +1,7 @@
 {
   "description": "High-stakes action against catastrophe — survival, rescue, and the clock running down.",
   "name": "disaster-action",
+  "groups": ["action-adventure", "thriller-suspense"],
   "ratings": {
     "quality": "B+",
     "heat": "PG-13",

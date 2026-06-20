@@ -6,6 +6,23 @@ import { OptionCard } from '../components/newbook/OptionCard.js';
 import { SnapshotSummary } from '../components/newbook/SnapshotSummary.js';
 import styles from './NewBook.module.css';
 
+// Publishing-standard buckets for the genre picker. Slugs match the `groups`
+// arrays written into each genre's meta.json; order here is display order.
+const GENRE_GROUPS: { slug: string; label: string }[] = [
+  { slug: 'romance', label: 'Romance' },
+  { slug: 'fantasy', label: 'Fantasy' },
+  { slug: 'science-fiction', label: 'Science Fiction' },
+  { slug: 'mystery-crime', label: 'Mystery & Crime' },
+  { slug: 'thriller-suspense', label: 'Thriller & Suspense' },
+  { slug: 'horror', label: 'Horror' },
+  { slug: 'western', label: 'Western' },
+  { slug: 'historical', label: 'Historical' },
+  { slug: 'action-adventure', label: 'Action & Adventure' },
+  { slug: 'speculative-dystopian', label: 'Speculative & Dystopian' },
+  { slug: 'literary', label: 'Literary & Upmarket' },
+  { slug: 'comedy-satire', label: 'Comedy & Satire' },
+];
+
 export function NewBook() {
   const navigate = useNavigate();
   const loadBooks = useStore((s) => s.loadBooks);
@@ -20,6 +37,8 @@ export function NewBook() {
   const [seqAddPick, setSeqAddPick] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [genreQuery, setGenreQuery] = useState('');
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   type SeriesOpt = { id: string; title: string; pulledFrom: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; pipeline?: { name: string } | null } };
   const [seriesList, setSeriesList] = useState<SeriesOpt[]>([]);
   const [seriesId, setSeriesId] = useState('');
@@ -125,13 +144,12 @@ export function NewBook() {
   const pick = (kind: LibraryKind) => {
     const g = GLOSSARY[kind];
     const entries = opts[kind] ?? [];
-    const locked = !!seriesId && (kind === 'author' || kind === 'voice' || kind === 'genre');
+    const locked = !!seriesId && (kind === 'author' || kind === 'voice');
     return (
       <section className={styles.pick} key={kind}>
         <div className={styles.ph}>
           <h3>
             {g.canon}
-            {kind === 'genre' && <span className={styles.pickone}> · optional</span>}
             {kind === 'section' && <span className={styles.pickone}> · choose any</span>}
             {locked && <span className={styles.pickone}> · from series</span>}
           </h3>
@@ -150,6 +168,77 @@ export function NewBook() {
             />
           ))}
           {entries.length === 0 && <p className={styles.def}>None in the library yet.</p>}
+        </div>
+      </section>
+    );
+  };
+
+  const toggleGroup = (slug: string) =>
+    setOpenGroups((s) => { const n = new Set(s); if (n.has(slug)) n.delete(slug); else n.add(slug); return n; });
+
+  // Genre is its own picker: a search box plus collapsible publishing-standard
+  // groups. A genre with several groups appears under each. When a query is
+  // present, grouping is bypassed for a flat list of matches.
+  const pickGenre = () => {
+    const g = GLOSSARY.genre;
+    const entries = opts.genre ?? [];
+    const locked = !!seriesId;
+    const q = genreQuery.trim().toLowerCase();
+    const matches = (e: LibraryEntry) =>
+      `${e.name.replace(/-/g, ' ')} ${e.name} ${e.description ?? ''}`.toLowerCase().includes(q);
+
+    const card = (e: LibraryEntry) => (
+      <OptionCard key={e.name} entry={e} mode="single" selected={sel.genre === e.name}
+        onToggle={() => pickSingle('genre', e.name)} />
+    );
+
+    const grouped = GENRE_GROUPS
+      .map((grp) => ({ ...grp, members: entries.filter((e) => e.groups?.includes(grp.slug)) }))
+      .filter((grp) => grp.members.length > 0);
+    const ungrouped = entries.filter((e) => !GENRE_GROUPS.some((grp) => e.groups?.includes(grp.slug)));
+    const hits = entries.filter(matches);
+
+    const groupBlock = (slug: string, label: string, members: LibraryEntry[]) => {
+      const open = openGroups.has(slug) || members.some((e) => e.name === sel.genre);
+      return (
+        <div className={styles.group} key={slug}>
+          <button type="button" className={styles.grouphdr} onClick={() => toggleGroup(slug)} aria-expanded={open}>
+            <span className={styles.gtw}>{open ? '▾' : '▸'}</span>
+            <span className={styles.glabel}>{label}</span>
+            <span className={styles.gcount}>{members.length}</span>
+          </button>
+          {open && <div className={styles.grid2}>{members.map(card)}</div>}
+        </div>
+      );
+    };
+
+    return (
+      <section className={styles.pick} key="genre">
+        <div className={styles.ph}>
+          <h3>{g.canon}<span className={styles.pickone}> · optional</span></h3>
+          <span className={styles.canon}>term · {g.canon}</span>
+        </div>
+        <div className={styles.def}>{g.def}</div>
+        <div className={styles.genretools}>
+          <input className={styles.search} value={genreQuery} disabled={locked}
+            onChange={(e) => setGenreQuery(e.target.value)} placeholder="Search genres…" />
+          {sel.genre && (
+            <button type="button" className={styles.clearbtn} disabled={locked}
+              onClick={() => pickSingle('genre', sel.genre)}>Clear “{sel.genre}”</button>
+          )}
+        </div>
+        <div className={locked ? styles.locked : undefined}>
+          {q
+            ? (hits.length
+              ? <div className={styles.grid2}>{hits.map(card)}</div>
+              : <p className={styles.def}>No genres match “{genreQuery}”.</p>)
+            : (
+              <>
+                {grouped.map((grp) => groupBlock(grp.slug, grp.label, grp.members))}
+                {ungrouped.length > 0 && groupBlock('_ungrouped', 'Other', ungrouped)}
+                {entries.length === 0 && <p className={styles.def}>None in the library yet.</p>}
+              </>
+            )}
         </div>
       </section>
     );
@@ -180,7 +269,7 @@ export function NewBook() {
           )}
           {pick('author')}
           {pick('voice')}
-          {pick('genre')}
+          {pickGenre()}
 
           {/* Sequence: pick a preset, then edit the ordered pipeline list. */}
           <section className={styles.pick}>

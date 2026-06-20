@@ -1,5 +1,9 @@
 {
   "description": "Mythology and folklore remixed with punk sensibility and modern edge.",
+  "groups": [
+    "literary",
+    "fantasy"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "PG-13",

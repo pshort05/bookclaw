@@ -1,5 +1,9 @@
 {
   "description": "Seafaring historical adventure of ships, voyages, and the age of sail.",
+  "groups": [
+    "historical",
+    "action-adventure"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "R",

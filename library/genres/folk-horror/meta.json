@@ -1,5 +1,8 @@
 {
   "description": "Horror rooted in rural ritual, old beliefs, and the dread of isolated communities.",
+  "groups": [
+    "horror"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "R",

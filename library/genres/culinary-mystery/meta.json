@@ -6,5 +6,8 @@
     "heat": "PG",
     "age": "Adult",
     "content": "PG"
-  }
+  },
+  "groups": [
+    "mystery-crime"
+  ]
 }

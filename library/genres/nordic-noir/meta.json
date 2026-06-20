@@ -1,5 +1,9 @@
 {
   "description": "Bleak, atmospheric Scandinavian crime fiction of moody landscapes and flawed detectives.",
+  "groups": [
+    "mystery-crime",
+    "thriller-suspense"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",

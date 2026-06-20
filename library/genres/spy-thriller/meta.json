@@ -3,5 +3,8 @@
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "R",
-  "Quality": "Literary"
+  "Quality": "Literary",
+  "groups": [
+    "thriller-suspense"
+  ]
 }

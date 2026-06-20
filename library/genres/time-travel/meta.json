@@ -1,5 +1,9 @@
 {
   "description": "Speculative fiction of journeys through time and their tangled consequences.",
+  "groups": [
+    "science-fiction",
+    "speculative-dystopian"
+  ],
   "Heat": "G",
   "Age": "NA",
   "Content": "PG",

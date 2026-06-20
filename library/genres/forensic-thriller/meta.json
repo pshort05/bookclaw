@@ -1,5 +1,9 @@
 {
   "description": "A thriller driven by forensic science, where evidence cracks the case under pressure.",
+  "groups": [
+    "thriller-suspense",
+    "mystery-crime"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "R",

@@ -1,6 +1,7 @@
 {
   "description": "Oppressive future societies and the individuals who resist or expose them.",
   "name": "dystopian-fiction",
+  "groups": ["speculative-dystopian"],
   "ratings": {
     "quality": "A",
     "heat": "PG-13",

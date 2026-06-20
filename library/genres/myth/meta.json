@@ -1,5 +1,9 @@
 {
   "description": "Stories in the mythic register of gods, heroes, and origins.",
+  "groups": [
+    "literary",
+    "fantasy"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "PG-13",

@@ -1,3 +1,6 @@
 {
-  "description": "Classic tales of cowboys, outlaws, and survival on the frontier."
+  "description": "Classic tales of cowboys, outlaws, and survival on the frontier.",
+  "groups": [
+    "western"
+  ]
 }

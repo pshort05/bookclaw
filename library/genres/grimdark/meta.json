@@ -1,5 +1,8 @@
 {
   "description": "Bleak, morally grey fantasy where the world is harsh and heroes are scarce.",
+  "groups": [
+    "fantasy"
+  ],
   "Heat": "R",
   "Age": "Adult",
   "Content": "NC-17",

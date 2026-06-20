@@ -1,5 +1,9 @@
 {
   "description": "A mystery set on the frontier, where the Old West hides its secrets.",
+  "groups": [
+    "western",
+    "mystery-crime"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",

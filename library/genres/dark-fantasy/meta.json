@@ -1,6 +1,7 @@
 {
   "description": "Fantasy steeped in dread, moral ambiguity, and the monstrous.",
   "name": "dark-fantasy",
+  "groups": ["fantasy", "horror"],
   "ratings": {
     "quality": "A",
     "heat": "R",

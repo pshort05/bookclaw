@@ -1,6 +1,7 @@
 {
   "description": "Dark romance fused with thriller stakes — obsession, danger, and a deadly plot.",
   "name": "dark-romance-thriller",
+  "groups": ["romance", "thriller-suspense"],
   "ratings": {
     "quality": "A",
     "heat": "NC-17",

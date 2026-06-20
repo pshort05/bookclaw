@@ -27,6 +27,7 @@ export interface LibraryEntry {
   name: string;
   source: LibrarySource;
   description?: string; // pipelines + skills carry one
+  groups?: string[];    // genres: publishing-standard buckets (from meta.json)
 }
 
 /** Full read for get(): a multi-file kind bundles its files; others carry content. */
@@ -228,12 +229,16 @@ export class LibraryService {
     return true;
   }
 
-  private readDescriptionSidecar(file: string): string | undefined {
+  private readMetaSidecar(file: string): { description?: string; groups?: string[] } {
     try {
-      if (!existsSync(file)) return undefined;
+      if (!existsSync(file)) return {};
       const meta = JSON.parse(readFileSync(file, 'utf-8'));
-      return typeof meta?.description === 'string' ? meta.description : undefined;
-    } catch { return undefined; }
+      const description = typeof meta?.description === 'string' ? meta.description : undefined;
+      const groups = Array.isArray(meta?.groups)
+        ? meta.groups.filter((g: unknown): g is string => typeof g === 'string')
+        : undefined;
+      return { description, groups };
+    } catch { return {}; }
   }
 
   private async loadKind(
@@ -283,7 +288,7 @@ export class LibraryService {
           if (!item.isFile() || !item.name.endsWith('.md')) continue;
           const content = await readFile(join(dir, item.name), 'utf-8');
           const name = item.name.replace(/\.md$/, '');
-          const description = this.readDescriptionSidecar(join(dir, `${name}.meta.json`));
+          const { description } = this.readMetaSidecar(join(dir, `${name}.meta.json`));
           out.set(name, { kind, name, source, content, ...(description !== undefined ? { description } : {}) });
         } else {
           // author / voice / genre: a directory of markdown files.
@@ -295,11 +300,15 @@ export class LibraryService {
               files[f.name] = await readFile(join(dir, item.name, f.name), 'utf-8');
             }
           }
-          const ownDescription = this.readDescriptionSidecar(join(dir, item.name, 'meta.json'));
+          const meta = this.readMetaSidecar(join(dir, item.name, 'meta.json'));
           // When the workspace overlay shadows a builtin but has no sidecar of its
-          // own, fall back to the builtin's description already in the Map.
-          const description = ownDescription ?? out.get(item.name)?.description;
-          out.set(item.name, { kind, name: item.name, source, files, ...(description !== undefined ? { description } : {}) });
+          // own, fall back to the builtin's description/groups already in the Map.
+          const prev = out.get(item.name);
+          const description = meta.description ?? prev?.description;
+          const groups = meta.groups ?? prev?.groups;
+          out.set(item.name, { kind, name: item.name, source, files,
+            ...(description !== undefined ? { description } : {}),
+            ...(groups !== undefined ? { groups } : {}) });
         }
       } catch (err) {
         console.error(`  ⚠ Library: failed to load ${kind}/${item.name}`, err);
@@ -348,6 +357,7 @@ export class LibraryService {
   }
 
   private toRow(e: LibraryEntryFull): LibraryEntry {
-    return { kind: e.kind, name: e.name, source: e.source, description: e.description };
+    return { kind: e.kind, name: e.name, source: e.source, description: e.description,
+      ...(e.groups ? { groups: e.groups } : {}) };
   }
 }

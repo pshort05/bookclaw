@@ -1,5 +1,6 @@
 {
   "description": "Speculative fiction drawing on East Asian history and aesthetics with inventive tech.",
+  "groups": ["fantasy", "science-fiction"],
   "ratings": {
     "heat": "PG-13",
     "age": "YA",

@@ -1,5 +1,9 @@
 {
   "description": "Stories of vampires — their hunger, allure, and the dark they bring.",
+  "groups": [
+    "horror",
+    "fantasy"
+  ],
   "Heat": "R",
   "Age": "Adult",
   "Content": "R",

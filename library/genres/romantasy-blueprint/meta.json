@@ -1,5 +1,6 @@
 {
   "description": "A structural template for romantasy, balancing romance arc and fantasy stakes.",
+  "groups": ["romance", "fantasy"],
   "ratings": {
     "heat": "R",
     "age": "NA",

@@ -6,5 +6,8 @@
     "heat": "R",
     "age": "NA/Adult",
     "content": "R"
-  }
+  },
+  "groups": [
+    "science-fiction"
+  ]
 }

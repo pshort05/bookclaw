@@ -1,5 +1,9 @@
 {
   "description": "Clever, twisty stories of elaborate thefts and the crews who pull them off.",
+  "groups": [
+    "mystery-crime",
+    "action-adventure"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "PG-13",

@@ -3,5 +3,9 @@
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "R",
-  "Quality": "High"
+  "Quality": "High",
+  "groups": [
+    "thriller-suspense",
+    "mystery-crime"
+  ]
 }

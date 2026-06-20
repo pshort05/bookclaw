@@ -1,3 +1,6 @@
 {
-  "description": "Visceral, adventure-first fantasy of swordplay and sorcery."
+  "description": "Visceral, adventure-first fantasy of swordplay and sorcery.",
+  "groups": [
+    "fantasy"
+  ]
 }

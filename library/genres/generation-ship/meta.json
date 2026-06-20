@@ -1,5 +1,8 @@
 {
   "description": "Science fiction aboard a centuries-long starship voyage and its enclosed society.",
+  "groups": [
+    "science-fiction"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "PG-13",

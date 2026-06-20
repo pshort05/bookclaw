@@ -156,6 +156,7 @@ export interface LibraryEntry {
   name: string;
   source: 'builtin' | 'workspace' | 'synthetic';
   description?: string;
+  groups?: string[]; // genres: publishing-standard buckets (from meta.json)
 }
 
 export interface LibraryPipelineStep {

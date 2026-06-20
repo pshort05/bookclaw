@@ -1,5 +1,9 @@
 {
   "description": "Brooding romance laced with mystery, menace, and atmospheric dread.",
+  "groups": [
+    "romance",
+    "horror"
+  ],
   "Heat": "R",
   "Age": "NA",
   "Content": "R",

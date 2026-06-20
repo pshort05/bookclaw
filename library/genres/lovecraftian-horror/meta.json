@@ -3,5 +3,8 @@
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",
-  "Quality": "Professional"
+  "Quality": "Professional",
+  "groups": [
+    "horror"
+  ]
 }

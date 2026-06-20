@@ -6,5 +6,8 @@
     "heat": "PG",
     "age": "YA/Adult",
     "content": "PG"
-  }
+  },
+  "groups": [
+    "science-fiction"
+  ]
 }

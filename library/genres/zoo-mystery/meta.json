@@ -1,5 +1,8 @@
 {
   "description": "A cozy mystery set among a zoo's animals and keepers.",
+  "groups": [
+    "mystery-crime"
+  ],
   "Heat": "G",
   "Age": "NA",
   "Content": "PG",

@@ -3,5 +3,8 @@
   "Heat": "PG",
   "Age": "YA",
   "Content": "PG",
-  "Quality": "Commercial"
+  "Quality": "Commercial",
+  "groups": [
+    "romance"
+  ]
 }

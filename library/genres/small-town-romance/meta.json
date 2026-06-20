@@ -1,5 +1,6 @@
 {
   "description": "Cozy romance rooted in a tight-knit town's warmth and community.",
+  "groups": ["romance"],
   "ratings": {
     "heat": "PG-13",
     "age": "Adult",

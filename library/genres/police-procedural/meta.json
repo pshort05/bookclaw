@@ -1,5 +1,8 @@
 {
   "description": "Crime fiction following the methodical, realistic work of police investigation.",
+  "groups": [
+    "mystery-crime"
+  ],
   "ratings": {
     "heat": "G",
     "age": "Adult",

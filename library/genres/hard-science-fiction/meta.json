@@ -1,5 +1,8 @@
 {
   "description": "Science fiction grounded in rigorous, plausible science and technical detail.",
+  "groups": [
+    "science-fiction"
+  ],
   "Heat": "PG",
   "Age": "Adult",
   "Content": "PG-13",

@@ -1,5 +1,6 @@
 {
   "description": "Sharp, critical comedy exposing folly and vice through irony and exaggeration.",
+  "groups": ["comedy-satire", "literary"],
   "ratings": {
     "heat": "G",
     "age": "NA",

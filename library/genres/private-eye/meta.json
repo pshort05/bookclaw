@@ -1,5 +1,6 @@
 {
   "description": "Hardboiled mystery led by a private investigator working the mean streets.",
+  "groups": ["mystery-crime"],
   "ratings": {
     "heat": "G",
     "age": "Adult",

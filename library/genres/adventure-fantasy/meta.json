@@ -1,3 +1,7 @@
 {
-  "description": "Quest-driven fantasy of journeys, wonders, and danger across an imagined world."
+  "description": "Quest-driven fantasy of journeys, wonders, and danger across an imagined world.",
+  "groups": [
+    "fantasy",
+    "action-adventure"
+  ]
 }

@@ -1,3 +1,6 @@
 {
-  "description": "A mystery set in scholarly worlds — campuses, archives, and faculty — where intellect cracks the case."
+  "description": "A mystery set in scholarly worlds \u2014 campuses, archives, and faculty \u2014 where intellect cracks the case.",
+  "groups": [
+    "mystery-crime"
+  ]
 }

@@ -3,5 +3,8 @@
   "Heat": "PG-13",
   "Age": "NA",
   "Content": "G",
-  "Quality": "High"
+  "Quality": "High",
+  "groups": [
+    "romance"
+  ]
 }

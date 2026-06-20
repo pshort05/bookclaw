@@ -3,5 +3,8 @@
   "Heat": "NC-17",
   "Age": "Adult",
   "Content": "R",
-  "Quality": "Professional"
+  "Quality": "Professional",
+  "groups": [
+    "romance"
+  ]
 }

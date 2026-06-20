@@ -1,6 +1,7 @@
 {
   "description": "Timeless tales of magic, archetype, and moral, in the folkloric tradition.",
   "name": "fairy-tale",
+  "groups": ["fantasy", "literary"],
   "ratings": {
     "quality": "A",
     "heat": "PG-13",

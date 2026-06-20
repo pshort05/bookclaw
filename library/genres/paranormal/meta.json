@@ -1,5 +1,9 @@
 {
   "description": "Fiction of ghosts, psychics, and the supernatural intruding on the ordinary.",
+  "groups": [
+    "fantasy",
+    "horror"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "PG-13",

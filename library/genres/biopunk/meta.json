@@ -1,3 +1,6 @@
 {
-  "description": "Speculative fiction centered on biotech, genetic engineering, and bodies as contested ground."
+  "description": "Speculative fiction centered on biotech, genetic engineering, and bodies as contested ground.",
+  "groups": [
+    "science-fiction"
+  ]
 }

@@ -1,5 +1,6 @@
 {
   "description": "High-stakes suspense driven by speculative science and technology.",
+  "groups": ["science-fiction", "thriller-suspense"],
   "ratings": {
     "heat": "G",
     "age": "Adult",

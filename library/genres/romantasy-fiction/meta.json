@@ -1,5 +1,6 @@
 {
   "description": "Fantasy-set romance where magic and the love story are inseparable.",
+  "groups": ["romance", "fantasy"],
   "ratings": {
     "heat": "R",
     "age": "NA",

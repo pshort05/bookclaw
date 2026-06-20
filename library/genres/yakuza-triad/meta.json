@@ -1,5 +1,9 @@
 {
   "description": "Crime fiction of Japanese and Chinese underworlds, honor, and brutal loyalty.",
+  "groups": [
+    "mystery-crime",
+    "thriller-suspense"
+  ],
   "Heat": "NC-17",
   "Age": "Adult",
   "Content": "NC-17",

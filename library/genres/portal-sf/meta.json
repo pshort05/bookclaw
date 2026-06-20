@@ -1,5 +1,6 @@
 {
   "description": "Science fiction built on gateways between worlds and what crossing them costs.",
+  "groups": ["science-fiction"],
   "ratings": {
     "heat": "G",
     "age": "YA",

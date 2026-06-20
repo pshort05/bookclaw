@@ -1,5 +1,6 @@
 {
   "description": "Horror steeped in the decayed grandeur and buried sins of the American South.",
+  "groups": ["horror", "literary"],
   "ratings": {
     "heat": "G",
     "age": "Adult",

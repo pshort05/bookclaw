@@ -1,3 +1,7 @@
 {
-  "description": "Lush, high-drama historical romance with sweeping passion and explicit heat."
+  "description": "Lush, high-drama historical romance with sweeping passion and explicit heat.",
+  "groups": [
+    "romance",
+    "historical"
+  ]
 }

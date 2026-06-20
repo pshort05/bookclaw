@@ -1,3 +1,8 @@
 {
-  "description": "A mystery set against climate crisis, where ecological stakes drive the investigation."
+  "description": "A mystery set against climate crisis, where ecological stakes drive the investigation.",
+  "groups": [
+    "mystery-crime",
+    "speculative-dystopian",
+    "science-fiction"
+  ]
 }

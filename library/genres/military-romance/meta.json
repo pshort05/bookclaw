@@ -3,5 +3,9 @@
   "Heat": "R",
   "Age": "Adult",
   "Content": "R",
-  "Quality": "Professional"
+  "Quality": "Professional",
+  "groups": [
+    "romance",
+    "action-adventure"
+  ]
 }

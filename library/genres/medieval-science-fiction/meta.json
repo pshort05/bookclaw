@@ -1,3 +1,7 @@
 {
-  "description": "Speculative fiction blending medieval settings with science-fiction elements."
+  "description": "Speculative fiction blending medieval settings with science-fiction elements.",
+  "groups": [
+    "science-fiction",
+    "historical"
+  ]
 }

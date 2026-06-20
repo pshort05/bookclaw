@@ -1,6 +1,7 @@
 {
   "description": "Retro-futurism powered by diesel-era tech and interwar grit and glamour.",
   "name": "dieselpunk",
+  "groups": ["science-fiction", "speculative-dystopian"],
   "ratings": {
     "quality": "A-",
     "heat": "R",

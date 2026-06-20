@@ -1,3 +1,7 @@
 {
-  "description": "Dark fantasy framed by Christian faith, wrestling with sin, grace, and spiritual warfare."
+  "description": "Dark fantasy framed by Christian faith, wrestling with sin, grace, and spiritual warfare.",
+  "groups": [
+    "fantasy",
+    "horror"
+  ]
 }

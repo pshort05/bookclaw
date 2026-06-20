@@ -1,6 +1,7 @@
 {
   "description": "Investigation-driven mystery led by a sharp detective piecing the truth together.",
   "name": "detective",
+  "groups": ["mystery-crime"],
   "ratings": {
     "quality": "A",
     "heat": "G",

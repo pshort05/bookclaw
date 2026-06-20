@@ -1,5 +1,6 @@
 {
   "description": "Romantasy that reimagines fairy tales with romance and magic at the core.",
+  "groups": ["romance", "fantasy"],
   "ratings": {
     "heat": "R",
     "age": "NA",

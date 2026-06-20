@@ -1,5 +1,8 @@
 {
   "description": "Atmospheric horror of decay, dread, and the haunted past in crumbling settings.",
+  "groups": [
+    "horror"
+  ],
   "Heat": "PG-13",
   "Age": "YA",
   "Content": "R",

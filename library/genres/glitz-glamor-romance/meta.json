@@ -1,5 +1,8 @@
 {
   "description": "Opulent romance of wealth, fame, and high-society passion.",
+  "groups": [
+    "romance"
+  ],
   "Heat": "R",
   "Age": "NA",
   "Content": "PG-13",

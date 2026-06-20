@@ -1,5 +1,8 @@
 {
   "description": "Frontier storytelling of the American West — its codes, conflicts, and landscapes.",
+  "groups": [
+    "western"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",

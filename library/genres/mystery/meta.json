@@ -1,5 +1,8 @@
 {
   "description": "A puzzle-driven story where a crime or secret is unraveled clue by clue.",
+  "groups": [
+    "mystery-crime"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "PG-13",

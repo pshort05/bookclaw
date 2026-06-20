@@ -1,5 +1,6 @@
 {
   "description": "Speculative fiction set in antiquity, remixing ancient worlds with invented tech or magic.",
+  "groups": ["fantasy", "historical"],
   "ratings": {
     "heat": "G",
     "age": "NA",

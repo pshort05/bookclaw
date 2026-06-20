@@ -1,3 +1,6 @@
 {
-  "description": "Cozy-leaning mystery solved by an ordinary person with a knack for noticing what others miss."
+  "description": "Cozy-leaning mystery solved by an ordinary person with a knack for noticing what others miss.",
+  "groups": [
+    "mystery-crime"
+  ]
 }

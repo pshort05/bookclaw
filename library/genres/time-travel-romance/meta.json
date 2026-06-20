@@ -1,5 +1,9 @@
 {
   "description": "Love across the centuries, where time travel keeps and tests the bond.",
+  "groups": [
+    "romance",
+    "science-fiction"
+  ],
   "Heat": "PG-13",
   "Age": "Adult",
   "Content": "PG",

@@ -1,5 +1,6 @@
 {
   "description": "A blend of science fiction and fantasy, where technology and magic coexist.",
+  "groups": ["science-fiction", "fantasy"],
   "ratings": {
     "heat": "G",
     "age": "YA",

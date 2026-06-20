@@ -1,6 +1,7 @@
 {
   "description": "High-stakes, high-heat romance with morally grey anti-heroes and extreme power dynamics.",
   "name": "dark-romance",
+  "groups": ["romance"],
   "ratings": {
     "quality": "A",
     "heat": "NC-17",

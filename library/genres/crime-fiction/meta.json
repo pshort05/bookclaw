@@ -1,10 +1,13 @@
 {
-  "description": "Stories driven by crime — its commission, investigation, and consequences.",
+  "description": "Stories driven by crime \u2014 its commission, investigation, and consequences.",
   "name": "crime-fiction",
   "ratings": {
     "quality": "A",
     "heat": "G",
     "age": "Adult",
     "content": "R"
-  }
+  },
+  "groups": [
+    "mystery-crime"
+  ]
 }

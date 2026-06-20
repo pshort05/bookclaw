@@ -1,3 +1,7 @@
 {
-  "description": "Speculative alternate history exploring worlds shaped by a changed past."
+  "description": "Speculative alternate history exploring worlds shaped by a changed past.",
+  "groups": [
+    "speculative-dystopian",
+    "historical"
+  ]
 }

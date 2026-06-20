@@ -1,3 +1,6 @@
 {
-  "description": "Sun-soaked, low-angst romance set in seaside towns and summer escapes."
+  "description": "Sun-soaked, low-angst romance set in seaside towns and summer escapes.",
+  "groups": [
+    "romance"
+  ]
 }

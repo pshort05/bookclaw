@@ -130,6 +130,8 @@ From the 2026-06-12 test review. **First batch DONE** (see COMPLETED.md 2026-06-
 - [ ] **Change the AI model from within Chat.** Let the user switch the model for a chat conversation directly in the studio Chat UI (a model picker), without editing provider/config settings. Decide scope (per-message vs. per-session override) and how it interacts with the AI router's task-tier routing and OpenRouter model pinning.
 - [ ] **Help item: how to enable the editors.** Add an in-app help entry explaining how to turn on editor mode — the `/editors` / `/editor:<name>` (or `/editor <name>`) chat commands, the opt-in `/editor <name> book` context, and `/editor off` to exit. Pairs with the in-app help system item above.
 
+- [ ] **Genre duplicate-dir cleanup.** Fold `yakuza-triad`/`yakuzatriad` (same genre, two dirs with near-identical content) into one; audit for other near-duplicate genre dirs (e.g. `satire`/`satire-fiction`, `uchronia`/`uchronia-speculative-fiction`, `spy-thriller`/`spy-thriller-fiction`, `portal-sf`/`portal-science-fiction`). Surfaced during the genre-grouping work (2026-06-20).
+
 ## Standing constraints (do not "fix" these)
 
 - Server bind defaults to `0.0.0.0` and is overridable via `BOOKCLAW_BIND`. This is a deliberate departure from the upstream localhost-only contract so the Docker image is usable on a LAN. **Do not revert to `127.0.0.1`-only.** (CORS, Socket.IO, and Helmet `connectSrc` were since tightened from permissive `*` to deny-by-default / `'self'` — see COMPLETED.md; the bind itself stays `0.0.0.0`.)

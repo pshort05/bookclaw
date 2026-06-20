@@ -1,3 +1,4 @@
 {
-  "description": "Grand-scale science fiction of starfaring adventure, politics, and war."
+  "description": "Grand-scale science fiction of starfaring adventure, politics, and war.",
+  "groups": ["science-fiction", "action-adventure"]
 }

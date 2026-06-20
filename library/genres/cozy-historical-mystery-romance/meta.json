@@ -6,5 +6,10 @@
     "heat": "PG-13",
     "age": "Adult",
     "content": "PG"
-  }
+  },
+  "groups": [
+    "historical",
+    "mystery-crime",
+    "romance"
+  ]
 }

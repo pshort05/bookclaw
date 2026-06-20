@@ -1,5 +1,9 @@
 {
   "description": "The Old West laced with magic, monsters, and the uncanny.",
+  "groups": [
+    "western",
+    "fantasy"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",

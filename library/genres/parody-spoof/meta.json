@@ -1,5 +1,8 @@
 {
   "description": "Comedy that mocks and exaggerates a genre or work for laughs.",
+  "groups": [
+    "comedy-satire"
+  ],
   "ratings": {
     "heat": "G",
     "age": "NA",

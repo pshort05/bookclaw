@@ -1,5 +1,9 @@
 {
   "description": "High-stakes suspense of soldiers, operations, and modern warfare.",
+  "groups": [
+    "thriller-suspense",
+    "action-adventure"
+  ],
   "Heat": "G",
   "Age": "Adult",
   "Content": "R",

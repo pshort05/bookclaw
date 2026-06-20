@@ -1,5 +1,6 @@
 {
   "description": "Speculative fiction extrapolating science, technology, and their human consequences.",
+  "groups": ["science-fiction"],
   "ratings": {
     "heat": "G",
     "age": "YA",

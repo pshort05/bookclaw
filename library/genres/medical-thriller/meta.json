@@ -3,5 +3,9 @@
   "Heat": "G",
   "Age": "Adult",
   "Content": "PG-13",
-  "Quality": "Professional"
+  "Quality": "Professional",
+  "groups": [
+    "thriller-suspense",
+    "mystery-crime"
+  ]
 }

@@ -3,5 +3,9 @@
   "Heat": "PG",
   "Age": "YA",
   "Content": "PG-13",
-  "Quality": "High"
+  "Quality": "High",
+  "groups": [
+    "fantasy",
+    "science-fiction"
+  ]
 }

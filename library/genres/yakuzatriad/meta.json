@@ -1,3 +1,7 @@
 {
-  "description": "Underworld crime fiction of yakuza and triad power, honor, and violence."
+  "description": "Underworld crime fiction of yakuza and triad power, honor, and violence.",
+  "groups": [
+    "mystery-crime",
+    "thriller-suspense"
+  ]
 }

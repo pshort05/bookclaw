@@ -6,5 +6,9 @@
     "heat": "G",
     "age": "YA/Adult",
     "content": "PG"
-  }
+  },
+  "groups": [
+    "fantasy",
+    "mystery-crime"
+  ]
 }

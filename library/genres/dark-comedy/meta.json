@@ -1,10 +1,13 @@
 {
-  "description": "Humor drawn from grim, taboo, or tragic subjects — laughter at the edge of the abyss.",
+  "description": "Humor drawn from grim, taboo, or tragic subjects \u2014 laughter at the edge of the abyss.",
   "name": "dark-comedy",
   "ratings": {
     "quality": "A-",
     "heat": "R",
     "age": "Adult",
     "content": "R"
-  }
+  },
+  "groups": [
+    "comedy-satire"
+  ]
 }

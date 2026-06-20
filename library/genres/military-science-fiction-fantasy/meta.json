@@ -1,3 +1,7 @@
 {
-  "description": "Martial speculative fiction blending soldiers, war, and the fantastic or futuristic."
+  "description": "Martial speculative fiction blending soldiers, war, and the fantastic or futuristic.",
+  "groups": [
+    "science-fiction",
+    "fantasy"
+  ]
 }
