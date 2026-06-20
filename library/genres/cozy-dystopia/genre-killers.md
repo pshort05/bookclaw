@@ -2,8 +2,13 @@ Avoid these mistakes that can undermine your story.
 
 ## Failure Modes
 
-- Tropes To Use (and Avoid)
-- Avoid:
-- Sample Tropes to Use (and Avoid)
-- AVOID:
-- The genre's surge during and after lockdown reflects what scholars identify as "trauma response" literature. People experiencing collective trauma seek stories that provide "safety and security," offering "grounding that other genres often don't". Cozy dystopia uniquely addresses real anxieties while providing emotional respite through its emphasis on connection and possibility.[40][23][41]
+- [ ] Breaking the cozy contract with genuine horror — cozy-dystopia readers come for subverted comfort, not real dread; if the dystopian stakes become viscerally terrifying (graphic violence, torture, true hopelessness), the cozy register collapses and the novel becomes something the audience did not choose. The threat must be present and real without becoming the dominant emotional experience.
+- [ ] A protagonist who remains passive through the whole book — the cozy register does not mean nothing changes; the protagonist must act in small, meaningful ways that accumulate into consequence. Passive protagonists who observe but do not act reduce the novel to atmosphere.
+- [ ] Using the cozy aesthetic to minimize real oppression without the subversive wink — the warmth must coexist with honest acknowledgment that the system is wrong; if the community's contentment reads as the author endorsing the dystopia rather than as the characters' coping mechanism, the genre loses its point.
+- [ ] Community that functions as backdrop rather than as characters — the warm community is the cozy-dystopia's engine, not its decoration; secondary characters must have distinct voices, competing interests, and stakes in what happens. Generic supportive neighbors are a dead weight.
+- [ ] A dystopian system that is never coherently explained or felt — the "dystopia" part of cozy-dystopia must be legible; readers need to understand what the system controls, how it intrudes, and why it matters, even if the protagonist's daily life has found ways to be warm within it.
+- [ ] Resolving the systemic problem entirely — cozy-dystopia lives in the tension between the warm community and the larger broken world; a tidy revolution that fixes everything destroys the genre's signature mood. The ending may be hopeful, but the system persists.
+- [ ] Romance or friendship arcs that are entirely isolated from the dystopian context — relationships in cozy-dystopia gain their emotional weight from what they cost or risk under the system; relationships that exist in a bubble untouched by the dystopia are a missed structural opportunity.
+- [ ] Treating the cozy elements as a tonal buffer that keeps the story "safe" — the genre is not comfort fiction with a dystopian backdrop; the contrast is the point. Both the warmth and the threat must be real and must push against each other throughout.
+- [ ] Neglecting the domestic and material — cozy-dystopia is built from the small textures of everyday life under constraint: what can be grown, traded, repaired, or quietly shared. Abstractions about community without these specifics produce vagueness, not atmosphere.
+- [ ] A villain who is cartoonishly evil rather than systemically banal — the most effective cozy-dystopian antagonists are the system's local representatives who are simply doing their jobs; cartoonish evil lets readers off the hook of recognizing the real model.

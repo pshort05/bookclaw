@@ -1,12 +1,14 @@
 # Time Travel Romance Genre Killers
 
-What causes DNF (Did Not Finish) and one-star reviews.
+Failures that reliably produce DNF responses and one-star reviews. Each item below explains not just what breaks but why it breaks the genre contract.
 
-- Inconsistent time rules
-- Convenient relationship
-- Flat love interest
-- Time-travel avoiding conflict
-- Ignored cultural differences
-- Ending violates time rules
-- Love without consequences
-- Weak historical detail
+- [ ] Inconsistent temporal mechanics. If the rules governing time travel change to serve the plot (travel is dangerous until it suddenly isn't; paradoxes matter until they don't), readers conclude the author has not thought through the world. Once trust in the mechanics is gone, tension collapses — if anything can be retconned, nothing is at stake.
+- [ ] Time paradoxes that invalidate the romance. If the resolution requires erasing a timeline in which the central relationship occurred, or if the love interest cannot logically exist given the mechanics established, the emotional investment readers built is retroactively voided. The romance must survive the mechanics, not be consumed by them.
+- [ ] The historical period used as decoration, not pressure. When the past setting is costume and scenery rather than a system that constrains and complicates the characters, the time-travel element becomes gratuitous. Readers who chose this genre specifically want the historical world to matter.
+- [ ] Love interest introduced after the primary temporal twist. A character who appears only after the story's central time-travel event has already unfolded has insufficient page time to earn emotional investment. Readers need to care before the stakes escalate.
+- [ ] The romance stalls while the time-travel plot runs. Extended sequences focused on mechanics, lore, or historical exposition with no romantic development are read as pacing failures. The relationship arc and the temporal arc must advance together.
+- [ ] Cultural and period differences played for comedy only. Fish-out-of-water moments can be charming, but if all period friction is played as joke material, the setting loses its capacity to generate genuine stakes or tension.
+- [ ] A love that carries no consequence. When the characters can move freely between times with no cost, no loss, and no permanent sacrifice, the central emotional premise — that love across time is hard — is undermined. Ease destroys the genre's core appeal.
+- [ ] Flat or passive love interest. The character anchored in one time period often has limited agency by structural necessity, but readers still require them to have interiority, goals, and the capacity to change. A character who merely waits is not a love interest; they are a destination.
+- [ ] An ending that severs the relationship to service the mechanics. Resolving the time-travel plot by stranding characters permanently in separate eras, with no emotional resolution for the romantic arc, violates the genre's HEA/HFN contract. The genre promises that love wins; a mechanics-first ending says it does not.
+- [ ] Anachronistic speech or behavior that breaks immersion. Protagonists from the past who speak, think, and behave like 21st-century people signal that the author has not done the work. Readers who select historical time-travel romance are specifically seeking the friction of other eras — remove that friction and the genre's primary pleasure disappears.

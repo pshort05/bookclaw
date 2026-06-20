@@ -1,12 +1,14 @@
 # Thriller Genre Killers
 
-What causes DNF (Did Not Finish) and one-star reviews.
+Elements that cause readers to abandon the book or leave one-star reviews. Each item includes the reason it breaks the genre contract.
 
-- Stupid protagonist acting
-- Pacing that sags
-- Twist not fitting clues
-- Unclear antagonist motivation
-- Cheap resolution
-- Too many coincidences
-- Diverting subplots
-- Passive protagonist
+- [ ] **Too many coincidences solve the plot.** If the protagonist finds the crucial clue because they happened to overhear a conversation, happened to be in the right place, or happened to know someone with the exact expertise needed — and this happens more than once — the reader loses faith that the plot is under authorial control. Thriller readers are watching for authorial cheating; coincidences confirm their suspicion.
+- [ ] **The villain waits passively for the protagonist to arrive.** A thriller's engine is the antagonist's forward momentum. If the villain spends chapters doing nothing while the protagonist catches up, the threat is theoretical, not felt. The antagonist must be executing their plan, not holding position.
+- [ ] **The resolution requires a monologue explaining everything.** If the only way to resolve the plot is for the villain (or any character) to stop and explain what happened, the thriller has failed structurally. The explanation means the plot was not visible enough in the story itself. Show the conclusion through action and discovery, not exposition.
+- [ ] **The protagonist knows everything the reader needs to solve the problem.** The thriller reader is solving the puzzle alongside the protagonist. If the protagonist withholds information the reader should have access to (information they possess but do not share with the reader), the reveal lands as cheap rather than clever. Unreliable narrators must mislead through interpretation, not withheld facts.
+- [ ] **Pacing collapses in the middle.** A mid-book sequence where nothing worsens and no new threat emerges will cause readers to DNF. The sag is often caused by subplot management — when the author moves away from the main threat to develop secondary characters, the tension drains. Every scene must connect to the central threat, even indirectly.
+- [ ] **The protagonist is stupid in order to sustain the plot.** If the only way to keep the antagonist ahead is to have the protagonist miss obvious conclusions, ignore clear warnings, or fail to do what any reasonable person would do, the reader loses sympathy. Competence in crisis is the genre's core protagonist promise.
+- [ ] **The twist is not planted.** A revelation that the reader cannot locate in retrospect is not a twist — it is a retcon. Every major reversal must have been seeded in the text. Re-read the manuscript with the reveal in mind: if there is no evidence, the twist has not been earned.
+- [ ] **The antagonist's motivation is incomprehensible or revealed too late.** Reader investment in the threat depends on understanding what the antagonist wants and why. Motivation withheld as a mystery works only if the reader has enough context to speculate. A villain whose logic is never grounded feels arbitrary, and arbitrary threats do not frighten.
+- [ ] **Secondary characters exist only to deliver information.** If every ally, witness, and bystander exists solely to hand the protagonist a clue and then disappear, the world feels hollow. Secondary characters need at least one attribute that serves the story beyond their informational function.
+- [ ] **The ending resolves all tension too quickly.** A climax that takes 800 words to resolve a 100,000-word threat feels unearned. The reader needs to feel the resolution at the same emotional pitch as the threat. Rushed endings are the most common cause of readers rating an otherwise strong thriller three stars instead of five.

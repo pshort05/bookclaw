@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Speculative fiction drawing on East Asian history, aesthetics, and philosophy, where an alternate technological substrate — bamboo, paper, silk, bone, feather — replaces the coal-and-iron of steampunk with something stranger and more culturally specific.
 
-## Tone
+## Tone & Mood
 
-Readers expect Following Ken Liu's groundbreaking work, the 2010s saw the genre expand beyond its epic fantasy root
+The tone balances wonder at the invented technology with the weight of political and philosophical conflict. Silkpunk is not merely East Asian steampunk; it explores themes of collective duty, cosmological balance, bureaucratic intrigue, and the tension between tradition and innovation within specific cultural contexts. The mood tends toward the epic and morally serious, with space for beauty — objects made from living materials, a well-governed bureaucracy, a philosophy tested against reality. It avoids Orientalist exoticism by treating the source cultures as primary rather than decorative. The punk dimension manifests as skepticism toward power and sympathy for those who challenge unjust hierarchies.
 
 ## Pacing
 
-The pacing should be Following Ken Liu's groundbreaking work, the 2010s saw the genre expand beyond its epic fantasy root
+Pacing tends toward the deliberate in character and philosophical scenes but accelerates sharply during political crisis or combat. Technology should be introduced through use and action rather than explanation; readers need to see a silkcraft vessel operating before understanding the mechanics. Political intrigue and bureaucratic maneuvering — a staple of the East Asian literary traditions the genre draws on — can sustain extended sections without action, but stakes must be legible and characters must be actively working toward goals. The philosophical questions of the world — duty vs. conscience, tradition vs. innovation — should be live plot stakes rather than background texture.
 
-## Setting
+## Setting Conventions
 
-Critically, Silkpunk is not merely 'Steampunk with samurai.' It diverges from Steampunk in its core ethos. Where Steampunk often critiques industrialization, colonialism, and class through a lens of Victorian nostalgia and rebellion, Silkpunk explores themes of collective duty, cosmological balance, bureaucratic intrigue, and the tension between tradition and innovation within its specific cultural frameworks. It also distinguishes itself from Wuxia and Xianxia (martial arts and cultivation fantasy) by placing greater emphasis on technological innovation and worldbuilding over individual martial prowess, though these elements can overlap.
+Settings draw on pre-modern East and Southeast Asian civilizations — Imperial China, Feudal Japan, ancient Korea, Southeast Asian kingdoms, and invented analogs — treated as genuine cultures rather than aesthetic backdrops. The alternate technology is the speculative intrusion: paper airships, silk-and-bamboo computing, bone-carved automata, living materials shaped by craft. The contrast between familiar cultural logic and strange technology generates the genre's cognitive dissonance. The technology must fit the culture's values and limitations, not merely be bolted on.
 
-## Archetypes
+## Character Archetypes
 
-Definition and Core Characteristics
+Protagonists are often skilled practitioners navigating institutions: engineers, scholars, court officials, military officers, craftspeople. The tension between individual conscience and institutional obligation is a recurring arc. Characters who innovate — finding solutions to problems the institution has declared unsolvable — are central. Silkpunk does not require the lone genius of Western SF; collaborative problem-solving is as common as individual heroism. Antagonists represent institutional calcification: officials suppressing innovation, commanders using technology without ethical constraint. Diverse gender and social representation is both appropriate to many of the source cultures and expected by readers.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Standard length is 90,000–130,000 words. Series are the dominant commercial form; readers invest deeply in the setting. Standalone novels are viable but less common. Maps, glossaries, and character lists are standard apparatus. The genre attracts readers from epic fantasy, historical fiction, and literary SF; cross-genre marketing is common. No romance requirement, though romantic subplots are common. Heat level is typically restrained compared to genre romance.

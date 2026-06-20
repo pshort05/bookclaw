@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Readers expect a narrative in which climate change and ecological collapse are not the background to a human story but the central force reshaping every dimension of it — political, emotional, moral, and physical.
 
-## Tone
+## Tone & Mood
 
-Readers expect Anthropological/Social Realism: Utilizes The Displaced Migrant (climate refugee's journey), The Slow
+Urgent, morally weighted, and unafraid of grief. Climate fiction occupies a tonal space that distinguishes it from both escapist disaster fiction and dry polemical nonfiction: it asks readers to feel what the data cannot convey. The dominant emotional register includes ecological grief (mourning for what is being lost), climate anxiety (the particular dread of threats that are real but not yet fully arrived), moral complexity (guilt, complicity, and the question of what one person can or should do), and, often, a tempered or conditional hope that resists false comfort. Sentimentality about the natural world is appropriate if it serves the grief; sentimentality about human solutions is suspect. The narrative must neither reassure readers that everything will be fine nor flatten them into helplessness — the most effective cli-fi holds both the scale of the catastrophe and the specificity of individual agency.
 
 ## Pacing
 
-The pacing should be The Bunker Mentality: The belief (often held by elites) that technological fortresses or sealed habi
+Pacing in climate fiction is frequently structured around two simultaneous timelines or pressures: the slow, systemic scale of ecological change (decades, feedback loops, tipping points) and the immediate, human-scale urgency of the protagonist's story. Balancing these without losing the reader to either abstraction or claustrophobia is the central craft challenge. Scenes set in damaged or transformed environments should carry atmospheric weight — slowing the pace to let the reader feel the wrongness of a changed world. Plot momentum comes from human decisions under pressure: evacuation, adaptation, political confrontation, survival. The ending should feel like a genuine reckoning, not a clean resolution; readers who understand climate reality will reject an implausibly tidy rescue.
 
-## Setting
+## Setting Conventions
 
-The Last Generation / First Generation: Characters born into the final era of relative normalcy or the first generation to face the full fury of the transformed world. Explores intergenerational guilt, responsibility, and trauma.
+The setting is always doing scientific and emotional work simultaneously. Whether the story is set in a near-future decade or a further-out transformed world, the environmental specifics must be grounded in real climate science: sea-level projections, heat dome dynamics, species extinction timelines, migration pressure, water stress. Readers in this genre are often unusually well-informed; factual errors or scientific implausibility break immersion immediately. The damaged world should feel specific to a geography: a flooding coastal city, a desertifying agricultural region, a wildfire-adapted forest landscape. The cultural and social texture of the setting — who is displaced, who has resources, where the adaptation infrastructure exists — should reflect real patterns of environmental injustice rather than distributing climate suffering evenly or abstractly.
 
-## Archetypes
+## Character Archetypes
 
-Common narrative conventions, plot structures, and character archetypes.
+The Climate Scientist or Activist whose knowledge makes her simultaneously right and isolated. The Policy Maker or Executive who understands the problem and must decide between solutions with different beneficiaries. The Climate Refugee whose displacement is not a metaphor but a specific dispossession. The Denier or Delayer whose position has a comprehensible economic or psychological logic. The Young Person who will live longest with the decisions being made now, often the moral center of the narrative. The Engineer or Technologist whose solution carries unforeseen costs. Avoid archetypes that reduce to pure villainy or pure heroism; the genre is most powerful when the characters' complicity and courage are both visible.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Standard novel length is 80,000–120,000 words. Standalone literary novels are common; speculative series set in a consistently developed near-future world are also viable. Third-person limited or omniscient narration suits the genre's tendency toward multiple perspectives and systemic scope; first-person works best for more intimate, character-centered stories. Multiple POVs across different geographies and socioeconomic positions are a strong structural choice — they reflect the uneven distribution of climate impact. Research appendices or author's notes situating the fiction within real science are welcomed by readers.

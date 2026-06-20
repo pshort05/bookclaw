@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+A crime occurs, a protagonist investigates, and the truth is revealed through the accumulation of clues — the reader is invited to solve alongside the detective and expects the answer to be both surprising and inevitable in retrospect.
 
-## Tone
+## Tone & Mood
 
-Readers expect The Misinterpreted Statement leverages language ambiguity, allowing readers to understand words corr
+Tone varies widely by subgenre — cozy mysteries run warm and domestic, hardboiled runs cynical and gritty, psychological thrillers run claustrophobic and paranoid — but all share an underlying current of intellectual engagement. The mystery genre is a contract with the reader: the puzzle will be solvable in retrospect, the resolution will not cheat. Atmosphere supports the puzzle rather than replacing it; a richly rendered setting is valuable only insofar as it makes the investigation feel real and places clues in a plausible context. Readers expect tension that comes from not knowing, not from withheld information that was never available to them. Fair play is the governing ethical principle of the genre: everything the reader needs to solve the case must be present in the narrative before the solution is revealed, though it need not be labeled as significant.
 
 ## Pacing
 
-The pacing should be How Many Red Herrings Should A Story Have? In this engaging video, we dive into the world of mystery
+Pacing in mystery is investigative: deliberate accumulation punctuated by revelation. A clue lands, its significance is uncertain; connections form slowly, then crystallize. Readers expect a structure that feels like genuine discovery rather than a tour of pre-arranged reveals. Red herrings should mislead through plausible misdirection — a suspect with genuine motive who is not the killer, an apparent clue that turns out to be coincidental — not through cheap ambiguity or withheld character knowledge. The middle act risks sagging if the investigation stalls; plant new complications or secondary characters whose behavior raises fresh questions. The final act compresses: revelations come faster, tension builds to confrontation or disclosure, and the solution accounts for every planted clue without requiring new information.
 
-## Setting
+## Setting Conventions
 
-Contextual camouflage embeds clues within environments so naturally that they seem part of setting rather than evidence. A missing piece of jewelry means little unless readers know its significance; a photograph showing someone wearing it in the past seems innocuous; only when connected do both details become critical. Meanwhile, the murderer placed a replica in the victim's jewelry box, creating a misdirection suggesting theft rather than murder.[7][8][22]
+Setting functions as both atmosphere and evidence repository. Clues are embedded naturally in the environment — objects, locations, and social context that seem ordinary until they acquire meaning. A closed environment (an island, a country house, a small town, a confined community) limits the suspect pool and creates natural tension by keeping everyone in proximity. Contemporary mysteries set in institutions — hospitals, corporations, academia — use the organization's internal culture and hierarchy as both setting and suspect logic; the murderer's method often exploits knowledge or access that only an insider would have. The investigator's home territory accumulates meaning across a series; readers develop expectations about the social world the investigator inhabits.
 
-## Archetypes
+## Character Archetypes
 
-Supporting clues substantiate critical clues without independently solving the mystery—typically 4-7 per mystery. These details corroborate solutions, reveal character psychology, or establish patterns that acquire meaning when context shifts. In Gone Girl, Amy's diary entries themselves are supporting clues that only gain significance when revealed as fabricated; individually they suggest Nick's guilt, collectively they demonstrate premeditation and psychological manipulation.[11][12][13][14]
+The investigator is the genre's anchor: whether amateur, professional detective, or journalist, they must be observant, persistent, and credible as someone who would pursue this truth at personal cost. The victim's biography is often as important as the crime itself; understanding why this person died, and who in their life had reason to want them dead, is part of solving how. Suspects must each have plausible motive, means, and opportunity, with the guilty party's guilt visible in retrospect but concealed in prospect. The loyal foil or partner — the Watson, the police contact, the skeptical friend — serves to receive the investigator's reasoning aloud without the reader feeling lectured. Antagonists in mystery are distinguished by their concealment strategy: what they did to hide the crime is often as revealing as the crime itself.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Standalone mysteries typically run 70,000–90,000 words; cozies often run shorter (60,000–75,000). Series are the dominant commercial format — readers invest in the investigator across many cases, and the recurring cast and setting accumulate emotional depth over time. Chapter length is usually short to moderate, maintaining forward momentum through frequent scene breaks. Dual timelines — alternating between the crime's past and the investigation's present — are a popular contemporary device that allows the reader to understand the victim while the investigator reconstructs them.

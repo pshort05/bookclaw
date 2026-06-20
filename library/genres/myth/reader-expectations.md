@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Fiction that takes mythological traditions as its primary narrative framework — using the gods, heroes, cosmologies, and symbolic logic of myth to tell stories that resonate with both ancient weight and contemporary relevance.
 
-## Tone
+## Tone & Mood
 
-Readers expect The late twentieth and early twenty-first centuries have witnessed an unprecedented renaissance in m
+The tone carries the double register of myth itself: elevated and intimate at once. Myth fiction operates at the level of archetype and eternal recurrence, which demands a prose register that has gravity without becoming pompous. Readers expect to feel the numinous — the sense that what is happening matters beyond the individual characters, that divine or cosmic forces are in motion. At the same time, the best myth fiction makes the gods and heroes feel urgently, uncomfortably human in their jealousy, grief, and desire. Irony and tragedy are as native to this genre as triumph. Unlike mythpunk, which subverts and reclaims, myth fiction in this tradition approaches its source material with fidelity and reverence — the goal is to illuminate the original story's power, not to interrogate its politics. Where marginalized figures appear, they do so to deepen the myth's meaning rather than to indict it.
 
 ## Pacing
 
-The pacing should be https://literaryquicksand.com/2024/04/best-fiction-books-about-greek-mythology/
+Pacing respects the episodic structure of mythology. Many mythological source texts are collections of interlocking tales rather than single linear narratives, and myth fiction may inherit that structure or resist it consciously. Linear novels set within a mythological world tend to move at a deliberate, stately pace with bursts of divine or heroic action. Journey structures — the hero's road, the descent into the underworld, the labors — organize pacing naturally and carry built-in escalation. Readers expect the world to feel vast even when the protagonist's path is narrow: the sense that larger divine machinations surround every mortal decision, that the characters are living inside a story that was always going to unfold this way.
 
-## Setting
+## Setting Conventions
 
-Mythic fiction encompasses literature that draws from the tropes, themes, and symbolism of myth, legend, folklore, and fairy tales. Unlike pure fantasy, mythic fiction is typically grounded in the real world and deals with realistic issues, though a mythic atmosphere pervades the narrative. The genre differs from magical realism in that mythic fiction uses symbolism specifically drawn from myth and legend rather than surreal or random imagery.[1][10][13]
+The mythological world should feel materially specific, not abstract. Whether the setting is Bronze Age Greece, the Norse cosmological tree, an Egyptian afterlife, or a contemporary city where the old gods persist, the physical details must be rendered with texture. Readers expect architectural, material, and social specificity that makes the world feel inhabited rather than merely symbolic. The geography of myth — Olympus, Asgard, the Underworld, the World Tree — carries its own weight and should be honored even when reimagined. Source mythology should be handled as living material: studied carefully, respected in its internal logic, and extended rather than simply borrowed. Invented elements should feel consistent with the tone and cosmology of the source tradition.
 
-## Archetypes
+## Character Archetypes
 
-The late twentieth and early twenty-first centuries have witnessed an unprecedented renaissance in myth fiction, marked by several key developments. The coining of the term "mythic fiction" by Charles de Lint and Terri Windling provided a framework for understanding stories that drew from mythological sources while maintaining contemporary relevance. This period has been characterized by increasing diversity in both source mythologies and authorial voices, moving beyond the traditional Greco-Roman focus to embrace global mythological traditions.[1][10][11][12]
+Gods in myth fiction are defined by their domains and their contradictions: the god of love who is cruel, the war god who weeps, the goddess of wisdom whose cleverness becomes cruelty. These contradictions should be present and functional, not resolved into comfortable characterization. Heroes are defined by exceptional capability and fatal flaw in equal measure; their greatness and their destruction arise from the same source. Mortals caught in divine conflict carry the genre's emotional core — their small lives made enormous by the attention of powers beyond them. Prophets, oracles, and tricksters serve as structural enablers: their ambiguous assistance moves the plot while preserving the sense that fate cannot be circumvented, only met with courage or cunning.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Length varies considerably: from compact retellings of 50,000–70,000 words to sprawling multi-volume mythological epics. The retelling format — a single myth expanded from a minor or marginalized character's perspective — is currently the dominant commercial mode and typically runs 70,000–90,000 words. Prose style often elevates toward the lyrical, with deliberate sentence rhythm and heightened diction. Epigraphs drawn from source texts are a common structural convention, grounding invented material in the tradition it extends. Series organized around different figures within the same mythological pantheon are commercially popular and allow the cosmological world to be built incrementally.

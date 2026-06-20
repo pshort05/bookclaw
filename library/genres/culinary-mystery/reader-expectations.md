@@ -1,21 +1,23 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+# Culinary Mystery Reader Expectations
+
+Readers come to culinary mystery for a cozy-register crime story in which food — its preparation, its culture, its politics, its pleasures — is not background but the medium through which murder is committed, investigated, and ultimately explained.
 
 ## Tone
 
-Readers expect POV and Voice
+Warm, sensory, and appetizing, with a cozy-safe threat: murder is present but violence is not graphic. The reader should feel invited into a world of good smells and interesting people, one of whom has done something terrible for reasons rooted in the culinary world. The food descriptions must make readers hungry. The danger must feel real but never squalid.
 
 ## Pacing
 
-The pacing should be Pacing and Tone
+Investigation scenes and cooking scenes interleave throughout the narrative. Food preparation sequences serve as breathing room between confrontations and as plot engines: a recipe remembered, a dish prepared in the wrong way, an ingredient that shouldn't be there. Readers expect these sequences to be sensory and pleasurable, not obligatory. The investigation moves at a considered pace — faster than literary fiction, slower than thriller — with the amateur sleuth's access constraints providing natural friction.
 
 ## Setting
 
-Culinary mystery features an amateur detective (chef, baker, food critic) solving crimes intertwined with food culture. Non-negotiable elements include: 1) Food as both clue mechanism and thematic anchor (recipes included); 2) Low-stakes violence with minimal gore; 3) Strong community world-building. It overlaps with cozy mysteries but is distinguished by its gastronomic focus—where a souflé's collapse may reveal a poison clue, unlike pet-focused cozies. Contrasted with culinary thrillers (e.g., 'The Menu'), it avoids high-body counts and psychological horror. Prose emphasizes sensory descriptions of food and often includes recipes. The killer's motive typically relates to food-world secrets (recipe theft, restaurant sabotage).
+A food-centered small business or community: restaurant kitchen, bakery, food truck, catering company, farmers' market, or small-town food corridor. The setting must be specific enough to feel lived-in — the reader should understand the economic pressures, the staff hierarchies, the supplier relationships, and the food culture of this particular world. The food business creates both the crime and the investigative access.
 
 ## Archetypes
 
-Definition and Core Characteristics
+The amateur sleuth is also a culinary professional: their knowledge of food, technique, suppliers, and industry politics gives them investigative access that a layperson would not have. The food community — line cooks, regulars, competitors, suppliers, food critics — serves as both the suspect pool and the support network. The inspector or detective functions as a foil: skeptical of the sleuth's involvement, constrained by procedure, occasionally useful, occasionally obstructive.
 
-## Length & Format
+## Length and Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+60,000–90,000 words. First-person is the dominant POV choice — it suits the cozy register and keeps the reader inside the protagonist's sensory experience of food. Standalone novels are common; series with recurring sleuth and setting are equally so, with the culinary world deepening across books.

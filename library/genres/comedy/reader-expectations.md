@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Readers come to prose comedy with one primary expectation: to laugh, and to laugh consistently — not at setup-and-punchline intervals but as a sustained experience of a comic mind at work on the world.
 
-## Tone
+## Tone & Mood
 
-Readers expect Banter as Bonding: Extended dialogue sequences building character relationship and establishing come
+The comic register must be established in the first paragraph and maintained throughout. Readers who pick up a comedy novel have made a contract with the author: they expect humor as the dominant mode, not an occasional seasoning. The specific flavor of humor — absurdist, satirical, farcical, dry, character-driven, situational — should be consistent and clear rather than lurching between registers. Darkness is permitted and can amplify comedy (the best comic novels are frequently about mortality, failure, and humiliation), but unironic tragedy mid-narrative breaks the contract. The authorial voice is crucial: readers of prose comedy are reading for the pleasure of a particular sensibility applied to character and situation, not merely for plot. That sensibility must feel genuinely funny, not merely clever or whimsical.
 
 ## Pacing
 
-The pacing should be Vehicles as Dynamic Spaces: Cars, motorcycles, helicopters as arenas for character interaction and c
+Comic pacing is the most technically demanding element of prose humor. Scenes must build to a comedic payoff, then release before the material is exhausted. Jokes that overstay their welcome are worse than no joke at all. The rhythm of a comedy novel alternates between escalation (things getting worse, more absurd, more complicated) and brief moments of false resolution that set up the next escalation. Running gags — motifs, callbacks, character-specific verbal tics — reward readers who are paying attention and create the sense of an internally consistent comic world. The black moment in comedy is usually maximum humiliation or maximum chaos rather than maximum grief; the resolution restores a degree of order while leaving the character recognizably themselves.
 
-## Setting
+## Setting Conventions
 
-The Fish Out of Water: Character from one world forced into another (cop in corporate world, civilian in espionage)
+Comic setting works through incongruity and specificity. A familiar world rendered slightly absurd (British village politics, corporate HR bureaucracy, academic departmental warfare) is more effective than an invented comic world, because the reader brings existing associations that the comedy can violate. The setting should be specific enough to feel real — a named town, an actual profession rendered with satirical accuracy, a social world the reader recognizes — and wrong enough in small ways to sustain comic possibility. Fish-out-of-water premises (a character radically mismatched with their environment) remain reliable because they generate incongruity automatically. Setting details should pay off: the peculiar local custom mentioned in chapter one should become a plot mechanism by chapter eight.
 
-## Archetypes
+## Character Archetypes
 
-Humor primarily derived from character contrast and situational comedy
+The comic protagonist is typically earnest, a quality that is both their vulnerability and their dignity: they believe things matter that the world treats as absurd, or they are sincerely wrong about themselves in ways the reader can see. Comic antagonists are more effective as oblivious impediments than as deliberate villains — the person who does not realize they are the problem is funnier than the person who knows. The ensemble is essential in prose comedy: a cast of characters with clearly differentiated, mutually incompatible worldviews generates situation comedy without requiring the author to manufacture external plot. The fool who inadvertently causes chaos, the authority figure with a weakness, the sensible observer who serves as the reader's point of alignment — these archetypes work because they are type-tested across centuries of comic tradition.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Standard novel length is 70,000–90,000 words; comedy rarely benefits from the extended word counts of epic genres, as comic momentum is difficult to sustain across 120,000 words without either padding or exhausting the reader. Standalone novels are the norm; series built around a recurring character in a recurring comic world (think Wodehouse or Pratchett) succeed when the world and the character are rich enough to sustain repeated mining. Third-person limited or omniscient narration both work; an unreliable or self-deceived first-person narrator is a specific comic form with its own strong tradition. Short-to-medium chapters suit the rhythm of comedy; chapter endings should either deliver a punchline or set up an irresistible question.

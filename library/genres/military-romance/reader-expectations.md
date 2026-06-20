@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Romance shaped by military service, where duty, sacrifice, and the warrior code create both the central obstacle and the emotional core of the love story.
 
-## Tone
+## Tone & Mood
 
-Readers expect Tone & Voice
+The tone balances intensity with tenderness. Military romance is emotionally high-stakes: readers expect a story that respects the weight of service without turning into a war narrative. There is an underlying current of sacrifice — characters choose between duty and love, between mission and relationship. Tension is often bittersweet, particularly around deployment, separation, and homecoming. Humor and camaraderie among unit members provide relief. Readers expect authenticity in the portrayal of military culture: the brotherhood or sisterhood of service, the dark gallows humor, and the emotional stoicism that masks deep feeling. Sentimentality is earned, not assumed.
 
 ## Pacing
 
-The pacing should be Pacing and Action Sequences – Techniques for balancing combat with romance, deployment scenes, and i
+Pacing reflects the push-pull of military life: extended stretches of tension and routine punctuated by sudden, high-stakes action or emotional confrontation. The romantic arc moves in two rhythms — the slow build of trust and connection during stateside or downtime scenes, and the accelerated emotional urgency created by deployment orders or combat threat. Reunion scenes and homecoming carry enormous weight and should be given room. The HEA or HFN must feel genuinely earned against the odds the military context creates.
 
-## Setting
+## Setting Conventions
 
-World-Building and Setting – Creating authentic military installations, deployment contexts, and civilian reintegration scenarios
+Settings are specific and grounded: military bases, forward operating bases, VA hospitals, small towns near installations, or civilian life during reintegration. Readers who come to this genre often have personal or family connections to service, so authenticity in rank, protocol, base culture, and branch distinctions matters. Deployment geography — whether Iraq, Afghanistan, or a fictional theater — should be handled with care and accuracy. The contrast between the hyperstructured world of active duty and the comparative chaos of civilian life is a productive setting dynamic.
 
-## Archetypes
+## Character Archetypes
 
-Character Development – Building complex military heroes, authentic trauma representation, and modern female military character development
+The military hero (or heroine) is disciplined, protective, and emotionally guarded — trained to suppress vulnerability, which makes intimacy a genuine challenge rather than a narrative convenience. The civilian love interest often serves as the bridge back to ordinary feeling. Female military characters are increasingly common and should be written with the same complexity: capable, code-trained, navigating a male-dominated culture. Supporting characters from the protagonist's unit provide camaraderie and often comic relief. Antagonists may be institutional (command decisions, PTSD, bureaucracy) rather than personal villains.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+Standard novel length is 75,000–95,000 words for standalone titles. Series are common, with each book following a different unit member. Dual POV is the norm. Flashback structure is frequently used to convey combat history and trauma backstory. Chapter length tends to be moderate — long enough to develop emotional beats, short enough to maintain the forward drive readers expect.

@@ -1,21 +1,21 @@
-Readers expect a narrative that delivers on specific emotional and structural promises.
+Action-comedy delivers genuine physical danger and genuine laughs in the same scene, requiring the writer to treat both with equal craft rather than letting one undercut the other.
 
-## Tone
+## Tone & Mood
 
-Readers expect Chan's films like Drunken Master (1978), Police Story (1985), and Wheels on Meals (1984) demonstrate
+Playful but never toothless. The comedy must not defuse the danger — it must coexist with it. Readers want to laugh and feel the threat simultaneously. The protagonist's wit, incompetence, or situational absurdity generates the humor, but the bullets are still real and the villain still wants them dead. Avoid the trap of undercutting every tense moment with a punchline; some beats need to land as pure action so that the comedic ones register as relief rather than deflation. The overall mood is energetic, fun, and propulsive.
 
 ## Pacing
 
-The pacing should be Timing and narrative structure prove pivotal to the genre's appeal. The rapid shifting from comedy t
+Fast-moving with rhythmic variation. Action sequences run hard, then release into a comedic beat — a character's stunned reaction, a misunderstood order, a plan that worked for all the wrong reasons. That release is the genre's signature, but it must be earned by genuine tension first. Chapters are short. Comic timing matters at the sentence level: setup lands, and the punchline hits at the end of the paragraph or scene, not buried in the middle. Escalation still drives the plot; humor is the texture, not the engine.
 
-## Setting
+## Setting Conventions
 
-Classic Hollywood productions like It's a Mad, Mad, Mad, Mad World demonstrated how humor could be seamlessly integrated into large-scale action scenarios, establishing early conventions for the hybrid form. The pre-1915 film The Lonedale Operator (1911) and other chase sequences provided editing patterns that would later become standard in both comedic and non-comedic action film grammar.[2][1]
+Environments should offer comic potential alongside action potential. A crowded marketplace, a cruise ship, a government gala, a suburban neighborhood where the action is wildly out of place — these settings let physical comedy and action choreography share the same space. Incongruity is a tool: the more ridiculous the location relative to the stakes, the richer the comedic territory. Settings shift frequently. The world should feel slightly heightened — not surreal, but one notch above mundane realism.
 
-## Archetypes
+## Character Archetypes
 
-The action comedy genre represents one of cinema's most dynamic and commercially successful hybrid forms, combining the adrenaline-pumping intensity of action sequences with comedic timing and humor to create entertainment that appeals to remarkably broad audiences. This guide examines the genre's historical development, defining characteristics, critical subgenres, and current market positioning based on 2023-2025 box office and audience demand data.[1][2]
+The Reluctant or Unlikely Hero: capable but not polished, or polished in one way and wildly inept in another. Their competence-gap generates the comedy. The Straight-Man Partner: plays it deadly serious, which amplifies the protagonist's absurdity. The Villain Who Doesn't Find It Funny: maintains genuine menace regardless of the chaos around them — a villain who also cracks jokes flattens the tension. Supporting cast includes well-meaning obstructions, misreading bystanders, and allies whose help makes things worse before it makes things better.
 
 ## Length & Format
 
-Standard novel length for this genre is 70,000–120,000 words.
+65,000–95,000 words. Series common; the protagonist's comedic personality is often as much the draw as the plot. Close-third or first-person POV, both work — first-person allows the narrator's voice to carry the comedy between action beats. Chapter length: 2,000–3,500 words. Avoid overly long set-pieces; comedy loses energy when it runs long without a payoff. Prologues with an immediately absurd-but-dangerous situation are a strong convention.

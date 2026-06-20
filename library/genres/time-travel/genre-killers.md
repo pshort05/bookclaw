@@ -1,12 +1,14 @@
 # Time Travel Genre Killers
 
-What causes DNF (Did Not Finish) and one-star reviews.
+Patterns that cause DNF and one-star reviews in time travel SF. Each item explains the reader damage, not just the flaw.
 
-- Inconsistent logic
-- Convenient fixes
-- No real consequences
-- Ignored paradoxes
-- Too-easy mechanism use
-- Historical inaccuracy
-- Time-travel without cost
-- Confusing timeline confusion
+- [ ] Time travel is used as a plot convenience with no internal rules. The mechanism does whatever the scene requires — travel is easy here, impossible there, with no governing logic. Readers notice the first inconsistency and spend the rest of the book waiting for the next one; trust never recovers.
+- [ ] The "reset ending" undoes all consequences. The protagonist uses time travel in the final act to erase everything that happened, returning the world (and themselves) to a pre-story state. This retroactively voids every sacrifice and decision the reader invested in. The story ends by announcing it did not matter.
+- [ ] Timeline changes that affect nothing meaningful. The protagonist alters the past — saves a life, prevents an event, plants information — and the consequences are trivial or invisible. The narrative implies that history is robust and changes are cosmetic. This contradicts the genre's core promise.
+- [ ] Paradoxes are introduced and then ignored. The story raises a temporal contradiction (grandfather paradox, bootstrap paradox, causal loop) and then simply proceeds without resolving, acknowledging, or dramatising it. Readers who are here for the puzzle feel cheated; readers who are not notice the authorial evasion anyway.
+- [ ] The mechanism is explained at length but never tested. Chapters of worldbuilding establish the rules of temporal travel; those rules are never put under pressure by the plot. Exposition without consequence is dead weight.
+- [ ] The protagonist learns nothing from other times beyond their immediate goal. History and the future are treated as a research library — in, retrieve information, out. The displacement never challenges the protagonist's worldview, values, or identity. This is the tourist failure mode.
+- [ ] Historical periods are indistinguishable from the present except by costume. Characters in 1850 think, speak, and hold values identical to contemporary people. The past has been sanitised into backdrop, removing both dramatic irony and the unsettling quality that makes historical time travel resonant.
+- [ ] The emotional stakes belong entirely to a love story unrelated to time. Time travel is the vehicle; the love interest is the destination; the temporal mechanics are a MacGuffin. This is the romance-crossover failure mode in non-romance SF — the genre's core concerns (causality, identity, free will) are abandoned for a subplot.
+- [ ] Multiple timeline versions of the same character appear but are treated as identical. When the narrative splits characters across timelines, those versions must diverge — in knowledge, in damage, in what they want. Characters who are interchangeable across their timeline splits make the branching feel decorative.
+- [ ] The protagonist has unlimited access to the mechanism with no cost or complication. They travel freely, repeatedly, without physical toll, without missing time in their home era, without interpersonal consequence. Stakes require constraint; unlimited access removes constraint entirely.

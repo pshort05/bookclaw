@@ -1,8 +1,15 @@
-Every book in this genre needs these essential elements.
+# Medieval Science Fiction Must-Haves
+
+Non-negotiable elements for this genre.
 
 ## Essential Checklist
 
-- Predominantly third-person limited to maintain the 'mystery' of technology, often using archaic but accessible prose. Primarily multi-volume series to allow for the extensive world-building required; often follows a journey or 'quest' structure adapted for a tech-discovery plot. Moderate to slow pacing with a focus on 'Philosophical Dread' and the 'Sense of Wonder.' Tone is often gritty, atmospheric, and intellectually rigorous.
-- Essential Motifs
-- Dominant Tropes (Must-Haves)
-- ## Scene-Writing Checklist
+- [ ] The technology follows internal SF logic: it needs power, degrades, and can fail. The narrative treats it as technology even when characters treat it as miracle.
+- [ ] The medieval surface world is historically textured — social hierarchy, material culture, institutional religion — not a generic backdrop of castles and swords.
+- [ ] The revelation of the SF substrate is earned through investigation: each discovery must cost the protagonist something social, physical, or epistemic.
+- [ ] The SF explanation is withheld long enough to establish genuine mystery: readers must commit to the world before the substrate is revealed.
+- [ ] The institution protecting the secret has plausible, self-interested reasons: those concealing the truth do so because the truth would end their power.
+- [ ] Technology and medieval society interact causally: the feudal hierarchy, the religion, and the geography should be explicable in terms of the SF substrate beneath them.
+- [ ] The outsider or document that introduces SF context arrives with friction and cost — not as a convenient infodump.
+- [ ] The protagonist holds a genuine medieval worldview at the outset: superstitions and misinterpretations the reader knows are wrong, held sincerely.
+- [ ] The climax forces a choice between the known world and the revealed truth, with real consequences either way.
