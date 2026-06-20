@@ -57,6 +57,42 @@ export interface RepullAsset {
 
 export interface RepullResult { hadConflicts: boolean; }
 
+/**
+ * Compose a set of genre `.md` files (filename → content) into a single,
+ * header-delimited prompt string. Canonical sections come first in fixed order;
+ * any extra files follow alphabetically. Empty files are dropped; returns null
+ * when nothing non-empty remains. Shared by the per-book snapshot path
+ * (genreGuideOf) and the per-channel library selection (getChannelGenreGuide).
+ */
+function composeGenreGuide(files: Record<string, string>): string | null {
+  const ORDER = ['reader-expectations', 'tropes', 'themes', 'beats', 'must-haves', 'genre-killers', 'comps'];
+  const TITLES: Record<string, string> = {
+    'reader-expectations': 'Reader Expectations',
+    'tropes': 'Tropes',
+    'themes': 'Themes',
+    'beats': 'Beats & Obligatory Scenes',
+    'must-haves': 'Must-Haves',
+    'genre-killers': 'Genre Killers',
+    'comps': 'Comparable Titles',
+  };
+  const names = Object.keys(files).filter((n) => n.endsWith('.md'));
+  if (names.length === 0) return null;
+
+  const ordered = [
+    ...ORDER.filter((n) => names.includes(`${n}.md`)).map((n) => `${n}.md`),
+    ...names.filter((f) => !ORDER.includes(f.replace(/\.md$/, ''))).sort(),
+  ];
+
+  const parts: string[] = [];
+  for (const file of ordered) {
+    const body = (files[file] ?? '').trim();
+    if (!body) continue;
+    const key = file.replace(/\.md$/, '');
+    parts.push(`## Genre Guide — ${TITLES[key] ?? key}\n\n${body}`);
+  }
+  return parts.length ? parts.join('\n\n') : null;
+}
+
 /** The library names used to seed the first-run Default Book. */
 const DEFAULT_BOOK_SELECTION: BookSelection = {
   title: 'Default Book',
@@ -78,6 +114,10 @@ export class BookService {
   // global pointer for any channel without an override (web/default included).
   private channelBooks: Map<string, string> = new Map();
   private readonly channelPtrPath: string;
+  // Per-channel genre selection (channel → library genre name). Persisted beside
+  // the active-book pointers; used to steer chat prompts and pre-fill new books.
+  private channelGenres: Map<string, string> = new Map();
+  private readonly channelGenrePath: string;
 
   constructor(booksDir: string, library: LibraryService, appVersion: string) {
     this.booksDir = booksDir;
@@ -87,6 +127,7 @@ export class BookService {
     // sits beside projects-state.json and the other workspace config.
     this.activePtrPath = join(dirname(this.booksDir), '.config', 'active-book.json');
     this.channelPtrPath = join(dirname(this.booksDir), '.config', 'channel-books.json');
+    this.channelGenrePath = join(dirname(this.booksDir), '.config', 'channel-genres.json');
   }
 
   async initialize(): Promise<void> {
@@ -96,6 +137,7 @@ export class BookService {
     // bindings to books that no longer exist.
     this.activeBookSlug = null;
     this.channelBooks.clear();
+    this.channelGenres.clear();
     // Restore the active-book pointer (fail-soft: a missing/corrupt file just
     // means "no active book yet" — the boot seed will resolve one).
     try {
@@ -127,6 +169,25 @@ export class BookService {
       }
     } catch (err) {
       console.warn('  ⚠ Books: could not read channel-books overrides — ignoring', err);
+    }
+    // Restore per-channel genre selections, pruning any whose genre is gone from
+    // the library (fail-soft, same posture as the channel-books overrides).
+    try {
+      if (existsSync(this.channelGenrePath)) {
+        const raw = JSON.parse(readFileSync(this.channelGenrePath, 'utf-8'));
+        const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw as Record<string, unknown> : {};
+        let pruned = obj !== raw; // raw wasn't a plain object → rewrite it clean
+        for (const [ch, name] of Object.entries(obj)) {
+          if (typeof name === 'string' && this.library.get('genre', name)) {
+            this.channelGenres.set(ch, name);
+          } else {
+            pruned = true;
+          }
+        }
+        if (pruned) await this.persistChannelGenres();
+      }
+    } catch (err) {
+      console.warn('  ⚠ Books: could not read channel-genres selections — ignoring', err);
     }
   }
 
@@ -466,6 +527,32 @@ export class BookService {
     await writeFile(this.channelPtrPath, JSON.stringify(obj, null, 2) + '\n', 'utf-8');
   }
 
+  /** The genre selected for a channel, or null if none is set. */
+  getChannelGenre(channel: string): string | null {
+    return this.channelGenres.get(channel) ?? null;
+  }
+
+  /** Pin a library genre (by canonical name) to a channel and persist. */
+  async setChannelGenre(channel: string, name: string): Promise<void> {
+    if (!this.library.get('genre', name)) {
+      throw new Error(`Unknown genre: ${name}`);
+    }
+    this.channelGenres.set(channel, name);
+    await this.persistChannelGenres();
+  }
+
+  /** Drop a channel's genre selection and persist if it existed. */
+  async clearChannelGenre(channel: string): Promise<void> {
+    if (this.channelGenres.delete(channel)) await this.persistChannelGenres();
+  }
+
+  /** Write the per-channel genre selections to .config/channel-genres.json. */
+  private async persistChannelGenres(): Promise<void> {
+    await mkdir(dirname(this.channelGenrePath), { recursive: true });
+    const obj = Object.fromEntries(this.channelGenres);
+    await writeFile(this.channelGenrePath, JSON.stringify(obj, null, 2) + '\n', 'utf-8');
+  }
+
   /** Absolute dir of the active book, or null. */
   activeBookDir(): string | null {
     return this.activeBookSlug ? join(this.booksDir, this.activeBookSlug) : null;
@@ -613,17 +700,6 @@ export class BookService {
     const genreDir = join(dir, 'templates', 'genre');
     if (!existsSync(genreDir)) return null;
 
-    const ORDER = ['reader-expectations', 'tropes', 'themes', 'beats', 'must-haves', 'genre-killers', 'comps'];
-    const TITLES: Record<string, string> = {
-      'reader-expectations': 'Reader Expectations',
-      'tropes': 'Tropes',
-      'themes': 'Themes',
-      'beats': 'Beats & Obligatory Scenes',
-      'must-haves': 'Must-Haves',
-      'genre-killers': 'Genre Killers',
-      'comps': 'Comparable Titles',
-    };
-
     let names: string[];
     try {
       names = readdirSync(genreDir, { withFileTypes: true })
@@ -634,24 +710,27 @@ export class BookService {
     }
     if (names.length === 0) return null;
 
-    const ordered = [
-      ...ORDER.filter((n) => names.includes(`${n}.md`)).map((n) => `${n}.md`),
-      ...names.filter((f) => !ORDER.includes(f.replace(/\.md$/, ''))).sort(),
-    ];
-
-    const parts: string[] = [];
-    for (const file of ordered) {
-      let body: string;
+    const files: Record<string, string> = {};
+    for (const name of names) {
       try {
-        body = readFileSync(join(genreDir, file), 'utf-8').trim();
-      } catch {
-        continue;
-      }
-      if (!body) continue;
-      const key = file.replace(/\.md$/, '');
-      parts.push(`## Genre Guide — ${TITLES[key] ?? key}\n\n${body}`);
+        files[name] = readFileSync(join(genreDir, name), 'utf-8');
+      } catch { /* skip unreadable file */ }
     }
-    return parts.length ? parts.join('\n\n') : null;
+    return composeGenreGuide(files);
+  }
+
+  /**
+   * Compose the genre guide for the genre selected on a channel (the /genre
+   * command). Reads the genre's files from the live library (not a book
+   * snapshot) so free chat with no book still gets genre context. Null when the
+   * channel has no selection or the genre is gone from the library.
+   */
+  getChannelGenreGuide(channel: string): string | null {
+    const name = this.channelGenres.get(channel);
+    if (!name) return null;
+    const entry = this.library.get('genre', name);
+    if (!entry || !entry.files) return null;
+    return composeGenreGuide(entry.files);
   }
 
   /**

@@ -19,6 +19,11 @@ interface CommandHandlers {
     | { ok: true; slug: string; title: string }
     | { ok: false; error: string; candidates?: Array<{ slug: string; title: string }> }
   >;
+  listGenres: (channel: string) => { genres: Array<{ name: string; description?: string }>; current: string | null };
+  selectGenre: (channel: string, query: string) => Promise<
+    | { ok: true; name: string }
+    | { ok: false; error: string; candidates?: string[] }
+  >;
   startAndRunProject: (projectId: string) => Promise<{ completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }>;
   autoRunProject: (projectId: string, statusCallback: (msg: string) => Promise<void>) => Promise<void>;
   listProjects: () => Array<{ id: string; title: string; status: string; progress: string }>;
@@ -135,6 +140,7 @@ export class TelegramBridge {
         `/projects — List all projects\n` +
         `/status — Project status\n` +
         `/book — Pick which book this chat writes into\n` +
+        `/genre [name] — Pick the genre for this chat\n` +
         `/stop — Stop/pause active project\n` +
         `/research [topic] — Research a topic\n` +
         `/files — List output files (numbered)\n` +
@@ -321,6 +327,32 @@ export class TelegramBridge {
           await this.sendMessage(chatId, `Couldn't pick a book (${result.error}). Try one of:\n${cands}`);
         } else {
           await this.sendMessage(chatId, `No book matches "${arg}". Send /book to see them all.`);
+        }
+      } catch (e) {
+        await this.sendMessage(chatId, `❌ ${String(e)}`);
+      }
+      return;
+    }
+
+    // ── /genre — show or set the genre pinned to this chat ──
+    if (text === '/genre' || text.startsWith('/genre ')) {
+      if (!this.commandHandlers) return;
+      const channel = `telegram:${chatId}`;
+      const arg = text.replace(/^\/genre\s*/, '').trim();
+      try {
+        if (!arg) {
+          const { genres, current } = this.commandHandlers.listGenres(channel);
+          const head = current ? `📚 Current genre: *${current}*` : '📚 No genre set for this chat yet.';
+          await this.sendMessage(chatId, `${head}\n\n${genres.length} genres available. Set one with \`/genre <name>\` — e.g. \`/genre dark romance\`.`);
+          return;
+        }
+        const sel = await this.commandHandlers.selectGenre(channel, arg);
+        if (sel.ok) {
+          await this.sendMessage(chatId, `📚 Genre set to *${sel.name}* for this chat.`);
+        } else if (sel.candidates && sel.candidates.length) {
+          await this.sendMessage(chatId, `Couldn't pick a genre (${sel.error}). Did you mean:\n${sel.candidates.map((c) => `• ${c}`).join('\n')}`);
+        } else {
+          await this.sendMessage(chatId, `No genre matches "${arg}". Send /genre to see how many are available.`);
         }
       } catch (e) {
         await this.sendMessage(chatId, `❌ ${String(e)}`);

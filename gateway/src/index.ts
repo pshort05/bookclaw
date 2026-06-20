@@ -36,6 +36,7 @@ import { InjectionDetector } from './security/injection.js';
 import { SkillLoader } from './skills/loader.js';
 import { LibraryService } from './services/library.js';
 import { BookService } from './services/book.js';
+import { matchGenre } from './services/genre-match.js';
 import { EditorService } from './services/editor.js';
 import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
 import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
@@ -653,9 +654,12 @@ class BookClawGateway {
           this.books?.voiceDirOf(overrideSlug) ?? null
         )) || this.soul.getFullContext())
       : this.soul.getFullContext();
-    const genreGuide = overrideSlug
+    // A resolved book's own genre is authoritative; the per-channel /genre
+    // selection is a fallback so free chat (no book genre) still gets steered.
+    const genreGuide = (overrideSlug
       ? (this.books?.genreGuideOf(overrideSlug) ?? undefined)
-      : (this.books?.getActiveGenreGuide() ?? undefined);
+      : (this.books?.getActiveGenreGuide() ?? undefined))
+      ?? (this.books?.getChannelGenreGuide(channel) ?? undefined);
     const worldGuide = overrideSlug
       ? (this.books?.worldbuildingOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveWorldbuilding() ?? undefined);
@@ -1371,6 +1375,10 @@ class BookClawGateway {
           '`/speak [text]` — Generate voice audio',
           '`/voice [preset]` — Set TTS voice preset',
           '',
+          '📚 **Genre**',
+          '`/genre` — Show the genre set for this chat',
+          '`/genre [name]` — Set the genre (steers prompts + new books)',
+          '',
           '🎨 **Images**',
           '`/cover [description]` — Generate a book cover image',
           '',
@@ -1806,6 +1814,22 @@ class BookClawGateway {
         } catch {
           return 'Could not read workspace.';
         }
+      }
+
+      case '/genre': {
+        if (!args) {
+          const { genres, current } = handlers.listGenres(dashboardChannel);
+          const head = current
+            ? `📚 Current genre for this chat: **${current}**`
+            : '📚 No genre set for this chat yet.';
+          return `${head}\n\n${genres.length} genres available. Set one with \`/genre <name>\` — e.g. \`/genre dark romance\`.`;
+        }
+        const sel = await handlers.selectGenre(dashboardChannel, args);
+        if (sel.ok) return `📚 Genre set to **${sel.name}** for this chat. It will steer your prompts and pre-fill new books.`;
+        if (sel.candidates && sel.candidates.length) {
+          return `Couldn't pick a genre (${sel.error}). Did you mean:\n${sel.candidates.map((c) => `• ${c}`).join('\n')}`;
+        }
+        return `No genre matches "${args}". Type \`/genre\` to see how many are available.`;
       }
 
       case '/cover': {
@@ -2540,6 +2564,27 @@ class BookClawGateway {
           return { ok: false as const, error: String((e as Error)?.message || e) };
         }
         return { ok: true as const, slug: match.slug, title: match.title };
+      },
+
+      listGenres(channel: string) {
+        const genres = gateway.library.list('genre')
+          .map((g) => ({ name: g.name, description: g.description }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const current = gateway.books?.getChannelGenre(channel) ?? null;
+        return { genres, current };
+      },
+
+      async selectGenre(channel: string, query: string) {
+        const names = gateway.library.list('genre').map((g) => g.name);
+        const result = matchGenre(names, query);
+        if (result.kind === 'ambiguous') return { ok: false as const, error: 'multiple matches', candidates: result.candidates };
+        if (result.kind === 'none') return { ok: false as const, error: 'not found' };
+        try {
+          await gateway.books!.setChannelGenre(channel, result.name);
+        } catch (e) {
+          return { ok: false as const, error: String((e as Error)?.message || e) };
+        }
+        return { ok: true as const, name: result.name };
       },
 
       async readFile(filename: string): Promise<{ content: string; error?: string }> {
