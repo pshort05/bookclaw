@@ -50,6 +50,19 @@ test('a malformed expand group is skipped, not emitted as a junk empty step', ()
   assert.equal(out[0].label, 'Real');
 });
 
+test('expandSteps carries modelOverride (provider+model+temperature) through emitStep', () => {
+  const vars = buildPipelineVars({ title: 'T', description: 'D' });
+  const raw = [
+    { label: 'Pinned Step', taskType: 'creative_writing', promptTemplate: 'write',
+      modelOverride: { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1 } },
+    { label: 'Unpinned Step', taskType: 'general', promptTemplate: 'answer' },
+  ];
+  const out = expandSteps(raw as any, vars);
+  assert.equal(out.length, 2);
+  assert.deepEqual(out[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1 });
+  assert.equal(out[1].modelOverride, undefined, 'step without modelOverride yields undefined (backward compat)');
+});
+
 test('book-production.json expands to interleaved chapters + compile', () => {
   const pipe = JSON.parse(readFileSync(new URL('../../library/pipelines/book-production.json', import.meta.url), 'utf8'));
   const vars = buildPipelineVars({ title: 'X', description: 'Y', targetChapters: 3 });

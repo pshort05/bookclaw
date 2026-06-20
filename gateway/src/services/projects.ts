@@ -92,7 +92,12 @@ export interface ProjectStep {
   // Per-step model override (cheap-draft / premium-edit). When set, this step
   // pins the given provider (and, if `model` is set, the exact model id) instead
   // of tier routing. Unset = inherit the project/tier default (today's behavior).
-  modelOverride?: { provider: string; model?: string };
+  modelOverride?: { provider: string; model?: string; temperature?: number };
+  // Membership marker for a `{ parallel: [...] }` pipeline group (parallel-step
+  // execution). Set to a stable group id ('g'+entryIndex) on each member; absent
+  // on ordinary steps. The next ordinary step after a group is the implicit join —
+  // gated until every member of the group is completed/skipped.
+  parallelGroup?: string;
 }
 
 export interface NovelPipelineConfig {
@@ -664,6 +669,8 @@ Description: ${description}`;
       ...(s.phase ? { phase: s.phase } : {}),
       ...(s.wordCountTarget ? { wordCountTarget: s.wordCountTarget } : {}),
       ...(s.chapterNumber ? { chapterNumber: s.chapterNumber } : {}),
+      ...(s.modelOverride ? { modelOverride: s.modelOverride } : {}),
+      ...(s.parallelGroup ? { parallelGroup: s.parallelGroup } : {}),
     }));
 
     if (this.authorOS) steps = this.enhanceWithAuthorOS(steps);
@@ -784,13 +791,66 @@ Description: ${description}`;
     project.status = 'active';
     project.updatedAt = new Date().toISOString();
 
+    // Activate the whole runnable frontier (a leading parallel group fans out;
+    // an ordinary first step is a one-element set → identical to the old
+    // single-step behavior). Return the first for the caller.
+    const runnable = this.runnableSteps(project);
+    for (const s of runnable) s.status = 'active';
+    return runnable[0] ?? null;
+  }
+
+  /** True once every member of `groupId` is completed or skipped (the barrier). */
+  private groupComplete(project: Project, groupId: string): boolean {
+    return project.steps
+      .filter(s => s.parallelGroup === groupId)
+      .every(s => s.status === 'completed' || s.status === 'skipped');
+  }
+
+  /**
+   * The set of currently-runnable pending steps — the single source of truth for
+   * "what may run now". Document-order scan:
+   *   - The frontier is the first `pending` step.
+   *   - If it belongs to a parallel group G: runnable only if every EARLIER
+   *     parallel group (groups whose first member appears before G's first member
+   *     in document order) is groupComplete. This is the inter-group barrier that
+   *     prevents adjacent groups from fanning out while the preceding group still
+   *     has in-flight (active) members. When unblocked, returns ALL pending members
+   *     of G (fan-out).
+   *   - If it's an ordinary step (join or sequential): runnable only if no parallel
+   *     step before it is still pending/active.
+   *   - A no-parallel pipeline always returns a one-element array, preserving
+   *     today's one-step-at-a-time behavior.
+   */
+  private runnableSteps(project: Project): ProjectStep[] {
     const firstPending = project.steps.find(s => s.status === 'pending');
-    if (firstPending) {
-      firstPending.status = 'active';
-      return firstPending;
+    if (!firstPending) return [];
+
+    if (firstPending.parallelGroup) {
+      // A parallel-group step is at the pending frontier. It is only runnable if
+      // every EARLIER (different) parallel group is fully complete (inter-group
+      // barrier). "Earlier" = groups whose members appear before firstPending in
+      // document order, excluding firstPending's own group.
+      const frontierGroupId = firstPending.parallelGroup;
+      const firstPendingIdx = project.steps.indexOf(firstPending);
+      const priorGroupIds = new Set(
+        project.steps.slice(0, firstPendingIdx)
+          .filter(s => s.parallelGroup && s.parallelGroup !== frontierGroupId)
+          .map(s => s.parallelGroup as string)
+      );
+      const blocked = [...priorGroupIds].some(gid => !this.groupComplete(project, gid));
+      if (blocked) return [];
+      return project.steps.filter(
+        s => s.parallelGroup === frontierGroupId && s.status === 'pending'
+      );
     }
 
-    return null;
+    // Ordinary frontier: it's the join (or a normal next step). Gate it behind any
+    // still-in-flight parallel group that precedes it in document order.
+    const idx = project.steps.indexOf(firstPending);
+    const blockedByGroup = project.steps
+      .slice(0, idx)
+      .some(s => s.parallelGroup && (s.status === 'pending' || s.status === 'active'));
+    return blockedByGroup ? [] : [firstPending];
   }
 
   /**
@@ -812,9 +872,14 @@ Description: ${description}`;
     project.progress = Math.round((done / project.steps.length) * 100);
     project.updatedAt = new Date().toISOString();
 
-    // Find next step to run — prefer pending, then check for orphaned active steps
-    // (active steps can occur from race conditions in concurrent auto-execute)
-    const next = project.steps.find(s => s.status === 'pending')
+    // Find what may run next — the runnable frontier (all pending members of an
+    // in-flight parallel group, or the single next ordinary step / join once its
+    // preceding group has drained). Fall back to an already-active sibling member
+    // (orphan recovery, and the case where the just-completed step left other
+    // group members still running). A no-parallel pipeline yields exactly one
+    // runnable step → identical to today.
+    const runnable = this.runnableSteps(project);
+    const next = runnable[0]
               || project.steps.find(s => s.status === 'active' && s.id !== stepId);
 
     // Per-step hook (TODO #15): advance the bound book's manifest phase. Fired on
@@ -829,9 +894,16 @@ Description: ${description}`;
     }
 
     if (next) {
+      // Activate + enrich the whole runnable frontier (a parallel group fans out;
+      // an ordinary next step is a one-element set → today's behavior).
+      for (const r of runnable) {
+        r.status = 'active';
+        r.prompt = this.enrichWithPriorResults(r.prompt, project);
+      }
+      // Orphan-recovery fallback: if `runnable` was empty (no new pending steps)
+      // but an active sibling exists, ensure it's active and return it as today.
       next.status = 'active';
-      // Enrich the next prompt with results from completed steps
-      next.prompt = this.enrichWithPriorResults(next.prompt, project);
+      if (runnable.length === 0) next.prompt = this.enrichWithPriorResults(next.prompt, project);
       this.persistState();
       return next;
     }
@@ -1019,6 +1091,52 @@ Description: ${description}`;
       if (s.status === 'active') s.status = 'pending';
     });
     this.persistState();
+  }
+
+  /**
+   * Resume a stuck/paused project: re-activate the whole runnable frontier (all
+   * pending members of an in-flight parallel group, or the single next ordinary
+   * step). Surplus active steps that aren't part of the frontier are reverted to
+   * pending first so a half-fanned group re-fans cleanly. Returns the steps now
+   * active. A no-parallel project re-activates exactly one step → today's behavior.
+   */
+  resumeProject(id: string): ProjectStep[] {
+    const project = this.projects.get(id);
+    if (!project) return [];
+    const runnable = this.runnableSteps(project);
+    if (runnable.length === 0) {
+      // Nothing pending in the frontier — keep any already-active steps as-is.
+      return project.steps.filter(s => s.status === 'active');
+    }
+    const frontier = new Set(runnable.map(s => s.id));
+    // Revert active steps that aren't part of the runnable frontier (orphans).
+    for (const s of project.steps) {
+      if (s.status === 'active' && !frontier.has(s.id)) s.status = 'pending';
+    }
+    for (const r of runnable) r.status = 'active';
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+    return runnable;
+  }
+
+  /**
+   * All currently-active steps in the frontier parallel group, or the single
+   * active step when the frontier is an ordinary sequential step. This is the
+   * set the run driver should execute concurrently on the current tick.
+   *
+   * Returns [] when there are no active steps (project hasn't started yet, is
+   * paused, or is completed).
+   */
+  activeFrontier(projectId: string): ProjectStep[] {
+    const project = this.projects.get(projectId);
+    if (!project) return [];
+    const active = project.steps.filter(s => s.status === 'active');
+    if (active.length === 0) return [];
+    // If the first active step belongs to a parallel group, all active members
+    // of that same group form the frontier batch. Otherwise it's just the one.
+    const frontierGroup = active[0].parallelGroup;
+    if (!frontierGroup) return [active[0]];
+    return active.filter(s => s.parallelGroup === frontierGroup);
   }
 
   /**

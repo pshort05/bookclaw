@@ -21,6 +21,7 @@ export interface LibraryPipelineStep {
   phase?: string;
   wordCountTarget?: number;
   chapterNumber?: number;
+  modelOverride?: { provider: string; model?: string; temperature?: number };
 }
 
 /** A pipeline expressed as data (the eventual book `templates/pipeline.json`). */
@@ -87,7 +88,11 @@ export const NOVEL_PIPELINE_PHASES = ['premise', 'bible', 'outline', 'writing', 
 export function pipelinePhases(pipeline: LibraryPipeline): string[] {
   if (pipeline.dynamic) return [...NOVEL_PIPELINE_PHASES];
   const seen: string[] = [];
-  for (const step of pipeline.steps ?? []) {
+  // Descend into `parallel` group wrappers (the phase lives on each member, not on
+  // the wrapper) so grouped phases still render as board segments.
+  const flat = (pipeline.steps ?? []).flatMap((s: any) =>
+    Array.isArray(s?.parallel) ? s.parallel : [s]);
+  for (const step of flat) {
     if (step.phase && !seen.includes(step.phase)) seen.push(step.phase);
   }
   if (seen.length) return seen;

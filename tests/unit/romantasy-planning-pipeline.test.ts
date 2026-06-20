@@ -26,12 +26,44 @@ test('romantasy-planning is valid pipeline JSON using only known task types', ()
   const p = parsePipelineJson(readFileSync(PIPELINE_PATH, 'utf-8'));
   assert.equal(p.schemaVersion, 1);
   const steps = p.steps as any[];
-  // 4 idea generators + 3 evaluators + select-best + the development tail.
-  const ideation = steps.filter((s) => s.phase === 'ideation');
-  const selection = steps.filter((s) => s.phase === 'selection');
+  // The 4 generators and 3 evaluators are wrapped in two `parallel` groups, so
+  // flatten members + plain steps to count phases as authored.
+  const flat = steps.flatMap((s) => (Array.isArray(s.parallel) ? s.parallel : [s]));
+  const ideation = flat.filter((s) => s.phase === 'ideation');
+  const selection = flat.filter((s) => s.phase === 'selection');
   assert.equal(ideation.length, 4, 'four concept generators');
   assert.equal(selection.length, 4, 'three evaluators + editor-in-chief');
-  assert.ok(steps.every((s) => KNOWN_TASK_TYPES.has(s.taskType)), 'all task types are routable');
+  assert.ok(flat.every((s) => KNOWN_TASK_TYPES.has(s.taskType)), 'all task types are routable');
+});
+
+test('romantasy-planning declares parallel idea + evaluator groups with a single join', () => {
+  const p = parsePipelineJson(readFileSync(PIPELINE_PATH, 'utf-8'));
+  const steps = p.steps as any[];
+  // Two parallel groups at the head: 4 idea generators, then 3 evaluators.
+  const groups = steps.filter((s) => Array.isArray(s.parallel));
+  assert.equal(groups.length, 2, 'exactly two parallel groups');
+  assert.equal(groups[0].parallel.length, 4, 'group 0 = four concept generators');
+  assert.equal(groups[1].parallel.length, 3, 'group 1 = three evaluators');
+
+  // The editor-in-chief is an ordinary (non-parallel) step — the implicit join —
+  // immediately after the two groups.
+  assert.equal(steps[0], groups[0]);
+  assert.equal(steps[1], groups[1]);
+  assert.ok(!Array.isArray(steps[2].parallel), 'step after the groups is the join, not a group');
+  assert.equal(steps[2].label, 'Select Winning Concept (Editor-in-Chief)');
+
+  // Flattening stamps stable g0/g1 markers on the members; the join has none.
+  const vars = buildPipelineVars({ title: 'T', description: 'd' });
+  const resolved = expandSteps(steps, vars);
+  const ideaMembers = resolved.filter((s) => (s as any).parallelGroup === 'g0');
+  const evalMembers = resolved.filter((s) => (s as any).parallelGroup === 'g1');
+  assert.equal(ideaMembers.length, 4);
+  assert.equal(evalMembers.length, 3);
+  const editor = resolved.find((s) => s.label === 'Select Winning Concept (Editor-in-Chief)');
+  assert.equal((editor as any).parallelGroup, undefined, 'the join carries no group marker');
+  // The editor-in-chief join immediately follows the last evaluator.
+  const lastEvalIdx = resolved.indexOf(evalMembers[evalMembers.length - 1]);
+  assert.equal(resolved.indexOf(editor!), lastEvalIdx + 1, 'editor-in-chief immediately follows the evaluators');
 });
 
 test('produces the four production artifacts the production pipeline consumes', () => {

@@ -556,7 +556,8 @@ class BookClawGateway {
     overrideTaskType?: string,
     preferredProvider?: string,
     overrideModel?: string,
-    bookSlug?: string
+    bookSlug?: string,
+    overrideTemperature?: number
   ): Promise<void> {
     // ── Security Check 1: Injection Detection ──
     const injectionResult = this.injectionDetector.scan(content);
@@ -759,6 +760,7 @@ class BookClawGateway {
         ...(thinking ? { thinking } : {}),
         ...(editorModel ? { model: editorModel } : {}),
         ...(editorCfg && typeof editorCfg.temperature === 'number' ? { temperature: editorCfg.temperature } : {}),
+        ...(typeof overrideTemperature === 'number' ? { temperature: overrideTemperature } : {}),
       });
 
       if (!skipHistory) {
@@ -2008,16 +2010,21 @@ class BookClawGateway {
 
       /**
        * Start (or continue) a project and run ONE step through the AI.
+       * When stepId is provided, runs that specific active step (used for
+       * Promise.all concurrency within a parallel group). When omitted, picks
+       * the first active step (or starts the project if no step is active).
        * Returns a short summary for Telegram + accurate word count.
        */
-      async startAndRunProject(projectId: string): Promise<
+      async startAndRunProject(projectId: string, stepId?: string): Promise<
         { completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }
       > {
         const project = gateway.projectEngine.getProject(projectId);
         if (!project) return { error: 'Project not found' };
 
-        let activeStep: any = project.steps.find(s => s.status === 'active');
-        if (!activeStep) {
+        let activeStep: any = stepId
+          ? project.steps.find(s => s.id === stepId && s.status === 'active')
+          : project.steps.find(s => s.status === 'active');
+        if (!activeStep && !stepId) {
           activeStep = gateway.projectEngine.startProject(projectId) ?? undefined;
         }
         if (!activeStep) return { error: 'No pending steps' };
@@ -2082,6 +2089,7 @@ class BookClawGateway {
         const stepOverride = (activeStep as any).modelOverride;
         const projectProvider = stepOverride?.provider || (project as any).preferredProvider || undefined;
         const stepModel = stepOverride?.model || undefined;
+        const stepTemp = typeof stepOverride?.temperature === 'number' ? stepOverride.temperature : undefined;
         let wasExecutable = false;
         try {
           // Multi-step skills: an executable skill's OpenRouter phase chain IS the
@@ -2108,7 +2116,8 @@ class BookClawGateway {
                 (activeStep as any).taskType || undefined,
                 projectProvider,
                 stepModel,
-                project.bookSlug
+                project.bookSlug,
+                stepTemp
               ).catch(reject);
             });
 
@@ -2125,7 +2134,8 @@ class BookClawGateway {
                   'general',
                   projectProvider,
                   stepModel,                  // preserve the step's pinned model on retry
-                  project.bookSlug
+                  project.bookSlug,
+                  stepTemp
                 ).catch(reject);
               });
             }
@@ -2373,9 +2383,27 @@ class BookClawGateway {
             return;
           }
 
-          const result = await this.startAndRunProject(projectId);
+          // Fire all currently-active frontier steps concurrently. For a parallel
+          // group this fans them out via Promise.all (real wall-clock concurrency).
+          // For an ordinary sequential step the frontier is one step → identical to
+          // the pre-parallel one-step-per-tick behavior.
+          const frontier = gateway.projectEngine.activeFrontier(projectId);
+          if (frontier.length === 0) {
+            // Nothing active — either project done or all steps waiting.
+            break;
+          }
 
-          // Re-check pause AFTER step completes (catches /stop sent during long AI call)
+          type StepResult = { completed: string; response: string; wordCount: number; nextStep?: string } | { error: string };
+          let results: StepResult[];
+          if (frontier.length === 1) {
+            results = [await this.startAndRunProject(projectId, frontier[0].id)];
+          } else {
+            results = await Promise.all(
+              frontier.map(step => this.startAndRunProject(projectId, step.id))
+            );
+          }
+
+          // Re-check pause AFTER the batch completes (catches /stop during long AI call)
           const afterStepProject = gateway.projectEngine.getProject(projectId);
           if (gateway.telegram?.pauseRequested || afterStepProject?.status === 'paused') {
             gateway.telegram && (gateway.telegram.pauseRequested = false);
@@ -2384,17 +2412,27 @@ class BookClawGateway {
             return;
           }
 
-          if ('error' in result) {
-            await statusCallback(`⚠️ Step ${stepNumber}/${totalSteps} failed: ${result.error}`);
+          // Surface any errors from the batch.
+          const failed = results.filter(r => 'error' in r);
+          if (failed.length > 0) {
+            await statusCallback(`⚠️ Step ${stepNumber}/${totalSteps} failed: ${(failed[0] as any).error}`);
             return;
           }
 
-          if (result.nextStep) {
+          const successes = results as { completed: string; response: string; wordCount: number; nextStep?: string }[];
+          const totalWords = successes.reduce((acc, r) => acc + r.wordCount, 0);
+
+          // Determine if anything remains.
+          const projectAfter = gateway.projectEngine.getProject(projectId);
+          const hasMore = projectAfter?.steps.some(s => s.status === 'pending' || s.status === 'active');
+
+          if (hasMore) {
+            const stepLabels = successes.map(r => r.completed).join(', ');
             await statusCallback(
-              `✅ ${stepNumber}/${totalSteps}: ${result.completed} (~${result.wordCount.toLocaleString()} words)\n` +
-              `⏭ Next: ${result.nextStep}...`
+              `✅ ${stepNumber}/${totalSteps}: ${stepLabels} (~${totalWords.toLocaleString()} words)\n` +
+              `⏭ Continuing...`
             );
-            stepNumber++;
+            stepNumber += successes.length;
           } else {
             await statusCallback(
               `🎉 All ${totalSteps} steps complete!\n` +

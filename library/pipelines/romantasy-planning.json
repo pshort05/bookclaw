@@ -2,54 +2,102 @@
   "schemaVersion": 1,
   "name": "romantasy-planning",
   "label": "Romantasy Planning (Idea → Outline + Bibles)",
-  "description": "Idea-to-outline development, ported from the n8n 'Idea to Book Outline - Romantasy V2' workflow. Starts from the book's romantasy genre guide + the author's concept ({{description}}), runs a diversity-then-judge ideation (4 concept sets -> 3 evaluators -> editor-in-chief), develops the winning concept into a chapter outline, refines it (names, engagement hooks, romantasy market standards), then builds the World Bible, Character Bible, and Production Notes. Produces the four files the romantasy-production pipeline consumes. Run this BEFORE romantasy-production (e.g. as a pipeline sequence). NOTE: the 4 generators and 3 evaluators run sequentially here (BookClaw has no parallel fan-out yet — tracked in TODO); each is given a distinct angle/emphasis to preserve the source's diversity.",
+  "description": "Idea-to-outline development, ported from the n8n 'Idea to Book Outline - Romantasy V2' workflow. Starts from the book's romantasy genre guide + the author's concept ({{description}}), runs a diversity-then-judge ideation (4 concept sets -> 3 evaluators -> editor-in-chief), develops the winning concept into a chapter outline, refines it (names, engagement hooks, romantasy market standards), then builds the World Bible, Character Bible, and Production Notes. Produces the four files the romantasy-production pipeline consumes. Run this BEFORE romantasy-production (e.g. as a pipeline sequence). The 4 generators and 3 evaluators run as parallel fan-out groups (a `parallel` group each, each member pinned to a distinct OpenRouter model/temperature); the editor-in-chief is the implicit join that waits for all of them.",
   "steps": [
     {
-      "label": "Concepts A — Dark & Political",
-      "taskType": "creative_writing",
-      "phase": "ideation",
-      "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context (tropes, reader expectations, comps) and the author's concept below, generate 5 distinct, commercially viable romantasy story concepts.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean dark and angsty, with political-intrigue fantasy stakes (courts, factions, betrayal). Make each of the 5 concepts genuinely different from one another.\n\nEvery concept MUST support: Romance.io Level 3-4 spice (open-door, not fade-to-black); the MMC introduced within the first 10% (Chapter 1-2); dual first-person POV (FMC + MMC); Power With dynamics by the HEA (the MMC respects the FMC's autonomy — never Power Over/controlling); Female Gaze (her subjective experience, not objectification); a guaranteed HEA/HFN where they end as equals; a dual narrative engine where the romance and the fantasy stakes are interdependent (one cannot resolve without the other); an ACTIVE FMC who drives the plot; and real, conflict-driving flaws for BOTH leads.\n\nNEVER produce: Power Over dynamics with no path to Power With; a passive FMC; romance as a subplot; a late MMC; Level 1-2 (fade-to-black) spice; Male Gaze; generic premises ('orphan discovers powers'); or AI-cliché names (Elara, Lyra, Aria, Kira, Kaelen, Kael, Seraphina, Luna, Thorne).\n\nFor each of the 5 concepts give: Title; Logline (WHO + WHAT + STAKES); Premise (4-5 sentences); FMC (name, archetype, primary flaw, arc, agency); MMC (name, archetype, primary flaw, Power-Over→Power-With arc, book-boyfriend factor); Romance Arc (primary trope, initial dynamic, forced proximity, key beats with approximate placement, spice level + why); Fantasy Stakes (external conflict, magic-system role, ticking clock, how it's interdependent with the romance); Commercial Positioning (2-3 comp titles, unique hook, BookTok appeal, sequel potential). Output only the 5 concepts."
+      "parallel": [
+        {
+          "label": "Concepts A — Dark & Political",
+          "taskType": "creative_writing",
+          "phase": "ideation",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "x-ai/grok-2-1212",
+            "temperature": 1.1
+          },
+          "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context (tropes, reader expectations, comps) and the author's concept below, generate 5 distinct, commercially viable romantasy story concepts.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean dark and angsty, with political-intrigue fantasy stakes (courts, factions, betrayal). Make each of the 5 concepts genuinely different from one another.\n\nEvery concept MUST support: Romance.io Level 3-4 spice (open-door, not fade-to-black); the MMC introduced within the first 10% (Chapter 1-2); dual first-person POV (FMC + MMC); Power With dynamics by the HEA (the MMC respects the FMC's autonomy — never Power Over/controlling); Female Gaze (her subjective experience, not objectification); a guaranteed HEA/HFN where they end as equals; a dual narrative engine where the romance and the fantasy stakes are interdependent (one cannot resolve without the other); an ACTIVE FMC who drives the plot; and real, conflict-driving flaws for BOTH leads.\n\nNEVER produce: Power Over dynamics with no path to Power With; a passive FMC; romance as a subplot; a late MMC; Level 1-2 (fade-to-black) spice; Male Gaze; generic premises ('orphan discovers powers'); or AI-cliché names (Elara, Lyra, Aria, Kira, Kaelen, Kael, Seraphina, Luna, Thorne).\n\nFor each of the 5 concepts give: Title; Logline (WHO + WHAT + STAKES); Premise (4-5 sentences); FMC (name, archetype, primary flaw, arc, agency); MMC (name, archetype, primary flaw, Power-Over→Power-With arc, book-boyfriend factor); Romance Arc (primary trope, initial dynamic, forced proximity, key beats with approximate placement, spice level + why); Fantasy Stakes (external conflict, magic-system role, ticking clock, how it's interdependent with the romance); Commercial Positioning (2-3 comp titles, unique hook, BookTok appeal, sequel potential). Output only the 5 concepts."
+        },
+        {
+          "label": "Concepts B — Witty & Magical Collapse",
+          "taskType": "creative_writing",
+          "phase": "ideation",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-2.5-pro",
+            "temperature": 1.1
+          },
+          "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts that are DIFFERENT from any generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean witty and fun (banter-forward voice), with a failing/collapsing magic system as the fantasy stakes. Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements as the rest of this pipeline: Level 3-4 open-door spice; MMC in the first 10%; dual first-person POV; Power With by the HEA; Female Gaze; HEA/HFN as equals; an interdependent dual narrative engine; an active FMC; real flaws for both leads. Avoid Power Over, passive FMCs, romance-as-subplot, late MMCs, fade-to-black, Male Gaze, generic premises, and AI-cliché names (Elara, Lyra, Aria, Kaelen, Seraphina, Luna, Thorne).\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning (as defined in the earlier ideation step). Output only the 5 concepts."
+        },
+        {
+          "label": "Concepts C — Epic & War",
+          "taskType": "creative_writing",
+          "phase": "ideation",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "meta-llama/llama-3.3-70b-instruct",
+            "temperature": 1
+          },
+          "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts, DIFFERENT from those generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean epic and sweeping, with realm-scale war or invasion as the fantasy stakes. Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements (Level 3-4 open-door spice; MMC in the first 10%; dual first-person POV; Power With by the HEA; Female Gaze; HEA/HFN as equals; interdependent dual narrative; active FMC; real flaws for both) and the same prohibitions (no Power Over, passive FMC, romance-as-subplot, late MMC, fade-to-black, Male Gaze, generic premises, or AI-cliché names).\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning. Output only the 5 concepts."
+        },
+        {
+          "label": "Concepts D — Intimate & Curse-Bound",
+          "taskType": "creative_writing",
+          "phase": "ideation",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-3.5-haiku",
+            "temperature": 1
+          },
+          "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts, DIFFERENT from those generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean intimate and tightly character-focused, with a curse, bond, or bargain at the center of the fantasy stakes (small cast, claustrophobic forced proximity). Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements and prohibitions as the rest of this pipeline.\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning. Output only the 5 concepts."
+        }
+      ]
     },
     {
-      "label": "Concepts B — Witty & Magical Collapse",
-      "taskType": "creative_writing",
-      "phase": "ideation",
-      "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts that are DIFFERENT from any generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean witty and fun (banter-forward voice), with a failing/collapsing magic system as the fantasy stakes. Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements as the rest of this pipeline: Level 3-4 open-door spice; MMC in the first 10%; dual first-person POV; Power With by the HEA; Female Gaze; HEA/HFN as equals; an interdependent dual narrative engine; an active FMC; real flaws for both leads. Avoid Power Over, passive FMCs, romance-as-subplot, late MMCs, fade-to-black, Male Gaze, generic premises, and AI-cliché names (Elara, Lyra, Aria, Kaelen, Seraphina, Luna, Thorne).\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning (as defined in the earlier ideation step). Output only the 5 concepts."
-    },
-    {
-      "label": "Concepts C — Epic & War",
-      "taskType": "creative_writing",
-      "phase": "ideation",
-      "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts, DIFFERENT from those generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean epic and sweeping, with realm-scale war or invasion as the fantasy stakes. Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements (Level 3-4 open-door spice; MMC in the first 10%; dual first-person POV; Power With by the HEA; Female Gaze; HEA/HFN as equals; interdependent dual narrative; active FMC; real flaws for both) and the same prohibitions (no Power Over, passive FMC, romance-as-subplot, late MMC, fade-to-black, Male Gaze, generic premises, or AI-cliché names).\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning. Output only the 5 concepts."
-    },
-    {
-      "label": "Concepts D — Intimate & Curse-Bound",
-      "taskType": "creative_writing",
-      "phase": "ideation",
-      "promptTemplate": "You are an expert romantasy concept developer. Using the romantasy genre guide in your context and the author's concept below, generate 5 distinct romantasy concepts, DIFFERENT from those generated in earlier steps.\n\nAUTHOR CONCEPT / BRAINDUMP:\n{{description}}\n\nANGLE FOR THIS SET: lean intimate and tightly character-focused, with a curse, bond, or bargain at the center of the fantasy stakes (small cast, claustrophobic forced proximity). Make each of the 5 genuinely different.\n\nApply the same non-negotiable romantasy requirements and prohibitions as the rest of this pipeline.\n\nFor each concept give the same fields: Title; Logline; Premise; FMC; MMC; Romance Arc; Fantasy Stakes; Commercial Positioning. Output only the 5 concepts."
-    },
-    {
-      "label": "Evaluate Concepts — Market & Genre Lens",
-      "taskType": "revision",
-      "phase": "selection",
-      "promptTemplate": "You are an expert romantasy acquisitions editor. Review ALL of the romantasy concepts generated in the four ideation steps above (roughly 20 concepts). Score each on a 1-10 scale across these weighted criteria, then pick a single winner:\n\n1. Author-vision alignment (0.25) — captures the author's concept ({{description}}) without contradiction.\n2. Romantasy market requirements (0.30) — romance as the A-plot; Level 3-4 spice; MMC in first 10%; Power With; Female Gaze; HEA; dual narrative engine; active FMC; flaws for both.\n3. Premise strength (0.20) — hook, stakes, inherent conflict, differentiation, BookTok appeal.\n4. Trope execution (0.15) — genre tropes used with fresh angles, stacked, cliche-free.\n5. Character potential (0.15) — FMC motivated/flawed/active; MMC book-boyfriend, flawed, vulnerable, Power-With evolution.\n6. World-building integration (0.10) — fantasy enhances romance and creates organic conflict.\n7. Commercial viability (0.10) — sequel potential, clear comps, current-market fit.\n\nWeighted score = c1*.25 + c2*.30 + c3*.20 + c4*.15 + c5*.15 + c6*.10 + c7*.10 (one decimal). IMMEDIATELY disqualify any concept with Power Over dynamics, a passive FMC, romance-as-subplot, no HEA path, Male Gaze, Level 1-2 spice, or a late MMC. A valid winner needs overall >= 7.5, market >= 7, vision >= 6, and no disqualifiers.\n\nWeight criteria 2 (market requirements) and 1 (author vision) most heavily in your final pick. Output: a brief scored ranking of the strongest contenders, your single WINNER, why it wins, and then the COMPLETE winning concept reproduced verbatim (all fields)."
-    },
-    {
-      "label": "Evaluate Concepts — Craft & Character Lens",
-      "taskType": "revision",
-      "phase": "selection",
-      "promptTemplate": "You are an expert romantasy developmental editor. Independently review ALL romantasy concepts generated in the ideation steps above and pick the single strongest, judging primarily on CRAFT and CHARACTER (a second, independent opinion to the market-lens evaluation above — reach your own verdict, do not just echo it).\n\nWeigh most heavily: the strength and specificity of BOTH leads' flaws and arcs; whether those flaws actively drive the plot and produce a credible black moment around the 80% mark; the clarity of the FMC's agency; the MMC's book-boyfriend appeal AND his believable Power-Over→Power-With evolution; the emotional logic of the romance arc across its milestones (meeting → forced proximity → first vulnerability → touch starvation → first intimate scene at 55-65% → declaration → black moment → resolution → HEA); and whether the central trope is executed with a genuinely fresh angle.\n\nDisqualify anything with a passive FMC, perfect/flawless leads, Power Over with no path to Power With, or romance demoted to subplot. Output: your top contenders with craft notes, your single WINNER and why, then the COMPLETE winning concept reproduced verbatim."
-    },
-    {
-      "label": "Evaluate Concepts — Commercial & BookTok Lens",
-      "taskType": "revision",
-      "phase": "selection",
-      "promptTemplate": "You are a romantasy marketing-minded acquisitions editor. Independently review ALL romantasy concepts from the ideation steps above and pick the single strongest on COMMERCIAL potential (a third independent opinion — form your own verdict).\n\nWeigh most heavily: the strength and shareability of the hook; BookTok appeal (quotable moments, trope stacking, aesthetic); clarity and credibility of 2-3 comp titles in the current market; freshness vs. overdone premises; and series/sequel potential without leaving book 1 incomplete. A concept must still clear the genre floor (Level 3-4 spice, MMC in first 10%, Power With, Female Gaze, HEA, active FMC) to be eligible.\n\nOutput: your top contenders with commercial notes, your single WINNER and why, then the COMPLETE winning concept reproduced verbatim."
+      "parallel": [
+        {
+          "label": "Evaluate Concepts — Market & Genre Lens",
+          "taskType": "revision",
+          "phase": "selection",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-2.5-flash",
+            "temperature": 0.3
+          },
+          "promptTemplate": "You are an expert romantasy acquisitions editor. Review ALL of the romantasy concepts generated in the four ideation steps above (roughly 20 concepts). Score each on a 1-10 scale across these weighted criteria, then pick a single winner:\n\n1. Author-vision alignment (0.25) — captures the author's concept ({{description}}) without contradiction.\n2. Romantasy market requirements (0.30) — romance as the A-plot; Level 3-4 spice; MMC in first 10%; Power With; Female Gaze; HEA; dual narrative engine; active FMC; flaws for both.\n3. Premise strength (0.20) — hook, stakes, inherent conflict, differentiation, BookTok appeal.\n4. Trope execution (0.15) — genre tropes used with fresh angles, stacked, cliche-free.\n5. Character potential (0.15) — FMC motivated/flawed/active; MMC book-boyfriend, flawed, vulnerable, Power-With evolution.\n6. World-building integration (0.10) — fantasy enhances romance and creates organic conflict.\n7. Commercial viability (0.10) — sequel potential, clear comps, current-market fit.\n\nWeighted score = c1*.25 + c2*.30 + c3*.20 + c4*.15 + c5*.15 + c6*.10 + c7*.10 (one decimal). IMMEDIATELY disqualify any concept with Power Over dynamics, a passive FMC, romance-as-subplot, no HEA path, Male Gaze, Level 1-2 spice, or a late MMC. A valid winner needs overall >= 7.5, market >= 7, vision >= 6, and no disqualifiers.\n\nWeight criteria 2 (market requirements) and 1 (author vision) most heavily in your final pick. Output: a brief scored ranking of the strongest contenders, your single WINNER, why it wins, and then the COMPLETE winning concept reproduced verbatim (all fields)."
+        },
+        {
+          "label": "Evaluate Concepts — Craft & Character Lens",
+          "taskType": "revision",
+          "phase": "selection",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-3.5-sonnet",
+            "temperature": 0.3
+          },
+          "promptTemplate": "You are an expert romantasy developmental editor. Independently review ALL romantasy concepts generated in the ideation steps above and pick the single strongest, judging primarily on CRAFT and CHARACTER (a second, independent opinion to the market-lens evaluation above — reach your own verdict, do not just echo it).\n\nWeigh most heavily: the strength and specificity of BOTH leads' flaws and arcs; whether those flaws actively drive the plot and produce a credible black moment around the 80% mark; the clarity of the FMC's agency; the MMC's book-boyfriend appeal AND his believable Power-Over→Power-With evolution; the emotional logic of the romance arc across its milestones (meeting → forced proximity → first vulnerability → touch starvation → first intimate scene at 55-65% → declaration → black moment → resolution → HEA); and whether the central trope is executed with a genuinely fresh angle.\n\nDisqualify anything with a passive FMC, perfect/flawless leads, Power Over with no path to Power With, or romance demoted to subplot. Output: your top contenders with craft notes, your single WINNER and why, then the COMPLETE winning concept reproduced verbatim."
+        },
+        {
+          "label": "Evaluate Concepts — Commercial & BookTok Lens",
+          "taskType": "revision",
+          "phase": "selection",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "openai/gpt-4o-mini",
+            "temperature": 0.3
+          },
+          "promptTemplate": "You are a romantasy marketing-minded acquisitions editor. Independently review ALL romantasy concepts from the ideation steps above and pick the single strongest on COMMERCIAL potential (a third independent opinion — form your own verdict).\n\nWeigh most heavily: the strength and shareability of the hook; BookTok appeal (quotable moments, trope stacking, aesthetic); clarity and credibility of 2-3 comp titles in the current market; freshness vs. overdone premises; and series/sequel potential without leaving book 1 incomplete. A concept must still clear the genre floor (Level 3-4 spice, MMC in first 10%, Power With, Female Gaze, HEA, active FMC) to be eligible.\n\nOutput: your top contenders with commercial notes, your single WINNER and why, then the COMPLETE winning concept reproduced verbatim."
+        }
+      ]
     },
     {
       "label": "Select Winning Concept (Editor-in-Chief)",
       "taskType": "final_edit",
       "phase": "selection",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-sonnet-4-5",
+        "temperature": 0.3
+      },
       "promptTemplate": "You are the Editor-in-Chief of a premier romantasy imprint making the final green-light decision for \"{{title}}\". Three editors independently evaluated the concepts in the steps above and each named a winner. Review their three selections and make the final binding choice.\n\nFirst determine consensus: do the three picks point at the SAME underlying concept (match on FMC/MMC names, core premise, primary conflict, world elements — wording will differ)? Classify as Unanimous (all three), Majority (two), or Split (all different).\n\nConsensus carries strong weight: a Unanimous or Majority concept gets priority. To override a consensus pick for a single editor's minority choice you MUST show the minority is SIGNIFICANTLY and objectively superior (a fatal flaw the majority missed, a disqualifying red flag in the consensus pick, or a demonstrably stronger hook/vision fit) — never mere preference. If Split, judge all three equally on market requirements, author-vision fit ({{description}}), commercial potential, character-arc strength, and premise differentiation.\n\nImmediately disqualify any option with Power Over dynamics, a passive FMC, romance-as-subplot, no HEA path, Male Gaze, Level 1-2 spice, or a late MMC — regardless of consensus.\n\nOutput: the consensus status; your final SELECTED CONCEPT with a 2-3 paragraph justification (and an explicit override defense if you went against consensus); a romantasy market-fit checklist for the winner; and then the COMPLETE green-lit concept reproduced verbatim (all fields). This green-lit concept is the spine of everything downstream."
     },
     {

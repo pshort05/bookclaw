@@ -40,3 +40,18 @@ test('no-phase pipeline without a book- prefix → single segment of its own nam
   const p = pipeline({ name: 'custom', steps: [{ label: 'a', taskType: 'general', promptTemplate: '' }] });
   assert.deepEqual(pipelinePhases(p), ['custom']);
 });
+
+test('descends into parallel groups so grouped phases still appear as segments', () => {
+  const p = pipeline({ name: 'romantasy-planning', steps: [
+    { parallel: [
+      { label: 'g1', taskType: 'creative_writing', promptTemplate: '', phase: 'ideation' },
+      { label: 'g2', taskType: 'creative_writing', promptTemplate: '', phase: 'ideation' },
+    ] },
+    { parallel: [
+      { label: 'e1', taskType: 'revision', promptTemplate: '', phase: 'selection' },
+    ] },
+    { label: 'join', taskType: 'final_edit', promptTemplate: '', phase: 'selection' },
+    { label: 'wb', taskType: 'book_bible', promptTemplate: '', phase: 'worldbuilding' },
+  ] as any });
+  assert.deepEqual(pipelinePhases(p), ['ideation', 'selection', 'worldbuilding']);
+});

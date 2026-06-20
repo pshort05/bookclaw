@@ -110,20 +110,25 @@ export const uploadZip = multer({
 });
 
 /**
- * Resolve the effective AI provider + model for executing a project step,
- * for passing to handleMessage(..., preferredProvider, overrideModel).
+ * Resolve the effective AI provider + model + temperature for executing a
+ * project step, for passing to handleMessage(..., preferredProvider,
+ * overrideModel, bookSlug, overrideTemperature).
  * Precedence: the step's own modelOverride wins; otherwise the project-level
- * preferredProvider applies; model is pinned only when the step sets one.
+ * preferredProvider applies; model and temperature are pinned only when the
+ * step sets them.
  * Returns undefined fields when nothing is pinned (→ tier routing, today's
  * default behavior).
  */
 export function stepRouting(
   project: any,
   step: any
-): { provider: string | undefined; model: string | undefined } {
+): { provider: string | undefined; model: string | undefined; temperature: number | undefined } {
   return {
     provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
     model: step?.modelOverride?.model || undefined,
+    temperature: typeof step?.modelOverride?.temperature === 'number'
+      ? step.modelOverride.temperature
+      : undefined,
   };
 }
 

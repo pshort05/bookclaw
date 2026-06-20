@@ -410,7 +410,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const projectContext = (await engine.buildProjectContext(project, activeStep))
         + passiveSkillBlock(services, (activeStep as any).skill, project.bookSlug);
       const userMessage = await buildStepUserMessage(project, activeStep);
-      const { provider: stepProvider, model: stepModel } = stepRouting(project, activeStep);
+      const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(project, activeStep);
       let response = '';
 
       // Multi-step skills: an executable skill's OpenRouter phase chain IS the
@@ -427,7 +427,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           activeStep.taskType || undefined,  // Use step's own taskType for routing
           stepProvider,                       // per-step override → project default → tier
           stepModel,                          // exact model id when the step pins one
-          project.bookSlug                    // Phase 8: compose soul/genre from the project's bound book
+          project.bookSlug,                   // Phase 8: compose soul/genre from the project's bound book
+          stepTemp                            // per-step temperature pin (undefined → provider default)
         );
 
         // Retry once with 'general' routing if the response is too short
@@ -612,7 +613,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const projectContext = (await engine.buildProjectContext(currentProject, activeStep))
           + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug);
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
-        const { provider: stepProvider, model: stepModel } = stepRouting(currentProject, activeStep);
+        const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep);
         let response = '';
 
         // Multi-step skills: an executable skill's OpenRouter phase chain IS the
@@ -629,7 +630,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             activeStep.taskType || undefined,  // Use step's own taskType for routing
             stepProvider,                       // per-step override → project default → tier
             stepModel,                          // exact model id when the step pins one
-            currentProject.bookSlug             // Phase 8: compose soul/genre from the project's bound book
+            currentProject.bookSlug,            // Phase 8: compose soul/genre from the project's bound book
+            stepTemp                            // per-step temperature pin (undefined → provider default)
           );
 
           // Retry once with 'general' routing if the response is too short
@@ -992,21 +994,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const project = engine.getProject(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
-    // Fix orphaned active steps — reset all but the first to pending
-    const activeSteps = project.steps.filter((s: any) => s.status === 'active');
-    if (activeSteps.length > 1) {
-      // Keep only the first active step, reset the rest to pending
-      for (let i = 1; i < activeSteps.length; i++) {
-        activeSteps[i].status = 'pending';
-      }
-    }
-
-    // If all remaining steps are 'pending' but none are 'active', activate the first one
-    const hasActive = project.steps.some((s: any) => s.status === 'active');
-    if (!hasActive) {
-      const nextPending = project.steps.find((s: any) => s.status === 'pending');
-      if (nextPending) nextPending.status = 'active';
-    }
+    // Re-activate the runnable frontier — all pending members of an in-flight
+    // parallel group fan out together, or the single next ordinary step / join.
+    // (For a no-parallel project this re-activates exactly one step, as before.)
+    engine.resumeProject(req.params.id);
 
     // Set project status back to active
     const remaining = project.steps.filter((s: any) => s.status === 'pending' || s.status === 'active');
