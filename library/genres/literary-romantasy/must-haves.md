@@ -1,0 +1,14 @@
+# Literary Romantasy — Must-Haves (non-negotiable checklist)
+
+Skip these and the manuscript fails the fundamental requirements of the genre. Treat as a revision pass.
+
+- [ ] **Prose that earns attention at the sentence level** — every page must contain at least one image, turn of phrase, or rhythm that the reader will want to revisit; the prose is not a delivery mechanism for plot but a primary experience. If the writing is invisible, the book is not literary romantasy.
+- [ ] **A world with internal coherence and cultural texture** — the setting has its own logic, history, and aesthetics; political structures are consistent, magical systems have rules with real consequences, and the texture of daily life (food, language, ritual, class) is specific enough to be unfamiliar.
+- [ ] **Character psychology that is consistent and costly** — each major character's behavior must be traceable to a coherent interior life; their mistakes, desires, and contradictions should surprise the reader while feeling, in retrospect, inevitable. Psychology must be earned by the narrative, not asserted.
+- [ ] **A romantic arc that grows from interiority** — the attraction between the leads must emerge from what they observe about each other's minds, not from physical proximity alone; the reader needs to understand, from inside the protagonist's consciousness, why this specific person matters.
+- [ ] **Themes that run through the world-building and the romance simultaneously** — the thematic content must not be separable from the plot or the romantic arc; the love story and the world-crisis should be two faces of the same question.
+- [ ] **A black moment grounded in genuine stakes** — the act three crisis must arise from the story's own logic — a real conflict between the characters' values or positions, or a consequence of the world-crisis — not from a misunderstanding a single conversation would resolve.
+- [ ] **An HEA or HFN that is earned and believed** — the romantic resolution must be consistent with who the characters have been shown to be; it must not require them to abandon the complexity the narrative has built; the reader should feel the ending is true.
+- [ ] **Secondary characters with their own interiority** — supporting characters are not functional archetypes; they have motivations, histories, and perspectives that diverge from the protagonist's; the world is inhabited by people, not roles.
+- [ ] **The world rendered as beautiful and strange** — at least one scene per act that delivers the genuine wonder of the fictional world for its own sake; the reader must feel the investment in the setting, not just be told it is remarkable.
+- [ ] **A prose register consistent throughout** — the writing does not shift gear between action, romance, world-building, and dialogue; the literary quality is not confined to description and absent during plot movement.
