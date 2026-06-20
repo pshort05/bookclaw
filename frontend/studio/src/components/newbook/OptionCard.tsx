@@ -2,14 +2,15 @@ import type { LibraryEntry } from '@bookclaw/shared';
 import { sourceBadge } from '../../lib/sourceBadge.js';
 import styles from '../../routes/NewBook.module.css';
 
-export function OptionCard({ entry, mode, selected, onToggle, meta }: {
-  entry: LibraryEntry; mode: 'single' | 'multi'; selected: boolean; onToggle: () => void; meta?: string;
+export function OptionCard({ entry, mode, selected, onToggle, meta, compact }: {
+  entry: LibraryEntry; mode: 'single' | 'multi'; selected: boolean; onToggle: () => void; meta?: string; compact?: boolean;
 }) {
   const badge = sourceBadge('library', entry.source);
+  const cls = [styles.optcard, selected && styles.sel, compact && styles.compact].filter(Boolean).join(' ');
   return (
     <button
       type="button"
-      className={selected ? `${styles.optcard} ${styles.sel}` : styles.optcard}
+      className={cls}
       onClick={onToggle}
       aria-pressed={selected}
     >

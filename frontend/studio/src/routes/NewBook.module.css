@@ -159,6 +159,29 @@
   background: linear-gradient(180deg,rgba(240,145,58,.07),var(--panel));
 }
 
+/* compact variant — Author & Voice cards: tighter padding, smaller text,
+   description clamped to ~2 lines so the panels take less vertical space. */
+.optcard.compact {
+  padding: 9px 12px;
+  gap: 10px;
+}
+.compact .nm {
+  font-size: 14px;
+}
+.compact .dsc {
+  font-size: 11px;
+  margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.compact .rad {
+  width: 17px;
+  height: 17px;
+  margin-top: 0;
+}
+
 .body2 {
   flex: 1;
   min-width: 0;

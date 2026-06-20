@@ -146,6 +146,7 @@ export function NewBook() {
               mode={kind === 'section' ? 'multi' : 'single'}
               selected={kind === 'section' ? sections.includes(e.name) : sel[kind] === e.name}
               onToggle={() => kind === 'section' ? toggleSection(e.name) : pickSingle(kind, e.name)}
+              compact={kind === 'author' || kind === 'voice'}
             />
           ))}
           {entries.length === 0 && <p className={styles.def}>None in the library yet.</p>}
