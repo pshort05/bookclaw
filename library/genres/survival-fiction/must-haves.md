@@ -1,12 +1,21 @@
-# Survival Fiction Must-Haves
+These are the non-negotiable elements of survival fiction — their absence is not a stylistic choice, it is a genre failure that readers will name explicitly in reviews.
 
-Non-negotiable elements for this genre.
+- [ ] **Physiological realism.** The human body's responses to deprivation — dehydration within 3 days, cognitive decline under starvation, wound infection timelines, hypothermia stages, altitude sickness onset — must be accurate and present. Readers with any outdoors experience will notice violations. The body's limitations must constrain what the protagonist can do and when. A character who goes a week without water and remains cognitively sharp has broken the genre's fundamental contract.
 
-- Realistic survival challenges
-- Detailed survival techniques
-- Clear resource limits
-- Life-or-death stakes
-- Protagonist agency
-- Harsh consequences
-- Environmental authenticity
-- Character growth
+- [ ] **Specific, accurate survival techniques.** Vague competence ("she started a fire," "he built a shelter") is insufficient. Methods must be named and described with enough specificity that a knowledgeable reader could evaluate them. Name the technique, name the materials, describe the process, and acknowledge its limitations. Research your survival context — wilderness, maritime, desert, arctic, and urban collapse all have distinct toolsets with distinct failure modes.
+
+- [ ] **A resource architecture established early and held consistently.** The novel's constraint system must be introduced in the resource audit scene and respected throughout. Resources cannot appear when convenient. If a character finds something, it must be findable — introduced with the logic that makes its presence plausible. If resources are consumed, they stay consumed. This is not pedantry; it is the foundation of reader trust.
+
+- [ ] **No lucky rescues or convenient solutions.** Every significant problem must be solved by the protagonist's own action, knowledge, or decision. External help that arrives without being sought or earned is a genre violation. Even when rescue eventually comes, the protagonist must have done enough — survived long enough, done enough right — that the rescue is a consequence, not a deus ex machina. A rescue that could have come on page 40 instead of page 280 makes the novel feel arbitrary.
+
+- [ ] **Earned competence.** If the protagonist has skills relevant to survival, the reader must understand how they acquired them — backstory, training, prior experience — established before those skills are needed. Competence that appears without explanation is wish fulfillment, not survival fiction. If the protagonist lacks relevant skills, the learning arc must include failure, cost, and incremental acquisition. No character should know how to do something without a reason to know it.
+
+- [ ] **The psychological dimension.** Physical survival alone is not sufficient. The protagonist must also be surviving psychologically — managing fear, combating despair, maintaining the will to continue under conditions designed to eliminate it. At least one scene must dramatize genuine psychological crisis. The interior life must be as detailed and specific as the physical problem-solving. A protagonist who is consistently stoic and rational under extreme stress is not realistic and will not engage readers who have experienced genuine fear.
+
+- [ ] **Life-or-death stakes at scene level.** Not just at the novel level. Each scene must carry the possibility that failure leads, directly or incrementally, to death. Stakes that are abstract ("she might not make it out") are weaker than stakes that are concrete ("if she can't get the fire going in the next hour, the hypothermia will be irreversible"). Readers need to feel the lethality of each individual problem, not just the survival situation in aggregate.
+
+- [ ] **Protagonist agency throughout.** The protagonist must be the primary driver of their own survival at every stage. They may receive help — a companion, a found supply cache, a piece of useful information — but they must be the one who acts on that help, who decides when to act, who bears the consequences. A protagonist who is carried by circumstances or by other characters is not surviving; they are being survived by others.
+
+- [ ] **A cost structure that escalates.** The problems in the final third must be harder to solve, and the solutions must cost more, than the problems in the first third. The protagonist should be solving challenges in Act 3 that they could not have solved in Act 1 — but at a physical and psychological price that would have been impossible to pay in Act 1. If the protagonist is in better shape at the climax than at the midpoint, the cost structure has failed.
+
+- [ ] **Environmental specificity.** The setting must feel like a particular place with particular rules, not a generic "wilderness" or "collapsed world." Temperature ranges, food and water availability, seasonal conditions, specific flora and fauna (with accurate behavior), terrain features that affect movement and shelter — these details are not decoration. They are the antagonist's specification. A reader who knows the Pacific Northwest should recognize it; a reader who doesn't should feel they could.

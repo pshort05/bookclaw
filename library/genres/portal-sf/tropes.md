@@ -1,0 +1,27 @@
+Portal SF runs on mechanisms, costs, and the vertigo of encountering a version of reality that obeys different rules — pick three to six tropes that serve your central question about what crossing costs and what it reveals.
+
+## The Trope Menu
+
+**The Eligibility Constraint** — Not everyone can cross. Biological compatibility, genetic markers, the death of your counterpart in the destination world, neural architecture, or psychological profile limits who can transit. This trope generates plot from exclusion: who has access, who enforces it, what happens when an ineligible person crosses anyway. Best when the constraint carries thematic weight beyond plot mechanics. (*The Space Between Worlds*)
+
+**The Quantum Many-Worlds Box** — The portal accesses not an alien planet but a parallel version of Earth or the protagonist's own world, navigated by navigating quantum probability states. The mechanism requires something of the operator — mental state, intention, memory — making transit a psychological act as much as a physical one. The danger is that infinite parallel worlds dilute narrative stakes; constrain aggressively. (*Dark Matter*)
+
+**The Government Gate** — The portal is a controlled asset: a military installation, a government research program, a classified facility. Access is bureaucratically gated. The protagonist is either an authorized operator who loses or exceeds their mandate, or an unauthorized person who breaches the perimeter. This trope makes the portal a political object from the start and puts institutional power in structural tension with individual curiosity. (*Stargate*, *Annihilation*)
+
+**The Stepper Network** — Portals are not rare but ubiquitous — a technology anyone can use, opening a frontier of parallel worlds that can be settled, exploited, or fled to. The drama is ecological, economic, and political: what does cheap dimensional transit do to civilization? Who goes, who stays, what is worth crossing for? Best at novel or series scale where the social consequences can accumulate. (*The Long Earth*)
+
+**The Asymmetric Cost** — Crossing takes something that cannot be recovered: a year of life, memory coherence, proximity to your own version of a loved one, the ability to have ever existed in the origin world. The cost is not the same in both directions. This trope forces the protagonist to decide whether what is in the destination is worth what it costs to reach or stay. Works best when the cost is not revealed all at once.
+
+**The Contamination Threshold** — Crossing changes the crosser, not just their location. Biological exposure, psychological imprinting, temporal accumulation, or quantum entanglement makes the traveller different on return — recognizably themselves but altered in ways that cannot be fully undone. This trope externalizes the genre's internal transformation arc: the crossing does something to the body or mind that cannot be reversed by going back. (*Annihilation*)
+
+**The Closed Loop** — The portal network is finite and governed by rules that, if violated, collapse the entire system. The climax is not a fight but a logic puzzle: how do you resolve the situation without triggering the collapse? Works best when the rules are established clearly enough that the reader can see the solution before the protagonist does.
+
+**The Doppelganger Confrontation** — The protagonist meets a version of themselves from another world — or is hunted by one, or must displace one, or must choose between them. The encounter forces a reckoning with contingency: the other-self made different choices and became different, but is not unrecognizable. What does it mean to be uniquely you when a version of you exists elsewhere? (*Dark Matter*, *The Space Between Worlds*)
+
+**The Ancient Gate Network** — The portals did not originate with the current civilization. They are ruins, artifacts, or infrastructure left by a prior species or version of humanity. The discovery arc is archaeological: what built this, why, and what happened to whoever built it? This trope extends the portal's temporal scale and often ends with a revelation that reframes the origin of the protagonist's own world. (*Stargate*, *Hyperion*)
+
+**The One-Way Threshold** — Crossing is irreversible, at least for the near term. The protagonist cannot go back until a condition is met, and it is not clear the condition can be met. This is the portal SF equivalent of the "point of no return" elevated to structural premise. The stranded protagonist must survive in the destination long enough to find the mechanism of return — if one exists.
+
+**The Physics Inversion** — The destination operates under different physical constants. Gravity behaves differently, light moves at a different speed, chemistry produces different compounds, time runs faster or slower. The protagonist must survive long enough to map the rules without being killed by violating them accidentally. This trope is most at home in hard SF and requires enough scientific grounding to make the inversions plausible rather than arbitrary.
+
+**The Contagion of Contact** — The destination world's biology, physics, or information begins to leak back through the portal into the origin world. Containment fails. What crosses in or out cannot be recalled. The plot becomes a race against expanding contamination, often with the protagonist complicit in the breach. (*Annihilation*, *The Southern Reach Trilogy*)

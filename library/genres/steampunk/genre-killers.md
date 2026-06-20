@@ -1,12 +1,21 @@
-# Steampunk Genre Killers
+The errors that produce DNFs, one-star reviews, and "this isn't really steampunk" dismissals — each one is a specific failure mode with a specific cause.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **Technology as costume, not engine.** Gears on the corset, goggles on the hat, brass fittings on everything — and none of it does anything in the plot. If the story would work identically if you replaced all the technology with horses and candles, you have written a historical romance with steampunk aesthetics. Readers in this genre are specifically looking for technology that changes what is possible and what is at stake.
 
-- Technology tacked-on
-- Inconsistent world-building
-- Passive protagonist
-- Aesthetic without substance
-- Ignored historical context
-- Slow adventure pacing
-- Tech solving everything
-- Weak world-building
+- [ ] **Steampunk aesthetic without social critique — cosplay, not storytelling.** Romanticizing the Victorian era without engaging with what made it brutal — child labor, colonial violence, gender subjugation, industrial immiseration — produces a fantasy that reads as naive or dishonest. The "punk" in steampunk is not about fashion; it is about antagonism toward power. A story where the aristocrats are charming, the empire is benign, and the workers are cheerful background figures is not steampunk. It is costume drama.
+
+- [ ] **Violating the one-impossible-thing rule.** Steampunk readers extend one free pass on scientific plausibility. After that, every additional impossible element must be justified within the world's internal logic. A story with working difference engines, magical dragons, alchemy, and psychic powers has stopped being steampunk and started being a fantasy novel with a steampunk aesthetic filter. Each unjustified impossible element erodes the suspension of disbelief that allows the genre to function.
+
+- [ ] **Modern consciousness in Victorian bodies without acknowledgment.** A female protagonist who thinks, speaks, and operates exactly like a 21st-century person without any friction from the period's actual constraints destroys the setting's credibility. The reader is not asking for a passive, victimized heroine; they are asking for a protagonist whose agency costs something, whose victories are won against specific institutional resistance, whose modernity is the source of conflict rather than an unmarked given.
+
+- [ ] **Technology exposition instead of technology in action.** Paragraphs explaining how the steam engine works, what the gears are made of, how the airship achieves lift. The reader does not need to understand the mechanism; they need to feel its consequences. Show the engine failing catastrophically. Show the airship losing altitude in a storm. Let the technical reality create dramatic pressure rather than explanatory pause.
+
+- [ ] **A passive protagonist who observes the technology rather than operating it.** The steampunk protagonist must make decisions that engage with the mechanical world — build, destroy, repair, circumvent. A protagonist who watches inventors invent and engineers engineer and then benefits from their work is a passenger. Readers in this genre want the engineer's point of view, not the tourist's.
+
+- [ ] **The crew as interchangeable color.** Airship hands, street mechanics, and factory workers exist in most steampunk novels as background figures who confirm the protagonist's importance. When they die, it should cost something. When they make a choice, it should change something. A found family whose individual members are undifferentiated produces no emotional investment and no genuine stakes in the climax.
+
+- [ ] **Gadget accumulation without plot relevance.** A protagonist with twelve specialized steampunk devices most of which do nothing in the story signals an author who has prioritized the aesthetic image of the inventor over the narrative function of specific inventions. Every device that appears must either drive plot, reveal character, or establish a world rule that matters later. Gadgets that exist for visual description are dead weight.
+
+- [ ] **The conspiracy that is too easy.** A power structure that collapses because the protagonist gives one good speech or publishes one pamphlet or wins one fight is not a power structure; it is a cardboard obstacle. The institutional resistance must require the protagonist to sacrifice something, build a coalition, and solve a problem they do not initially know how to solve. One person beating a systemic injustice through individual brilliance alone is the genre's most common and most disappointing resolution.
+
+- [ ] **Ignoring the "colonial other" at the empire's edges.** Steampunk set in a British or European analog that treats colonized peoples as absent, voiceless, or as colorful backdrop for the European protagonist's adventure is both politically irresponsible and aesthetically incomplete. The empire's violence at its margins is inseparable from the prosperity at its center that makes the aesthetic possible. Stories that look away from this fail the genre's requirement for social critique and increasingly fail the reader.

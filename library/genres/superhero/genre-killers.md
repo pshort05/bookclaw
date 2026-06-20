@@ -1,12 +1,21 @@
-# Superhero Genre Killers
+Documented failure modes for prose superhero fiction — patterns that consistently produce DNF (did not finish) responses and one-star reviews, with the structural reason each one destroys the reading experience.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **The overpowered protagonist.** The single most-cited failure mode across reader reviews. When a protagonist can solve any problem through superior power, outcomes feel predetermined, conflict requires implausible escalation, and emotional investment collapses. The "Superman Problem" — a character who faces no genuine physical or psychological jeopardy — is the genre's structural Achilles' heel. Fix: establish specific limits early and have the antagonist exploit them before the climax.
 
-- Powers with no cost
-- Villain without motivation
-- Inconsistent power system
-- Hero too powerful
-- Sacrificed character development
-- Ignored herodom isolation
-- Unsatisfying power resolution
-- Powers as plot convenience
+- [ ] **A villain with no motivation beyond being an obstacle.** Universally condemned. The antagonist exists only to create problems for the protagonist, has no comprehensible internal logic, and is defeated without the reader feeling the confrontation meant anything. The villain's defeat should feel like the resolution of a philosophical argument, not the removal of a plot device. Fix: write at least one scene from the villain's perspective showing why they believe they are correct.
+
+- [ ] **Power without consequence.** Powers that cost nothing — no physical depletion, no psychological toll, no relationship damage, no systemic blowback — eliminate tension at the structural level. If the hero can use their abilities freely without paying any price, there is no dramatic reason they should ever lose. Fix: establish the cost in the first action sequence and enforce it consistently.
+
+- [ ] **The civilian identity as empty placeholder.** The hero's non-powered life is a thin cover story with no real relationships, no genuine obligations, and no consequences when heroism damages it. This means the dual identity has no dramatic function. Readers come to prose superhero fiction specifically for the interior conflict of the double life; a hollow civilian identity eliminates this. Fix: create at least one civilian relationship that is actively endangered by the hero life and show the damage accumulating.
+
+- [ ] **Tonal inconsistency.** Mixing content appropriate for one tonal register — cheerful adventure, PG consequence — with material from another register — graphic violence, permanent death, adult themes — without a coherent tonal framework. The result is a book that disappoints readers from all three available registers. Fix: choose a register (earnest, dark, or deconstructive), commit to it in chapter one, and maintain it through the climax.
+
+- [ ] **Origin story overexplanation.** Excessive flashbacks, world-mechanic infodumps, and backstory chapters for secondary characters, diverting from present-tense narrative momentum. Genre-literate readers already understand how powers work; over-explaining world mechanics signals distrust of the reader and kills pacing. Fix: establish power rules through action, not exposition, and limit secondary-character backstory to what is required for their function in the present plot.
+
+- [ ] **Predictable execution of every beat.** Readers of prose superhero fiction are genre-literate — they know the seven-stage arc. Executing every obligatory beat exactly as expected, without a single inversion, subversion, or earned surprise, produces "I was almost falling asleep" responses. Predictability is not the same as structure; it is structure without specificity. Fix: identify the single most expected version of each obligatory scene and determine what makes your version different.
+
+- [ ] **The morally infallible protagonist.** A hero whose ethics are never genuinely tested, whose "morals won't allow them to make tough decisions," and who consistently chooses the obviously right thing without real cost. This produces a protagonist readers describe as "predictable and boring." Moral clarity arrived at easily is not virtue — it is the absence of a story. Fix: put the protagonist in a situation where every available choice is wrong, then let them choose.
+
+- [ ] **Identical POV voices in dual perspective.** A structural failure specific to prose: when a novel alternates between hero and villain (or any two characters), the prose voice, internal rhythm, and diction of each chapter must be distinctly different. If hero chapters and villain chapters read identically, the dual-POV structure has no function beyond logistics. Fix: assign each POV voice a specific vocabulary range, sentence rhythm, and default emotional register that reflects their psychology.
+
+- [ ] **Worldbuilding rule violations for plot convenience.** Establishing power limits and then suspending them when the story requires it. Readers of superhero fiction actively track power system rules and experience violations as a breach of the narrative contract. This destroys trust in the author faster than any other craft failure. Fix: if the story requires the protagonist to exceed their established limits, pay for it — with cost, with consequence, or with a prior setup that makes the exception comprehensible within the rules.

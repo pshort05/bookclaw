@@ -1,12 +1,21 @@
-# Uchronia Genre Killers
+These are the failures that cause uchronia readers to put the book down and post one-star reviews; each one represents a breach of the implicit contract between author and reader.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **An implausible or underpowered divergence point.** If the divergence cannot plausibly have caused the world the story depicts — if the causal chain is too long, too fragile, or too convenient — readers with any historical knowledge will disengage immediately. The divergence must be both historically possible and causally sufficient. "Hitler got a better night's sleep" is too thin; "a single battle's outcome reversed due to a documented near-miss" is workable. *Why this kills:* the reader came specifically for the "what if" logic. If the premise fails that test, the entire structure collapses.
 
-- Implausible divergence
-- Inconsistent alternate history
-- Too similar to actual timeline
-- Historical inaccuracy
-- Weak world-building detail
-- No change explanation
-- Preachy politics
-- Protagonist easily changing system
+- [ ] **An alternate world indistinguishable from the real timeline.** If the author changed one historical fact but left the social, cultural, technological, and political fabric of the world essentially unchanged, the divergence was not significant enough to carry a novel. *Why this kills:* the reader is waiting for the world to be genuinely different, and they will notice immediately if it is not.
+
+- [ ] **Front-loaded worldbuilding exposition.** Opening chapters that deliver the history of the alternate world as lecture, tour, or info-dump before the story has generated any reader investment. *Why this kills:* readers lose orientation and patience; they need a story reason to absorb the worldbuilding, and that reason must be present from page one.
+
+- [ ] **Inconsistency in the alternate world's internal logic.** Technologies, political structures, or social conditions that contradict each other or that the divergence cannot account for. *Why this kills:* uchronia readers are detail-oriented and often historically literate; they are actively checking the world's internal consistency. A single anachronism can undermine trust in the entire premise.
+
+- [ ] **Historical inaccuracies in the real-history elements.** Getting the pre-divergence history wrong — wrong dates, wrong people, wrong technologies, wrong geography — destroys the author's credibility with readers who know the period. *Why this kills:* the author's claim to authority over the alternate history depends on demonstrating mastery of the real history. If the real history is wrong, why should the reader trust the alternate history?
+
+- [ ] **A triumphalist resistance narrative.** A resistance organisation that is competent, well-organised, morally pure, and ultimately successful against a vastly more powerful alternate order. *Why this kills:* it is historically illiterate (actual resistance movements were fractured, compromised, and often failed) and it resolves the genre's central tension — the weight of living under an unjust system — too easily. Readers want the resistance to cost something.
+
+- [ ] **Preachy or contemporary political allegory worn on the sleeve.** Uchronia that exists solely to comment on present-day politics, where the historical setting is a thin costume and the characters are mouthpieces. *Why this kills:* readers feel lectured at rather than immersed; the alternate world ceases to feel real and becomes a debate prop. The political commentary, if present, must be earned through the specifics of the alternate world, not grafted on top.
+
+- [ ] **A protagonist who can change the system too easily.** A single individual who, through personal heroism or cleverness, overturns an entrenched alternate order with implausible ease. *Why this kills:* it contradicts the genre's central premise — that history is heavy and that its inertia is enormous. If one person can undo the divergence in a weekend, the alternate world was never serious.
+
+- [ ] **Withholding the divergence point for the entire novel.** Using the alternate history as pure atmosphere, never committing to what changed or when. Some literary fiction can sustain this; uchronia cannot. *Why this kills:* the reader came to trace the "what if" logic. If the author refuses to state the premise, the reader has no way to engage with the genre's core pleasure.
+
+- [ ] **Moral tourism.** Using the horrors of the alternate world (genocide, slavery, occupation) as exotic atmosphere without taking their weight seriously — as backdrop rather than as the lived reality of characters. *Why this kills:* it is ethically indefensible and readers (correctly) call it out. The atrocities of the alternate world must matter to the characters who live in it, must have costs, and must be depicted with the same seriousness they would receive in realistic historical fiction.

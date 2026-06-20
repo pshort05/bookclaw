@@ -1,12 +1,21 @@
-# Spy Thriller Genre Killers
+These are the specific failures that generate one-star reviews and DNFs. Each one is distinct and each one is fatal in its own way.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **Tradecraft that is vague or invented.** Readers who know the genre — and a substantial proportion of spy thriller readers have professional, military, or intelligence backgrounds — will put the book down immediately when tradecraft is invented rather than researched. "She activated her spy training" is not tradecraft. Dead drops have specific protocols. Cover legends have specific construction methods. Surveillance detection runs have specific patterns. Get these right or they become the single thing every informed reader notices.
 
-- Unrealistic spy craft
-- Villain without motivation
-- Plot holes in spy logic
-- Slow middle pacing
-- Protagonist too easily succeeding
-- Convenience-driven resolution
-- Losing human cost
-- Unearned twist
+- [ ] **An invincible protagonist.** A spy who is never in real danger, never makes a consequential error, and always outsmarts the adversary is not a spy thriller hero — they are an action fantasy hero in a trench coat. The tension of the genre depends on the reader believing the protagonist can fail. They must make mistakes. They must be physically hurt. They must occasionally be outmaneuvered. Jason Bourne gets beaten. Gabriel Allon nearly dies. Jack Ryan makes catastrophic miscalculations. Competence is required; invulnerability is fatal.
+
+- [ ] **An antagonist without a comprehensible worldview.** The adversary intelligence service, the rogue operative, or the mole must have motivations the reader can understand even if they reject them. Ideology, personal grievance, blackmail, material incentive, genuine belief — any of these work. Villainy for its own sake does not work in this genre. Le Carré's Karla is terrifying because his loyalty to the Soviet project is absolute and comprehensible. A cartoon villain flattens the moral complexity the genre requires.
+
+- [ ] **The unplanted twist.** A mole revelation or a major betrayal that arrives without having been planted in the text is not a twist — it is a cheat. Readers who feel cheated do not write one-star reviews calling the ending "unearned." They write one-star reviews calling the author a fraud. Every major revelation must be traceable in retrospect. Plant multiple candidates. Plant the real answer. Let the reader argue with themselves.
+
+- [ ] **Pacing collapse in the middle.** The first act and the climax write themselves; the middle is where spy thrillers die. A protagonist who gathers intelligence for fifty pages without complications, reversals, or genuine pressure is a protagonist in a procedural, not a thriller. Every scene in the middle act must either advance the operational situation, deepen the personal cost, or introduce a new complication — ideally all three.
+
+- [ ] **Exposition disguised as dialogue.** "As you know, the SVR is the successor organization to the First Chief Directorate of the KGB, established in..." No. Characters who are professionals do not explain their own world to each other. Tradecraft terminology should be used as native speakers use it — in context, without translation. If the reader needs a glossary, provide one. If the dialogue is being used to dump information into the reader's head, rewrite the scene.
+
+- [ ] **Stakes that are geopolitical but not personal.** "The bomb will destroy a city" is not enough. The reader also needs to know what the protagonist specifically will lose — a person, a relationship, their institutional standing, their remaining illusions — if the mission fails or succeeds. The geopolitical and the personal must be in genuine tension, not just parallel. The resolution must address both.
+
+- [ ] **Resolution by convenience.** The climax resolves because the antagonist makes an inexplicable error, because a deus ex machina arrives, or because the plot requires it and not because the protagonist's earlier actions made it possible. Readers track the logic of spy thrillers carefully. Coincidence that benefits the protagonist is tolerated exactly once per book; a second coincidence reads as authorial laziness.
+
+- [ ] **No institutional ambiguity.** A spy thriller in which the protagonist's agency is straightforwardly good and straightforwardly on their side is an action thriller that happens to use spy props. The genre's essential tension is between the operative and the institution — between the human being and the organizational logic that is willing to use them as a means to an end. Flatten that tension and the moral weight of the genre evaporates.
+
+- [ ] **The personal cost is emotional only, not structural.** The protagonist feels bad about what they had to do. That is not the same as paying a structural price. If the protagonist ends the book with their relationships, their institutional standing, and their operational capability essentially intact, the genre's implicit argument — that this work costs the person doing it, over time, in ways they cannot fully recover from — has been violated. The cost must be visible in the protagonist's circumstances, not just in their feelings about those circumstances.

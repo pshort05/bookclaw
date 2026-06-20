@@ -1,12 +1,21 @@
-# Teen Angst Romance Must-Haves
+Teen-angst romance is validated or disqualified by these ten elements — each is testable against the manuscript; if any is missing or shallow, the book will not deliver the reader experience the genre promises.
 
-Non-negotiable elements for this genre.
+- [ ] **An emotionally specific protagonist voice.** The narrator's interiority must feel lived-in and age-consistent: the particular way a 16-year-old processes humiliation, desire, or family conflict, not a generic introspective person. Test: could this voice plausibly belong to a 35-year-old? If yes, revise.
 
-- Emotionally authentic protagonist
-- Intense romantic feelings
-- Social/personal obstacles
-- Coming-of-age elements
-- Flawed but relatable
-- Internal struggle
-- First-love intensity
-- Character growth
+- [ ] **A romantic arc that is the structural spine, not a subplot.** The romance drives the plot. Remove it and the story collapses. It cannot orbit a larger adventure, mystery, or family drama as a secondary thread. Test: does the protagonist's central want — in every scene — relate to the romantic arc or the internal wound the romance is exposing?
+
+- [ ] **Genuine emotional stakes in the relationship.** The reader must believe that getting this relationship wrong will cost the protagonist something real — self-knowledge, a sense of safety, their social world, their identity. Romantic tension without consequence is decoration. Test: what does the protagonist stand to lose if this goes badly? Is that clearly established?
+
+- [ ] **A coming-of-age arc braided with the romantic arc.** The protagonist must change internally over the course of the book, and that change must be caused or catalyzed by the romantic experience, not just running parallel to it. Test: is the protagonist's internal growth specifically connected to what the relationship demanded of them?
+
+- [ ] **A love interest who is a full character.** The love interest has their own internal life, wound, and arc — one that exists independent of their role in the protagonist's story. They make choices for their own reasons. They have a scene or perspective that reveals something about them the protagonist didn't know and couldn't have known. Test: can you describe the love interest's central desire and fear without referencing the protagonist?
+
+- [ ] **Emotional authenticity in social scenes.** Peer dynamics, social hierarchies, group scenes, and public moments of humiliation or recognition must be rendered with specificity. Avoid generic high school backdrop. Test: does each social scene have a particular texture — specific people, specific social rules, specific stakes — rather than a generic "high school" feel?
+
+- [ ] **Family or background context that shapes the protagonist's beliefs about love.** The protagonist's family situation — even if handled lightly — must inform what they believe they deserve, what they fear about commitment, or what template for relationships they're working from. This is not a subplot requirement; it can be established in a handful of well-placed details. Test: does the reader understand why the protagonist has trouble trusting, or letting go, or being seen?
+
+- [ ] **All six obligatory scenes present and executed with specificity.** The Meet, the Almost Kiss, the First Kiss, the Misunderstanding/Rupture, the Grand Gesture, and the HEA/HFN must be present and must land with emotional weight proportional to the relationship's stakes. Test: locate each in the manuscript. If any is missing or dispatched in two sentences, it needs work.
+
+- [ ] **No adult-perspective creep.** The narrator must not exhibit wisdom about their emotional state that exceeds what a person of their age could plausibly have. Processing, self-awareness, and emotional intelligence are fine — retrospective adult clarity about events-in-progress is not. This is most common in first-person narrators who explain their feelings with the precision of someone who has already completed therapy. Test: read a random page of interiority and ask whether it sounds like a teenager living it or an adult remembering it.
+
+- [ ] **A resolution that earns its emotional payoff.** The ending must resolve both the romantic arc and the internal arc. The HEA/HFN must feel specific to these characters. The protagonist's growth must be demonstrable through action or decision, not just declared in interior monologue. Test: what has the protagonist done in the final act — not thought or felt, but done — that proves they have changed?

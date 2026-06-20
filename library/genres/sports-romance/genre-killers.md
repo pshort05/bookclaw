@@ -1,12 +1,21 @@
-# Sports Romance Genre Killers
+These are the specific failures that generate one-star reviews, DNF decisions, and negative word-of-mouth in sports romance; each one has a structural reason it destroys genre satisfaction.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **The athlete does not read as an athlete.** The most frequently cited credibility failure in the genre. The author has produced a character who happens to play a sport rather than someone whose sport has structured every waking hour of their life. The athlete talks about "the big game" in the same generic way any non-athlete would. They have no sport-specific vocabulary, no insider relationship to their body, no consuming pre-game ritual, no specific fear about their specific position. Readers with sports proximity — family members of athletes, former athletes, dedicated fans — identify this immediately. It is unfixable in revision without restructuring the protagonist from the inside out.
 
-- Love interest with no life outside athlete
-- Incorrect sport details
-- Conflict unrelated to sports
-- Athlete career without stakes
-- Big game climax disconnected from romance
-- Passive love interest
-- Clichéd press conference gestures
-- Romance relegated to generic scenes
+- [ ] **Inaccurate sport details.** Factual errors in rules, league structure, terminology, or procedure. A hockey character describes an illegal play without knowing it is illegal. A football character's contract situation contradicts CBA rules. A baseball character references an impossible game scenario. Sports romance readers often follow or have played the sport featured, and they are not forgiving of research failures. This is not a matter of obscure trivia — readers flag basic inaccuracies. The standard is knowledgeable fan accuracy, not Wikipedia-level accuracy.
+
+- [ ] **The sport stops mattering at the midpoint.** A chronic structural failure in otherwise promising sports romances: the athletic world is established in the opening chapters to justify the genre label, then disappears as the romance takes over. By the third act, the characters could be in any profession and the plot would be identical. The sport must be present as an active force through the entire manuscript, not just the establishing chapters.
+
+- [ ] **The love interest has no interiority outside the athlete.** The love interest exists to react to the protagonist's athletic identity, to be impressed or unimpressed by the sport, and to receive the athlete's emotional growth. They have no meaningful career stakes, no life that was functioning before the athlete arrived, no reason of their own to resist or pursue the relationship. This produces a passive love interest who reads as a plot device rather than a person.
+
+- [ ] **Conflict that could exist in any contemporary romance.** The major obstacle separating the protagonists is a generic jealousy plot, a family secret, a misunderstanding about intentions, or a communication failure with no connection to the athletic world. The conflict must come from the specific structural pressures of the sport: trade deadline, injury, career choice, contract year, media exposure. Generic conflict in a sport setting is not sports romance — it is contemporary romance wearing a jersey.
+
+- [ ] **Jargon overload without earned context.** The narrative assumes reader familiarity with the sport to a degree that alienates anyone outside the core fandom. Unexplained plays, positions, rules, and league-specific terminology accumulate without contextualizing detail. The target reader is sport-curious and fan-aware, not a coaching staff member. Jargon should be earned through context rather than explained through awkward exposition, but it must be accessible.
+
+- [ ] **The big game climax is disconnected from the romance resolution.** The championship game or career-defining athletic moment happens in a separate scene from the emotional resolution, and the two events do not affect each other. The athlete wins the championship (or loses it) while the romance resolves in a separate scene through a generic conversation. The genre expectation is that the athletic climax and the romantic climax are structurally linked — what happens in the game matters to what happens between the protagonists.
+
+- [ ] **Insta-love without earned emotional grounding.** The protagonists fall in love based on physical attraction and a single intense conversation, with no slow accumulation of specific emotional knowledge about each other. This failure is particularly visible in hockey romance, where the Mariana Zapata slow-burn tradition has trained readers to expect emotional intimacy to be earned over an extended timeline. The physical tension is expected to be present early; the emotional certainty must be delayed and earned.
+
+- [ ] **Character overload in the team setting.** The author introduces fifteen named secondary characters in the first three chapters because team sports require a roster. Each teammate gets a name, a position, a quirky characteristic, and a line of dialogue. The reader cannot track them, cannot invest in them, and begins skipping their scenes. Secondary characters from the athletic world should be introduced selectively, with distinct voices, and only when they serve the romance or athletic arcs. Save the rest for later books in the series.
+
+- [ ] **Heat-level mismatch between expectation and delivery.** The cover, title, and marketing signal signals explicit content in a sports romance context — where the default market expectation is open-door and steamy — and the book delivers closed-door or near-closed-door content without clear advance signaling. Or the reverse: a cover and description that suggest a cleaner romance delivers graphic content that surprises readers not looking for it. Mismatched heat-level expectations are one of the top drivers of one-star reviews in the genre. Signal accurately or readers will feel deceived in both directions.

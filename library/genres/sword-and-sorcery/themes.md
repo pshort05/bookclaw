@@ -1,9 +1,17 @@
-# Sword And Sorcery Themes
+Sword-and-sorcery themes are not moral lessons — they are the genre's recurring philosophical tensions, present in every Howard and Leiber story without resolution.
 
-Thematic elements readers expect in this genre.
+## The 7 Core S&S Themes
 
-- Power and responsibility
-- Light vs darkness
-- Redemption through battle
-- Magic cost
-- Loyalty and betrayal
+**1. Civilization as Corruption, Barbarism as Vitality.** This is the foundational Howard thesis, stated explicitly in the Conan stories and implicitly in almost every S&S work since. Civilized society is not progress — it is accumulation of vice, hierarchy, and decay. The barbarian outsider is vigorous, honest in their violence, and uncorrupted by the self-deceptions civilization requires. This is not an endorsement of brutalism; it is a structural critique of the idea that complexity equals goodness. The S&S protagonist is the genre's instrument for exposing that critique story by story.
+
+**2. Magic as Transgression, Not Tool.** In epic fantasy, magic is a system to be learned, controlled, and deployed. In S&S, magic is a boundary violation — a reaching into forces that predate human civilization and do not care about human life. Sorcerers in S&S pay costs they did not fully anticipate. The protagonist is typically distrustful of magic precisely because they have seen what it does to those who wield it. Magic does not solve problems cleanly; it introduces new, worse problems.
+
+**3. Survival as the Only Honest Motive.** The protagonist does not pretend to fight for virtue, justice, or the greater good. They fight to stay alive, to eat, to collect what is owed to them, and occasionally to protect someone they care about. This honesty about motive is the genre's ethical core. S&S refuses the epic fantasy contract in which the protagonist's private desires align with the world's moral needs. The world's needs are not the protagonist's problem.
+
+**4. The Past as Active Threat.** Ancient history in S&S is not lore to be appreciated — it is a force that intrudes on the present in the form of sleeping gods, bound demons, extinct civilizations whose traps still function, and sorcerers old enough to remember when things were worse. The past is not prologue; it is a predator. This distinguishes S&S from dungeon-crawl fantasy, where the past is merely a location.
+
+**5. Loyalty Within Amorality.** Despite the genre's moral greyness, S&S protagonists typically hold one personal loyalty absolute — to a companion, a blood-debt, a code that has nothing to do with virtue and everything to do with identity. Fafhrd and the Gray Mouser protect each other across every story. Conan honors debts to those who deal squarely with him. This loyalty is not ethical in a universal sense; it is personal and non-transferable. It provides emotional stakes without requiring the protagonist to be a good person.
+
+**6. The Indifferent Cosmos.** The universe of S&S does not care whether the protagonist lives or dies. Gods, when they exist, are alien and manipulative rather than loving or just. Fate is not a story structure that will protect the hero long enough to complete their arc; it is a word humans use when they cannot identify the cause of the next catastrophe. This cosmicism — borrowed partly from Lovecraft's influence on the genre — means that S&S dread is genuine. Nothing guarantees survival.
+
+**7. Freedom Through Rootlessness.** The protagonist has no home, no family (or has lost one), no permanent allegiance. This is framed not as tragedy but as a condition that enables a certain kind of freedom. They can leave any city, refuse any master, survive any betrayal by simply moving on. The road is not a burden — it is the protagonist's natural state. Stories that try to give the S&S protagonist a home to protect tend to drift toward epic fantasy's stakes-structure instead.

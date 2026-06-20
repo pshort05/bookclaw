@@ -1,12 +1,21 @@
-# Teen Angst Romance Genre Killers
+These ten failures generate one-star reviews, DNF responses, and reader trust collapse — each is listed with an explanation of why it damages the reading experience specifically in this subgenre.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **Romanticized toxicity.** Possessiveness, jealousy, control, and manipulation presented as evidence of intense love. Why it kills: teen readers are navigating real first relationships and may not have the frame to identify abusive dynamics when they are aestheticized. The genre has a responsibility to the developmental reality of its audience. Jealousy can appear as a complication; it cannot be the proof of love.
 
-- Shallow protagonist
-- Love interest as prop
-- Romanticized toxicity
-- Adult-dismissive tone
-- Too-easy resolution
-- Too adult perspective
-- No real growth
-- Love solves everything
+- [ ] **Adults solving the protagonists' problems.** A parent, teacher, therapist, or other adult intervenes at the critical moment to fix what the teenagers could not. Why it kills: this evacuates the protagonist's agency at the exact moment the reader needs to see them demonstrate growth. It also invalidates the premise — if adults can fix it, the emotional stakes of the teen protagonists' struggle were false. Adults can complicate, pressure, fail, and occasionally help — they cannot resolve the romantic or identity arc.
+
+- [ ] **A love interest with no interiority.** The love interest exists only to be attractive, to want the protagonist, and to be the occasion for the protagonist's feelings. No independent life, wound, or motivation. Why it kills: this reads as wish-fulfillment rather than story, and experienced YA readers recognize it immediately. It also makes the grand gesture impossible to earn — why does it cost them anything if they have nothing else going on?
+
+- [ ] **Anachronistic or inauthentically adult voice.** The first-person narrator speaks with the processed emotional clarity of someone who has already survived their adolescence and is reflecting on it. Why it kills: it creates distance from the very immediacy that makes this subgenre work. The reader wants to be in the protagonist's confusion, not above it. This is the most common craft error in first-time YA writers with literary fiction backgrounds.
+
+- [ ] **Mental health as decoration.** A character's anxiety, depression, eating disorder, or grief is used to establish depth or create stakes but is not addressed with craft honesty — it disappears when convenient, is cured by love, or is handled with vague acknowledgment rather than specific portrayal. Why it kills: contemporary teen readers have high baseline literacy about mental health; imprecise or convenient handling reads as dismissive, and readers who share the condition feel misrepresented.
+
+- [ ] **The romance solves the protagonist's identity problem.** The protagonist's internal wound — whatever they believed about themselves that was not quite true — is resolved by the love interest validating or rescuing them rather than by the protagonist's own reckoning. Why it kills: the message is that you need someone else to be okay, which contradicts the coming-of-age function of the genre. Love can be the catalyst; it cannot be the solution.
+
+- [ ] **No genuine growth by the final page.** The protagonist ends the book in essentially the same emotional or psychological position as they began, with the addition of a relationship. Why it kills: readers of this subgenre are paying for the emotional arc, not just the romance. A romance without a coming-of-age arc is a lighter YA rom-com; including angst and then withholding transformation is a breach of the genre contract.
+
+- [ ] **Misunderstandings that depend on characters failing to have a two-sentence conversation.** The rupture between the protagonists is caused by a withheld piece of information that any reasonable person would immediately clarify, and the narrative delays that clarification only through contrivance. Why it kills: it signals to the reader that the writer ran out of real conflict. Readers feel manipulated. Misunderstandings must be rooted in genuine fear, pride, or self-protective behavior — not authorial convenience.
+
+- [ ] **A flat or absent social world.** The high school or community exists as a vague backdrop with no specific social architecture, no real secondary characters, and no stakes that exist outside the central romance. Why it kills: the social pressure system is what creates the conditions for angst. Remove the specificity of that world and the emotional intensity evaporates — the protagonists are just two people in a vacuum. Every meaningful scene should occur within a social context that is doing something.
+
+- [ ] **Heat level inconsistency.** The narrative establishes a kissing/fade-to-black register and then breaks it with graphic content, or conversely, treats a first kiss with clinical detachment that undercuts its emotional weight. Why it kills: both errors break the reader's trust in the narrative's emotional calibration. Teen-angst romance readers know the genre's heat register and choose it intentionally; subverting it downward reads as prudish, subverting it upward can exclude younger readers and alienate parents.

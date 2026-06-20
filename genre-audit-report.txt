@@ -1,0 +1,229 @@
+# Genre Guide Audit Report
+===================================================
+Date: Sat Jun 20 02:23:27 PM EDT 2026
+Total genres audited: 193
+Reference standard: workplace-romance
+
+## Summary Statistics
+
+Perfect (100): 182
+Excellent (90+): 8
+Good (80-89): 0
+Needs work (70-79): 0
+Poor (<70): 0
+
+## Rankings: Best to Worst
+
+**Format:** [Score/100] Genre | Depth | Words | Issues
+
+  1. [100/A+] zoo-mystery                              | RICH     |  2010 words | OK
+  2. [100/A+] yakuzatriad                              | RICH     |  3641 words | Sparse expectations | 
+  3. [100/A+] yakuza-triad                             | RICH     |  1917 words | Sparse expectations | 
+  4. [100/A+] workplace-romance                        | RICH     |  2581 words | OK
+  5. [100/A+] women-s-sports-romance                   | RICH     |  2472 words | OK
+  6. [100/A+] western                                  | RICH     |  4117 words | OK
+  7. [100/A+] western-mystery                          | RICH     |  5744 words | OK
+  8. [100/A+] western-fiction                          | RICH     |  8967 words | Sparse expectations | 
+  9. [100/A+] weird-west-fantasy                       | RICH     |  2373 words | Sparse expectations | 
+ 10. [100/A+] vampire-fiction                          | RICH     |  8542 words | OK
+ 11. [100/A+] urban-fantasy-romance                    | MODERATE |  1402 words | Sparse expectations | 
+ 12. [100/A+] urban-fantasy                            | RICH     |  4184 words | OK
+ 13. [100/A+] uchronia-speculative-fiction             | RICH     |  5364 words | Sparse expectations | 
+ 14. [100/A+] time-travel-romance                      | MODERATE |  1322 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 15. [100/A+] time-travel                              | MODERATE |  1427 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 16. [100/A+] thriller                                 | RICH     |  2380 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 17. [100/A+] techno-thriller                          | MODERATE |  1120 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 18. [100/A+] sword-and-sorcery-fantasy                | RICH     |  6906 words | Sparse expectations | 
+ 19. [100/A+] swashbuckler                             | THIN     |   657 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 20. [100/A+] suspense-thriller                        | RICH     |  2411 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 21. [100/A+] superhero-action                         | MODERATE |   882 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+ 22. [100/A+] spy-thriller-fiction                     | RICH     |  7688 words | Sparse expectations | 
+ 23. [100/A+] space-western                            | RICH     |  2108 words | OK
+ 24. [100/A+] space-romance                            | RICH     |  2826 words | OK
+ 25. [100/A+] space-opera-sf                           | RICH     |  5663 words | Sparse expectations | 
+ 26. [100/A+] space-opera                              | RICH     |  1774 words | OK
+ 27. [100/A+] space-fantasy-romance                    | RICH     |  3528 words | OK
+ 28. [100/A+] southern-gothic-horror                   | RICH     |  3971 words | OK
+ 29. [100/A+] small-town-romance                       | RICH     |  7519 words | OK
+ 30. [100/A+] simulation-thriller                      | RICH     |  3415 words | Sparse expectations | 
+ 31. [100/A+] silver-romance                           | RICH     |  1825 words | OK
+ 32. [100/A+] silkpunk                                 | RICH     |  5949 words | Sparse expectations | 
+ 33. [100/A+] second-chance-romance                    | RICH     |  5227 words | OK
+ 34. [100/A+] screwball-comedy                         | RICH     |  5199 words | Sparse expectations | 
+ 35. [100/A+] science-fiction-thriller                 | RICH     |  1527 words | Sparse expectations | 
+ 36. [100/A+] science-fiction-romance                  | RICH     |  4373 words | Sparse expectations | 
+ 37. [100/A+] science-fiction                          | RICH     |  1700 words | OK
+ 38. [100/A+] science-fantasy                          | RICH     |  1706 words | OK
+ 39. [100/A+] satire-fiction                           | RICH     |  2961 words | Thin must-haves | Sparse expectations | 
+ 40. [100/A+] sandalpunk                               | RICH     |  4967 words | Sparse expectations | 
+ 41. [100/A+] romantic-suspense                        | RICH     |  5418 words | Sparse expectations | 
+ 42. [100/A+] romantic-comedy                          | RICH     |  2044 words | OK
+ 43. [100/A+] romantasy                                | RICH     |  2366 words | Sparse expectations | 
+ 44. [100/A+] romantasy-fiction                        | RICH     |  2371 words | OK
+ 45. [100/A+] romantasy-fairytale-retellings           | RICH     |  2262 words | OK
+ 46. [100/A+] romantasy-blueprint                      | RICH     |  2935 words | OK
+ 47. [100/A+] romance-western                          | RICH     |  2362 words | Sparse expectations | 
+ 48. [100/A+] psychological-thriller                   | RICH     |  2838 words | Sparse expectations | 
+ 49. [100/A+] progression-fantasy                      | MODERATE |  1071 words | Sparse expectations | 
+ 50. [100/A+] private-eye                              | MODERATE |  1050 words | Sparse expectations | 
+ 51. [100/A+] post-apocalyptic-romance                 | RICH     |  2078 words | Sparse expectations | 
+ 52. [100/A+] post-apocalyptic                         | RICH     |  2532 words | Sparse expectations | 
+ 53. [100/A+] portal-science-fiction                   | MODERATE |  1067 words | Sparse expectations | 
+ 54. [100/A+] portal-fantasy                           | RICH     |  2348 words | Sparse expectations | 
+ 55. [100/A+] police-procedural                        | RICH     |  1720 words | OK
+ 56. [100/A+] parody-spoof                             | RICH     |  7843 words | Sparse expectations | 
+ 57. [100/A+] paranormal-romance                       | RICH     |  6850 words | Sparse expectations | 
+ 58. [100/A+] paranormal                               | RICH     |  4942 words | Sparse expectations | 
+ 59. [100/A+] paranormal-mystery                       | RICH     |  6842 words | OK
+ 60. [100/A+] parallel-universes                       | MODERATE |  1283 words | OK
+ 61. [100/A+] nordic-noir                              | RICH     |  7025 words | Sparse expectations | 
+ 62. [100/A+] noir-cozy                                | RICH     |  2389 words | OK
+ 63. [100/A+] neurodiverse-romance                     | RICH     |  3860 words | OK
+ 64. [100/A+] nautical-historical-fiction              | RICH     | 17880 words | OK
+ 65. [100/A+] myth                                     | RICH     |  4846 words | Sparse expectations | 
+ 66. [100/A+] mythpunk                                 | RICH     |  6712 words | Sparse expectations | 
+ 67. [100/A+] mystery                                  | RICH     | 32503 words | Sparse expectations | 
+ 68. [100/A+] multicultural-romance                    | RICH     |  3223 words | Sparse expectations | 
+ 69. [100/A+] mmaufc-romantasy                         | RICH     |  5742 words | Sparse expectations | 
+ 70. [100/A+] military-thriller                        | RICH     |  9174 words | OK
+ 71. [100/A+] military-sf                              | RICH     |  4954 words | Sparse expectations | 
+ 72. [100/A+] military-science-fiction-fantasy         | RICH     |  3926 words | OK
+ 73. [100/A+] military-romance                         | RICH     |  6222 words | Sparse expectations | 
+ 74. [100/A+] midlife-crisis-romance                   | RICH     |  2986 words | Sparse expectations | 
+ 75. [100/A+] memoir-and-autofiction                   | RICH     |  8600 words | Sparse expectations | 
+ 76. [100/A+] medieval-science-fiction                 | MODERATE |  1157 words | Thin must-haves | Weak killers | Sparse expectations | 
+ 77. [100/A+] medieval-mystery                         | RICH     |  4938 words | Sparse expectations | 
+ 78. [100/A+] medical-thriller                         | RICH     |  6013 words | OK
+ 79. [100/A+] mc-romance                               | RICH     |  5990 words | Sparse expectations | 
+ 80. [100/A+] martial-arts-action                      | RICH     |  3105 words | OK
+ 81. [100/A+] magical-realism                          | RICH     |  6249 words | Sparse expectations | 
+ 82. [100/A+] mafia-thriller                           | RICH     |  2756 words | Weak comps | Sparse expectations | 
+ 83. [100/A+] mafia-romance                            | RICH     | 10281 words | OK
+ 84. [100/A+] low-fantasy                              | RICH     |  4236 words | Sparse expectations | 
+ 85. [100/A+] love-story                               | RICH     | 11043 words | OK
+ 86. [100/A+] lovecraftian-horror                      | RICH     |  3719 words | Sparse expectations | 
+ 87. [100/A+] lost-world-adventure                     | RICH     |  3382 words | Sparse expectations | 
+ 88. [100/A+] litrpg                                   | RICH     |  5532 words | Sparse expectations | 
+ 89. [100/A+] literary-romantasy                       | RICH     |  4693 words | OK
+ 90. [100/A+] lgbtq-plus-romance                       | RICH     |  2377 words | OK
+ 91. [100/A+] legal-thriller                           | RICH     |  5589 words | Sparse expectations | 
+ 92. [100/A+] kaiju                                    | RICH     |  4831 words | Sparse expectations | 
+ 93. [100/A+] jungle-adventure                         | RICH     | 11670 words | Sparse expectations | 
+ 94. [100/A+] isekai                                   | RICH     | 10090 words | OK
+ 95. [100/A+] horror                                   | RICH     |  3667 words | Sparse expectations | 
+ 96. [100/A+] hopepunk                                 | RICH     |  8776 words | OK
+ 97. [100/A+] holiday-romance                          | RICH     |  5210 words | Sparse expectations | 
+ 98. [100/A+] historical-thriller                      | RICH     |  3959 words | Sparse expectations | 
+ 99. [100/A+] historical-romance                       | RICH     |  9215 words | OK
+100. [100/A+] historical-coming-of-age                 | RICH     |  5689 words | OK
+101. [100/A+] highlander-romance                       | RICH     |  2276 words | Sparse expectations | 
+102. [100/A+] high-fantasy                             | RICH     |  6183 words | Sparse expectations | 
+103. [100/A+] heist-caper-fiction                      | RICH     |  6337 words | Sparse expectations | 
+104. [100/A+] hard-science-fiction                     | RICH     |  4845 words | Sparse expectations | 
+105. [100/A+] grimdark                                 | RICH     |  8156 words | OK
+106. [100/A+] gothic-romance                           | RICH     |  5085 words | Sparse expectations | 
+107. [100/A+] gothic-horror                            | RICH     |  4847 words | Sparse expectations | 
+108. [100/A+] glitz-glamor-romance                     | RICH     |  8310 words | Sparse expectations | 
+109. [100/A+] generation-ship                          | RICH     |  7396 words | Sparse expectations | 
+110. [100/A+] gaslamp-romantasy                        | RICH     |  7514 words | OK
+111. [100/A+] gangster                                 | RICH     |  5458 words | Sparse expectations | 
+112. [100/A+] gangster-mystery                         | RICH     |  3486 words | Sparse expectations | 
+113. [100/A+] galactic-empire                          | RICH     |  9757 words | Sparse expectations | 
+114. [100/A+] furry-sleuths                            | RICH     |  6469 words | OK
+115. [100/A+] friends-to-lovers                        | RICH     |  4733 words | OK
+116. [100/A+] forensic-thriller                        | RICH     |  7161 words | Sparse expectations | 
+117. [100/A+] folk-horror                              | RICH     |  1664 words | Weak comps | Sparse expectations | 
+118. [100/A+] flintlock-fantasy                        | RICH     |  4774 words | Sparse expectations | 
+119. [100/A+] farce-fiction                            | RICH     |  3753 words | Sparse expectations | 
+120. [100/A+] fantasy                                  | RICH     | 11074 words | Sparse expectations | 
+121. [100/A+] family-saga-romance                      | MODERATE |  1476 words | Sparse expectations | 
+122. [100/A+] fairy-tale                               | RICH     |  2850 words | Sparse expectations | 
+123. [100/A+] epic-western                             | RICH     |  7817 words | Sparse expectations | 
+124. [100/A+] eco-horror                               | RICH     |  5848 words | Sparse expectations | 
+125. [100/A+] dystopian-fiction                        | RICH     |  4531 words | Thin must-haves | Sparse expectations | 
+126. [100/A+] domestic-thriller-grip-lit               | RICH     |  4702 words | Sparse expectations | 
+127. [100/A+] disaster-action                          | RICH     |  2317 words | Sparse expectations | 
+128. [100/A+] dieselpunk                               | RICH     |  3083 words | Sparse expectations | 
+129. [100/A+] detective                                | RICH     | 11407 words | Sparse expectations | 
+130. [100/A+] dark-romantasy                           | RICH     |  1982 words | Weak comps | Sparse expectations | 
+131. [100/A+] dark-romance-thriller                    | RICH     |  4369 words | OK
+132. [100/A+] dark-romance                             | RICH     |  4807 words | Sparse expectations | 
+133. [100/A+] dark-gothic-fantasy                      | RICH     |  5416 words | Sparse expectations | 
+134. [100/A+] dark-fantasy                             | RICH     |  8726 words | OK
+135. [100/A+] dark-fairytale-fantasy                   | RICH     |  3736 words | Sparse expectations | 
+136. [100/A+] dark-comedy                              | RICH     |  3662 words | Sparse expectations | 
+137. [100/A+] dark-academia                            | RICH     |  3494 words | Thin must-haves | 
+138. [100/A+] cyberpunk                                | RICH     |  3541 words | Sparse expectations | 
+139. [100/A+] cyberfantasy                             | RICH     |  5853 words | Sparse expectations | 
+140. [100/A+] culinary-mystery                         | RICH     |  2133 words | Thin must-haves | Weak killers | Sparse expectations | 
+141. [100/A+] crime-fiction                            | RICH     |  7430 words | Sparse expectations | 
+142. [100/A+] cozy-science-fiction                     | RICH     |  6448 words | Sparse expectations | 
+143. [100/A+] cozy-romantasy                           | RICH     |  6247 words | OK
+144. [100/A+] cozy-pet-mystery                         | RICH     |  5168 words | Sparse expectations | 
+145. [100/A+] cozy-horror                              | RICH     |  3315 words | Sparse expectations | 
+146. [100/A+] cozy-horror-mystery                      | RICH     |  4971 words | Sparse expectations | 
+147. [100/A+] cozy-historical-mystery-romance          | RICH     |  3169 words | Thin must-haves | Sparse expectations | 
+148. [100/A+] cozy-fantasy                             | RICH     |  6081 words | Sparse expectations | 
+149. [100/A+] cozy-fantasy-mystery                     | RICH     |  6095 words | Sparse expectations | 
+150. [100/A+] cozy-dystopia                            | RICH     |  5710 words | Weak killers | Sparse expectations | 
+151. [100/A+] cosy-motorcycle-club-romance             | RICH     | 15068 words | Sparse expectations | 
+152. [100/A+] contemporary-romance                     | RICH     |  6629 words | Sparse expectations | 
+153. [100/A+] coming-of-age-bildungsroman              | RICH     |  3852 words | Sparse expectations | 
+154. [100/A+] comedy-western                           | RICH     |  3987 words | Sparse expectations | 
+155. [100/A+] comedy-thriller                          | RICH     |  3200 words | Weak comps | Sparse expectations | 
+156. [100/A+] comedy                                   | RICH     |  2501 words | Sparse expectations | 
+157. [100/A+] climate-fiction                          | RICH     |  3817 words | Sparse expectations | 
+158. [100/A+] climate-fiction-mystery                  | RICH     |  3466 words | Sparse expectations | 
+159. [100/A+] clean-romantasy                          | RICH     |  4444 words | OK
+160. [100/A+] christian-romance                        | RICH     |  4037 words | Sparse expectations | 
+161. [100/A+] christian-dark-fantasy                   | RICH     |  1974 words | OK
+162. [100/A+] bwwm-romance                             | RICH     |  3146 words | Sparse expectations | 
+163. [100/A+] bodice-ripper                            | RICH     |  7158 words | OK
+164. [100/A+] blue-collar-romance                      | RICH     |  6522 words | OK
+165. [100/A+] biopunk                                  | RICH     |  6016 words | OK
+166. [100/A+] billionaire-romance                      | RICH     |  5676 words | OK
+167. [100/A+] beach-romance                            | RICH     |  6340 words | Sparse expectations | 
+168. [100/A+] australian-western                       | RICH     |  6103 words | Sparse expectations | 
+169. [100/A+] apocalyptic-fiction                      | RICH     |  8757 words | Sparse expectations | 
+170. [100/A+] apocalyptic-dystopian-coming-of-age      | RICH     |  4598 words | Sparse expectations | 
+171. [100/A+] ancient-world-science-fiction            | RICH     |  5869 words | Sparse expectations | 
+172. [100/A+] amateur-sleuth                           | RICH     |  5037 words | Sparse expectations | 
+173. [100/A+] alternative-sports-romance               | RICH     |  2655 words | OK
+174. [100/A+] alternative-history                      | RICH     |  2197 words | Sparse expectations | 
+175. [100/A+] alternate-reality-romance                | RICH     |  4268 words | Sparse expectations | 
+176. [100/A+] adventure                                | RICH     |  5885 words | OK
+177. [100/A+] adventure-fantasy                        | RICH     | 14551 words | OK
+178. [100/A+] action-romance                           | RICH     |  6344 words | Sparse expectations | 
+179. [100/A+] action                                   | RICH     |  8462 words | Sparse expectations | 
+180. [100/A+] action-comedy                            | RICH     |  7733 words | Sparse expectations | 
+181. [100/A+] academy-romance                          | RICH     |  6763 words | Sparse expectations | 
+182. [100/A+] academic-mystery                         | RICH     |  5208 words | Sparse expectations | 
+183. [92/A] uchronia                                 | THIN     |   315 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+184. [92/A] teen-angst-romance                       | THIN     |   304 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+185. [92/A] sword-and-sorcery                        | THIN     |   305 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+186. [92/A] survival-fiction                         | BARE     |   283 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+187. [92/A] superhero                                | BARE     |   294 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+188. [92/A] steampunk                                | BARE     |   297 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+189. [92/A] spy-thriller                             | THIN     |   304 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+190. [92/A] sports-romance                           | THIN     |   360 words | Weak comps | Thin must-haves | Weak killers | Sparse expectations | 
+191. [ 2/D] satire                                   | RICH     |  4967 words | Missing: reader-expectations.md tropes.md themes.md beats.md must-haves.md genre-killers.md comps.md | Sparse expectations | 
+192. [ 2/D] portal-sf                                | MODERATE |  1067 words | Missing: reader-expectations.md tropes.md themes.md beats.md must-haves.md genre-killers.md comps.md | Sparse expectations | 
+
+## Detailed Issues by Category
+
+### Missing Required Files (should have 7)
+
+- **reader-expectations.md**: missing from 2 genres
+- **tropes.md**: missing from 2 genres
+- **themes.md**: missing from 2 genres
+- **beats.md**: missing from 2 genres
+- **must-haves.md**: missing from 2 genres
+- **genre-killers.md**: missing from 2 genres
+- **comps.md**: missing from 2 genres
+
+### No meta.json (missing picker description)
+
+(None — all have meta.json)
+
+### Particularly Weak or Generic (< 300 words total)
+

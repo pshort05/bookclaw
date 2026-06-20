@@ -1,12 +1,21 @@
-# Survival Fiction Genre Killers
+These are the specific failures that generate DNF (did-not-finish) events and one-star reviews in survival fiction — each listed with the mechanism by which it breaks reader engagement.
 
-What causes DNF (Did Not Finish) and one-star reviews.
+- [ ] **The omniscient protagonist.** A character who knows everything needed for survival from page one has no learning arc, no credible failure, and no discovery. The reader's engagement is partly vicarious problem-solving — watching someone figure out what they need to know, when it is almost too late. A protagonist who already knows removes the puzzle. Even expert characters (the wilderness guide, the ex-military survivalist) must face a specific situation that exceeds their expertise in some critical respect, or they are not a survival fiction protagonist; they are a tour guide.
 
-- Unrealistic solutions
-- Protagonist too fortunate
-- Ignored physiological reality
-- Weak environmental description
-- Passive protagonist
-- No real setbacks
-- Tone-deaf humor
-- Unearned rescue/ending
+- [ ] **Nature solved by convenience rather than skill.** The storm that conveniently stops at the right moment. The berry bush that appears precisely when starvation threatens. The other person who happens by with needed supplies. Convenience is the enemy of the genre. Every problem the environment creates must be solved by the protagonist's own action — even if that action is choosing to endure rather than solve. When the plot solves problems for the protagonist, the novel has stopped being survival fiction and has become a survival-adjacent adventure story.
+
+- [ ] **Ignored physiological reality.** A protagonist who survives three weeks without adequate food and shows no cognitive decline. A character who suffers a serious wound and functions at full capacity within two days. A person dehydrated for four days who can still walk and think clearly. These violations break reader immersion immediately for anyone with outdoors knowledge, medical knowledge, or simply the knowledge that the body is a physical system with non-negotiable requirements. The body's limits are the genre's most reliable source of genuine tension; ignoring them is discarding the genre's best tool.
+
+- [ ] **Passive protagonist.** A character who waits, endures, and hopes is not surviving — they are lingering. Survival fiction requires a protagonist who is always assessing, planning, attempting, and adapting. Passivity reads as incompetence, and an incompetent protagonist who survives is unconvincing by definition. Even when the correct action is to stay still and conserve energy, that must be an active decision with specific reasoning, not an absence of decision-making.
+
+- [ ] **Unearned rescue.** The helicopter that appears from nowhere. The hiker who stumbles by. The radio that somehow starts working. These endings retroactively undermine everything the protagonist did, because they reveal that survival was never really required — rescue was always coming. Even in narratives where rescue is the ending, it must be sought, signaled for, worked toward, or at minimum arrived at a moment when the protagonist has done enough to have deserved it. Rescue must be a consequence, not a coincidence.
+
+- [ ] **Inconsistent resource tracking.** The knife that was lost in chapter three reappears in chapter twelve. The food supply that was exhausted on day eight is available on day ten. These errors may seem small but they are catastrophic to trust. Readers of survival fiction are tracking resources consciously — it is part of their engagement with the puzzle. A resource continuity error tells the reader the author was not taking their own constraint architecture seriously. If the author does not track resources, neither can the reader, and the survival situation becomes meaningless.
+
+- [ ] **Tone-deaf disaster humor.** Comic relief that arrives during scenes of genuine physical crisis or psychological breakdown breaks the genre's tonal contract. Survival fiction can contain humor — dark humor, gallows humor, the sardonic inner voice of a character coping — but it must be the character's humor, emerging from their specific psychology, not the author's hand appearing to lighten the mood. A sentence that makes the reader smile in a scene where the protagonist is dying of cold destroys the reader's belief in the death.
+
+- [ ] **The magical skill acquisition.** The protagonist who has never started a fire suddenly builds a perfect Dakota hole and has a warm camp running within an hour. Skills in survival fiction must be learned at cost — either established in backstory before they are needed, acquired through failure and iteration in the narrative, or improvised with visible uncertainty and imperfect results. Skill that appears cleanly, without foundation or effort, is a genre-level failure. It tells the reader that the author needed the plot to work out and arranged the character's competence accordingly.
+
+- [ ] **Undifferentiated group survival.** In group survival scenarios, every member of the group must be a specific person with a specific relationship to survival pressure. Groups in which everyone is equally functional, equally committed, and equally sane are not groups — they are a composite protagonist. The group's internal tensions (the person who breaks, the person who betrays, the person who imposes their agenda) are a required source of conflict in group survival narratives. A group that cooperates smoothly and loses members only to external threat has missed the genre's central complication.
+
+- [ ] **The too-fast return to normalcy.** A protagonist who survives months of extreme conditions and within a chapter or two is back to their old life, relationships, and concerns has not been changed by the experience. This is dishonest about what extreme survival does to people. The trauma, the perceptual shift, the inability to care about what used to matter, the sensory hyperawareness — these are real responses to extreme experience and survival fiction readers, who have often sought the genre precisely for its unflinching treatment of what humans actually endure, will feel the cheat. Reentry must cost something.
