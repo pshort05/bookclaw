@@ -266,22 +266,24 @@ ACTIVE_COUNT="$(printf '%s' "$PROJ" | psteps_count status eq active)"
 log ""
 log "Phase 3: per-step model pinning passthrough (exact provider/model/temperature)"
 
-# Concepts A — Dark & Political → openrouter / x-ai/grok-2-1212 / 1.1
+# Concepts A — Dark & Political → openrouter / google/gemini-3-pro / 1
+# (matches the n8n "Suggest Book Ideas 1" generator model)
 MO_PROVIDER="$(printf '%s' "$PROJ" | pstep_field label startsWith "Concepts A" modelOverride.provider)"
 MO_MODEL="$(printf '%s' "$PROJ" | pstep_field label startsWith "Concepts A" modelOverride.model)"
 MO_TEMP="$(printf '%s' "$PROJ" | pstep_field label startsWith "Concepts A" modelOverride.temperature)"
-if [ "$MO_PROVIDER" = "openrouter" ] && [ "$MO_MODEL" = "x-ai/grok-2-1212" ] && [ "$MO_TEMP" = "1.1" ]; then
-  pass "parallel member pin survives passthrough (openrouter / x-ai/grok-2-1212 / 1.1)"
+if [ "$MO_PROVIDER" = "openrouter" ] && [ "$MO_MODEL" = "google/gemini-3-pro" ] && [ "$MO_TEMP" = "1" ]; then
+  pass "parallel member pin survives passthrough (openrouter / google/gemini-3-pro / 1)"
 else
   fail "member pin wrong: provider=$MO_PROVIDER model=$MO_MODEL temp=$MO_TEMP"
 fi
 
-# Editor-in-Chief (the join) → openrouter / anthropic/claude-sonnet-4-5 / 0.3
+# Editor-in-Chief (the join) → openrouter / anthropic/claude-sonnet-4.6 / 0.3
+# (matches the n8n "Select Best" editor-in-chief model)
 JO_PROVIDER="$(printf '%s' "$PROJ" | pstep_field label has "Editor-in-Chief" modelOverride.provider)"
 JO_MODEL="$(printf '%s' "$PROJ" | pstep_field label has "Editor-in-Chief" modelOverride.model)"
 JO_TEMP="$(printf '%s' "$PROJ" | pstep_field label has "Editor-in-Chief" modelOverride.temperature)"
-if [ "$JO_PROVIDER" = "openrouter" ] && [ "$JO_MODEL" = "anthropic/claude-sonnet-4-5" ] && [ "$JO_TEMP" = "0.3" ]; then
-  pass "join-step pin survives passthrough (openrouter / anthropic/claude-sonnet-4-5 / 0.3)"
+if [ "$JO_PROVIDER" = "openrouter" ] && [ "$JO_MODEL" = "anthropic/claude-sonnet-4.6" ] && [ "$JO_TEMP" = "0.3" ]; then
+  pass "join-step pin survives passthrough (openrouter / anthropic/claude-sonnet-4.6 / 0.3)"
 else
   fail "join pin wrong: provider=$JO_PROVIDER model=$JO_MODEL temp=$JO_TEMP"
 fi
