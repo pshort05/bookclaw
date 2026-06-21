@@ -56,6 +56,16 @@
 .entry.on{border-color:rgba(240,145,58,.4);background:linear-gradient(180deg,rgba(240,145,58,.08),var(--panel))}
 .entry .et{font-family:'Fraunces',serif;font-weight:480;font-size:15px;display:flex;align-items:center;gap:8px;justify-content:space-between}
 .entry .ed{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.4}
+
+/* genre list: search + collapsible groups */
+.gsearch{width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:9px;padding:8px 11px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;margin-bottom:12px;transition:.15s}
+.gsearch::placeholder{color:var(--faint);font-style:italic}
+.gsearch:focus{border-color:rgba(240,145,58,.45);box-shadow:0 0 0 3px rgba(240,145,58,.08)}
+.ghead{width:100%;display:flex;align-items:center;gap:8px;background:none;border:none;border-bottom:1px solid var(--line);padding:7px 2px;color:var(--text);cursor:pointer;text-align:left}
+.ghead:hover .glabel{color:var(--teal)}
+.gtw{font-size:9px;color:var(--faint);width:11px}
+.glabel{font-family:'Fraunces',serif;font-size:14px;transition:.15s}
+.gcount{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint)}
 .src{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid var(--line-2);color:var(--faint);flex:none}
 .src.builtin{color:var(--dim)}
 .src.yours{color:var(--ember);border-color:rgba(240,145,58,.4)}

@@ -5,6 +5,7 @@ import type { LibraryEntry, LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
 import { listEntries, createLibraryEntry, deleteLibraryEntry, readEntry } from '../../lib/assetApi.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
+import { GENRE_GROUPS } from '../../lib/genreGroups.js';
 import { GLOSSARY } from '../../lib/glossary.js';
 import { useDialog } from '../Dialog.js';
 import styles from '../../routes/AssetStudio.module.css';
@@ -74,6 +75,8 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importPending, setImportPending] = useState<{ id: string; findings: ImportFinding[] } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [genreQuery, setGenreQuery] = useState('');
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const { confirm, prompt, alert } = useDialog();
 
@@ -92,6 +95,7 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setGenreQuery('');
     listEntries(scope, kind)
       .then((result) => { if (!cancelled) setEntries(result); })
       .catch((e) => { if (!cancelled) setError(String(e)); })
@@ -213,6 +217,84 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
 
   const canCreate = scope === 'library' && WRITABLE_KINDS.includes(kind);
 
+  // Genres get a search box + collapsible publishing-standard groups (library
+  // scope only — book scope returns a single snapshot with no groups).
+  const useGroups = kind === 'genre' && scope === 'library';
+  const toggleGroup = (slug: string) =>
+    setOpenGroups((s) => { const n = new Set(s); if (n.has(slug)) n.delete(slug); else n.add(slug); return n; });
+
+  const renderEntry = (e: LibraryEntry) => (
+    <div
+      key={e.name}
+      className={`${styles.entry}${selectedName === e.name ? ' ' + styles.on : ''}`}
+      onClick={() => onSelect(e.name)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(e.name); }}
+    >
+      <div className={styles.et}>
+        <span>{e.name}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {(() => { const b = sourceBadge(scope, e.source); return <span className={`${styles.src} ${styles[b.cls]}`}>{b.label}</span>; })()}
+          {scope === 'library' && e.source !== 'synthetic' && (
+            <a
+              href={exportUrl(kind, e.name)}
+              onClick={(ev) => ev.stopPropagation()}
+              title="Export as zip"
+              style={{ color: 'var(--faint)', textDecoration: 'none', padding: '2px 4px', fontSize: 11, lineHeight: 1 }}
+            >
+              ↓
+            </a>
+          )}
+          {scope === 'library' && e.source === 'workspace' && (
+            <button
+              onClick={(ev) => handleDelete(e, ev)}
+              title="Delete overlay"
+              style={{ border: 'none', background: 'transparent', color: 'var(--faint)', cursor: 'pointer', padding: '2px 4px', fontSize: 11 }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+      {e.description && <div className={styles.ed}>{e.description}</div>}
+    </div>
+  );
+
+  const renderGenreGroups = () => {
+    const q = genreQuery.trim().toLowerCase();
+    if (q) {
+      const hits = entries.filter((e) =>
+        `${e.name.replace(/-/g, ' ')} ${e.name} ${e.description ?? ''}`.toLowerCase().includes(q));
+      return hits.length
+        ? <>{hits.map(renderEntry)}</>
+        : <div style={{ color: 'var(--faint)', fontSize: 12 }}>No genres match "{genreQuery}".</div>;
+    }
+    const grouped = GENRE_GROUPS
+      .map((grp) => ({ ...grp, members: entries.filter((e) => e.groups?.includes(grp.slug)) }))
+      .filter((grp) => grp.members.length > 0);
+    const ungrouped = entries.filter((e) => !GENRE_GROUPS.some((grp) => e.groups?.includes(grp.slug)));
+    const block = (slug: string, label: string, members: LibraryEntry[]) => {
+      const open = openGroups.has(slug) || members.some((e) => e.name === selectedName);
+      return (
+        <div key={slug} style={{ marginBottom: 6 }}>
+          <button type="button" className={styles.ghead} onClick={() => toggleGroup(slug)} aria-expanded={open}>
+            <span className={styles.gtw} aria-hidden="true">{open ? '▾' : '▸'}</span>
+            <span className={styles.glabel}>{label}</span>
+            <span className={styles.gcount}>{members.length}</span>
+          </button>
+          {open && <div style={{ marginTop: 8 }}>{members.map(renderEntry)}</div>}
+        </div>
+      );
+    };
+    return (
+      <>
+        {grouped.map((grp) => block(grp.slug, grp.label, grp.members))}
+        {ungrouped.length > 0 && block('_ungrouped', 'Other', ungrouped)}
+      </>
+    );
+  };
+
   return (
     <div className={styles.entries}>
       <div className={styles.ehead}>
@@ -277,43 +359,16 @@ export function EntryList({ scope, kind, selectedName, onSelect }: Props) {
       {loading && <div style={{ color: 'var(--faint)', fontSize: 12 }}>Loading…</div>}
       {error && <div style={{ color: 'var(--alert)', fontSize: 12 }}>{error}</div>}
 
-      {entries.map((e) => (
-        <div
-          key={e.name}
-          className={`${styles.entry}${selectedName === e.name ? ' ' + styles.on : ''}`}
-          onClick={() => onSelect(e.name)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(e.name); }}
-        >
-          <div className={styles.et}>
-            <span>{e.name}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {(() => { const b = sourceBadge(scope, e.source); return <span className={`${styles.src} ${styles[b.cls]}`}>{b.label}</span>; })()}
-              {scope === 'library' && e.source !== 'synthetic' && (
-                <a
-                  href={exportUrl(kind, e.name)}
-                  onClick={(ev) => ev.stopPropagation()}
-                  title="Export as zip"
-                  style={{ color: 'var(--faint)', textDecoration: 'none', padding: '2px 4px', fontSize: 11, lineHeight: 1 }}
-                >
-                  ↓
-                </a>
-              )}
-              {scope === 'library' && e.source === 'workspace' && (
-                <button
-                  onClick={(ev) => handleDelete(e, ev)}
-                  title="Delete overlay"
-                  style={{ border: 'none', background: 'transparent', color: 'var(--faint)', cursor: 'pointer', padding: '2px 4px', fontSize: 11 }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          </div>
-          {e.description && <div className={styles.ed}>{e.description}</div>}
-        </div>
-      ))}
+      {useGroups && (
+        <input
+          className={styles.gsearch}
+          value={genreQuery}
+          onChange={(ev) => setGenreQuery(ev.target.value)}
+          placeholder="Search genres…"
+        />
+      )}
+
+      {useGroups ? renderGenreGroups() : entries.map(renderEntry)}
     </div>
   );
 }

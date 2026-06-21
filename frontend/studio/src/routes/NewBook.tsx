@@ -4,24 +4,8 @@ import { api, useStore, type LibraryEntry, type LibraryKind, type LibraryEntryFu
 import { GLOSSARY } from '../lib/glossary.js';
 import { OptionCard } from '../components/newbook/OptionCard.js';
 import { SnapshotSummary } from '../components/newbook/SnapshotSummary.js';
+import { GENRE_GROUPS } from '../lib/genreGroups.js';
 import styles from './NewBook.module.css';
-
-// Publishing-standard buckets for the genre picker. Slugs match the `groups`
-// arrays written into each genre's meta.json; order here is display order.
-const GENRE_GROUPS: { slug: string; label: string }[] = [
-  { slug: 'romance', label: 'Romance' },
-  { slug: 'fantasy', label: 'Fantasy' },
-  { slug: 'science-fiction', label: 'Science Fiction' },
-  { slug: 'mystery-crime', label: 'Mystery & Crime' },
-  { slug: 'thriller-suspense', label: 'Thriller & Suspense' },
-  { slug: 'horror', label: 'Horror' },
-  { slug: 'western', label: 'Western' },
-  { slug: 'historical', label: 'Historical' },
-  { slug: 'action-adventure', label: 'Action & Adventure' },
-  { slug: 'speculative-dystopian', label: 'Speculative & Dystopian' },
-  { slug: 'literary', label: 'Literary & Upmarket' },
-  { slug: 'comedy-satire', label: 'Comedy & Satire' },
-];
 
 export function NewBook() {
   const navigate = useNavigate();
