@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-review-and-edit",
+  "label": "Editorial Review and Edit",
+  "description": "A full editorial polish pass over a drafted manuscript, ported from the n8n Neptune editorial suite. Runs the four classic edit passes in order, each per-chapter (analyze → apply): developmental edit (structure/pacing/character/theme), then line edit (prose/flow/show-don't-tell/banned words), then copy edit (grammar/punctuation/consistency), then proofread (surface errors only). Run AFTER production. Two related editorial pipelines were imported alongside this suite but are NOT auto-chained here: editorial-alpha-read (applies supplied alpha-reader feedback) and editorial-outline-council (a multi-model OUTLINE improvement pass, planning-stage) — add either to this sequence if you want them in the chain.",
+  "pipelines": [
+    "editorial-developmental-edit",
+    "editorial-line-edit",
+    "editorial-copy-edit",
+    "editorial-proofread"
+  ]
+}

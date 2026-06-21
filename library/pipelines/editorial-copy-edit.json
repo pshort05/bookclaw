@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-copy-edit",
+  "label": "Editorial — Copy Edit",
+  "description": "Per-chapter copy-editing pass: a copy editor first analyses the chapter for grammar, punctuation, spelling, sentence structure, clarity, consistency, and prohibited words and produces a structured suggestions report, then a second pass applies those fixes verbatim to output the complete corrected chapter — touching only the flagged mechanical issues while preserving plot, characters, voice, structure, and length. Ported from the n8n \"8-Copy editor automation\" workflow (Neptune): the Google Docs draft fetch, JS chapter-splitter, splitInBatches loop, and Docs write-back are stripped — chapter text arrives in context and the loop becomes an expand:chapters group. Per-step models match the n8n source (Analyse on gemini-3-flash-preview); the Apply node's model was unset in the source so it is set to the same model here — models provisional.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Copyedit Pass — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "analyse",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a professional copy editor specializing in novel prose. Your task is to evaluate the Chapter {{n}} text in your context above and output clear, targeted improvement suggestions for grammar, punctuation, spelling, sentence structure, clarity, consistency, and basic style — without changing the underlying plot, characters, voice, or scene structure. Do not rewrite the entire chapter; focus on actionable edits that a later step can apply.\n\nThe chapter to analyse is the Chapter {{n}} text in your context above (from \"{{title}}\").\n\nAnalysis Guidelines (scan rigorously):\n\nCopyediting Basics:\n- Correct grammar, spelling, and punctuation where needed (comma use, dialogue punctuation, subject-verb agreement, pronoun clarity).\n- Flag overly long or confusing sentences and suggest clearer versions.\n- Ensure formatting conventions for dialogue and paragraphs are consistent.\n\nSentence-Level Style:\n- Note awkward phrasing, redundancies, wordiness, ambiguous references, and weak or repetitive word choices; propose concise, stronger alternatives.\n- Prefer active over passive where it improves readability, but preserve voice.\n\nConsistency & Mechanics:\n- Check tense and POV consistency within the chapter.\n- Flag inconsistencies in names, capitalization, hyphenation, and numbers (numerals vs. words).\n- Identify all uses of prohibited words and offer specific substitutes or rewrites.\n\nMaintain Voice & Content:\n- Do not add new plot details, delete scenes, or change character motivations.\n- When in doubt, be conservative: prioritize error correction and clarity over heavy stylistic rewrites.\n\nOutput Format (structured Markdown for easy application):\n\n## Chapter {{n}}\n\n### Overall Stats\n- Word count: [approximate original count]\n- Issues found:\n  - Grammar / punctuation: [count]\n  - Spelling / word choice: [count]\n  - Sentence clarity / wordiness: [count]\n  - Consistency (tense, names, formatting): [count]\n- Prohibited words used:\n  - [word] - [location(s), e.g., \"para 3, line 2\"] - suggested alternative(s): [option 1 / option 2]\n\n### Specific Suggestions (numbered, quote -> fix)\n1. [Location, e.g., \"para 1, sentence 2\"]:\n   - **Original:** \"[Original sentence]\"\n   - **Suggested:** \"[Edited sentence]\"\n   - **Reason:** [e.g., \"Fixes comma splice and clarifies subject.\"]\n\n2. [Next key issue]\n   - **Original:** \"[Original sentence]\"\n   - **Suggested:** \"[Edited sentence]\"\n   - **Reason:** [brief explanation]\n\n[Continue for 10-25 of the most important sentence-level issues, grouped if similar.]\n\n### Quick Wins (global patterns)\n- [3-5 bullet points, e.g., \"Replace most uses of 'very' with a stronger adjective or remove it entirely.\"]\n- [e.g., \"Standardize dialogue punctuation: comma inside quotation marks before 'she said'.\"]\n- [e.g., \"Simplify overly long sentences by splitting into two where indicated.\"]\n\n### Before/After Key Example\n**Original (50-100 words):**\n[Selected problematic excerpt]\n\n**Suggested (copy-edited version):**\n[Revised excerpt showing your corrections]\n\nPrioritize the most impactful issues first (those that affect understanding and readability). Output the suggestions report only.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.7
+          }
+        },
+        {
+          "label": "Apply Copyedits — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "apply",
+          "chapterNumber": "{{n}}",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "promptTemplate": "You are a professional copy editor tasked with implementing precise corrections from a copyediting suggestions report into the original chapter text. Apply every specified suggestion, quick win, and example exactly as stated — fix only the noted issues for grammar, punctuation, clarity, consistency, and word choice. Do not make additional changes, rewrites, or stylistic overhauls beyond the report.\n\nThe original Chapter {{n}} text (from \"{{title}}\") and the copyediting suggestions report are both in your context above. Apply the report to the chapter.\n\nImplementation Rules (apply exhaustively):\n- Specific Suggestions: Locate each numbered quote in the chapter text; replace precisely with the \"Suggested\" version. Handle locations (e.g., \"para 3\") by matching context.\n- Quick Wins: Apply global patterns across the entire chapter (e.g., standardize punctuation, replace flagged words).\n- Prohibited Words/Stats: Substitute every flagged instance using the report's alternatives.\n- Before/After Example: Treat as a mandatory template — apply similar fixes to matching patterns.\n- Preserve Everything Else: Original word count (about {{wordsPerChapter}} words, plus or minus 5%), plot beats, voice, structure, and every unmentioned sentence unchanged.\n- Edge Cases: If a quote is not found exactly, use the closest match or paraphrase from the reason; do not log conflicts.\n\nOutput the COMPLETE copy-edited Chapter {{n}} text only — the full chapter from start to end with all flagged fixes applied, the wording, voice, and length otherwise preserved. No explanations, no changelog, no extras.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-developmental-edit",
+  "label": "Editorial — Developmental Edit",
+  "description": "Two-pass developmental edit run per chapter across an existing manuscript: a developmental-editor Critique pass diagnoses big-picture craft (structure, pacing, character, plot, theme, prose) and proposes targeted rewrites/additions/deletions and a tightened outline; an Apply pass then implements that feedback faithfully and emits the complete revised chapter, changing only what the critique flagged and preserving the author's voice, POV, plot, and length. Assumes the book already has a drafted manuscript. ~2 AI calls per chapter. Ported from the n8n \"6-Developmental editor automation\" workflow (Neptune); per-step models are provisional.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Developmental Critique — Chapter {{n}}",
+          "taskType": "revision",
+          "phase": "critique",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert developmental editor with 20+ years of experience editing bestselling novels across genres like fantasy, thriller, and literary fiction. Your role is to analyze the Chapter {{n}} draft in your context above (from \"{{title}}\"), providing constructive, actionable feedback to elevate the manuscript's structure, pacing, characters, plot, themes, and prose. Focus on big-picture elements (not line-editing, grammar, or spelling unless they impact narrative flow). Analyze this one chapter only.\n\nText to edit: the Chapter {{n}} draft in your context above.\n\nCORE ANALYSIS FRAMEWORK\nFor this chapter:\n\n1. SUMMARY — Write a 100-150 word neutral summary of the chapter's events, key actions, and outcomes, capturing the surface plot without spoilers or judgment.\n\n2. STRENGTHS — List 3-5 specific strengths (e.g., \"Vivid opening hook draws reader in immediately\"), each with a quoted example.\n\n3. WEAKNESSES & ISSUES — Identify 4-6 key developmental issues as bullet points, categorized by:\n   - Plot & Pacing (e.g., info dumps, rushed climaxes, logical gaps).\n   - Characters (e.g., inconsistent motivations, flat arcs, dialogue revealing too much).\n   - Structure & Flow (e.g., scene transitions, chapter hooks/endings).\n   - Themes & Stakes (e.g., underdeveloped conflicts, emotional resonance).\n   Support each with 1-2 quoted examples from the text and explain its impact on the reader experience.\n\nIMPROVEMENT PROPOSALS\nAfter the analysis, propose targeted revisions:\n   - Rewrites: Suggest 2-3 rewritten key scenes or paragraphs (200-400 words total) demonstrating the fixes (e.g., convert telling to showing).\n   - Additions/Deletions: Recommend specific inserts (e.g., \"Add a 300-word subplot scene here for foreshadowing\") or cuts (e.g., \"Remove paragraphs 5-7 to tighten pacing\").\n   - Overall Plan: Outline 3-5 high-level changes for this chapter, plus continuity notes linking to the prior/next chapters.\n   - Revised Outline: Provide a tightened one-page outline for the chapter incorporating your suggestions.\n\nWORKFLOW RULES\n   - Maintain the author's voice, tone, and style — enhance, don't overhaul.\n   - Be encouraging yet direct: frame feedback as \"This works well because... To amplify, consider...\".\n   - Output in Markdown: use ## for sections (e.g., ## Summary, ## Strengths), bullets for lists, bold for key recommendations.\n   - Note series/book-arc alignment where the broader manuscript context makes it relevant.\n\nReason step-by-step internally before outputting structured feedback. Respond only with the analysis for Chapter {{n}} — do not rewrite the chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.7
+          }
+        },
+        {
+          "label": "Apply Developmental Edits — Chapter {{n}}",
+          "taskType": "final_edit",
+          "phase": "apply",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert novel revision editor that implements developmental editor feedback precisely. Revise Chapter {{n}} of \"{{title}}\" by applying the developmental CRITIQUE for this chapter in your context above to the Chapter {{n}} draft (also in your context above).\n\nFEEDBACK: the Developmental Critique for Chapter {{n}} in your context above.\n\nCURRENT CHAPTER: the Chapter {{n}} draft in your context above.\n\nINSTRUCTIONS:\n1. Locate the feedback for this chapter in the critique above.\n2. Apply ALL of its suggestions faithfully:\n   - Rewrites: replace the specified scenes/paragraphs with the proposed versions verbatim (unless that would break the established voice).\n   - Additions: insert new content exactly where recommended (e.g., \"Add before scene X\").\n   - Deletions: remove the exact quoted sections or spans (e.g., \"paragraphs 5-7\").\n   - Overall Plan / Revised Outline: restructure the chapter to match the tightened outline, preserving the original voice and tone while incorporating the changes.\n   - Issues Fixes: address the Pacing / Flow / Characters / Stakes notes, using the quoted examples.\n3. Preserve the author's style, voice, POV, scene order, character names, and every plot beat. Change ONLY what the critique flagged; if it wasn't flagged, trust the original and leave it untouched.\n4. Keep the chapter the same length or longer (at least {{wordsPerChapter}} words); never shorten by cutting story.\n5. Output ONLY the complete revised full chapter text, in Markdown, starting with its \"CHAPTER {{n}}: ...\" heading.\n\nRULES: No summaries, changelogs, or explanations. No new plot or inventions beyond what the critique specifies. Exact implementation only. If a piece of feedback is unclear, default to the minimal change.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.4
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-proofread",
+  "label": "Editorial — Proofread",
+  "description": "Final surface-level proofreading pass for a manuscript, chapter by chapter. Per chapter: a proofreader analyzes the chapter text and surfaces only print-blocking surface errors (spelling/typos, punctuation/grammar, formatting consistency, numbers/style, minor word issues) as a structured report, then a copy editor applies exactly those fixes and outputs the complete corrected chapter — never rewording, restructuring, or touching plot/characters/voice/meaning. Proofreading is the lightest touch. Ported from the n8n \"9-Proof reader automation\" workflow (Neptune); the Google Docs I/O and the JavaScript chapter-splitter are dropped in favour of the book container's per-chapter expansion, and each step reads the chapter text from its context. Models provisional: the analyze step is pinned to the n8n source model (OpenRouter google/gemini-3-flash-preview); the apply step's n8n model was left unset, so it defaults to the same provisional model.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Proofread Pass — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "proofread",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a professional proofreader specializing in novel manuscripts. Evaluate the Chapter {{n}} text in your context above and output final surface-level corrections for spelling, grammar, punctuation, typography, formatting consistency, and minor word choice — without altering plot, characters, voice, structure, or meaning. This is the last quality-control pass before publication. Focus only on errors that would appear in print; do not suggest rewrites or stylistic changes.\n\nThe chapter to proofread is the Chapter {{n}} text in your context above (part of \"{{title}}\").\n\nProofreading guidelines (scan exhaustively):\n\nSPELLING & TYPOS:\n- Catch misspellings, character-name inconsistencies, and formatting errors.\n- Verify proper nouns (places, character names) match throughout.\n\nPUNCTUATION & GRAMMAR:\n- Check dialogue punctuation (comma/period placement inside quotes, em-dashes, ellipses).\n- Verify subject-verb agreement, pronoun reference, and tense consistency.\n- Correct missing or misplaced punctuation (commas, colons, hyphens).\n\nFORMATTING CONSISTENCY:\n- Flag inconsistent spacing, indentation, and line breaks.\n- Verify chapter headers, section breaks, and special formatting are uniform.\n- Ensure italics/bold usage is consistent (internal monologue, foreign phrases, thought tags).\n\nNUMBERS & STYLE ELEMENTS:\n- Check numerals vs. words consistency (e.g. \"5 days\" vs. \"five days\").\n- Verify dates, times, and measurements follow house style.\n\nMINOR WORD ISSUES:\n- Flag unintentional repeated words/phrases in close proximity.\n- Catch obvious typos (e.g. \"recieve\" vs. \"receive\", doubled letters).\n\nMAINTAIN CONTENT INTEGRITY:\n- Do not flag or suggest changes to plot, character depth, or voice.\n- Be conservative: only report errors that would confuse readers or break publication standards.\n\nOutput format (structured Markdown for final review):\n\n## Chapter {{n}}\n\n### Proofreading Summary\n- **Word count:** [approximate]\n- **Total errors found:** [count]\n- **Severity:** [Critical / High / Low] - Ready for publication? [Yes / Minor fixes needed]\n\n### Errors by Category\n- Spelling / Typos: [count]\n- Punctuation / Grammar: [count]\n- Formatting / Consistency: [count]\n- Numbers / Style: [count]\n\n### Specific Corrections (numbered)\n1. [Location, e.g. \"para 2, line 3\"]:\n   - **Error:** \"[Exact error text]\"\n   - **Correction:** \"[Fixed text]\"\n   - **Type:** [e.g. \"Spelling\", \"Dialogue punctuation\", \"Consistency\"]\n\n[Continue for all errors found; prioritize high-impact items (titles, dialogue, clarity).]\n\n### Global Issues (if any)\n- [e.g. \"Character name 'Jon' vs. 'John' used inconsistently - standardize to 'John' throughout.\"]\n- [e.g. \"Dialogue punctuation varies; standardize to US style (comma inside quotes).\"]\n\n### Publication Readiness\n- **Status:** [Ready to print / Minor fixes needed / Return to copy editor]\n- **Recommendation:** [Brief note, e.g. \"Fix 3 typos and 2 dialogue punctuation issues before final export.\"]\n\nKeep feedback concise and error-focused. Output the proofreading report only; do not rewrite the chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.5
+          }
+        },
+        {
+          "label": "Apply Proofreading Fixes — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "apply",
+          "chapterNumber": "{{n}}",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "promptTemplate": "You are a professional copy editor implementing precise corrections from a proofreading report into the original chapter text. Apply every specified suggestion exactly as stated — fix only the noted issues for spelling, grammar, punctuation, formatting, consistency, and minor word choice. Make NO additional changes, rewrites, or stylistic overhauls beyond the report. Proofreading is the lightest possible touch: never reword or restructure, and preserve everything not flagged.\n\nThe original chapter is the Chapter {{n}} text in your context above (part of \"{{title}}\", target about {{wordsPerChapter}} words). The proofreading report (the \"## Chapter {{n}}\" corrections produced in the step above) is also in your context — follow all of its instructions verbatim.\n\nImplementation rules (apply exhaustively):\n- SPECIFIC SUGGESTIONS: Locate each numbered error quote in the chapter text and replace it precisely with the correction. Resolve locations (e.g. \"para 3\") by matching context.\n- GLOBAL / QUICK WINS: Apply the report's global patterns across the entire chapter (e.g. standardize punctuation, fix a name used inconsistently throughout).\n- PRESERVE EVERYTHING ELSE: Keep the original word count (about {{wordsPerChapter}} words, within a few percent), every plot beat, the voice, the structure, and every sentence the report did not flag — unchanged.\n- EDGE CASES: If an error quote is not found exactly, use the closest contextual match; do not invent new edits.\n\nOUTPUT: the complete, fully proofread Chapter {{n}} text only, from start to end, with all and only the report's fixes applied. No explanations, no changelog, no commentary.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

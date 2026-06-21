@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-alpha-read",
+  "label": "Editorial — Alpha-Read Revision",
+  "description": "Per-chapter alpha-read revision pass: for each chapter, an Alpha-Feedback Analysis step diffs the draft against the alpha-reader feedback and proposes concrete, chapter-specific improvements, then an Apply step rewrites the chapter applying only those feedback-driven fixes while preserving voice, plot, and length. This pipeline APPLIES alpha-reader feedback, so that feedback must be supplied — provide it via the book concept ({{description}}) or as a feedback document/artifact in context; without it the analysis has nothing to diff against. Assumes the draft already exists (split into chapters from the book's context). Ported from the n8n \"4-Alpha read improvement automation\" workflow (Neptune). Per-step models are provisional: both the analyze and apply agents ran on google/gemini-3-flash-preview via OpenRouter in the source workflow.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Alpha-Feedback Analysis — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "analyze",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert alpha reader editor proposing targeted revisions to a novel draft. Analyze ONLY the Chapter {{n}} draft in your context above against the alpha-reader feedback in your context (supplied via the book concept / a feedback document). Do not invent feedback that was not supplied.\n\nALPHA-READER FEEDBACK: use the alpha-reader feedback in your context (supplied via the book concept / a feedback document).\n\nCURRENT CHAPTER TEXT: use the Chapter {{n}} draft in your context above.\n\nStep 1: Identify issues from the feedback that appear in THIS CHAPTER. Ignore general or unrelated feedback. Focus on chapter-specific problems like plot holes, character inconsistencies, pacing drags, dialogue issues, worldbuilding gaps, tension drops, or prose problems.\n\nStep 2: For each relevant issue, propose 1-3 concrete, actionable improvements. Be specific: quote exact text snippets, suggest rewrites (under 50 words each), or outline changes (e.g., \"Cut scene X, add Y detail\").\n\nStep 3: If NO improvements are needed, output: {\"needsRevision\": false, \"reason\": \"Chapter aligns well with feedback.\"}\n\nStep 4: Otherwise, output ONLY valid JSON:\n{\n  \"needsRevision\": true,\n  \"chapterNumber\": {{n}},\n  \"summary\": \"1-sentence overview of key issues here.\",\n  \"improvements\": [\n    {\n      \"issue\": \"Brief description\",\n      \"quote\": \"Exact text snippet (if applicable)\",\n      \"suggestion\": \"Actionable fix/rewrite\"\n    }\n  ]\n}\n\nKeep output concise (under 500 words total). Prioritize high-impact changes for pacing, stakes, and character arcs.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview"
+          }
+        },
+        {
+          "label": "Apply Alpha-Read Revisions — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "final_edit",
+          "phase": "apply",
+          "chapterNumber": "{{n}}",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "promptTemplate": "You are an expert novel editor rewriting chapters based on precise alpha-reader improvements. Apply ONLY the improvements from the Alpha-Feedback Analysis in your context above to the Chapter {{n}} draft (also in your context). Do NOT add new content, plot, or changes beyond what the analysis lists.\n\nORIGINAL CHAPTER TEXT: use the Chapter {{n}} draft in your context above.\n\nIMPROVEMENTS TO APPLY (only if needsRevision = true): implement every improvement from the Alpha-Feedback Analysis exactly. If the analysis returned needsRevision = false, output the chapter unchanged.\n\nINSTRUCTIONS:\n1. Preserve the original voice, length (about {{wordsPerChapter}} words, within ±10%), tone, and structure.\n2. For each improvement:\n   - Locate the quote/context.\n   - Integrate the suggestion verbatim or as a precise rewrite.\n   - Blend it seamlessly (e.g., replace the quoted text with the suggested text).\n3. Keep the chapter header intact (e.g., \"## Chapter {{n}}: ...\").\n4. Output ONLY the full revised chapter text — no explanations, no JSON.\n\nRespond with ONLY the complete revised chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview"
+          }
+        }
+      ]
+    }
+  ]
+}

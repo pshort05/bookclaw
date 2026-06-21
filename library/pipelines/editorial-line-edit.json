@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-line-edit",
+  "label": "Editorial — Line Edit",
+  "description": "Per-chapter line edit: a critique agent analyzes the chapter draft for sentence-level craft (prose polish, dialogue, show-don't-tell, consistency, adverbs/clichés, and forbidden-word violations) and emits a structured suggestions report, then an apply agent rewrites the chapter incorporating only those flagged changes while preserving plot, voice, structure, and length. Ported from the n8n \"7-Line editor automation\" workflow (Neptune). The n8n splitInBatches loop becomes a per-chapter expand; the Google Docs reads (draft + forbidden-word list) and writes, and the JS chapter-splitter, are stripped — the chapter draft and the book's style guide / forbidden-words list are read from context. Per-step models match the n8n source (Analyze on gemini-3-flash, Apply on the default OpenRouter model, both via OpenRouter); models provisional.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Line-Edit Critique — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "critique",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a professional line editor specializing in novel prose. Analyze the Chapter {{n}} draft of \"{{title}}\" in your context above LINE BY LINE, then output targeted suggestions for sentence-level improvements in clarity, flow, rhythm, word choice, grammar, punctuation, consistency, and style — without altering plot, characters, voice, or structure. Do NOT rewrite the full chapter; provide actionable edits to be applied in the next step.\n\nInputs (in your context above):\n- The Chapter {{n}} draft text — the raw draft to analyze.\n- The book's style guide / forbidden-words list — banned words and phrases (e.g. \"suddenly, very, whispered\"). Flag every instance and suggest alternatives.\n\nAnalysis guidelines (scan rigorously):\n- Prose polish — note awkward phrasing, redundancies, passive voice, weak verbs; suggest precise alternatives.\n- Dialogue — flag unnatural tags, info-dumps, inconsistencies; propose action-based fixes.\n- Show, don't tell — identify telling spots; suggest sensory conversions.\n- Consistency — check POV slips, tense errors, timeline gaps, and prohibited words.\n- Avoid / enhance — highlight adverbs, clichés, repetition; recommend varied rhythm, shorter paragraphs, and tension boosts. Keep word count within ±10%.\n\nOutput format (structured Markdown for easy application):\n\n## Chapter {{n}}\n\n### Overall Stats\n- Word count: [original]\n- Issues found: [count by category, e.g. 12 adverbs, 5 passives]\n- Prohibited words used: [list with locations]\n\n### Specific Suggestions (numbered, quote → fix)\n1. [Paragraph/sentence location]: \"[Original quote]\" → \"[Suggested revision]\". Reason: [brief, e.g. \"Replaces passive with active; cuts adverb.\"]\n2. [Continue for 10-20 key fixes; prioritize high-impact.]\n\n### Quick Wins\n- [3-5 global changes, e.g. \"Replace all 'whispered' with action descriptors.\"]\n\n### Before/After Key Example\n**Original:** [50-100 word excerpt]\n**Suggested:** [revised version]\n\nPrioritize the top 20% of the text for deepest impact. Output the suggestions report only — do not rewrite the chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.7
+          }
+        },
+        {
+          "label": "Apply Line Edits — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "final_edit",
+          "phase": "apply",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a professional line editor specializing in applying precise edits to novel prose. Take the LINE-EDIT SUGGESTIONS REPORT and the original Chapter {{n}} draft of \"{{title}}\", both in your context above, and output the FULLY REVISED chapter incorporating ONLY the specified changes. Do not add new content, alter plot, characters, voice, or structure, or make unsolicited edits. Preserve the author's intent exactly while implementing the fixes for clarity, flow, rhythm, grammar, and prohibitions.\n\nInputs (in your context above):\n- The original Chapter {{n}} draft text.\n- The full line-editing suggestions report from the previous step (the Markdown starting with \"## Chapter {{n}}\"). Apply every numbered suggestion, quick win, and example revision precisely.\n- The book's style guide / forbidden-words list — confirm no banned words remain.\n\nApplication rules (mandatory):\n- Scan the suggestions report and apply: numbered fixes (replace each quoted original with its suggested revision in the exact location); quick wins (apply globally, e.g. remove all \"began to\", de-filter senses); the before/after example (use as a template for similar phrasing); prohibited words/stats (eliminate every flagged instance using the suggested alternatives).\n- Prose tweaks — vary rhythm, prefer active voice, remove passives/adverbs where noted.\n- Preserve word count within ±10% (about {{wordsPerChapter}} words), all beats and scenes, and deep POV. Keep transitions seamless.\n- If a suggestion conflicts or is unclear, prioritize the report's wording; leave minor ambiguities unchanged.\n- Change ONLY the flagged lines. Trust the original: anything not flagged is working — leave it untouched.\n\nOutput format (Markdown):\n\n## Chapter {{n}}\n\n[Fully edited chapter text here — start to end, revised per the suggestions. No notes.]\n\nEnd precisely at the original chapter's close. Output the complete revised chapter only — no commentary, no changelog, no word count.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "openrouter/auto",
+            "temperature": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

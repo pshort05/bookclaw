@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-outline-council",
+  "label": "Editorial — Outline Council (Multi-Model)",
+  "description": "Multi-model 'council of LLMs' improvement pass on the CHAPTER OUTLINE (planning/outline stage — it operates on the outline, NOT the manuscript prose). Round 1: five models each independently critique the chapter outline (story, structure, theme, pacing, character, dialogue, world) against the character bible and world bible, producing detailed per-chapter improvements. Round 2: three models act as a writers' room rewrite pass, merging the strongest Round 1 ideas, resolving contradictions, and elevating the result. Round 3: a single lead-writer model synthesizes everything into one authoritative, polished, definitive improved outline. Each round sees the prior round's outputs in its context. The two parallel groups are multi-model fan-outs (each member pinned to its own model); the step after each group is the implicit join. Ported from the n8n 'Council of LLMs - 3 Chapter Outline Improvement' workflow (Neptune). Models are provisional.",
+  "steps": [
+    {
+      "parallel": [
+        {
+          "label": "Round 1 — Story Developer (Claude Haiku)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-haiku-4.5"
+          },
+          "promptTemplate": "You are a creative story developer in a roundtable of five AIs improving the chapter outline for \"{{title}}\" ({{chapterCount}} chapters). You have the chapter outline, character bible, and world bible in your context above. Your goal: take the outline and make it better in every way — story, structure, theme, pacing, character, dialogue, world. Use your own instincts and strengths, but explore the whole story.\n\nHow to use your inputs: read the chapter outline thoroughly to understand the full narrative arc and maintain continuity across chapters. Reference the character bible (profiles, backstories, arcs, relationships) so your suggestions align with established traits and motivations, and suggest ways to deepen characterization. Reference the world bible (setting, magic system, cultures, technology, world rules) so your suggestions are consistent with the established world and showcase its details.\n\nFor EACH chapter in the outline, give 5–7 detailed, actionable improvements. Consider: character motivation & emotion (consistent with the character bible); plot beats, stakes, and flow (continuity with the outline); thematic depth & imagery; dialogue & tone (true to established character voices); worldbuilding detail & mood (accurate to the world bible); pacing, hooks, and engagement.\n\nRequirements: label every chapter clearly using its exact title from the outline; use the proper names of people, places, and things from the provided documents and avoid pronouns; be specific (no 'make it better' fluff); note how ideas link across chapters; keep all suggestions continuous with the broader story arc.\n\nFormat:\nChapter [X]: [Title]\n\n- [Suggestion…]\n- [Suggestion…]"
+        },
+        {
+          "label": "Round 1 — Story Developer (GPT-5 nano)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "openai/gpt-5-nano"
+          },
+          "promptTemplate": "You are a creative story developer in a roundtable of five AIs improving the chapter outline for \"{{title}}\" ({{chapterCount}} chapters). You have the chapter outline, character bible, and world bible in your context above. Your goal: take the outline and make it better in every way — story, structure, theme, pacing, character, dialogue, world. Use your own instincts and strengths, but explore the whole story.\n\nHow to use your inputs: read the chapter outline thoroughly to understand the full narrative arc and maintain continuity across chapters. Reference the character bible (profiles, backstories, arcs, relationships) so your suggestions align with established traits and motivations, and suggest ways to deepen characterization. Reference the world bible (setting, magic system, cultures, technology, world rules) so your suggestions are consistent with the established world and showcase its details.\n\nFor EACH chapter in the outline, give 5–7 detailed, actionable improvements. Consider: character motivation & emotion (consistent with the character bible); plot beats, stakes, and flow (continuity with the outline); thematic depth & imagery; dialogue & tone (true to established character voices); worldbuilding detail & mood (accurate to the world bible); pacing, hooks, and engagement.\n\nRequirements: label every chapter clearly using its exact title from the outline; use the proper names of people, places, and things from the provided documents and avoid pronouns; be specific (no 'make it better' fluff); note how ideas link across chapters; keep all suggestions continuous with the broader story arc.\n\nFormat:\nChapter [X]: [Title]\n\n- [Suggestion…]\n- [Suggestion…]"
+        },
+        {
+          "label": "Round 1 — Story Developer (Gemini Flash)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-2.5-flash"
+          },
+          "promptTemplate": "You are a creative story developer in a roundtable of five AIs improving the chapter outline for \"{{title}}\" ({{chapterCount}} chapters). You have the chapter outline, character bible, and world bible in your context above. Your goal: take the outline and make it better in every way — story, structure, theme, pacing, character, dialogue, world. Use your own instincts and strengths, but explore the whole story.\n\nHow to use your inputs: read the chapter outline thoroughly to understand the full narrative arc and maintain continuity across chapters. Reference the character bible (profiles, backstories, arcs, relationships) so your suggestions align with established traits and motivations, and suggest ways to deepen characterization. Reference the world bible (setting, magic system, cultures, technology, world rules) so your suggestions are consistent with the established world and showcase its details.\n\nFor EACH chapter in the outline, give 5–7 detailed, actionable improvements. Consider: character motivation & emotion (consistent with the character bible); plot beats, stakes, and flow (continuity with the outline); thematic depth & imagery; dialogue & tone (true to established character voices); worldbuilding detail & mood (accurate to the world bible); pacing, hooks, and engagement.\n\nRequirements: label every chapter clearly using its exact title from the outline; use the proper names of people, places, and things from the provided documents and avoid pronouns; be specific (no 'make it better' fluff); note how ideas link across chapters; keep all suggestions continuous with the broader story arc.\n\nFormat:\nChapter [X]: [Title]\n\n- [Suggestion…]\n- [Suggestion…]"
+        },
+        {
+          "label": "Round 1 — Story Developer (Llama 4 Scout)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "meta-llama/llama-4-scout"
+          },
+          "promptTemplate": "You are a creative story developer in a roundtable of five AIs improving the chapter outline for \"{{title}}\" ({{chapterCount}} chapters). You have the chapter outline, character bible, and world bible in your context above. Your goal: take the outline and make it better in every way — story, structure, theme, pacing, character, dialogue, world. Use your own instincts and strengths, but explore the whole story.\n\nHow to use your inputs: read the chapter outline thoroughly to understand the full narrative arc and maintain continuity across chapters. Reference the character bible (profiles, backstories, arcs, relationships) so your suggestions align with established traits and motivations, and suggest ways to deepen characterization. Reference the world bible (setting, magic system, cultures, technology, world rules) so your suggestions are consistent with the established world and showcase its details.\n\nFor EACH chapter in the outline, give 5–7 detailed, actionable improvements. Consider: character motivation & emotion (consistent with the character bible); plot beats, stakes, and flow (continuity with the outline); thematic depth & imagery; dialogue & tone (true to established character voices); worldbuilding detail & mood (accurate to the world bible); pacing, hooks, and engagement.\n\nRequirements: label every chapter clearly using its exact title from the outline; use the proper names of people, places, and things from the provided documents and avoid pronouns; be specific (no 'make it better' fluff); note how ideas link across chapters; keep all suggestions continuous with the broader story arc.\n\nFormat:\nChapter [X]: [Title]\n\n- [Suggestion…]\n- [Suggestion…]"
+        },
+        {
+          "label": "Round 1 — Story Developer (Grok 4 Fast)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "x-ai/grok-4-fast"
+          },
+          "promptTemplate": "You are a creative story developer in a roundtable of five AIs improving the chapter outline for \"{{title}}\" ({{chapterCount}} chapters). You have the chapter outline, character bible, and world bible in your context above. Your goal: take the outline and make it better in every way — story, structure, theme, pacing, character, dialogue, world. Use your own instincts and strengths, but explore the whole story.\n\nHow to use your inputs: read the chapter outline thoroughly to understand the full narrative arc and maintain continuity across chapters. Reference the character bible (profiles, backstories, arcs, relationships) so your suggestions align with established traits and motivations, and suggest ways to deepen characterization. Reference the world bible (setting, magic system, cultures, technology, world rules) so your suggestions are consistent with the established world and showcase its details.\n\nFor EACH chapter in the outline, give 5–7 detailed, actionable improvements. Consider: character motivation & emotion (consistent with the character bible); plot beats, stakes, and flow (continuity with the outline); thematic depth & imagery; dialogue & tone (true to established character voices); worldbuilding detail & mood (accurate to the world bible); pacing, hooks, and engagement.\n\nRequirements: label every chapter clearly using its exact title from the outline; use the proper names of people, places, and things from the provided documents and avoid pronouns; be specific (no 'make it better' fluff); note how ideas link across chapters; keep all suggestions continuous with the broader story arc.\n\nFormat:\nChapter [X]: [Title]\n\n- [Suggestion…]\n- [Suggestion…]"
+        }
+      ]
+    },
+    {
+      "parallel": [
+        {
+          "label": "Round 2 — Writers' Room Rewrite (Claude Haiku)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-haiku-4.5"
+          },
+          "promptTemplate": "You are part of a small team of expert story analysts reviewing the five Round 1 creative passes on the chapter outline for \"{{title}}\". The chapter outline, character bible, and world bible are in your context above, along with all five Round 1 outputs. Your job: find the strongest material, merge compatible ideas, and fix what's broken — this is the 'writers' room rewrite pass.'\n\nUse the outline, character bible, and world bible as reference context so your work stays consistent with the established story world. The five Round 1 analyses give five different perspectives on the chapters; review all five, identify the strongest ideas, merge complementary suggestions, and resolve any conflicts.\n\nYour tasks: identify the strongest concepts, scenes, and emotional beats from the Round 1 outputs; merge overlapping ideas into unified, improved versions; eliminate contradictions or filler; make light improvements where something could hit harder emotionally, thematically, or structurally; output one cohesive, elevated outline ready for the Lead Writer to finalize.\n\nRequirements: use the proper names of people, places, and things and avoid pronouns; label every chapter using its exact title from the outline; credit standout ideas (e.g. 'best from Pass 3,' 'merged Pass 2 + 4'); do not over-edit — keep the creative spark intact; aim for clarity, flow, and balance.\n\nFormat:\nChapter [X]: [Title]\n\nSummary of the best ideas merged: …\n\nFinal refined version: …"
+        },
+        {
+          "label": "Round 2 — Writers' Room Rewrite (GPT-5 nano)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "openai/gpt-5-nano"
+          },
+          "promptTemplate": "You are part of a small team of expert story analysts reviewing the five Round 1 creative passes on the chapter outline for \"{{title}}\". The chapter outline, character bible, and world bible are in your context above, along with all five Round 1 outputs. Your job: find the strongest material, merge compatible ideas, and fix what's broken — this is the 'writers' room rewrite pass.'\n\nUse the outline, character bible, and world bible as reference context so your work stays consistent with the established story world. The five Round 1 analyses give five different perspectives on the chapters; review all five, identify the strongest ideas, merge complementary suggestions, and resolve any conflicts.\n\nYour tasks: identify the strongest concepts, scenes, and emotional beats from the Round 1 outputs; merge overlapping ideas into unified, improved versions; eliminate contradictions or filler; make light improvements where something could hit harder emotionally, thematically, or structurally; output one cohesive, elevated outline ready for the Lead Writer to finalize.\n\nRequirements: use the proper names of people, places, and things and avoid pronouns; label every chapter using its exact title from the outline; credit standout ideas (e.g. 'best from Pass 3,' 'merged Pass 2 + 4'); do not over-edit — keep the creative spark intact; aim for clarity, flow, and balance.\n\nFormat:\nChapter [X]: [Title]\n\nSummary of the best ideas merged: …\n\nFinal refined version: …"
+        },
+        {
+          "label": "Round 2 — Writers' Room Rewrite (Gemini Flash)",
+          "taskType": "revision",
+          "phase": "outline",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-2.5-flash"
+          },
+          "promptTemplate": "You are part of a small team of expert story analysts reviewing the five Round 1 creative passes on the chapter outline for \"{{title}}\". The chapter outline, character bible, and world bible are in your context above, along with all five Round 1 outputs. Your job: find the strongest material, merge compatible ideas, and fix what's broken — this is the 'writers' room rewrite pass.'\n\nUse the outline, character bible, and world bible as reference context so your work stays consistent with the established story world. The five Round 1 analyses give five different perspectives on the chapters; review all five, identify the strongest ideas, merge complementary suggestions, and resolve any conflicts.\n\nYour tasks: identify the strongest concepts, scenes, and emotional beats from the Round 1 outputs; merge overlapping ideas into unified, improved versions; eliminate contradictions or filler; make light improvements where something could hit harder emotionally, thematically, or structurally; output one cohesive, elevated outline ready for the Lead Writer to finalize.\n\nRequirements: use the proper names of people, places, and things and avoid pronouns; label every chapter using its exact title from the outline; credit standout ideas (e.g. 'best from Pass 3,' 'merged Pass 2 + 4'); do not over-edit — keep the creative spark intact; aim for clarity, flow, and balance.\n\nFormat:\nChapter [X]: [Title]\n\nSummary of the best ideas merged: …\n\nFinal refined version: …"
+        }
+      ]
+    },
+    {
+      "label": "Round 3 — Final Synthesis (Lead Writer, Claude Sonnet)",
+      "taskType": "final_edit",
+      "phase": "outline",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-sonnet-4.5"
+      },
+      "promptTemplate": "You are the Lead Writer responsible for crafting the final, definitive improved outline for \"{{title}}\" ({{chapterCount}} chapters). You have the original chapter outline, character bible, and world bible in your context above, the five Round 1 creative passes, and the three Round 2 refined rewrites. Your role: make the outline read like the professional blueprint of a finished novel.\n\nHow to use your inputs: use the outline, character bible, and world bible as reference context to ensure continuity and consistency with the full story. The five Round 1 passes show the breadth of ideas explored — understand them, but prioritize the Round 2 synthesis. The three Round 2 rewrites are your PRIMARY source material; the Round 2 team already did the heavy lifting of merging the best Round 1 ideas and eliminating contradictions.\n\nYour tasks: absorb all refined material from Round 2; synthesize the three Round 2 perspectives into one authoritative version for each chapter; strengthen pacing, continuity, character arcs, and emotional payoffs; polish language, clarity, and flow; ensure tonal and thematic consistency across the whole outline. Output one cohesive, ready-to-use final outline covering every chapter.\n\nRequirements: maintain clear chapter labels using exact titles from the outline; integrate all the best ideas from Round 2 and drop the weak ones; do not write dialogue — only describe what each character says; use the proper names of people, places, and things and avoid pronouns; end with a short 'Key Innovations' summary noting what was improved overall.\n\nOutput format:\nFinal Enhanced Outline:\n\nChapter [X]: [Title] – summary paragraph\n\nChapter [Y]: [Title] – summary paragraph\n\nKey Innovations: [Summary of improvements made across the outline]"
+    }
+  ]
+}

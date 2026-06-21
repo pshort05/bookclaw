@@ -27,7 +27,12 @@ Every row below carries a **Server** column (Neptune / Mercury).
 > - **StoryHackerAI → the `nerdynovelistai` suite** — 5 pipelines (`nerdynovelistai-stage1-dossier`, `-stage2-characters`, `-stage3-worldbuilding`, `-stage4-outline`, `-stage5-chapters`) + the `nerdynovelistai` **sequence**. (BookClaw brand "NerdyNovelistAI"; the n8n source provenance still cites StoryHackerAI.)
 > - **MSF → the `msf` suite** — 6 pipelines (`msf-phase1-ideation`, `-phase2-developmental`, `-phase3-outline`, `-phase4-prose`, `-phase5-summary-bible`, `-phase6-finalize`) + the `msf` **sequence**. The four Phase-1 ideation variants were consolidated into one `msf-phase1-ideation`; the all-in-one `xjfw8` is covered by phases 1–3 (not separately ported).
 >
-> **Still open:** the Neptune editor personas (cluster 10), the standalone prompt assets, and folding the romantasy/numbered-suite/scene-drafter/humanizer variants into the ported pipelines.
+> - **Neptune editorial suite → "Editorial Review and Edit"** — 6 `editorial-*` revision pipelines (`-developmental-edit`, `-line-edit`, `-copy-edit`, `-proofread`, `-alpha-read`, `-outline-council`) + the `editorial-review-and-edit` **sequence** (chains dev→line→copy→proof; alpha-read + outline-council standalone).
+> - **Standalone prompt assets** — 6 `library/prompts/` assets: `scene-brief`, `chapter-summary`, `character-arc-summary`, `public-domain-modernize`, `story-hack`, `short-story-hack`.
+> - **Scene drafter** — `scene-drafter` pipeline (per-chapter brief→prose).
+> - **Humanize / de-AI polish** — `humanize-claude` (11 passes) + `humanize-gemini` (10 passes) pipelines, built from the owner's `pshort05/{ClaudeHumanizer,GeminiHumanizer}` GitHub prompt repos.
+>
+> **Effectively complete:** every importable writing workflow has been ported. What remains is **dedup** of superseded Neptune variants (Braindump→Dossier / Dossier→Outline / Outline→Chapters / romantasy planning+production variants) — not new imports.
 
 ```
 Importability (of 83 workflows)            N=Neptune  M=Mercury
@@ -75,17 +80,17 @@ The 62 to-port workflows collapse to **~10 canonical BookClaw assets**.
 | 5 | **Romantasy planning** ✅*ported* + variants | `romantasy-planning.json` | `a02D2` V2 **ported** · `kxxF5` V1 · `RBCVT` · `AW7L9` (N) |
 | 6 | **Outline → Chapters** (production) | production pipeline | `IHTaF`·`ZzKHM`·`86NzV`·`9XdYI`·`lkWKu` (N) |
 | 7 | **Romantasy production** ✅*ported* + variants | `romantasy-production.json` | `FSkMG` **ported** · `9M6Wc`·`Jtq3M`·`gmExi`·`xrJRe` (N) · `aq1zq` (M, mislabeled "MSF") |
-| 8 | **Scene drafter** (beat→brief→prose) | small production pipeline + scene-brief prompt | `Eu0e5`·`F9pZp`·`7Zrv`·`qj7Vw`·`hXYjx` (N) |
-| 9 | **Humanize / de-AI polish** (10-stage) | revision pipeline + external prompt corpus | `2cld7`·`qZJnF`·`dgGYp`·`ashDN` (N) |
-| 10 | **Editor personas** (dev/line/copy/proof/alpha + Council) | 6 `editor` assets | `0lPjG`·`5cLbh`·`2mBFA`·`8cURn`·`I5qY9`·`T1CaY` (N) |
-| — | **Standalone prompt assets** | `prompt` assets | scene-brief `Xznp2`/`iZGg5` · summary `V09sr`/`dOUOe`/`ml4PU`/`KneULz`(M) · public-domain `m6OBl` · story-hack `ArzkC`/`b9wH7` · blurb `F7jpU`(M) |
+| 8 | **Scene drafter** (beat→brief→prose) | ✅ **IMPORTED** → `scene-drafter` pipeline + `scene-brief` prompt | `Eu0e5`·`F9pZp`·`7Zrv`·`qj7Vw`·`hXYjx` (N) |
+| 9 | **Humanize / de-AI polish** (10-stage) | ✅ **IMPORTED** → `humanize-claude` + `humanize-gemini` pipelines (built from the owner's `pshort05/{ClaudeHumanizer,GeminiHumanizer}` GitHub repos) | `2cld7`·`qZJnF`·`dgGYp`·`ashDN` (N) |
+| 10 | **Editor personas** (dev/line/copy/proof/alpha + Council) | ✅ **IMPORTED** → 6 `editorial-*` revision pipelines + the `editorial-review-and-edit` sequence | `0lPjG`·`5cLbh`·`2mBFA`·`8cURn`·`I5qY9`·`T1CaY` (N) |
+| — | **Standalone prompt assets** | ✅ **IMPORTED** → 6 `library/prompts/` assets (`scene-brief`, `chapter-summary`, `character-arc-summary`, `public-domain-modernize`, `story-hack`, `short-story-hack`) | scene-brief `Xznp2`/`iZGg5` · summary `V09sr`/`dOUOe`/`ml4PU`/`KneULz`(M) · public-domain `m6OBl` · story-hack `ArzkC`/`b9wH7` · blurb `F7jpU`(M, → `msf-phase6`) |
 
 ### Recommended port order
 1. ✅ **DONE — StoryHackerAI suite (Mercury, cluster 1)** → the `nerdynovelistai` sequence + 5 stage pipelines (2026-06-20). The cleanest, most modular design and a 1:1 match for a BookClaw pipeline **sequence**; this was the reference port.
 2. ✅ **DONE — MSF suite (Mercury, cluster 2)** → the `msf` sequence + 6 phase pipelines (2026-06-20). The four Phase-1 ideation variants were consolidated into one `msf-phase1-ideation` (the **Parallel/Divergent** fan-out → a `parallel` block with per-step `modelOverride`); Phase 6's blurb step became a `marketing` step and the cover-image step was dropped (native BookClaw tooling). Provisional per-step model IDs — confirm against OpenRouter.
-3. **Neptune editor personas (cluster 10)** — uniform analyze→apply template; quick wins as `editor` assets. ← next up
-4. **Standalone prompt assets** — trivial single-transform ports.
-5. **Fold Neptune romantasy + numbered-suite variants** into the ported pipelines rather than duplicating.
+3. ✅ **DONE — Neptune editorial suite (cluster 10)** → 6 `editorial-*` revision pipelines + the `editorial-review-and-edit` sequence (2026-06-20). Each manuscript editor = a per-chapter `expand:chapters` analyze→apply pair; Council = a multi-model `parallel` outline pass. Sequence chains dev→line→copy→proof; alpha-read + outline-council standalone.
+4. ✅ **DONE — Standalone prompt assets + scene-drafter + humanize (2026-06-20)** → 6 `library/prompts/` assets, the `scene-drafter` pipeline, and `humanize-claude` (11 passes) + `humanize-gemini` (10 passes) pipelines built from the `pshort05/{ClaudeHumanizer,GeminiHumanizer}` repos.
+5. **Fold Neptune romantasy + numbered-suite variants** — dedup of superseded duplicates (mostly mark-and-skip; not new imports).
 
 ### Common adaptation (applies to nearly every pipeline)
 - **I/O:** swap Google Docs/Drive (Neptune numbered suite + a few Mercury) and local-FS reads-writes (`/home/node/.n8n-files/msf-novels/<slug>/`, `Dropbox/Writing/`) for BookClaw's per-book `templates/` + `data/`.
@@ -170,16 +175,16 @@ The 62 to-port workflows collapse to **~10 canonical BookClaw assets**.
 | Neptune | a02D2zwwK6Yt6wbM | Idea to Book Outline - Romantasy V2 | `romantasy-planning.json` ✅ |
 | Neptune | FSkMGDuNQjxPhcy4 | Romantasy Book Writer - Shattered Cradle World | `romantasy-production.json` ✅ |
 
-## Editor personas (6 — all Neptune)
+## Editor personas (6 — all Neptune) — ✅ IMPORTED as the "Editorial Review and Edit" suite
 
 | Server | ID | Name | BookClaw target |
 |---|---|---|---|
-| Neptune | 0lPjGX4hKt19GxlZ | 6-Developmental editor automation | `editor` (developmental) + `revision` |
-| Neptune | 5cLbhkSaeVdRnKfF | 7-Line editor automation | `editor` (line) + `revision` |
-| Neptune | 2mBFAeaLFBAvmMG7 | 8-Copy editor automation | `editor` (copy) + `final_edit` |
-| Neptune | 8cURnEYyaRIM9inR | 9-Proof reader automation | `editor` (proofread) + `final_edit` |
-| Neptune | I5qY93U4k21w6Uto | 4-Alpha read improvement automation | `editor` (alpha) / `revision` |
-| Neptune | T1CaY8Z27Aj0MHtU | Council of LLMs - 3 Chapter Outline Improvement | `editor` (developmental, multi-model) → `parallel` + synthesis |
+| Neptune | 0lPjGX4hKt19GxlZ | 6-Developmental editor automation | ✅ `editorial-developmental-edit` (in `editorial-review-and-edit` seq) |
+| Neptune | 5cLbhkSaeVdRnKfF | 7-Line editor automation | ✅ `editorial-line-edit` (in seq) |
+| Neptune | 2mBFAeaLFBAvmMG7 | 8-Copy editor automation | ✅ `editorial-copy-edit` (in seq) |
+| Neptune | 8cURnEYyaRIM9inR | 9-Proof reader automation | ✅ `editorial-proofread` (in seq) |
+| Neptune | I5qY93U4k21w6Uto | 4-Alpha read improvement automation | ✅ `editorial-alpha-read` (standalone — needs reader feedback) |
+| Neptune | T1CaY8Z27Aj0MHtU | Council of LLMs - 3 Chapter Outline Improvement | ✅ `editorial-outline-council` (standalone — multi-model `parallel`, outline-stage) |
 
 ## Prompt assets (10)
 
@@ -228,6 +233,6 @@ The 62 to-port workflows collapse to **~10 canonical BookClaw assets**.
 
 ## Next step
 
-**Done (2026-06-20):** the Mercury **StoryHackerAI** suite → the `nerdynovelistai` sequence + 5 pipelines, and the Mercury **MSF** suite → the `msf` sequence + 6 pipelines (see [COMPLETED.md](COMPLETED.md); provisional per-step model IDs to confirm against OpenRouter).
+**Done (2026-06-20):** the Mercury **StoryHackerAI** suite → the `nerdynovelistai` sequence + 5 pipelines; the Mercury **MSF** suite → the `msf` sequence + 6 pipelines; the Neptune **editorial suite** → the `editorial-review-and-edit` sequence + 6 `editorial-*` pipelines; **6 standalone `prompt` assets**; the **`scene-drafter`** pipeline; and the **`humanize-claude` + `humanize-gemini`** pipelines (from the `pshort05/*Humanizer` GitHub repos). See [COMPLETED.md](COMPLETED.md); provisional per-step model IDs to confirm against OpenRouter.
 
-**Remaining** (per `docs/TODO.md`): the Neptune **editor personas** (cluster 10) → `editor` assets, the **standalone prompt assets** → `prompt` assets, then **fold** the Neptune romantasy + numbered-suite + scene-drafter/humanizer variants into the ported pipelines rather than duplicating.
+**Remaining:** only **dedup** — the superseded Neptune Braindump→Dossier / Dossier→Outline / Outline→Chapters / romantasy planning+production variants are duplicates of assets already ported; mark-and-skip rather than re-import. Every distinct importable writing workflow is now in BookClaw.

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "name": "scene-drafter",
+  "label": "Scene Drafter (Brief → Prose)",
+  "description": "A lightweight 2-step per-chapter scene drafter: first a comprehensive scene brief from the chapter's beats and worldbuilding context, then the full scene prose drafted from that brief. Simpler than the full production pipelines (no critique/rewrite/humanize loop) — use it for fast first drafts. Assumes the book already has a chapter outline (the source of per-chapter beats) plus a world bible and genre guide. Ported from the n8n \"My workflow 10\" scene-drafter (Neptune). Models provisional: brief on a small/fast model, prose on a large model.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Scene Brief — Chapter {{n}}",
+          "skill": "outline",
+          "taskType": "outline",
+          "phase": "brief",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a professional screenwriter and story analyst.\n\nBased on the scene beats for Chapter {{n}} of \"{{title}}\", generate an approximately 1000-word SCENE BRIEF that another writer will use to draft the full chapter. This is the blueprint, not the prose.\n\nDraw the beats from the Chapter {{n}} entry in the book's outline in your context. Draw all setting, atmosphere, technology, and continuity detail from the book's world bible and genre guide in your context — stay strictly consistent with the established world and never reference real-world places not already in the world bible.\n\nInclude these sections:\n- Scene setup and atmosphere\n- Key emotional beats\n- Character moments\n- Dialogue requirements\n- Pacing notes\n- Visual elements\n- Any special effects or technical requirements\n\nAnalyze the beats thoroughly and produce a comprehensive brief a writer could draft the full scene from.\n\nOUTPUT: the scene brief only. Do not write the chapter prose.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-3.5-haiku"
+          }
+        },
+        {
+          "label": "Draft Scene — Chapter {{n}}",
+          "skill": "write",
+          "taskType": "creative_writing",
+          "phase": "draft",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a bestselling novelist with expertise in deep point of view, sensory detail, and character-driven prose.\n\nBased on the SCENE BRIEF for Chapter {{n}} of \"{{title}}\" in your context above, write the complete scene/chapter with these requirements:\n\n1. Prose Style:\n   - Clear, direct, concise language (no purple prose)\n   - Active voice only\n   - Show, don't tell\n   - Deep point of view from the POV character\n   - Sensory-rich descriptions\n   - Dialogue carries action (no unnecessary dialogue tags)\n\n2. Structure:\n   - Write the entire scene as described in the brief\n   - Target about {{wordsPerChapter}} words\n   - Natural pacing with varied sentence length\n   - Mix short, punchy sentences with longer descriptive passages\n\n3. Writing Rules:\n   - No adverbs (avoid -ly words)\n   - No clichés or overused phrases\n   - Active voice throughout\n   - Avoid mushy dialogue\n   - Skip \"he/she said\" tags when possible (show through action/expression)\n   - Fresh, original descriptions\n\nWrite the full scene now, fully immersed in the POV character's perspective. The reader should feel present in the moment, seeing events through their eyes.\n\nOUTPUT: the chapter prose only, in Markdown. No meta-commentary, no word count, no author's notes.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-3-opus",
+            "temperature": 0.7
+          }
+        }
+      ]
+    }
+  ]
+}

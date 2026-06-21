@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "character-arc-summary",
+  "label": "Character Arc Summary",
+  "description": "Concise (~50-word) character-arc summary from an outline and character profile. Ported from the n8n \"My workflow 12\" workflow (Neptune).",
+  "systemPrompt": "You are an expert parser. Summarize the information in the outline and character profile provided in the text below, and generate a 50-word summary that explains what happens to the named character over the course of the story.",
+  "model": "google/gemini-2.5-flash"
+}
