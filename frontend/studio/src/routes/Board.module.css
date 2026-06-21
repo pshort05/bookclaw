@@ -138,7 +138,70 @@
 /* filters row */
 .filters {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+}
+
+/* divider + label introducing the Author/Series/Genre grouping buttons */
+.fsep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 6px;
+  background: var(--line);
+}
+
+.grouplbl {
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+/* collapsible group block (active when grouping by author/series/genre) */
+.groupBlock {
+  margin: 18px 0 4px;
+}
+
+.groupBlock:first-of-type {
+  margin-top: 6px;
+}
+
+.ghead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 7px 2px;
+  margin-bottom: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ghead:hover .glabel { color: var(--ember); }
+
+.gtw {
+  font-size: 9px;
+  color: var(--faint);
+  width: 11px;
+}
+
+.glabel {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  transition: 0.15s;
+}
+
+.gcount {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
 }
 
 .chip {
