@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "name": "nerdynovelistai-stage5-chapters",
+  "label": "NerdyNovelistAI Stage 5: Outline to Chapters",
+  "description": "Per-chapter prose production: a comprehensive plot/character/worldbuilding scene brief, a pre-draft chronology check and brief rewrite, a deep-POV first draft, then post-draft chronology and style passes feeding a final rewrite. Ported from the n8n \"StoryHackerAI - Stage 5 - Outline to Chapters\" workflow (Mercury). Assumes the book already has an outline, a character bible, and a world bible in context (from a prior planning pass). Models are provisional. ~6 AI calls per chapter.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Scene Brief — Chapter {{n}}",
+          "taskType": "outline",
+          "phase": "brief",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert plotter, character expert, and developmental writer of bestselling books. This is a complex task and requires your full faculties; you are not allowed to be mediocre. Build a COMPREHENSIVE SCENE BRIEF for Chapter {{n}} of \"{{title}}\" that another writer will use as the blueprint for the full chapter prose. This is NOT the chapter itself.\n\nWork strictly from the outline, character bible, and world bible in your context, and from the prior chapters already written in your context. Stay consistent with all of them. Label the chapter clearly as \"Chapter {{n}}\". The brief has three parts:\n\n## PART 1 — PLOT BRIEF\n- Plot Overview: reproduce the outline's entry for Chapter {{n}} (its summary, POV, levels, and any sliders) verbatim.\n- POV and Tense: pull the viewpoint character from the outline; match the tense established by the prior chapters in your context.\n- Beats & Blocking: 20-25 scene beats covering only what happens (save sensory detail for the prose). For each beat, give the action AND the blocking — how characters/objects are positioned in space, how they move, and the physical actions they perform in relation to each other and their surroundings. Label both the beat and the blocking.\n- Continuity: the plot must pick up naturally from where the previous chapter (in your context) left off, with no repeats of moments already covered.\n- Cliffhanger: end on a small, earned cliffhanger that flows into the next chapter (see the outline) without revealing anything meant for later. Good cliffhangers raise stakes or land on a consequence/decision/reversal/revelation/emotional gut-punch; cut earlier than feels natural, end on a short punchy line, and never fake-out or withhold info the POV already knows.\n\n## PART 2 — CHARACTER BRIEF\nFor each character active in this chapter, reproduce their profile from the character bible, adjusted to a SNAPSHOT in time for this scene: strip anything that alludes to future events (consult the outline), and add this-scene specifics (clothing, posture, visible wear). Treat each personality slider as a baseline that can shift for this scene: list every slider with its baseline value, the adjusted value (-10 to 10) for this specific scene, and one sentence on what that implies here. For mentioned or indirectly linked characters, give a 1-2 sentence snapshot each, with no future details.\n\n## PART 3 — WORLDBUILDING BRIEF\nFor each worldbuilding element active in this chapter, reproduce its section from the world bible, trimmed to a snapshot for this scene: remove anything alluding to future events, and reflect this-chapter conditions (time of day, weather, tone). Ensure each element carries ALL information needed to write this chapter. For mentioned or indirectly linked elements, give a 1-2 sentence snapshot each, with no future details.\n\nOUTPUT: the scene brief only, in Markdown, headed \"# Chapter {{n}} Scene Brief\". Do not write the chapter prose.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3.1-pro-preview",
+            "temperature": 1
+          }
+        },
+        {
+          "label": "Scene Brief Chronology Check & Rewrite — Chapter {{n}}",
+          "taskType": "revision",
+          "phase": "brief-revision",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert plotter and developmental editor. Audit the Chapter {{n}} scene brief in your context for chronological consistency against the outline, the character bible, the world bible, and the prior chapters in your context, then apply your fixes.\n\nWatch for:\n- Plot revealed too early: motivations, secrets, guilt/innocence, or worldbuilding the reader/characters should not yet know at this point.\n- Plot already revealed: anything treated as newly introduced that the outline shows is already established.\n- Continuity: does the brief sit naturally in its correct slot in the novel, given the outline, and flow from the end of the previous chapter?\n- Cliffhanger: does it feel natural and lead into the next chapter (see the outline) without giving away later reveals?\n\nApply ONLY the changes these issues require; leave everything else in the brief untouched.\n\nOUTPUT: the COMPLETE corrected scene brief only, in Markdown, headed \"# Chapter {{n}} Scene Brief\". No changelog, no commentary.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "moonshotai/kimi-k2-thinking",
+            "temperature": 1
+          }
+        },
+        {
+          "label": "First Draft — Chapter {{n}}",
+          "taskType": "creative_writing",
+          "phase": "draft",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert author who writes bestselling books. This is a complex task and requires your full faculties; you are not allowed to be mediocre. Write the COMPLETE Chapter {{n}} of \"{{title}}\" based on the corrected scene brief in your context, in the prose style established by the style guide and prior chapters in your context.\n\nWrite from deep point of view: the reader should feel fully immersed, experiencing events through the viewpoint character rather than being told what happened. Cover the scene thoroughly without rushing; flesh out every important detail. Target about {{wordsPerChapter}} words.\n\nRULES:\n- Match the prose style of the style guide and the sample chapters in your context.\n- Pick up naturally from the end of the previous chapter (in your context), with no repeats of moments already covered. (Not applicable for the first chapter.)\n- NEVER use em dashes. Use commas or ... instead.\n- Do not start multiple sentences in a row with the same word, and do not reuse the same word (including pronouns like he/she/it) across consecutive sentences.\n- Do not use the prohibited words from the style guide.\n- Convey events and story through dialogue where possible; dialogue must always advance the action, never stall or pad. Vary descriptions; do not repeat yourself.\n- Avoid mushy dialogue and description. Do NOT use metaphors in the prose.\n- Vary sentence and paragraph length; mix longer and shorter sentences for cadence.\n- NEVER conclude the scene on your own initiative: follow the beats closely, never end on foreshadowing, never write past what the brief prompts, never invent an ending or deviate from the instructions.\n- Render scene breaks as \"***\".\n- Use the tense and POV character set in the scene brief.\n\nOUTPUT: the chapter prose only, in Markdown, with the chapter title as an H1 (# Chapter {{n}}). No meta-commentary, no word count, no author's notes. Begin writing Chapter {{n}} now.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3.1-pro-preview",
+            "temperature": 1
+          }
+        },
+        {
+          "label": "Chronology Check — Chapter {{n}}",
+          "taskType": "revision",
+          "phase": "critique-chronology",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert continuity editor. Run a chronology check on the Chapter {{n}} draft in your context, against the scene brief, the outline, and the prior chapters in your context. Catch every continuity issue and give a concrete fix for each. Do NOT rewrite the chapter; produce an improvement plan only.\n\nLook for:\n1. Previous-text consistency: contradictions with prior chapters, including small throwaway details about characters, locations, and objects.\n2. Outline consistency: contradictions with the outline.\n3. Future events: information about future events, mysteries, or reveals that should not be known at this point.\n4. Foreshadowing: events that SHOULD be foreshadowed here (per the outline and scene brief) but are missing.\n5. Scene-brief consistency: anything in the scene brief that the chapter omitted or contradicted.\n\nOUTPUT: a numbered list of issues, each with a recommended fix. The critique only.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "moonshotai/kimi-k2.5",
+            "temperature": 0.7
+          }
+        },
+        {
+          "label": "Style Check — Chapter {{n}}",
+          "taskType": "revision",
+          "phase": "critique-style",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert line and style editor. Run a style-guide check on the Chapter {{n}} draft in your context against the style guide and prose samples in your context. Confirm the chapter matches the established prose style and obeys the style-guide recommendations. Keep the tense and the POV character exactly as written; never recommend changing tense or viewpoint. Catch every style-adherence issue and give a concrete fix for each. Do NOT rewrite the chapter; produce an improvement plan only.\n\nOUTPUT: a numbered list of style issues, each with a recommended fix. The critique only.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "moonshotai/kimi-k2.5",
+            "temperature": 0.7
+          }
+        },
+        {
+          "label": "Final Rewrite — Chapter {{n}}",
+          "taskType": "final_edit",
+          "phase": "rewrite",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a precision editor. Apply the chronology improvement plan and the style improvement plan in your context to the Chapter {{n}} draft (also in your context). Implement ONLY the suggested changes; do not change anything else about the chapter. Preserve voice, POV, tense, scene order, character names, and every plot beat. Keep the chapter at least {{wordsPerChapter}} words; never shorten by cutting story.\n\nOUTPUT: the COMPLETE revised chapter only, in Markdown, beginning with its H1 header \"# Chapter {{n}}\" (use numerals). No commentary, no changelog, no word count. This is the publishable chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-flash-preview",
+            "temperature": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "label": "Compile manuscript report",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Generate a completion report for the manuscript \"{{title}}\". Total chapters: {{chapterCount}}, target ~{{wordsPerChapter}} words each. Assess plot and chronology continuity across the book, voice and prose-style consistency against the style guide, character and worldbuilding consistency, and any chapters that warrant a human editing pass. End with concrete next steps (beta readers, professional edit, formatting)."
+    }
+  ]
+}

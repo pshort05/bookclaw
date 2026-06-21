@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "nerdynovelistai",
+  "label": "NerdyNovelistAI Suite (Idea → Full Manuscript)",
+  "description": "Full novel pipeline ported from the n8n 'StoryHackerAI' suite (Mercury): an orchestrator that chained five stage sub-workflows. Runs in order — Stage 1 develops the braindump into a story dossier; Stage 2 builds the character bible; Stage 3 builds the world bible; Stage 4 generates the chapter outline; Stage 5 drafts the chapters (brief -> draft -> chronology/style checks -> rewrite, per chapter). Each stage's outputs persist to the book and feed the next.",
+  "pipelines": [
+    "nerdynovelistai-stage1-dossier",
+    "nerdynovelistai-stage2-characters",
+    "nerdynovelistai-stage3-worldbuilding",
+    "nerdynovelistai-stage4-outline",
+    "nerdynovelistai-stage5-chapters"
+  ]
+}

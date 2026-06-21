@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "name": "nerdynovelistai-stage4-outline",
+  "label": "NerdyNovelistAI Stage 4 — Outline Generator",
+  "description": "Chapter-outline generator with a craft-audit critique loop. Ported from the n8n \"StoryHackerAI - Stage 4 - Outline Generator\" workflow (Mercury). Condenses the genre's tropes, writes a full chapter-by-chapter outline ({{chapterCount}} chapters at ~{{wordsPerChapter}} words each) with per-chapter POV and Spice/Violence/Swearing ratings, then runs an emotional-resonance audit -> rewrite, adds six per-chapter intensity sliders (Tension, Dread, Emotional Intimacy, Relationship Tension, Pacing Energy, Humor), and runs a logic/consistency audit -> rewrite, producing the final production-ready outline. Assumes the book already has a story dossier, character bible, and world bible in context (Stage 1-3 outputs); the n8n source received these via executeWorkflowTrigger inputs. Models are provisional (the source ran on OpenRouter: gemini-3-flash-preview, claude-opus-4.6, claude-sonnet-4.6, moonshotai/kimi-k2-thinking).",
+  "steps": [
+    {
+      "label": "Condense Tropes",
+      "taskType": "general",
+      "phase": "prep",
+      "promptTemplate": "You are an expert developmental editor and plot assistant. The genre guide and trope list for this book are in your context above. Given that list of tropes for this genre, condense the information to one sentence per trope, in this format:\n\n- [Trope Name]: [1 sentence explaining the trope]\n- [Next Trope Name]: [1 sentence explaining the trope]\n\nContinue for each trope. Output only the condensed list.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "google/gemini-3-flash-preview",
+        "temperature": 0.7
+      }
+    },
+    {
+      "label": "Write Outline",
+      "taskType": "outline",
+      "phase": "outline",
+      "promptTemplate": "You are an expert developmental editor and plot assistant. This is a complex task; do not perform at a mediocre level.\n\nUsing the dossier, character bible, and world bible in your context above, the genre guide and plot template (structure/beats and the per-chapter Spice/Violence/Swearing levels) in your context, the condensed trope list from the step above, the genre's themes, and the author's concept ({{description}}), generate a simple chapter outline for \"{{title}}\".\n\nUse the plot template to inform the kind of events that should happen in each chapter. Produce EXACTLY {{chapterCount}} chapters (this matches the book's production target), each scene-scaled to about {{wordsPerChapter}} words of eventual prose, so downstream production aligns. The summary for each chapter should be ONLY 2-3 sentences — the goal is a general blueprint, not full detail.\n\nFor each chapter name the viewpoint character (just the name; for first-person genres every chapter may share one POV). Do not state whether the chapter is first or third person, or what the tense is. For each chapter also include the Spice Level, Violence Level, and Swearing Level from the plot template, matching it exactly, and make the 2-3 sentence description consistent with those ratings (e.g. if violence is 1/10, no epic battle in that chapter).\n\nFormat in Markdown:\n\n## [Chapter Number]:\n[2-3 sentence summary of what happens in this chapter]\n* **Viewpoint Character (POV): [name only]\n* **Spice Level**: [number]/10, [1 sentence about what this looks like]\n* **Violence Level**: [number]/10, [1 sentence about what this looks like]\n* **Swearing Level**: [number]/10, [1 sentence about what this looks like]\n\nContinue for all {{chapterCount}} chapters. Output only the outline — no preamble or commentary.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-opus-4.6",
+        "temperature": 0.7
+      }
+    },
+    {
+      "label": "Emotional Resonance Audit",
+      "taskType": "revision",
+      "phase": "critique",
+      "promptTemplate": "You are an expert developmental editor and plot assistant. This is a complex task; do not perform at a mediocre level. Read the chapter outline produced in the step above, with the plot template, dossier, character bible, world bible, and the author's notes/concept ({{description}}) in your context. Audit the outline across these six dimensions — stay in the EMOTIONAL lane only.\n\n1. EMOTIONAL SETUP VS. PAYOFF — For every major emotional beat (a death, betrayal, confession, reunion, sacrifice), trace backward. Has the story earned this feeling? Flag any beat whose payoff arrives before the reader has had enough time, scenes, or intimacy with the people involved to feel it. Say what's missing and where to add it.\n\n2. CHARACTER GRIEF AND LOSS — When a character dies, is injured, or disappears, does the narrative stop long enough for the protagonist AND the reader to grieve? Flag any loss treated mainly as a plot mechanism. Note if a character's absence after death feels inconsistent with how much they mattered alive.\n\n3. CLIMAX READINESS — The climax should feel like the only possible ending. Does the protagonist's climactic action emerge naturally from who they are and what they've experienced, or is it plot convenience? If you removed every chapter before the climax and it would still make emotional sense, the earlier chapters aren't doing enough emotional work.\n\n4. RELATIONSHIP ARCS — Trace every significant relationship (friendship, rivalry, romance, mentor/student, antagonist). Does each change and earn its final state? Flag any that begins and ends in the same emotional place without reason, and any dramatic shift (reconciliation, betrayal, love) without enough scenes to support the transition.\n\n5. TONAL WHIPLASH — Flag any place the emotional register shifts too abruptly (comedy right after tragedy, lightness right before a death, resolution before the reader has processed the darkness) — scenes that undercut accumulated weight even if well-written in isolation.\n\n6. THE PROTAGONIST'S INTERIOR ARC — Separate from plot and goal arcs, trace the protagonist's interior arc: what do they believe about themselves or the world at the start, and how has it changed by the end? Flag if it's absent, resolves too easily, or its final state doesn't connect to what they went through.\n\nFor each flag give: the specific chapter or beat; what the reader is likely to feel instead of what the story intends; and one concrete suggestion for what to add, move, or expand to close the gap. Do not comment on plot logic, momentum pacing, or structural symmetry unless it directly causes an emotional problem. Output the audit only — do not rewrite the outline.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "moonshotai/kimi-k2-thinking",
+        "temperature": 1
+      }
+    },
+    {
+      "label": "Rewrite — Emotional Pass",
+      "taskType": "final_edit",
+      "phase": "rewrite",
+      "promptTemplate": "Using the original chapter outline (the \"Write Outline\" step above) and the emotional-resonance improvement plan (the step immediately above), implement the suggested changes. Implement ONLY the suggested changes and do not alter anything else about the outline. Reproduce the entire outline with the same formatting as the original, with the suggested changes made. Output the complete revised outline only.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "google/gemini-3-flash-preview",
+        "temperature": 0.7
+      }
+    },
+    {
+      "label": "Add Intensity Sliders",
+      "taskType": "revision",
+      "phase": "sliders",
+      "promptTemplate": "You are an expert developmental editor and plot assistant. This is a complex task; do not perform at a mediocre level. Analyze the revised outline from the step above (and the plot template in your context) and determine the slider levels for each chapter, using the rubric below.\n\nPLOT SLIDER RUBRIC (5 anchor points mapped to 1, 3, 5, 7, 10; interpolate in between, e.g. 4 = between 3 and 5):\n\nTension (Present) — immediate in-the-moment threat/danger/conflict, what is happening right now. 1: complete stillness, no conflict. 3: mild friction, minor obstacle. 5: moderate pressure, outcome uncertain not urgent. 7: clear present danger, outcome genuinely in doubt. 10: maximum immediate threat, everything on the line right now.\n\nDread (Anticipated) — the shadow of FUTURE danger (a scene can have low tension and high dread). 1: no shadow, future feels safe. 3: faint unease, something off. 5: mild anticipation, something building, curiosity more than fear. 7: clear foreboding, reader dreads the coming moment. 10: inevitable doom, devastating thing about to happen.\n\nEmotional Intimacy — the reader's access to the VIEWPOINT character's interior world (not intimacy between characters). 1: completely exterior, a camera lens. 3: occasional interiority, mostly surface. 5: moderate access, broad strokes. 7: strong interiority, doubts/contradictions visible and specific. 10: full immersion, the inner life IS the scene.\n\nRelationship Tension — unresolved charge between two significant characters (romantic, adversarial, or otherwise). 1: fully resolved, no charge. 3: settled but not closed, faint echoes. 5: neutral coexistence, no active charge. 7: noticeable charge, something unspoken present. 10: maximum unresolved charge, every word loaded.\n\nPacing Energy — velocity and momentum (distinct from tension; a slow scene can be tense). 1: deliberately still, ruminative. 3: measured walking tempo. 5: moderate momentum, purposeful. 7: elevated momentum, reader pulled. 10: maximum velocity, the scene burns.\n\nHumor — presence and weight of comic energy (every point is right in context). 1: completely humorless, grave/tragic. 3: earnest, straight-faced, not playful. 5: tonally neutral. 7: noticeably light, banter/wit doing real work. 10: fully comedic, humor is the point.\n\nReproduce the text of EACH chapter of the outline verbatim, but add the sliders beneath each chapter. Format each chapter in Markdown:\n\n## [Chapter Number]:\n[2-3 sentence summary, copied verbatim from the outline]\n* **Viewpoint Character (POV): [copied verbatim]\n* **Spice Level**: [copied verbatim]\n* **Violence Level**: [copied verbatim]\n* **Swearing Level**: [copied verbatim]\n* **Tension (Present) Slider: [NUMBER]/10, [one sentence on what this number means for the chapter]\n* **Dread (Anticipated) Slider: [NUMBER]/10, [one sentence]\n* **Emotional Intimacy Slider: [NUMBER]/10, [one sentence]\n* **Relationship Tension Slider: [NUMBER]/10, [one sentence]\n* **Pacing Energy Slider: [NUMBER]/10, [one sentence]\n* **Humor Slider: [NUMBER]/10, [one sentence]\n\nOutput only the chapters with sliders — no preamble or commentary.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-sonnet-4.6",
+        "temperature": 1
+      }
+    },
+    {
+      "label": "Logic & Consistency Audit",
+      "taskType": "revision",
+      "phase": "critique",
+      "promptTemplate": "This is a complex task; do not perform at a mediocre level. You are performing a rigorous LOGIC CHECK on this generated outline. Your job is to ensure it is 100% consistent, plausible, and logical, and consistent with the dossier, character bible, world bible, author notes/concept ({{description}}), and the plot template — all in your context above, alongside the slider-annotated outline from the step above. Flag ANY issues against this checklist:\n\n1. Dossier/Characters/Worldbuilding Consistency — Does every element align with the dossier, characters, and worldbuilding documents? No contradictions with story events, character roles, or worldbuilding?\n\n2. Plot Template Consistency — Is the outline aligned with the plot template? Does it follow the template while still feeling like a natural plot, not forced?\n\n3. Internal Logic & Consistency — Does the flow of events hold up under scrutiny? Any logical contradictions within the outline? Does the plot flow naturally rather than feel forced?\n\n4. Plausibility & Cause/Effect — Do the social, political, economic, or physical consequences make sense? Does the story flow logically from cause to effect, or do events happen only because the plot needs them to?\n\n5. Thematic Resonance — Does the plot reflect or reinforce the story's central themes? Could it serve as a metaphor or lens for the core questions? Does it feel intentional, not added for color?\n\n6. Jumping the Gun — Does any chapter reveal details about a character or situation too early? Does any foreshadowing feel forced? Are any twists too obvious given prior reveals?\n\n7. Ratings and Slider Consistency — Are the Spice, Violence, and Swearing levels consistent with the genre and the plot template? Are the sliders and explanations appropriate for each chapter? There should be sliders for all six of: Tension (Present), Dread (Anticipated), Emotional Intimacy, Relationship Tension, Pacing Energy, Humor.\n\nOUTPUT: a list of anything you flag, plus an improvement plan for how to fix the outline while keeping it within the story and genre. Do not ask it to expand much — each chapter must stay a 2-3 sentence description. Ask only for corrections as needed. Output the flags and plan only — do not rewrite the outline.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "moonshotai/kimi-k2-thinking",
+        "temperature": 1
+      }
+    },
+    {
+      "label": "Rewrite — Logic Pass (Final Outline)",
+      "taskType": "final_edit",
+      "phase": "rewrite",
+      "promptTemplate": "Using the slider-annotated outline (the \"Add Intensity Sliders\" step above) and the logic/consistency improvement plan (the step immediately above), implement the suggested changes. Implement ONLY the suggested changes and do not alter anything else. Reproduce the entire outline with the same formatting as the original, with the changes made. Keep each chapter's description to 2-3 sentences. The formatting should look like this:\n\n## [Chapter Number]:\n[2-3 sentence summary, with modifications per the improvement plan but nothing else changed from the original]\n* **Viewpoint Character (POV): [copied verbatim unless the plan specifies a change]\n* **Spice Level**: [copied verbatim unless the plan specifies a change]\n* **Violence Level**: [copied verbatim unless the plan specifies a change]\n* **Swearing Level**: [copied verbatim unless the plan specifies a change]\n* **Tension (Present) Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n* **Dread (Anticipated) Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n* **Emotional Intimacy Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n* **Relationship Tension Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n* **Pacing Energy Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n* **Humor Slider: [NUMBER]/10, [copied verbatim unless the plan specifies a change]\n\nThis is the final, production-ready outline of {{chapterCount}} chapters. Output the complete outline only — no commentary.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "google/gemini-3-flash-preview",
+        "temperature": 0.7
+      }
+    }
+  ]
+}

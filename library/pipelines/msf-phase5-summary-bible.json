@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "name": "msf-phase5-summary-bible",
+  "label": "MSF Phase 5 — Summary + World Bible Update",
+  "description": "Per-chapter analytical book summary followed by a series World Bible merge. For each chapter it produces a tight structured entry (3-4 sentence summary, characters present, key setting, primary conflict, and the 2 most-significant verbatim quotes); then a single merge step folds everything this novel established into the running Series World Bible — preserving existing canon, adding new canon, tagging origin, tracking status fields, and maintaining continuity warnings — and outputs the full updated bible (BookClaw persists and backs it up natively). Ported from the n8n \"MSF Phase 5 — Book Summary + World Bible Update\" workflow (Mercury); the local-file manuscript scan and canonical-bible overwrite/backup plumbing have been dropped. Models are provisional, matching the n8n source.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Chapter Summary — Chapter {{n}}",
+          "taskType": "general",
+          "phase": "summary",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a literary analyst producing structured per-chapter entries for a series bible. Analyze Chapter {{n}} of \"{{title}}\" (the chapter prose is in your context above) and produce a tight structured entry.\n\nSTRICT OUTPUT FORMAT:\n1. Response must be raw markdown.\n2. Do NOT wrap in JSON.\n3. Do NOT include preamble, postamble, or meta-commentary.\n4. Begin output directly with the H2 heading.\n\nProduce these sections:\n\nSTEP 1 — SUMMARY: Write a 3-4 sentence summary of the chapter's direct events. Use character names instead of pronouns. If the chapter has multiple distinct scenes, you may use up to two short paragraphs (one per scene), but stay within the sentence budget. Be concrete and specific — what was decided, who acted, what changed.\n\nSTEP 2 — CHARACTERS: List characters physically present. For each: Name, demographic/role, key actions in this chapter, and their primary \"want\" in this scene.\n\nSTEP 3 — SETTING: Identify the key setting(s) and explain in 2-3 sentences how it serves the plot or character development.\n\nSTEP 4 — CONFLICT: Identify the primary tension/conflict in 1-2 sentences.\n\nSTEP 5 — QUOTES: Extract the 2 most significant verbatim quotes from the chapter. Pick lines that carry character, theme, or plot weight — not throwaway dialogue. Exactly 2 quotes. Not 3.\n\nFORMATTING CONSTRAINTS:\n- Title: use the heading exactly: ## Chapter {{n}} — [chapter title]\n- Syntax: strict markdown only.\n- Tone: professional, objective.\n- No Tropes section. Do not add it under any circumstance.\n\nOUTPUT FORMAT:\n\n## Chapter {{n}} — [chapter title]\n\n**Summary:**\n[3-4 sentences. If multiple scenes, up to two short paragraphs.]\n\n**Characters:**\n- **[Name]**: [role, actions, want]\n\n**Setting:**\n- **[Location]**: [how it serves plot/character — 2-3 sentences]\n\n**Conflict:**\n[1-2 sentences]\n\n**Quotes:**\n- \"[Quote 1 — most significant]\"\n- \"[Quote 2 — most significant]\"",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3.1-pro-preview",
+            "temperature": 0.4
+          }
+        }
+      ]
+    },
+    {
+      "label": "World Bible Merge",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "You are a series continuity editor. Your job: take the existing Series World Bible and merge in everything \"{{title}}\" established — without losing what was already canonical. The output is the FULL UPDATED BIBLE, not a delta. The next novel in the series will read it as ground truth.\n\nYour context above contains: the existing Series World Bible (if any — if none exists, this is the first novel and you create one from scratch), this novel's world guide, this novel's characters, this novel's outline, and the per-chapter book summary just produced (the {{chapterCount}} chapter entries from the steps above).\n\nMERGE RULES:\n\n1. Preserve all existing canon. Every entry in the existing world bible stays unless this novel irreversibly changed its state (a character died, a location was destroyed, a treaty was signed). When state changes, update the entry — do not delete it.\n\n2. Add new canon. For each item this novel introduced (character, location, technology, world event, state change), add an entry under the appropriate section.\n\n3. Tag origin. Mark every entry with which novel established it: (from {slug}). Existing entries with no tag should be left untagged (they predate this tracking).\n\n4. Status fields. For characters, locations, technologies, include a status_at_end field: alive | dead | exiled | resigned | promoted | sealed | destroyed | banned | leaked | obsolete | etc. — pick the precise term.\n\n5. Continuity warnings. Maintain a CONTINUITY_WARNINGS section listing irreversible facts future novels must NOT contradict. Carry forward all existing warnings; add new ones from this novel (deaths, irreversible decisions, public revelations).\n\n6. Brevity. Each entry is one to two sentences. The bible is reference material, not narrative. If something needs more explanation, the original novel's outline has it.\n\n7. No invention. Only what the existing bible or this novel's source material establishes. Do not extrapolate.\n\nOUTPUT STRUCTURE:\n\n# Series World Bible\n\nLast updated by: {this novel}\nUpdated: {ISO date}\n\n# ESTABLISHED_CHARACTERS\n\n- **Name** *(role/affiliation)* — one-line description. Status at end of {origin slug}: alive/dead/etc. *(from origin-slug)*\n- ...\n\n# ESTABLISHED_LOCATIONS\n\n- **Name** *(type)* — one-line description. Status: existing/destroyed/sealed. *(from origin-slug)*\n- ...\n\n# ESTABLISHED_TECHNOLOGIES\n\n- **Name** *(domain)* — one-line description. Status: in use / banned / leaked / obsolete. *(from origin-slug)*\n- ...\n\n# WORLD_EVENTS\n\n- **Event Name** — when, what, who. *(from origin-slug)*\n- ...\n\n# WORLD_STATE\n\n- **Domain** — current state of this domain (politics, economy, public knowledge of X technology, etc.). *(last updated in origin-slug)*\n- ...\n\n# CONTINUITY_WARNINGS\n\n- **[fact]** — must not be contradicted in future novels. *(from origin-slug)*\n- ...\n\nOUTPUT CONTRACT: Output exactly one updated World Bible as raw markdown. No preamble, no postamble, no JSON, no commentary. Begin output directly with the top-level \"# Series World Bible\" heading.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-sonnet-4-6",
+        "temperature": 0.4
+      }
+    }
+  ]
+}

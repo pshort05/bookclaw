@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "msf",
+  "label": "MSF — Mundane Science Fiction (Idea → Finalized Book)",
+  "description": "Full novel pipeline ported from the n8n 'MSF' (Mundane Science Fiction) phase suite (Mercury). Runs in order — Phase 1 multi-model ideation selects a concept; Phase 2 develops it (worldbuilding, characters, engagement); Phase 3 builds the chapter outline; Phase 4 drafts the prose (brief -> draft -> protect -> diagnostic -> rewrite, per chapter); Phase 5 produces per-chapter summaries and updates the world/series bible; Phase 6 finalizes the back-cover blurb and cover-art prompt. (n8n Phase 0 file-scaffolding is replaced by the BookClaw book container; the Phase 6 cover-image generation is handled by BookClaw's native cover tooling.)",
+  "pipelines": [
+    "msf-phase1-ideation",
+    "msf-phase2-developmental",
+    "msf-phase3-outline",
+    "msf-phase4-prose",
+    "msf-phase5-summary-bible",
+    "msf-phase6-finalize"
+  ]
+}

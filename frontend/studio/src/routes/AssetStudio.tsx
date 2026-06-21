@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useStore, useActiveBook } from '@bookclaw/shared';
+import { api, useStore, useActiveBook, useBooks } from '@bookclaw/shared';
 import type { LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../lib/assetApi.js';
 import { KindRail } from '../components/asset/KindRail.js';
@@ -16,6 +16,8 @@ import styles from './AssetStudio.module.css';
 export function AssetStudio() {
   const loadBooks = useStore((s) => s.loadBooks);
   const activeBook = useActiveBook();
+  const books = useBooks();
+  const activeSlug = activeBook?.slug;
 
   const [scope, setScope] = useState<Scope>('library');
   const [kind, setKind] = useState<LibraryKind>('author');
@@ -39,6 +41,21 @@ export function AssetStudio() {
 
   function handleSelect(name: string | null) {
     setSelectedName(name);
+    setEditorKey((n) => n + 1);
+  }
+
+  // Pick which book to view: set it active (the book-scope endpoints read the
+  // active-book pointer), then switch to book scope to show its files.
+  async function pickBook(slug: string) {
+    if (!slug) return;
+    if (slug !== activeSlug) {
+      try {
+        await api('/api/books/active', { method: 'POST', body: JSON.stringify({ slug }) });
+        await loadBooks();
+      } catch { return; } // non-fatal: selection just won't switch
+    }
+    setScope('book');
+    setSelectedName(null);
     setEditorKey((n) => n + 1);
   }
 
@@ -84,6 +101,15 @@ export function AssetStudio() {
               {bookTitle}
             </button>
           </div>
+          <select
+            className={styles.bookpick}
+            value={scope === 'book' ? (activeSlug ?? '') : ''}
+            onChange={(e) => pickBook(e.target.value)}
+            title="Choose which book's files to view"
+          >
+            <option value="">{books.length ? '— choose a book —' : 'No books yet'}</option>
+            {books.map((b) => <option key={b.slug} value={b.slug}>{b.title}</option>)}
+          </select>
         </div>
       </header>
 
@@ -115,6 +141,7 @@ export function AssetStudio() {
         <KindRail kind={kind} onKind={handleKind} />
 
         <EntryList
+          key={scope === 'book' ? `book:${activeSlug ?? ''}` : 'library'}
           scope={scope}
           kind={kind}
           selectedName={selectedName}

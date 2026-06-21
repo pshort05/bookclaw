@@ -166,7 +166,7 @@
   cursor: pointer;
   transition: .18s;
 }
-.clearbtn:hover { color: var(--text); border-color: var(--line-1); }
+.clearbtn:hover { color: var(--text); border-color: rgba(238,229,210,.22); }
 .clearbtn:disabled { opacity: .5; cursor: default; }
 .group { margin-bottom: 8px; }
 .grouphdr {

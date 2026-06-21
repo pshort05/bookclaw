@@ -10,6 +10,9 @@
 .seg button svg{width:14px;height:14px}
 .seg button.on{background:var(--ember-grad);color:#1a0f08;box-shadow:0 3px 10px -4px var(--glow)}
 .seg button.on.book{background:linear-gradient(105deg,#7fb6a6,#a7d0c2);color:#0e1614}
+.bookpick{background:var(--panel);border:1px solid var(--line-2);border-radius:10px;color:var(--text);font-family:'Hanken Grotesk',sans-serif;font-size:12.5px;font-weight:600;padding:7px 11px;cursor:pointer;outline:none;transition:.16s;max-width:220px}
+.bookpick:hover{border-color:rgba(238,229,210,.22)}
+.bookpick:focus{border-color:rgba(121,176,162,.45);box-shadow:0 0 0 3px rgba(121,176,162,.08)}
 
 .banner{display:flex;align-items:center;gap:13px;padding:13px 18px;margin:18px 26px 0;border-radius:12px;font-size:13px}
 .banner svg{width:17px;height:17px;flex:none}
