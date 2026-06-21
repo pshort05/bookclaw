@@ -1,4 +1,5 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { homedir } from 'os';
 import { SoulService } from '../services/soul.js';
 import { MemoryService } from '../services/memory.js';
 import { MemorySearchService } from '../services/memory-search.js';
@@ -18,8 +19,19 @@ export async function initSoulMemory(gw: BookClawGateway): Promise<void> {
   // ── Phase 3b: Memory Search (FTS5 over conversations + project outputs) ──
   // Hermes-inspired persistent cross-session search. Falls back gracefully
   // if better-sqlite3 isn't available on this platform.
-  gw.memorySearch = new MemorySearchService(join(ROOT_DIR, 'workspace'));
+  // The FTS index DB lives in workspace/memory by default, but can be moved to a
+  // separate (e.g. local, non-synced) disk via BOOKCLAW_DB_DIR / config memory.dbDir
+  // so the workspace can sit in a cloud-synced folder without corrupting the live DB.
+  const rawDbDir: string = process.env.BOOKCLAW_DB_DIR || gw.config.get('memory.dbDir', '');
+  const dbDir = rawDbDir
+    ? (rawDbDir.startsWith('~') ? join(homedir(), rawDbDir.slice(1)) : resolve(rawDbDir))
+    : undefined;
+  gw.memorySearch = new MemorySearchService(join(ROOT_DIR, 'workspace'), dbDir);
   await gw.memorySearch.initialize();
+  if (dbDir) {
+    const via = process.env.BOOKCLAW_DB_DIR ? 'BOOKCLAW_DB_DIR' : 'config memory.dbDir';
+    console.log(`  ℹ Memory search DB relocated → ${gw.memorySearch.getDbPath()} (${via})`);
+  }
   if (gw.memorySearch.isAvailable()) {
     // Wire memory.process() → live FTS indexing
     gw.memory.setLiveIndexHook((entry) => gw.memorySearch.indexConversationTurn(entry));

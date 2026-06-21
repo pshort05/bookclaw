@@ -24,7 +24,7 @@
 
 import { readFile, readdir, stat } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -92,10 +92,20 @@ export class MemorySearchService {
   // it returns a path, that dir is indexed instead of the legacy projects/ tree.
   private activeDataDir: (() => string | null) | null = null;
 
-  constructor(workspaceDir: string) {
+  constructor(workspaceDir: string, dbDir?: string) {
     this.workspaceDir = workspaceDir;
     this.memoryDir = join(workspaceDir, 'memory');
-    this.dbPath = join(workspaceDir, 'memory', 'memory-search.db');
+    // The FTS index DB defaults inside the workspace, but can be relocated to a
+    // separate (e.g. local, non-synced) disk via `dbDir` — a live SQLite DB must
+    // not sit in a cloud-synced workspace folder (WAL + concurrent writes corrupt
+    // under sync). The conversation source dir (memoryDir) always stays in the
+    // workspace; only the rebuildable index moves.
+    this.dbPath = dbDir ? join(dbDir, 'memory-search.db') : join(workspaceDir, 'memory', 'memory-search.db');
+  }
+
+  /** Absolute path of the FTS index DB (default in workspace/memory; relocatable via BOOKCLAW_DB_DIR). */
+  getDbPath(): string {
+    return this.dbPath;
   }
 
   /** Wire the active-book data/ dir resolver (book-container Phase 3). */
@@ -115,7 +125,9 @@ export class MemorySearchService {
       const mod: any = await import('better-sqlite3');
       const Database: any = mod.default || mod;
       const { mkdir } = await import('fs/promises');
-      await mkdir(this.memoryDir, { recursive: true });
+      // Create the DB's own directory (== workspace/memory by default, or the
+      // relocated dir when BOOKCLAW_DB_DIR is set).
+      await mkdir(dirname(this.dbPath), { recursive: true });
       this.db = new Database(this.dbPath);
       // WAL mode = better concurrent reads (dashboard) while writes happen.
       this.db.pragma('journal_mode = WAL');

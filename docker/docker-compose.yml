@@ -22,6 +22,10 @@ services:
       - bookclaw-vault:/app/config/.vault
       # Author OS tools (read-only mount for templates/references)
       - ${AUTHOR_OS_PATH:-~/author-os}:/app/author-os:ro
+      # Optional: keep the live FTS index SQLite DB OFF the workspace bind-mount
+      # (e.g. when the workspace is a cloud-synced folder — a live SQLite DB must
+      # not be synced). Uncomment + pair with BOOKCLAW_DB_DIR=/app/db below.
+      # - ${BOOKCLAW_DB_HOST_PATH:-/home/paul/bookclaw-db}:/app/db
     environment:
       - NODE_ENV=production
       - BOOKCLAW_VAULT_KEY=${BOOKCLAW_VAULT_KEY:-}
@@ -42,6 +46,10 @@ services:
       - BOOKCLAW_CORS_ORIGINS=${BOOKCLAW_CORS_ORIGINS:-}
       # Backup root inside the container (the bind-mount above).
       - BOOKCLAW_BACKUP_DIR=/app/backups
+      # Relocate the FTS index SQLite DB off the workspace (default = in
+      # workspace/memory). Set to an in-container path (e.g. /app/db) and pair
+      # with the /app/db bind-mount above to keep the live DB on a non-synced disk.
+      - BOOKCLAW_DB_DIR=${BOOKCLAW_DB_DIR:-}
     # Security: Resource limits
     deploy:
       resources:
