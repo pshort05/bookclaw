@@ -165,6 +165,15 @@ export class LibraryService {
       }
       return;
     }
+    if (kind === 'world') {
+      // A world entry is a directory holding world.json (documents/ is owned by
+      // WorldService). target = worlds/<name> (the dir); write world.json inside.
+      const raw = String(body.content ?? '');
+      parseWorldJson(raw); // throws on invalid JSON / missing required world fields
+      await mkdir(target, { recursive: true });
+      await writeFile(join(target, 'world.json'), raw.endsWith('\n') ? raw : raw + '\n', 'utf-8');
+      return;
+    }
     // author / voice / genre: a directory of .md files. Per-file UPSERT that
     // PRESERVES siblings: merge the provided files over the entry's CURRENT
     // resolved files and write the full set into the overlay. This matters when

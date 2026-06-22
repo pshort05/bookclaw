@@ -27,6 +27,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Unique names (PID ensures no collision with real data or parallel runs)
 WORLD_NAME="smoke-world-$$"
 WORLD_DIR="${ROOT_DIR}/workspace/library/worlds/${WORLD_NAME}"
+API_WORLD="smoke-apiworld-$$"   # created via POST /api/library/world (Phase 8)
+API_WORLD_DIR="${ROOT_DIR}/workspace/library/worlds/${API_WORLD}"
 BOOK_TITLE="Smoke World Book $$"
 BOOK_SLUG=""     # filled in after book create
 BOOK2_SLUG=""    # filled in after the series-inheritance book create (Phase 7)
@@ -63,8 +65,8 @@ cleanup() {
       "${BASE}/api/series/${SERIES_ID}" 2>/dev/null || true
   fi
   stop_server
-  # Remove the seeded world overlay dir so the real workspace is clean.
-  rm -rf "${WORLD_DIR}"
+  # Remove the seeded + API-created world overlay dirs so the real workspace is clean.
+  rm -rf "${WORLD_DIR}" "${API_WORLD_DIR}"
   # Belt-and-suspenders: remove the book dir directly in case the API delete
   # failed (e.g. server was already dead when cleanup ran).
   if [ -n "${BOOK_SLUG}" ]; then
@@ -300,6 +302,27 @@ else
   fail "P5 appendix persist: skipped"
 fi
 
+# ── Phase 8: Create a world via the library API (regression: POST /api/library/world 400) ──
+# The studio "new world" button POSTs to /api/library/world. world must be a
+# WRITABLE kind AND writeEntry must write worlds/<name>/world.json.
+APIW_BODY="$(cat <<JSON
+{"name":"${API_WORLD}","content":"{\"schemaVersion\":1,\"name\":\"${API_WORLD}\",\"label\":\"API World\",\"documentTypes\":[{\"id\":\"field-guide\",\"label\":\"Field Guide\"}],\"domains\":[\"GEO\"],\"clearanceLevels\":[\"General Access\"],\"classificationScheme\":\"{TYPE}-{DOMAIN}-{NNNN}\",\"formatDirective\":\"Narrative prose only.\"}"}
+JSON
+)"
+APIW_CODE="$(curl -s -o /tmp/apiw.$$.out -w '%{http_code}' "${AUTH[@]}" \
+  -H 'Content-Type: application/json' -X POST "${BASE}/api/library/world" -d "${APIW_BODY}")"
+[ "${APIW_CODE}" = "200" ] \
+  && pass "POST /api/library/world creates a world (HTTP 200)" \
+  || { fail "POST /api/library/world returned ${APIW_CODE} (got: $(cat /tmp/apiw.$$.out 2>/dev/null))"; }
+[ -f "${API_WORLD_DIR}/world.json" ] \
+  && pass "API-created world.json written to worlds/${API_WORLD}/world.json" \
+  || { fail "API world.json not on disk: ${API_WORLD_DIR}/world.json"; }
+APIW_LIST="$(curl -fsS "${AUTH[@]}" "${BASE}/api/worlds")"
+echo "${APIW_LIST}" | grep -q "\"${API_WORLD}\"" \
+  && pass "API-created world appears in GET /api/worlds" \
+  || { fail "API world not listed (got: ${APIW_LIST})"; }
+rm -f "/tmp/apiw.$$.out"
+
 # ── Phase 7: World binding wiring (bind + auto-propose, inheritance, unbind) ──
 # Exercises the endpoints added by the world-binding feature. Runs while DOC_ID
 # is still live (the world has one document) and the series carries the world ref
@@ -414,7 +437,7 @@ stop_server
 
 log ""
 if [ "$FAILED" -eq 0 ]; then
-  log "PASS: world smoke (Phase 1 + Phase 3 + Phase 4 + Phase 5 + Phase 7 binding) — 39 checks"
+  log "PASS: world smoke (Phase 1 + Phase 3 + Phase 4 + Phase 5 + Phase 7 binding + Phase 8 api-create) — 42 checks"
   exit 0
 fi
 log "FAIL: world smoke — see output above"
