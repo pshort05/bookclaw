@@ -74,6 +74,7 @@ export class LibraryTransferService {
   export(kind: LibraryKind, name: string): Buffer {
     if (!(LIBRARY_KINDS as readonly string[]).includes(kind)) throw new Error(`Invalid kind: ${kind}`);
     if (!ENTRY_NAME_RE.test(name)) throw new Error(`Invalid name: ${name}`);
+    if (kind === 'world') throw new Error('world transfer is not supported yet (Phase 1)');
     const entry = this.library.get(kind, name);
     if (!entry) throw new Error(`Entry not found: ${kind}/${name}`);
     if (kind === 'skill' && entry.source === 'synthetic') {
@@ -157,6 +158,7 @@ export class LibraryTransferService {
     // formatVersion is fail-closed: unknown → reject, never coerce.
     if (manifest.formatVersion !== ENTRY_FORMAT_VERSION) return fail(`unsupported formatVersion: ${manifest.formatVersion}`);
     if (!(LIBRARY_KINDS as readonly string[]).includes(manifest.kind)) return fail(`unknown kind: ${manifest.kind}`);
+    if (manifest.kind === 'world') return fail('world transfer is not supported yet (Phase 1)');
     if (typeof manifest.name !== 'string' || !ENTRY_NAME_RE.test(manifest.name)) return fail('invalid entry name');
     const shapeError = this.validateKindShape(stageDir, manifest.kind);
     if (shapeError) return fail(shapeError);

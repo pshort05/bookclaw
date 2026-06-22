@@ -5,7 +5,7 @@
  */
 
 /** Library template kinds. `skill` is served via SkillLoader delegation. */
-export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'prompt', 'section', 'skill'] as const;
+export const LIBRARY_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'prompt', 'section', 'skill', 'world'] as const;
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
 
 /** Where a library entry came from. Mirrors SkillSource. */

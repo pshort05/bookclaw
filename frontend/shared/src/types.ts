@@ -150,7 +150,7 @@ export interface Project {
   [k: string]: unknown;
 }
 
-export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'sequence' | 'editor' | 'prompt';
+export type LibraryKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'sequence' | 'editor' | 'prompt' | 'world';
 export interface LibraryEntry {
   kind: LibraryKind;
   name: string;

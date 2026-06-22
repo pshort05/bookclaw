@@ -4,6 +4,7 @@ import { ResearchGate } from '../services/research.js';
 import { SkillLoader } from '../skills/loader.js';
 import { AuthorOSService } from '../services/author-os.js';
 import { LibraryService } from '../services/library.js';
+import { WorldService } from '../services/world.js';
 import { BookService } from '../services/book.js';
 import { appVersion } from './phase-01-config.js';
 import { ROOT_DIR } from '../paths.js';
@@ -74,6 +75,9 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   } catch (err) {
     console.warn(`  ⚠ Library: load failed, continuing with degraded library — ${(err as Error)?.message || err}`);
   }
+
+  gw.world = new WorldService(gw.library, join(ROOT_DIR, 'workspace', 'library'));
+  console.log(`  ✓ World repository: ${gw.world.list().length} world(s)`);
 
   gw.books = new BookService(
     join(ROOT_DIR, 'workspace', 'books'),

@@ -15,6 +15,8 @@ import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryKind, LibrarySource, LibraryPipeline, LibrarySequence, LibraryEditor, LibraryPrompt } from './library-types.js';
+import type { LibraryWorld } from './world-types.js';
+import { parseWorldJson } from './world-parse.js';
 import type { SkillStep } from '../skills/loader.js';
 import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { parseSequence } from './sequence-parse.js';
@@ -38,6 +40,7 @@ export interface LibraryEntryFull extends LibraryEntry {
   sequence?: LibrarySequence;     // sequence: parsed JSON
   editor?: LibraryEditor;         // editor: parsed JSON
   prompt?: LibraryPrompt;         // prompt: parsed JSON
+  world?: LibraryWorld;           // world: parsed world.json (documents/ owned by WorldService)
   steps?: SkillStep[];            // skill: executable phases (steps.json)
   retries?: number;               // skill: per-phase retry budget
 }
@@ -49,7 +52,7 @@ interface SkillCatalogLike {
 }
 
 /** Library kinds backed by files on disk — everything except `skill`, which is delegated to SkillLoader. */
-const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'prompt', 'section'] as const;
+const FILE_KINDS = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'editor', 'prompt', 'section', 'world'] as const;
 type FileKind = (typeof FILE_KINDS)[number];
 
 /** Subdirectory under the library root for each file-backed kind. */
@@ -62,6 +65,7 @@ const DIR_LAYOUT: Record<FileKind, string> = {
   editor: 'editors',
   prompt: 'prompts',
   section: 'sections',
+  world: 'worlds',
 };
 
 // MD_FILE_RE is imported from book-types.ts (shared with books.routes.ts).
@@ -290,6 +294,15 @@ export class LibraryService {
           const name = item.name.replace(/\.md$/, '');
           const { description } = this.readMetaSidecar(join(dir, `${name}.meta.json`));
           out.set(name, { kind, name, source, content, ...(description !== undefined ? { description } : {}) });
+        } else if (kind === 'world') {
+          // A world entry is a directory: load only world.json into `world`.
+          // `documents/` is owned by WorldService, not the library overlay.
+          if (!item.isDirectory()) continue;
+          const cfgPath = join(dir, item.name, 'world.json');
+          if (!existsSync(cfgPath)) continue;
+          const raw = await readFile(cfgPath, 'utf-8');
+          const world = parseWorldJson(raw);
+          out.set(item.name, { kind, name: item.name, source, description: world.description, world });
         } else {
           // author / voice / genre: a directory of markdown files.
           if (!item.isDirectory()) continue;

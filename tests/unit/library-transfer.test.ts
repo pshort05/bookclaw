@@ -187,6 +187,31 @@ test('export throws on a synthetic skill (generated at runtime — cannot round-
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('export(world) throws: world transfer deferred to a later phase', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer } = await setup(root);
+    assert.throws(() => xfer.export('world', 'smoke-world'), /world transfer is not supported/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+// Import-side guard: validateAndStage rejects a manifest with kind 'world'.
+// The import-side guard (validateAndStage line: manifest.kind === 'world' → structuralError)
+// mirrors the export-side throw above. Both use the same message.
+test('validateAndStage rejects a manifest with kind world', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer, stagingDir } = await setup(root);
+    const r = xfer.validateAndStage(makeZip({
+      'library-entry.json': JSON.stringify({ formatVersion: ENTRY_FORMAT_VERSION, kind: 'world', name: 'smoke-world' }),
+      'files/world.json': '{}',
+    }));
+    assert.ok(r.structuralError, 'world kind must be rejected on import');
+    assert.match(r.structuralError!, /world transfer is not supported/);
+    assert.ok(!existsSync(join(stagingDir, r.stagingId)), 'staging purged');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 // ── Round-trips (import lands in the workspace overlay) ─────────────────────
 
 test('round-trip author: re-imported built-in shadows it (source: workspace)', async () => {
