@@ -91,6 +91,9 @@ import { WebsiteBuilderService } from './services/website-builder.js';
 import { BookTransferService } from './services/book-transfer.js';
 import type { LibraryTransferService } from './services/library-transfer.js';
 import type { BackupService } from './services/backup.js';
+import { ConsistencyStore } from './services/consistency/fact-store.js';
+import { extractChapterFacts } from './services/consistency/extractor.js';
+import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
@@ -242,6 +245,7 @@ class BookClawGateway {
   public bookTransfer!: BookTransferService;
   public libraryTransfer?: LibraryTransferService;
   public backup?: BackupService;
+  public consistencyStore?: ConsistencyStore;
   public telegram?: TelegramBridge;
   public discord?: DiscordBridge;
 
@@ -1317,6 +1321,28 @@ class BookClawGateway {
       bookTransfer: this.bookTransfer,
       libraryTransfer: this.libraryTransfer,
       backup: this.backup,
+      consistencyStore: this.consistencyStore,
+      consistencyAudit: (slug: string, onProgress?: (msg: string) => void): Promise<AuditReport> => {
+        const books = this.books;
+        const aiRouter = this.aiRouter;
+        return runConsistencyAudit(slug, {
+          store: this.consistencyStore!,
+          books: {
+            dataDirOf: (s) => books.dataDirOf(s),
+            worldDocsOf: (s) => books.worldDocsOf(s),
+            worldbuildingOf: (s) => books.worldbuildingOf(s),
+            open: (s) => books.open(s) as Promise<any>,
+          },
+          extract: (chapterText, known, base) =>
+            extractChapterFacts(
+              { ai: { complete: (r) => aiRouter.complete(r), select: (t) => aiRouter.selectProvider(t) } },
+              chapterText,
+              known,
+              base,
+            ),
+          onProgress,
+        });
+      },
     };
   }
 

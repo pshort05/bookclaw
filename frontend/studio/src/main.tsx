@@ -15,6 +15,7 @@ import { Settings } from './routes/Settings.js';
 import { Confirmations } from './routes/Confirmations.js';
 import { Files } from './routes/Files.js';
 import { PromptRunner } from './routes/PromptRunner.js';
+import { Consistency } from './routes/Consistency.js';
 import { Series } from './routes/Series.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="library" element={<AssetStudio />} />
           <Route path="files" element={<Files />} />
           <Route path="prompt-runner" element={<PromptRunner />} />
+          <Route path="consistency" element={<Consistency />} />
           <Route path="series" element={<Series />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />

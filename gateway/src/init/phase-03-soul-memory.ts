@@ -3,6 +3,7 @@ import { homedir } from 'os';
 import { SoulService } from '../services/soul.js';
 import { MemoryService } from '../services/memory.js';
 import { MemorySearchService } from '../services/memory-search.js';
+import { ConsistencyStore } from '../services/consistency/fact-store.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -45,5 +46,20 @@ export async function initSoulMemory(gw: BookClawGateway): Promise<void> {
     }
   } else {
     console.log('  ⚠ Memory search unavailable (search will be disabled, rest of BookClaw works)');
+  }
+
+  // ── Phase 3c: Consistency Store (SQLite fact ledger for cross-chapter auditor) ──
+  // Reuses the already-resolved dbDir so it lands beside memory-search.db (or is
+  // relocated via BOOKCLAW_DB_DIR). Degrades fail-soft if better-sqlite3 is absent.
+  try {
+    gw.consistencyStore = new ConsistencyStore(join(ROOT_DIR, 'workspace'), dbDir);
+    await gw.consistencyStore.initialize();
+    if (gw.consistencyStore.isAvailable()) {
+      console.log(`  ✓ Consistency store ready: ${gw.consistencyStore.getDbPath()}`);
+    } else {
+      console.log('  ⚠ Consistency store unavailable (consistency auditor disabled, rest of BookClaw works)');
+    }
+  } catch (err) {
+    console.warn(`  ⚠ Consistency store init failed: ${(err as Error)?.message || err}`);
   }
 }
