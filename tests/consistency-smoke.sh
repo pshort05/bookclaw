@@ -2,11 +2,17 @@
 #
 # Consistency Auditor smoke test — Task 6
 # ───────────────────────────────────────
-# Boots the gateway, creates a 2-chapter book with a planted eye-color
-# contradiction and a legitimate clothing-state reset (shower + next morning),
+# Boots the gateway, creates a 5-chapter book with a planted eye-color
+# contradiction, a legitimate clothing-state reset (shower + next morning), a
+# dream scene with an impossibility, and a knowledge-timeline violation,
 # triggers a consistency audit, polls until the report is ready, then asserts:
 #   - the report flags eye_color (blue vs green) as a contradiction
 #   - the report does NOT flag clothing_state for the justified reset
+#   - a chapter marked non-canonical via the .non-canonical.json author override
+#     contributes NO findings (Selective Exclusion)
+#   - when the extractor emits knowledge events, a knowledge-violation is reported
+#     (Elena uses a secret before learning it); skipped on a model too weak to
+#     emit knowledge events (same graceful-skip posture as the 503 path)
 #
 # If better-sqlite3 is unavailable the audit returns 503 — asserts that path
 # is clean and exits 0 (no content checks on a box without the native binary).
@@ -143,6 +149,39 @@ showered and changed into a clean grey suit, the mud of the previous day washed 
 knotted his tie and headed out.
 MD
 
+# chapter-3.md: a DREAM scene asserting an impossibility (purple eyes). It is marked
+# non-canonical via the author-override sidecar below, so Selective Exclusion must
+# keep ANY of its details out of the findings — deterministically, independent of
+# whether the extractor model auto-detected the dream. (Auto-detect is unit-tested.)
+cat > "${DATA_DIR}/chapter-3.md" <<'MD'
+# Chapter 3
+
+That night John dreamed. In the dream, his eyes burned a brilliant purple and he soared above
+the rooftops, weightless. He woke with a start, the vision already fading.
+MD
+
+# Author override: mark chapter-3 (the dream) non-canonical so its facts are stored
+# but excluded from the consistency check as both priors and subjects.
+cat > "${DATA_DIR}/.non-canonical.json" <<'JSON'
+{ "chapter-3": false }
+JSON
+
+# chapter-4.md + chapter-5.md plant a knowledge-timeline violation: Elena USES the
+# secret (states the killer) in chapter 4, but is only TOLD it in chapter 5.
+cat > "${DATA_DIR}/chapter-4.md" <<'MD'
+# Chapter 4
+
+Elena turned to the inspector. "Marsh is the killer," she said flatly. "He has been all along."
+The inspector frowned; no one had told her that yet.
+MD
+
+cat > "${DATA_DIR}/chapter-5.md" <<'MD'
+# Chapter 5
+
+It was here that the inspector finally told Elena the truth: Marsh was the killer.
+She received the news as though hearing it for the very first time.
+MD
+
 pass "chapter files written to ${DATA_DIR}"
 
 # ── 3. Trigger consistency audit ──────────────────────────────────────────────
@@ -232,6 +271,39 @@ process.stdout.write(hit ? JSON.stringify(hit) : '');
   [ -z "${BAD_CLOTHING}" ] \
     && pass "no unjustified continuity finding for clothing state (legitimate reset not flagged)" \
     || { fail "clothing-state continuity finding unexpectedly present (justified reset flagged): ${BAD_CLOTHING}"; }
+
+  # 5c. Selective Exclusion (author override): chapter-3 is marked non-canonical,
+  #     so it must contribute ZERO findings (its facts are excluded as both priors
+  #     and subjects). Deterministic — does not depend on the extractor model.
+  CH3_FINDING="$(printf '%s' "${REPORT_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+const findings = (d.report && d.report.findings) ? d.report.findings : [];
+const cites = f => (f.a && f.a.chapter === 'chapter-3') || (f.b && f.b.chapter === 'chapter-3');
+const hit = findings.find(cites);
+process.stdout.write(hit ? JSON.stringify(hit) : '');
+" 2>/dev/null || true)"
+  [ -z "${CH3_FINDING}" ] \
+    && pass "non-canonical chapter-3 produced no findings (Selective Exclusion works)" \
+    || { fail "non-canonical chapter-3 was still checked (exclusion failed): ${CH3_FINDING}"; }
+
+  # 5d. Knowledge Matrix (positive confirmation, never a hard failure): Elena
+  #     references the killer (ch4) before being told (ch5). Knowledge-event
+  #     extraction AND the use/acquire factKey match are model-dependent — there
+  #     is no deterministic injection path, and a weak extractor cannot reliably
+  #     normalize the two events to the same factKey. The deterministic engine is
+  #     fully covered by tests/unit/consistency-check-engine.test.ts; here we PASS
+  #     when a capable model reproduces the planted violation and SKIP otherwise
+  #     (same graceful-skip posture as the 503 path) so the smoke is not flaky.
+  KNOW_HIT="$(printf '%s' "${REPORT_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+const findings = (d.report && d.report.findings) ? d.report.findings : [];
+process.stdout.write(findings.some(f => f.category === 'knowledge-violation') ? 'HIT' : '');
+" 2>/dev/null || true)"
+  if [ "${KNOW_HIT}" = "HIT" ]; then
+    pass "knowledge-violation reported (use precedes acquire)"
+  else
+    log "  [SKIP] extractor did not reproduce the planted knowledge-violation (model-dependent) — deterministic logic is unit-tested"
+  fi
 fi
 
 stop_server

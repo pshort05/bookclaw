@@ -5,13 +5,21 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConsistencyStore } from '../../gateway/src/services/consistency/fact-store.js';
-import type { LedgerFact } from '../../gateway/src/services/consistency/types.js';
+import type { LedgerFact, KnowledgeEvent } from '../../gateway/src/services/consistency/types.js';
+
+function ke(p: Partial<KnowledgeEvent>): KnowledgeEvent {
+  return {
+    world: null, bookSlug: 'b1', knower: 'Elena', factKey: 'Marsh killer_identity guilty',
+    kind: 'use', source: 'reference', storyTime: 3, chapter: 'ch4', scene: 0, canonical: true,
+    evidence: 'Elena said Marsh did it', ...p,
+  };
+}
 
 function fact(p: Partial<LedgerFact>): LedgerFact {
   return {
     world: null, bookSlug: 'b1', entity: 'John', aliases: ['John'], attribute: 'eye_color',
     type: 'immutable', valueRaw: 'blue', valueNorm: 'blue', storyTime: 0, timeLabel: null,
-    transition: null, chapter: 'ch1', scene: 0, source: 'manuscript', evidence: 'his blue eyes', ...p,
+    transition: null, chapter: 'ch1', scene: 0, source: 'manuscript', evidence: 'his blue eyes', canonical: true, ...p,
   };
 }
 
@@ -39,6 +47,43 @@ test('insert + priorFacts returns scoped rows newest-first; idempotent rebuild',
     // Idempotent rebuild: clearing b1 leaves canon + OTHER intact.
     s.clearBookFacts('b1');
     assert.equal(s.priorFacts({ world: 'w1', bookSlug: 'b1' }, 'John', 'eye_color').length, 1); // only canon
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('priorFacts excludes non-canonical rows', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-canon-'));
+  try {
+    const s = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await s.initialize();
+    if (!s.isAvailable()) return;
+    s.insertFacts([
+      fact({ chapter: 'ch1', storyTime: 0, valueNorm: 'blue', canonical: true }),
+      fact({ chapter: 'ch2-dream', storyTime: 1, valueNorm: 'red', canonical: false }), // dream — must not be a prior
+    ]);
+    const priors = s.priorFacts({ world: null, bookSlug: 'b1' }, 'John', 'eye_color');
+    assert.equal(priors.length, 1);
+    assert.equal(priors[0].valueNorm, 'blue');
+    assert.equal(priors[0].canonical, true);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('knowledge insert/query scoped by book; per-book clear', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-know-'));
+  try {
+    const s = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await s.initialize();
+    if (!s.isAvailable()) return;
+    s.insertKnowledge([
+      ke({ kind: 'acquire', storyTime: 1, chapter: 'ch2' }),
+      ke({ kind: 'use', storyTime: 3, chapter: 'ch4' }),
+      ke({ bookSlug: 'OTHER', chapter: 'x' }),
+    ]);
+    const rows = s.knowledgeForBook({ world: null, bookSlug: 'b1' });
+    assert.equal(rows.length, 2);
+    assert.ok(!rows.some(r => r.bookSlug === 'OTHER'));
+    s.clearBookKnowledge('b1');
+    assert.equal(s.knowledgeForBook({ world: null, bookSlug: 'b1' }).length, 0);
+    assert.equal(s.knowledgeForBook({ world: null, bookSlug: 'OTHER' }).length, 1);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

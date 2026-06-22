@@ -26,3 +26,38 @@ test('tolerates code-fenced JSON and rejects pure garbage', () => {
   assert.equal(parseExtractorResponse(fenced, 0).facts.length, 2);
   assert.throws(() => parseExtractorResponse('not json at all', 0));
 });
+
+const SAMPLE_V2 = JSON.stringify({
+  scenes: [{ timeLabel: 'that evening', canonical: true }, { timeLabel: 'in the dream', canonical: false }],
+  facts: [
+    { entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable', valueRaw: 'blue', valueNorm: 'blue', scene: 0, transition: null, evidence: 'blue eyes' },
+    { entity: 'John', aliases: ['John'], attribute: 'can_fly', type: 'stateful', valueRaw: 'flying', valueNorm: 'flying', scene: 1, transition: null, evidence: 'he soared' },
+  ],
+  knowledgeEvents: [
+    { knower: 'Elena', factEntity: 'Marsh', factAttribute: 'killer', factValueNorm: 'guilty', kind: 'use', source: 'reference', scene: 0, evidence: 'Elena named Marsh' },
+    { knower: '', factEntity: 'X', factAttribute: 'y', factValueNorm: 'z', kind: 'use', source: 'reference', scene: 0, evidence: 'dropme' }, // empty knower -> dropped
+  ],
+});
+
+test('parses sceneCanonical onto scenes and facts (default true)', () => {
+  const r = parseExtractorResponse(SAMPLE_V2, 0);
+  assert.equal(r.scenes[0].canonical, true);
+  assert.equal(r.scenes[1].canonical, false);
+  assert.equal(r.facts[0].canonical, true);   // scene 0
+  assert.equal(r.facts[1].canonical, false);  // scene 1 (dream)
+});
+
+test('parses knowledgeEvents; composes factKey; drops malformed', () => {
+  const r = parseExtractorResponse(SAMPLE_V2, 100);
+  assert.equal(r.knowledge.length, 1);
+  assert.equal(r.knowledge[0].knower, 'Elena');
+  assert.equal(r.knowledge[0].factKey, 'Marsh\0killer\0guilty');
+  assert.equal(r.knowledge[0].storyTime, 100); // base + scene 0
+});
+
+test('v1 response (no canonical / no knowledge) defaults cleanly', () => {
+  const r = parseExtractorResponse(SAMPLE, 0); // SAMPLE = the existing v1 fixture
+  assert.equal(r.facts[0].canonical, true);
+  assert.deepEqual(r.knowledge, []);
+  assert.equal(r.scenes[0].canonical, true);
+});

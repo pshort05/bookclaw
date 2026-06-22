@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConsistencyStore } from '../../gateway/src/services/consistency/fact-store.js';
 import { runConsistencyAudit } from '../../gateway/src/services/consistency/audit.js';
-import { selectChapterFiles, inferGap } from '../../gateway/src/services/consistency/audit.js';
+import { selectChapterFiles, inferGap, loadNonCanonicalOverride } from '../../gateway/src/services/consistency/audit.js';
 
 test('audit reports a planted eye-color contradiction across two chapters', async () => {
   const root = mkdtempSync(join(tmpdir(), 'consist-audit-'));
@@ -80,6 +80,79 @@ test('C1+I3: worldbuildingOf string content seeds canon and detects canon-diverg
     const div = report.findings.find(f => f.category === 'canon-divergence');
     assert.ok(div, 'canon-divergence finding expected (C1 + I3)');
     assert.equal(div!.severity, 'high');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('Selective Exclusion: a dream scene impossibility is NOT flagged', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-excl-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) return;
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'chapter-1.md'), 'John has blue eyes.');
+    writeFileSync(join(dataDir, 'chapter-2.md'), 'In the dream John had red eyes.');
+
+    // ch1: canonical blue immutable. ch2: dream scene (canonical:false) asserts red.
+    const extract = async (text: string, _k: any[], base: number) => {
+      const isDream = text.includes('dream');
+      return {
+        scenes: [{ storyTime: base, timeLabel: isDream ? 'in the dream' : null, canonical: !isDream }],
+        knowledge: [],
+        facts: [{ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable' as const,
+          valueRaw: isDream ? 'red' : 'blue', valueNorm: isDream ? 'red' : 'blue',
+          storyTime: base, timeLabel: null, transition: null, scene: 0, source: 'manuscript' as const,
+          evidence: text, canonical: !isDream }],
+      };
+    };
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+    const report = await runConsistencyAudit('b1', { store, books, extract });
+    assert.equal(report.findings.find(f => f.attribute === 'eye_color'), undefined, 'dream eye-color must NOT contradict');
+    assert.equal(report.nonCanonicalSceneCount, 1);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('Knowledge Matrix: use-before-acquire reported via audit', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-know-audit-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) return;
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'chapter-1.md'), 'Elena names the killer.');
+    writeFileSync(join(dataDir, 'chapter-2.md'), 'Elena is told the killer.');
+
+    const extract = async (text: string, _k: any[], base: number) => {
+      const isUse = text.includes('names');
+      return {
+        scenes: [{ storyTime: base, timeLabel: null, canonical: true }],
+        facts: [],
+        knowledge: [{
+          knower: 'Elena', factKey: 'Marsh killer guilty',
+          kind: isUse ? 'use' as const : 'acquire' as const,
+          source: isUse ? 'reference' as const : 'told' as const,
+          storyTime: base, scene: 0, canonical: true, evidence: text,
+        }],
+      };
+    };
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+    const report = await runConsistencyAudit('b1', { store, books, extract });
+    const kv = report.findings.find(f => f.category === 'knowledge-violation');
+    assert.ok(kv, 'knowledge-violation expected (use in ch1 precedes acquire in ch2)');
+    assert.equal(report.knowledgeEventCount, 2);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('loadNonCanonicalOverride reads sidecar; fail-soft on missing', () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-ov-'));
+  try {
+    const dataDir = join(root, 'data');
+    mkdirSync(dataDir, { recursive: true });
+    assert.deepEqual(loadNonCanonicalOverride(dataDir), {});
+    writeFileSync(join(dataDir, '.non-canonical.json'), JSON.stringify({ 'chapter-2': false }));
+    assert.deepEqual(loadNonCanonicalOverride(dataDir), { 'chapter-2': false });
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

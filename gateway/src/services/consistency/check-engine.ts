@@ -1,4 +1,4 @@
-import type { LedgerFact, ConsistencyFinding, FindingRef, CanonRef } from './types.js';
+import type { LedgerFact, ConsistencyFinding, FindingRef, CanonRef, KnowledgeEvent } from './types.js';
 
 export type Gap = 'same' | 'day' | 'longer' | 'unknown';
 
@@ -54,4 +54,45 @@ export function evaluateFact(fact: LedgerFact, priors: LedgerFact[], gap: Gap): 
   return finding('continuity', severity, fact, prior,
     `${fact.entity}'s ${fact.attribute} changed from "${prior.valueRaw}" (${prior.chapter}) to "${fact.valueRaw}" (${fact.chapter}) with no stated cause.`,
     `${fact.entity}'s ${fact.attribute} was "${prior.valueRaw}" in ${prior.chapter} and is "${fact.valueRaw}" in ${fact.chapter} with nothing in between — add a transition or fix.`);
+}
+
+/**
+ * Deterministic knowledge-timeline check. For each `use` event, a character must
+ * have a CANONICAL `acquire` of the same fact at an earlier-or-equal story_time.
+ * Dream/flashback (non-canonical) acquisitions do not count as learning.
+ */
+export function evaluateKnowledge(events: KnowledgeEvent[]): ConsistencyFinding[] {
+  const byKey = new Map<string, KnowledgeEvent[]>();
+  for (const e of events) {
+    const k = `${e.knower} ${e.factKey}`;
+    const bucket = byKey.get(k);
+    if (bucket) bucket.push(e);
+    else byKey.set(k, [e]);
+  }
+
+  const findings: ConsistencyFinding[] = [];
+  for (const group of byKey.values()) {
+    const acquires = group.filter(e => e.kind === 'acquire' && e.canonical);
+    const firstAcquire = acquires.length
+      ? acquires.reduce((m, e) => (e.storyTime < m.storyTime ? e : m))
+      : null;
+    for (const use of group.filter(e => e.kind === 'use')) {
+      const learned = firstAcquire !== null && firstAcquire.storyTime <= use.storyTime;
+      if (learned) continue;
+      const attribute = use.factKey.split('\0')[1] ?? use.factKey;
+      const severity: ConsistencyFinding['severity'] =
+        firstAcquire === null ? 'high' : use.source === 'reference' ? 'high' : use.source === 'act_on' ? 'medium' : 'low';
+      const a: FindingRef = { chapter: use.chapter, scene: use.scene, quote: use.evidence };
+      const b: FindingRef | CanonRef = firstAcquire
+        ? { chapter: firstAcquire.chapter, scene: firstAcquire.scene, quote: firstAcquire.evidence }
+        : { canonSource: 'never learned in-story', quote: '' };
+      const where = firstAcquire ? `not until ${firstAcquire.chapter}` : 'at no point in the story';
+      findings.push({
+        category: 'knowledge-violation', severity, entity: use.knower, attribute, a, b,
+        explanation: `${use.knower} uses knowledge of "${attribute}" in ${use.chapter} but learns it ${where}.`,
+        suggestedFix: `Move ${use.knower}'s discovery of "${attribute}" before ${use.chapter}, or cut the reference.`,
+      });
+    }
+  }
+  return findings;
 }

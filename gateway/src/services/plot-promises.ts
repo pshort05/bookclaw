@@ -65,6 +65,8 @@ export interface PlotPromise {
   /** When the promise was paid off (or marked intentionally unpaid). */
   closedAtChapter?: number;
   closedAtTimestamp?: string;
+  /** Set when the payoff detector thinks an intentional red herring is being resolved. */
+  redHerringResolvedAtChapter?: number;
   /** Author confirmation flag — false until the author has reviewed. */
   authorConfirmed: boolean;
 }
@@ -90,6 +92,8 @@ export interface PromiseAuditReport {
   closureRate: number;
   /** Promises that should worry the author given current project progress. */
   atRiskPromises: PlotPromise[];
+  /** Intentional red herrings the payoff detector thinks are being resolved like genuine promises. */
+  redHerringWarnings: { id: string; title: string; chapter: number }[];
   summary: string;
 }
 
@@ -382,16 +386,25 @@ export class PlotPromisesService {
         const status = parsed?.status as string;
         const confidence = Number(parsed?.confidence) || 0;
 
-        if (status === 'paid_off' && confidence > 0.6) {
-          promise.status = 'paid_off';
-          promise.closedAtChapter = input.chapterNumber;
-          promise.closedAtTimestamp = new Date().toISOString();
-          promise.touchedAtChapters.push(input.chapterNumber);
-          updated.push(promise);
-        } else if (status === 'partial_payoff' && confidence > 0.5 && promise.status === 'open') {
-          promise.status = 'partial_payoff';
-          promise.touchedAtChapters.push(input.chapterNumber);
-          updated.push(promise);
+        if ((status === 'paid_off' && confidence > 0.6) ||
+            (status === 'partial_payoff' && confidence > 0.5 && promise.status === 'open')) {
+          if (promise.category === 'red_herring') {
+            // A red herring "resolving" like a genuine promise is a warning, not a payoff:
+            // the misdirection may be intentional. Do not auto-close it.
+            promise.redHerringResolvedAtChapter = input.chapterNumber;
+            if (!promise.touchedAtChapters.includes(input.chapterNumber)) promise.touchedAtChapters.push(input.chapterNumber);
+            updated.push(promise);
+          } else if (status === 'paid_off') {
+            promise.status = 'paid_off';
+            promise.closedAtChapter = input.chapterNumber;
+            promise.closedAtTimestamp = new Date().toISOString();
+            promise.touchedAtChapters.push(input.chapterNumber);
+            updated.push(promise);
+          } else {
+            promise.status = 'partial_payoff';
+            promise.touchedAtChapters.push(input.chapterNumber);
+            updated.push(promise);
+          }
         } else if (status === 'touched' && confidence > 0.5) {
           if (!promise.touchedAtChapters.includes(input.chapterNumber)) {
             promise.touchedAtChapters.push(input.chapterNumber);
@@ -436,6 +449,10 @@ export class PlotPromisesService {
       ? project.promises.filter(p => p.status === 'open' || p.status === 'partial_payoff')
       : [];
 
+    const redHerringWarnings = project.promises
+      .filter(p => typeof p.redHerringResolvedAtChapter === 'number')
+      .map(p => ({ id: p.id, title: p.title, chapter: p.redHerringResolvedAtChapter! }));
+
     let summary: string;
     if (total === 0) {
       summary = 'No promises tracked yet. Run the extractor against your opening chapters.';
@@ -454,6 +471,7 @@ export class PlotPromisesService {
       intentionallyUnpaid, dropped,
       closureRate: Math.round(closureRate * 100) / 100,
       atRiskPromises: atRisk,
+      redHerringWarnings,
       summary,
     };
   }

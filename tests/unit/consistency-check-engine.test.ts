@@ -1,8 +1,8 @@
 // tests/unit/consistency-check-engine.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateFact, type Gap } from '../../gateway/src/services/consistency/check-engine.js';
-import type { LedgerFact } from '../../gateway/src/services/consistency/types.js';
+import { evaluateFact, evaluateKnowledge, type Gap } from '../../gateway/src/services/consistency/check-engine.js';
+import type { LedgerFact, KnowledgeEvent } from '../../gateway/src/services/consistency/types.js';
 
 const F = (p: Partial<LedgerFact>): LedgerFact => ({
   world: null, bookSlug: 'b1', entity: 'John', aliases: ['John'], attribute: 'eye_color',
@@ -68,4 +68,47 @@ test('same value as prior -> no finding', () => {
 
 test('no priors -> no finding', () => {
   assert.equal(evaluateFact(F({}), [], 'unknown'), null);
+});
+
+const K = (p: Partial<KnowledgeEvent>): KnowledgeEvent => ({
+  world: null, bookSlug: 'b1', knower: 'Elena', factKey: 'Marsh killer guilty',
+  kind: 'use', source: 'reference', storyTime: 5, chapter: 'ch5', scene: 0, canonical: true,
+  evidence: 'Elena named Marsh', ...p,
+});
+
+test('use before acquire -> knowledge-violation', () => {
+  const acquire = K({ kind: 'acquire', source: 'told', storyTime: 9, chapter: 'ch9' });
+  const use = K({ kind: 'use', source: 'reference', storyTime: 5, chapter: 'ch5' });
+  const findings = evaluateKnowledge([acquire, use]);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].category, 'knowledge-violation');
+  assert.equal(findings[0].severity, 'high'); // reference
+  assert.equal(findings[0].entity, 'Elena');
+});
+
+test('use after acquire -> no finding', () => {
+  const acquire = K({ kind: 'acquire', storyTime: 2, chapter: 'ch2' });
+  const use = K({ kind: 'use', storyTime: 5, chapter: 'ch5' });
+  assert.deepEqual(evaluateKnowledge([acquire, use]), []);
+});
+
+test('no acquire anywhere -> high violation', () => {
+  const use = K({ kind: 'use', source: 'act_on', storyTime: 5 });
+  const findings = evaluateKnowledge([use]);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].severity, 'high'); // never learned
+});
+
+test('only a non-canonical (dream) acquire before use -> still flags', () => {
+  const dream = K({ kind: 'acquire', source: 'witnessed', storyTime: 1, canonical: false });
+  const use = K({ kind: 'use', source: 'act_on', storyTime: 5 });
+  const findings = evaluateKnowledge([dream, use]);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].severity, 'high'); // dream doesn't count -> no real acquire
+});
+
+test('act_on before acquire -> medium', () => {
+  const acquire = K({ kind: 'acquire', storyTime: 9 });
+  const use = K({ kind: 'use', source: 'act_on', storyTime: 5 });
+  assert.equal(evaluateKnowledge([acquire, use])[0].severity, 'medium');
 });

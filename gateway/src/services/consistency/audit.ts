@@ -2,9 +2,9 @@ import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { ConsistencyStore } from './fact-store.js';
-import { evaluateFact, type Gap } from './check-engine.js';
+import { evaluateFact, evaluateKnowledge, type Gap } from './check-engine.js';
 import type { ExtractResult } from './extractor.js';
-import type { ConsistencyFinding, LedgerFact } from './types.js';
+import type { ConsistencyFinding, LedgerFact, KnowledgeEvent } from './types.js';
 
 export interface AuditDeps {
   store: ConsistencyStore;
@@ -22,6 +22,8 @@ export interface AuditReport {
   findings: ConsistencyFinding[];
   chaptersScanned: number;
   factCount: number;
+  knowledgeEventCount: number;
+  nonCanonicalSceneCount: number;
   generatedAt: string;
 }
 
@@ -82,13 +84,34 @@ export function inferGap(prev: string | null, curr: string | null): Gap {
 }
 
 
+/** Read data/.non-canonical.json (chapterStem -> canonical boolean). Fail-soft -> {}. */
+export function loadNonCanonicalOverride(dataDir: string): Record<string, boolean> {
+  try {
+    const p = join(dataDir, '.non-canonical.json');
+    if (!existsSync(p)) return {};
+    const raw = JSON.parse(readFileSync(p, 'utf-8'));
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    const out: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(raw)) if (typeof v === 'boolean') out[k] = v;
+    return out;
+  } catch { return {}; }
+}
+
+/**
+ * Resolve a scene/fact's effective canonical flag: an author chapter override
+ * (when present) wins over the extractor's auto-detected value.
+ */
+function effectiveCanonical(chapterOverride: boolean | undefined, autoCanonical: boolean): boolean {
+  return chapterOverride !== undefined ? chapterOverride : autoCanonical;
+}
+
 export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promise<AuditReport> {
   const { store, books, extract, onProgress } = deps;
   const progress = (msg: string) => onProgress?.(msg);
 
   const dataDir = books.dataDirOf(slug);
   if (!dataDir || !existsSync(dataDir)) {
-    return { findings: [], chaptersScanned: 0, factCount: 0, generatedAt: new Date().toISOString() };
+    return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, generatedAt: new Date().toISOString() };
   }
 
   // Resolve the world name from the book manifest (used for canon scoping).
@@ -101,8 +124,16 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   }
   const scope = { world: worldName, bookSlug: slug };
 
-  // Idempotent rebuild: clear prior manuscript facts for this book.
+  // Idempotent rebuild: clear prior manuscript facts + knowledge for this book.
   store.clearBookFacts(slug);
+  store.clearBookKnowledge(slug);
+
+  // Author override: data/.non-canonical.json maps a chapter file stem to a
+  // canonical boolean; it wins over the extractor's auto-detected scene flag.
+  const override = loadNonCanonicalOverride(dataDir);
+  const allKnowledge: KnowledgeEvent[] = [];
+  let nonCanonicalSceneCount = 0;
+  let knowledgeEventCount = 0;
 
   // --- Canon seeding (C1 + I3) ---
   // worldbuildingOf / worldDocsOf return composed markdown STRINGS, not paths.
@@ -130,6 +161,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
             chapter: 'CANON',
             source: 'canon',
             sourceLabel: label,
+            canonical: f.canonical !== false,
           }));
           store.insertFacts(canonFacts);
           store.setCanonSeed(seedKey, hash);
@@ -154,6 +186,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
           chapter: 'CANON',
           source: 'canon',
           sourceLabel: 'Series bible',
+          canonical: f.canonical !== false,
         }));
         store.insertFacts(canonFacts);
         progress(`Book canon seeded: ${canonFacts.length} facts`);
@@ -169,7 +202,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     const all = readdirSync(dataDir);
     chapterFiles = selectChapterFiles(all);
   } catch {
-    return { findings: [], chaptersScanned: 0, factCount: 0, generatedAt: new Date().toISOString() };
+    return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, generatedAt: new Date().toISOString() };
   }
 
   const findings: ConsistencyFinding[] = [];
@@ -226,36 +259,54 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     const lastScene = extractResult.scenes[extractResult.scenes.length - 1];
     prevTimeLabel = lastScene?.timeLabel ?? null;
 
+    // Effective per-scene canonical: author override (by chapter stem) wins over
+    // the extractor's auto-detect. A non-canonical scene's facts are still stored
+    // but excluded from the check (both as priors — via priorFacts — and as subjects).
+    const chapterOverride = override[chapterName];
+
     // Evaluate each extracted fact against priors + earlier facts in THIS chapter (M1).
     const chapterFacts: LedgerFact[] = [];
     for (const f of extractResult.facts) {
+      const isCanonical = effectiveCanonical(chapterOverride, f.canonical !== false);
       const full: LedgerFact = {
         ...f,
         world: worldName,
         bookSlug: slug,
         chapter: chapterName,
+        canonical: isCanonical,
       };
-      // Combine ledger priors with already-collected intra-chapter facts for the same
-      // entity+attribute. Only IMMUTABLE intra-chapter facts are cross-checked: a
-      // character's eye colour stated two ways in one chapter is a real contradiction,
-      // but STATEFUL details (clothing, location, hair) legitimately progress within a
-      // scene — comparing two same-scene observations would flag normal change as an
-      // impossibility. Stateful facts are still checked across chapters via the ledger.
-      const ledgerPriors = store.priorFacts(scope, full.entity, full.attribute);
-      const intraChapterPriors = chapterFacts.filter(
-        c => c.entity === full.entity && c.attribute === full.attribute && c.type === 'immutable',
-      );
-      const priors = [...intraChapterPriors, ...ledgerPriors];
-      const finding = evaluateFact(full, priors, gap);
-      if (finding) findings.push(finding);
-      chapterFacts.push(full);
-      // Update in-memory entity state for the digest (M3).
-      if (!entityAliases.has(full.entity)) entityAliases.set(full.entity, new Set());
-      for (const alias of full.aliases) entityAliases.get(full.entity)!.add(alias);
-      if (full.type === 'stateful') {
-        entityCurrentState.set(`${full.entity}\0${full.attribute}`, full.valueNorm);
+      if (isCanonical) {
+        // Combine ledger priors with already-collected intra-chapter facts for the same
+        // entity+attribute. Only IMMUTABLE intra-chapter facts are cross-checked: a
+        // character's eye colour stated two ways in one chapter is a real contradiction,
+        // but STATEFUL details (clothing, location, hair) legitimately progress within a
+        // scene — comparing two same-scene observations would flag normal change as an
+        // impossibility. Stateful facts are still checked across chapters via the ledger.
+        const ledgerPriors = store.priorFacts(scope, full.entity, full.attribute);
+        const intraChapterPriors = chapterFacts.filter(
+          c => c.entity === full.entity && c.attribute === full.attribute && c.type === 'immutable' && c.canonical,
+        );
+        const priors = [...intraChapterPriors, ...ledgerPriors];
+        const finding = evaluateFact(full, priors, gap);
+        if (finding) findings.push(finding);
+        // Update in-memory entity state for the digest (M3) from canonical facts only.
+        if (!entityAliases.has(full.entity)) entityAliases.set(full.entity, new Set());
+        for (const alias of full.aliases) entityAliases.get(full.entity)!.add(alias);
+        if (full.type === 'stateful') {
+          entityCurrentState.set(`${full.entity}\0${full.attribute}`, full.valueNorm);
+        }
       }
+      chapterFacts.push(full);
     }
+
+    // Collect this chapter's knowledge events with the effective canonical applied.
+    for (const k of (extractResult.knowledge ?? [])) {
+      const isCanonical = effectiveCanonical(chapterOverride, k.canonical !== false);
+      allKnowledge.push({ ...k, world: worldName, bookSlug: slug, chapter: chapterName, canonical: isCanonical });
+    }
+    knowledgeEventCount += (extractResult.knowledge ?? []).length;
+    nonCanonicalSceneCount += (extractResult.scenes ?? []).filter(s =>
+      !effectiveCanonical(chapterOverride, s.canonical !== false)).length;
 
     // Persist this chapter's facts so subsequent chapters see them as priors.
     try {
@@ -269,10 +320,19 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     chaptersScanned++;
   }
 
+  // Knowledge Matrix: second deterministic pass over all collected events, once
+  // every chapter's facts + canonical flags are final.
+  if (allKnowledge.length > 0) {
+    try { store.insertKnowledge(allKnowledge); } catch (err) { progress(`Warning: failed to persist knowledge: ${(err as Error)?.message ?? err}`); }
+    for (const kf of evaluateKnowledge(allKnowledge)) findings.push(kf);
+  }
+
   const report: AuditReport = {
     findings,
     chaptersScanned,
     factCount,
+    knowledgeEventCount,
+    nonCanonicalSceneCount,
     generatedAt: new Date().toISOString(),
   };
   store.saveReport(slug, report);
