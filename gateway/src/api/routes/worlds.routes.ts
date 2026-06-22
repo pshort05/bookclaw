@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { SLUG_RE } from '../../services/book-types.js';
 import { serializeWorldDoc } from '../../services/world-parse.js';
+import { bindBookWorld, unbindBookWorld } from './world-bind.js';
 
 /**
  * World Repository documents API (World Repository Phase 1). World CONFIG
@@ -160,6 +161,33 @@ export function mountWorlds(app: Application, gateway: any, _baseDir: string): v
       res.json({ worldDocs: written });
     } catch (err) {
       res.status(400).json({ error: (err as Error)?.message || 'snapshot failed' });
+    }
+  });
+
+  // Bind a book to a world: set pulledFrom.world + auto-propose the initial bible.
+  app.put('/api/books/:slug/world', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug) || !services.books?.exists?.(slug)) return res.status(404).json({ error: 'Book not found' });
+    const worldName = req.body?.world;
+    if (typeof worldName !== 'string' || !worldName) return res.status(400).json({ error: 'world (string) is required' });
+    try {
+      const result = await bindBookWorld(services, slug, worldName);
+      res.json(result);
+    } catch (err) {
+      const msg = (err as Error)?.message || 'bind failed';
+      res.status(/not found/i.test(msg) ? 404 : 400).json({ error: msg });
+    }
+  });
+
+  // Unbind a book's world (clear binding + bible).
+  app.delete('/api/books/:slug/world', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug) || !services.books?.exists?.(slug)) return res.status(404).json({ error: 'Book not found' });
+    try {
+      const unbound = await unbindBookWorld(services, slug);
+      res.json({ unbound });
+    } catch (err) {
+      res.status(400).json({ error: (err as Error)?.message || 'unbind failed' });
     }
   });
 }

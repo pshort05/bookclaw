@@ -4,6 +4,7 @@ import { api, useStore, useActiveBook, useCosts, money, LIFECYCLE_PHASES, type B
 import { Button } from '@bookclaw/shared';
 import { BuildBiblePanel } from './book/BuildBiblePanel.js';
 import { AppendixPanel } from './book/AppendixPanel.js';
+import { WorldBindControl } from './book/WorldBindControl.js';
 import styles from './BookDrawer.module.css';
 
 export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
@@ -107,6 +108,15 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                 </div>
               </div>
 
+              {/* World bind / change / unbind control — visible regardless of current binding */}
+              <div className={styles.sec}>World</div>
+              <WorldBindControl
+                slug={slug}
+                boundWorld={pf?.world?.name}
+                seriesId={pf?.series?.id}
+                onChanged={refreshBook}
+              />
+
               {/* World repository panels — only when the book is bound to a world */}
               {pf?.world?.name && (
                 <>
@@ -122,6 +132,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                   {panel === 'bible' && (
                     <BuildBiblePanel
                       slug={slug}
+                      world={pf?.world?.name ?? ''}
                       current={data.book.worldDocs}
                       onSaved={refreshBook}
                       onClose={() => setPanel(null)}

@@ -913,6 +913,28 @@ export class BookService {
   }
 
   /**
+   * World binding: unbind a book's world. Removes templates/world/ + .baseline/world/,
+   * clears pulledFrom.world + worldDocs, appends a `world-unbind` history entry.
+   * Schema-gated via assertWritable (mirrors snapshotWorldDocs). Returns false if no book.
+   */
+  async clearWorld(slug: string): Promise<boolean> {
+    await this.assertWritable(slug);
+    const base = this.bookDir(slug);
+    if (!base) throw new Error(`Invalid slug: ${slug}`);
+    await rm(join(base, 'templates', 'world'), { recursive: true, force: true });
+    await rm(join(base, '.baseline', 'world'), { recursive: true, force: true });
+    const opened = await this.open(slug);
+    if (!opened) return false;
+    const m = opened.manifest;
+    if (m.pulledFrom) m.pulledFrom.world = null;
+    m.worldDocs = [];
+    m.lastWrittenByApp = this.appVersion;
+    m.history.push({ at: new Date().toISOString(), event: 'world-unbind' });
+    await writeFile(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
+    return true;
+  }
+
+  /**
    * World Repository Phase 5: save the ordered appendix selection on the book manifest.
    * Read-modify-write of books/<slug>/book.json. Entries are stored sorted by order asc.
    * Returns the updated manifest, or undefined when the slug has no readable book.

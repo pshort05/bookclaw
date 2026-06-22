@@ -4,8 +4,8 @@ import { proposeWorldDocs, saveWorldDocs } from '../../lib/worldApi.js';
 import styles from './BookPanels.module.css';
 
 /** "Build bible from world" — propose relevant docs (AI-ranked), curate, save. */
-export function BuildBiblePanel({ slug, current, onSaved, onClose }: {
-  slug: string; current?: string[]; onSaved?: (docIds: string[]) => void; onClose?: () => void;
+export function BuildBiblePanel({ slug, world, current, onSaved, onClose }: {
+  slug: string; world: string; current?: string[]; onSaved?: (docIds: string[]) => void; onClose?: () => void;
 }) {
   const [proposals, setProposals] = useState<WorldProposal[]>([]);
   const [sel, setSel] = useState<Set<string>>(new Set(current ?? []));
@@ -38,7 +38,7 @@ export function BuildBiblePanel({ slug, current, onSaved, onClose }: {
     if (saving) return;
     setSaving(true); setError(null); setMsg(null);
     try {
-      await saveWorldDocs(slug, [...sel]);
+      await saveWorldDocs(slug, world, [...sel]);
       setMsg(`Saved ${sel.size} document${sel.size === 1 ? '' : 's'} as the bible.`);
       onSaved?.([...sel]);
     } catch (e) {

@@ -7,6 +7,7 @@ import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
 import { writeWithVersion, listVersions, restoreVersion } from '../../services/file-versions.js';
 import { mapRunnerPath } from '../../services/runner-files.js';
+import { bindBookWorld } from './world-bind.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -283,6 +284,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // if the series sets one) from the series' refs; record provenance + membership.
     let seriesProvenance: { id: string; title: string } | undefined;
     let seriesWorldbuilding: { characters: string; places: string; lore: string } | undefined;
+    let seriesWorldName = '';
     if (typeof body.series === 'string' && body.series) {
       const series = services.seriesBible?.getSeries?.(body.series);
       if (!series) return res.status(400).json({ error: 'unknown series' });
@@ -293,6 +295,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       seriesProvenance = { id: series.id, title: series.title };
       // Series Phase B: snapshot the series' world-building into the new book.
       seriesWorldbuilding = await services.seriesBible?.getWorldbuilding?.(series.id);
+      seriesWorldName = series.pulledFrom.world?.name ?? '';
     }
 
     // Config-not-code pipelines (Task 13): resolve the ordered pipeline names the
@@ -328,6 +331,14 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     try {
       const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
+      const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
+      if (worldName && services.world?.getConfig?.(worldName)) {
+        try {
+          await bindBookWorld(services, manifest.slug, worldName);
+        } catch (e) {
+          console.log(`  ⚠ World bind on create failed for ${manifest.slug}: ${(e as Error)?.message || e}`);
+        }
+      }
       res.json({ success: true, book: manifest });
     } catch (err) {
       const msg = (err as Error)?.message || String(err);

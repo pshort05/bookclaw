@@ -30,8 +30,14 @@ export const deleteWorldDoc = (name: string, docId: string) =>
 export const proposeWorldDocs = (slug: string) =>
   api<{ proposals: WorldProposal[] }>(`/api/books/${encodeURIComponent(slug)}/world/propose`, { method: 'POST', body: '{}' }).then((r) => r.proposals ?? []);
 
-export const saveWorldDocs = (slug: string, docIds: string[]) =>
-  api<{ worldDocs: string[] }>(`/api/books/${encodeURIComponent(slug)}/world/docs`, { method: 'PUT', body: JSON.stringify({ docIds }) });
+export const saveWorldDocs = (slug: string, world: string, docIds: string[]) =>
+  api<{ worldDocs: string[] }>(`/api/books/${encodeURIComponent(slug)}/world/docs`, { method: 'PUT', body: JSON.stringify({ world, docIds }) });
 
 export const saveAppendix = (slug: string, appendix: AppendixEntry[]) =>
   api<{ appendix: AppendixEntry[] }>(`/api/books/${encodeURIComponent(slug)}/world/appendix`, { method: 'PUT', body: JSON.stringify({ appendix }) });
+
+export const bindWorld = (slug: string, world: string) =>
+  api<{ world: string; worldDocs: string[]; proposed: number }>(`/api/books/${encodeURIComponent(slug)}/world`, { method: 'PUT', body: JSON.stringify({ world }) });
+
+export const unbindWorld = (slug: string) =>
+  api<{ unbound: boolean }>(`/api/books/${encodeURIComponent(slug)}/world`, { method: 'DELETE' });

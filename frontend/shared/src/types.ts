@@ -122,6 +122,7 @@ export interface BookManifest {
     pipeline: PulledRef;
     sections: string[];
     skills?: string[];
+    series?: { id: string; title: string };  // Series Phase A provenance, written by backend book.ts:333
   };
   worldDocs?: string[];
   appendix?: AppendixEntry[];

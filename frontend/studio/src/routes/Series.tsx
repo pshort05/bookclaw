@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, Button, useBooks, useStore } from '@bookclaw/shared';
 import type { LibraryEntry, LibraryKind } from '@bookclaw/shared';
 import { useDialog } from '../components/Dialog.js';
+import { listWorlds } from '../lib/worldApi.js';
+import type { WorldListRow } from '../lib/worldApi.js';
 import styles from './Series.module.css';
 
 interface SeriesRef { name: string; source: string }
@@ -9,22 +11,23 @@ interface Series {
   id: string;
   title: string;
   description: string;
-  pulledFrom: { author?: SeriesRef; voice?: SeriesRef; genre?: SeriesRef | null; pipeline?: SeriesRef | null };
+  pulledFrom: { author?: SeriesRef; voice?: SeriesRef; genre?: SeriesRef | null; pipeline?: SeriesRef | null; world?: SeriesRef | null };
   bookSlugs: string[];
   readingOrder: string[];
 }
 interface Worldbuilding { characters: string; places: string; lore: string }
 interface Report { stats: { totalBooks: number; totalWords: number; characterCount: number; locationCount: number }; contradictions: unknown[] }
 
-type RefKind = 'author' | 'voice' | 'genre' | 'pipeline';
+type RefKind = 'author' | 'voice' | 'genre' | 'pipeline' | 'world';
 const REF_KINDS: RefKind[] = ['author', 'voice', 'genre', 'pipeline'];
-const OPTIONAL_REF = new Set<RefKind>(['genre', 'pipeline']);
+const OPTIONAL_REF = new Set<RefKind>(['genre', 'pipeline', 'world']);
 
 export function Series() {
   const books = useBooks();
   const loadBooks = useStore((s) => s.loadBooks);
   const [series, setSeries] = useState<Series[]>([]);
   const [opts, setOpts] = useState<Partial<Record<LibraryKind, LibraryEntry[]>>>({});
+  const [worlds, setWorlds] = useState<WorldListRow[]>([]);
   const [selId, setSelId] = useState<string | null>(null);
   const { confirm } = useDialog();
   const [wb, setWb] = useState<Worldbuilding>({ characters: '', places: '', lore: '' });
@@ -44,6 +47,7 @@ export function Series() {
     Promise.all(REF_KINDS.map((k) =>
       api<{ entries: LibraryEntry[] }>(`/api/library/${k}`).then((r) => [k, r.entries ?? []] as const).catch(() => [k, []] as const),
     )).then((pairs) => setOpts(Object.fromEntries(pairs) as Partial<Record<LibraryKind, LibraryEntry[]>>));
+    listWorlds().then(setWorlds).catch(() => {});
   }, [loadSeries, loadBooks]);
 
   const sel = series.find((s) => s.id === selId) ?? null;
@@ -180,6 +184,13 @@ export function Series() {
                     </select>
                   </label>
                 ))}
+                <label className={styles.ref}>
+                  <span>world</span>
+                  <select value={sel.pulledFrom.world?.name ?? ''} onChange={(e) => setRef('world', e.target.value)}>
+                    <option value="">— none —</option>
+                    {worlds.map((w) => <option key={w.name} value={w.name}>{w.name}</option>)}
+                  </select>
+                </label>
               </div>
 
               <div className={styles.sec}>World-building <small>· canon snapshotted into each book + injected into prompts</small></div>

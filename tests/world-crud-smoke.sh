@@ -29,6 +29,7 @@ WORLD_NAME="smoke-world-$$"
 WORLD_DIR="${ROOT_DIR}/workspace/library/worlds/${WORLD_NAME}"
 BOOK_TITLE="Smoke World Book $$"
 BOOK_SLUG=""     # filled in after book create
+BOOK2_SLUG=""    # filled in after the series-inheritance book create (Phase 7)
 SERIES_ID=""     # filled in after series create
 
 VERBOSE=0
@@ -49,6 +50,12 @@ cleanup() {
       -H "Authorization: Bearer ${TEST_TOKEN}" \
       "${BASE}/api/books/${BOOK_SLUG}" 2>/dev/null || true
   fi
+  # Delete the Phase 7 inheritance book via API (best-effort).
+  if [ -n "${BOOK2_SLUG}" ] && [ -n "${SERVER_PID}" ]; then
+    curl -s -o /dev/null -X DELETE \
+      -H "Authorization: Bearer ${TEST_TOKEN}" \
+      "${BASE}/api/books/${BOOK2_SLUG}" 2>/dev/null || true
+  fi
   # Delete the created series via API (best-effort).
   if [ -n "${SERIES_ID}" ] && [ -n "${SERVER_PID}" ]; then
     curl -s -o /dev/null -X DELETE \
@@ -62,6 +69,14 @@ cleanup() {
   # failed (e.g. server was already dead when cleanup ran).
   if [ -n "${BOOK_SLUG}" ]; then
     rm -rf "${ROOT_DIR}/workspace/books/${BOOK_SLUG}"
+  fi
+  if [ -n "${BOOK2_SLUG}" ]; then
+    rm -rf "${ROOT_DIR}/workspace/books/${BOOK2_SLUG}"
+  fi
+  # Belt-and-suspenders: remove the series dir directly (the API delete does not
+  # always remove the on-disk dir, and workspace/series/ is not gitignored).
+  if [ -n "${SERIES_ID}" ]; then
+    rm -rf "${ROOT_DIR}/workspace/series/${SERIES_ID}"
   fi
   if [ "$VERBOSE" -eq 1 ] || [ "$FAILED" -ne 0 ]; then
     log ""
@@ -285,6 +300,88 @@ else
   fail "P5 appendix persist: skipped"
 fi
 
+# ── Phase 7: World binding wiring (bind + auto-propose, inheritance, unbind) ──
+# Exercises the endpoints added by the world-binding feature. Runs while DOC_ID
+# is still live (the world has one document) and the series carries the world ref
+# (set in P3-4 above).
+
+# P7-1) Bind an existing book: PUT /api/books/:slug/world { world }
+#        → auto-proposes (fail-soft → full catalog, capped) and snapshots as the
+#        initial bible. Response: { world, worldDocs, proposed }.
+if [ -n "${BOOK_SLUG}" ] && [ -n "${DOC_ID}" ]; then
+  BIND_RESP="$(curl -fsS "${AUTH[@]}" \
+    -H 'Content-Type: application/json' \
+    -X PUT "${BASE}/api/books/${BOOK_SLUG}/world" \
+    -d "{\"world\":\"${WORLD_NAME}\"}")"
+  echo "${BIND_RESP}" | grep -q "\"world\":\"${WORLD_NAME}\"" \
+    && pass "PUT /world binds the book to the world" \
+    || { fail "PUT /world bind missing world (got: ${BIND_RESP})"; }
+  echo "${BIND_RESP}" | grep -q "\"${DOC_ID}\"" \
+    && pass "PUT /world auto-proposed bible contains the world doc" \
+    || { fail "PUT /world worldDocs missing docId (got: ${BIND_RESP})"; }
+  echo "${BIND_RESP}" | grep -q '"proposed"' \
+    && pass "PUT /world response carries proposed count" \
+    || { fail "PUT /world missing proposed field (got: ${BIND_RESP})"; }
+  BOUND="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}")"
+  echo "${BOUND}" | grep -q "\"world\":{\"name\":\"${WORLD_NAME}\"" \
+    && pass "book manifest pulledFrom.world set after bind" \
+    || { fail "manifest world not set after bind (got: ${BOUND})"; }
+else
+  fail "P7 bind: skipped (no BOOK_SLUG or DOC_ID)"
+  fail "P7 bind doc: skipped"
+  fail "P7 bind proposed: skipped"
+  fail "P7 bind manifest: skipped"
+fi
+
+# P7-2) Creation inheritance: a new book created in the series (whose world ref
+#        was set in P3-4) auto-binds to that world, no explicit world in the body.
+if [ -n "${SERIES_ID}" ]; then
+  BOOK2_RESP="$(curl -fsS "${AUTH[@]}" \
+    -H 'Content-Type: application/json' \
+    -X POST "${BASE}/api/books" \
+    -d "{\"title\":\"Smoke Inherit Book $$\",\"author\":\"default\",\"voice\":\"default\",\"genre\":null,\"pipeline\":\"novel-pipeline\",\"series\":\"${SERIES_ID}\"}")"
+  BOOK2_SLUG="$(printf '%s' "${BOOK2_RESP}" | sed -n 's/.*"slug":"\([^"]*\)".*/\1/p')"
+  [ -n "${BOOK2_SLUG}" ] \
+    && pass "series-inheritance book created: ${BOOK2_SLUG}" \
+    || { fail "inheritance book create failed (got: ${BOOK2_RESP})"; }
+  if [ -n "${BOOK2_SLUG}" ]; then
+    INH="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK2_SLUG}")"
+    echo "${INH}" | grep -q "\"world\":{\"name\":\"${WORLD_NAME}\"" \
+      && pass "new series book auto-bound to the series world" \
+      || { fail "inheritance: world not bound on create (got: ${INH})"; }
+    echo "${INH}" | grep -q "\"${DOC_ID}\"" \
+      && pass "inherited book bible populated by auto-propose" \
+      || { fail "inheritance: worldDocs empty (got: ${INH})"; }
+  else
+    fail "P7 inherit world: skipped"
+    fail "P7 inherit bible: skipped"
+  fi
+else
+  fail "P7 inherit: skipped (no SERIES_ID)"
+  fail "P7 inherit world: skipped"
+  fail "P7 inherit bible: skipped"
+fi
+
+# P7-3) Unbind: DELETE /api/books/:slug/world → { unbound: true }; clears
+#        pulledFrom.world + worldDocs and removes templates/world/.
+if [ -n "${BOOK_SLUG}" ]; then
+  UNBIND_RESP="$(curl -fsS "${AUTH[@]}" -X DELETE "${BASE}/api/books/${BOOK_SLUG}/world")"
+  echo "${UNBIND_RESP}" | grep -q '"unbound":true' \
+    && pass "DELETE /world returns unbound:true" \
+    || { fail "unbind failed (got: ${UNBIND_RESP})"; }
+  AFTER_UNBIND="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}")"
+  echo "${AFTER_UNBIND}" | grep -q '"world":null' \
+    && pass "manifest pulledFrom.world cleared after unbind" \
+    || { fail "world not cleared after unbind (got: ${AFTER_UNBIND})"; }
+  [ ! -d "${ROOT_DIR}/workspace/books/${BOOK_SLUG}/templates/world" ] \
+    && pass "templates/world/ removed after unbind" \
+    || { fail "templates/world/ still present after unbind"; }
+else
+  fail "P7 unbind: skipped (no BOOK_SLUG)"
+  fail "P7 unbind clear: skipped"
+  fail "P7 unbind dir: skipped"
+fi
+
 # ── Phase 1 continued: Delete checks ──────────────────────────────────────
 
 # 6a) DELETE /api/worlds/:name/documents/:docId → deleted:true
@@ -317,7 +414,7 @@ stop_server
 
 log ""
 if [ "$FAILED" -eq 0 ]; then
-  log "PASS: world smoke (Phase 1 + Phase 3 + Phase 4 + Phase 5) — 29 checks"
+  log "PASS: world smoke (Phase 1 + Phase 3 + Phase 4 + Phase 5 + Phase 7 binding) — 39 checks"
   exit 0
 fi
 log "FAIL: world smoke — see output above"
