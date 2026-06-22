@@ -11,6 +11,7 @@ import {
   AlignmentType, PageBreak, TabStopType, TabStopPosition,
   SectionType,
 } from 'docx';
+import type { AppendixEntry } from './world-appendix.js';
 
 export interface DocxExportOptions {
   title: string;
@@ -23,6 +24,7 @@ export interface DocxExportOptions {
   alsoBy?: string[];     // Other titles by this author
   newsletterCta?: string; // Newsletter call-to-action
   trimSize?: '5x8' | '5.5x8.5' | '6x9';
+  appendix?: AppendixEntry[]; // ordered world back-matter, rendered after BACK MATTER
 }
 
 // KDP trim size margins (in twips, 1 inch = 1440 twips)
@@ -191,6 +193,30 @@ ISBN: [ISBN placeholder]`;
       properties: { type: SectionType.NEXT_PAGE, page: { margin: margins } },
       children: backMatterParas,
     });
+  }
+
+  // ── World Appendix (back-matter, codes already stripped by the resolver) ──
+  if (options.appendix && options.appendix.length > 0) {
+    for (const entry of options.appendix) {
+      const appendixParas: any[] = [];
+      appendixParas.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: entry.title.toUpperCase(), bold: true, size: 28, font: 'Georgia' })],
+        spacing: { after: 300 },
+      }));
+      if (entry.attribution) {
+        appendixParas.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: entry.attribution, italics: true, size: 20, font: 'Georgia' })],
+          spacing: { after: 400 },
+        }));
+      }
+      for (const para of parseMarkdownToDocx(entry.body)) appendixParas.push(para);
+      sections.push({
+        properties: { type: SectionType.NEXT_PAGE, page: { margin: margins } },
+        children: appendixParas,
+      });
+    }
   }
 
   // ═══════════════════════════════════════

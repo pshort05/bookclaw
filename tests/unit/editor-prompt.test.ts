@@ -53,3 +53,30 @@ test('composeEditorPrompt places the mode directive after the persona and before
   assert.ok(personaAt >= 0 && directiveAt > personaAt, 'directive follows persona');
   assert.ok(memoryAt > directiveAt, 'context follows the directive');
 });
+
+test('composeEditorPrompt injects the worldContext section when provided', () => {
+  const out = composeEditorPrompt('You are Jorin.', { worldContext: 'FORMAT: narrative only' });
+  assert.ok(out.includes('# World authoring context'));
+  assert.ok(out.includes('FORMAT: narrative only'));
+});
+
+test('composeEditorPrompt adds nothing for absent or blank worldContext', () => {
+  const outAbsent = composeEditorPrompt('You are Jorin.', {});
+  assert.ok(!outAbsent.includes('# World authoring context'));
+  const outBlank = composeEditorPrompt('You are Jorin.', { worldContext: '   ' });
+  assert.ok(!outBlank.includes('# World authoring context'));
+});
+
+test('composeEditorPrompt places worldContext after manuscript and before memories', () => {
+  const out = composeEditorPrompt('You are Jorin.', {
+    manuscript: 'BOOK',
+    worldContext: 'WORLD',
+    memories: 'MEM',
+  });
+  const bookAt = out.indexOf('# Active book context');
+  const worldAt = out.indexOf('# World authoring context');
+  const memAt = out.indexOf('# Recent conversation context');
+  assert.ok(bookAt >= 0, '# Active book context present');
+  assert.ok(worldAt > bookAt, '# World authoring context follows Active book context');
+  assert.ok(memAt > worldAt, '# Recent conversation context follows World authoring context');
+});

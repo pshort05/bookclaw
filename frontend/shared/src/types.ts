@@ -118,10 +118,13 @@ export interface BookManifest {
     author: PulledRef;
     voice?: PulledRef;
     genre?: PulledRef | null;
+    world?: PulledRef | null;
     pipeline: PulledRef;
     sections: string[];
     skills?: string[];
   };
+  worldDocs?: string[];
+  appendix?: AppendixEntry[];
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 
@@ -175,12 +178,82 @@ export interface LibraryPrompt {
   schemaVersion?: number; name: string; label?: string; description?: string;
   systemPrompt: string; model?: string; temperature?: number;
 }
+
+/** Mirrors gateway/src/services/world-types.ts — do not diverge. */
+export interface WorldDocumentType {
+  id: string;        // e.g. "field-guide"
+  label: string;     // e.g. "Field Guide"
+  note?: string;     // e.g. "practical"
+}
+
+/** Per-world config, parsed from worlds/<name>/world.json (mirrors backend LibraryWorld). */
+export interface LibraryWorld {
+  schemaVersion: number;
+  name: string;
+  label?: string;
+  description?: string;
+  documentTypes: WorldDocumentType[];
+  domains: string[];
+  clearanceLevels: string[];
+  classificationScheme: string;
+  formatDirective: string;
+  authoringEditor?: string;
+  stripCodesInAppendix?: boolean;
+}
+
+export interface WorldDocMeta {
+  title: string;
+  type: string;
+  classification: string;
+  clearance: string;
+  domain: string;
+  attribution?: string;
+  tags: string[];
+  summary: string;
+  appendixEligible?: boolean;
+}
+
+export interface WorldDocument {
+  docId: string;
+  meta: WorldDocMeta;
+  body: string;
+}
+
+export interface WorldDocCatalogRow {
+  docId: string;
+  title: string;
+  type: string;
+  domain: string;
+  clearance: string;
+  classification: string;
+  summary: string;
+  tags: string[];
+  appendixEligible: boolean;
+  needsAttention?: boolean;
+}
+
+/** A row from POST /api/books/:slug/world/propose (Phase 3). */
+export interface WorldProposal {
+  docId: string;
+  title: string;
+  rank: number;
+  reason: string;
+}
+
+/** One ordered appendix selection on a book (Phase 5). */
+export interface AppendixEntry {
+  docId: string;
+  title?: string;
+  order: number;
+}
+
 export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>;
   content?: string;
   pipeline?: LibraryPipeline;
   editor?: LibraryEditor;
   prompt?: LibraryPrompt;
+  world?: LibraryWorld;
 }
 export type RepullStatus = 'in-sync'|'library-updated'|'locally-edited'|'diverged'|'library-removed'|'no-baseline';
 export interface RepullAsset { kind: LibraryKind; name: string; status: RepullStatus; libraryPresent: boolean; hasBaseline: boolean; wired: boolean; }

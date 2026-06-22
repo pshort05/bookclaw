@@ -39,7 +39,10 @@ export interface BookManifest {
     sections: string[];       // section names snapshotted
     skills?: string[];        // pipeline-referenced skill names snapshotted (frozen record)
     series?: { id: string; title: string };  // Series Phase A — set when created in a series
+    world?: PulledRef | null; // World Repository Phase 3 — the bound world, null when unbound
   };
+  worldDocs?: string[];       // World Repository Phase 3 — curated doc ids = the bible (additive-optional, no schema bump)
+  appendix?: Array<{ docId: string; title?: string; order: number }>; // World Repository Phase 5 — ordered back-matter selection (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 
@@ -80,7 +83,7 @@ export function classifyVersion(v: number): BookStatus {
 }
 
 /** Snapshot kinds that DRIVE generation (author+voice via SoulService, pipeline via the engine, genre/world/sections via the prompt composer, skill content via snapshot-preference). */
-export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline', 'worldbuilding', 'section', 'skill']);
+export const WIRED_KINDS: ReadonlySet<string> = new Set(['author', 'voice', 'pipeline', 'worldbuilding', 'section', 'skill', 'world']);
 
 /** A single .md filename (no path separators) allowed inside a multi-file template entry. */
 export const MD_FILE_RE = /^[A-Za-z0-9._-]+\.md$/;

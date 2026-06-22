@@ -1,0 +1,15 @@
+{
+  "id": "series-1782106281198-lrre",
+  "title": "Smoke Series 529812",
+  "description": "Smoke series for CI.",
+  "pulledFrom": {
+    "world": {
+      "name": "smoke-world-529812",
+      "source": "workspace"
+    }
+  },
+  "bookSlugs": [],
+  "readingOrder": [],
+  "createdAt": "2026-06-22T05:31:21.198Z",
+  "updatedAt": "2026-06-22T05:31:21.274Z"
+}

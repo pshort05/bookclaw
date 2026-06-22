@@ -11,7 +11,7 @@ import { seriesDivergence, type SeriesRef } from '../../services/series-bible.js
  */
 export function mountSeries(app: Application, gateway: any, _baseDir: string): void {
   const services = gateway.getServices();
-  const REF_KINDS = ['author', 'voice', 'genre', 'pipeline'] as const;
+  const REF_KINDS = ['author', 'voice', 'genre', 'pipeline', 'world'] as const;
 
   /** Resolve a ref input (name string | {name} | null) to a SeriesRef using the library for source. */
   const resolveRef = (kind: string, val: unknown): SeriesRef | null | undefined => {

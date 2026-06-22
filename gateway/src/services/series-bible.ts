@@ -65,6 +65,7 @@ export interface Series {
     voice?: SeriesRef;
     genre?: SeriesRef | null;
     pipeline?: SeriesRef | null;
+    world?: SeriesRef | null;     // World Repository Phase 3 — the bound world
   };
   bookSlugs: string[];          // member books (book-centric membership)
   readingOrder: string[];       // member book slugs in intended reading order

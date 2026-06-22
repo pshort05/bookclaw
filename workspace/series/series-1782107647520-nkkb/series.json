@@ -1,0 +1,15 @@
+{
+  "id": "series-1782107647520-nkkb",
+  "title": "Smoke Series 532712",
+  "description": "Smoke series for CI.",
+  "pulledFrom": {
+    "world": {
+      "name": "smoke-world-532712",
+      "source": "workspace"
+    }
+  },
+  "bookSlugs": [],
+  "readingOrder": [],
+  "createdAt": "2026-06-22T05:54:07.520Z",
+  "updatedAt": "2026-06-22T05:54:07.639Z"
+}

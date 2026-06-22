@@ -5,6 +5,7 @@
  */
 
 import AdmZip from 'adm-zip';
+import type { AppendixEntry } from './world-appendix.js';
 
 export interface EpubExportOptions {
   title: string;
@@ -16,6 +17,7 @@ export interface EpubExportOptions {
   isbn?: string;
   authorBio?: string;
   coverImageBuffer?: Buffer; // Optional cover image
+  appendix?: AppendixEntry[]; // ordered world back-matter, after chapters / About the Author
 }
 
 interface Chapter {
@@ -36,6 +38,7 @@ export async function generateEpubBuffer(options: EpubExportOptions): Promise<Bu
 
   const bookId = isbn || `bookclaw-${Date.now()}`;
   const chapters = splitIntoChapters(content);
+  const appendix = options.appendix ?? [];
   const zip = new AdmZip();
 
   // ── 1. mimetype (must be first, uncompressed) ──
@@ -62,6 +65,14 @@ export async function generateEpubBuffer(options: EpubExportOptions): Promise<Bu
     ? '\n    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg" properties="cover-image"/>'
     : '';
 
+  const appendixManifest = appendix.map((_, i) =>
+    `    <item id="appendix${i + 1}" href="appendix${i + 1}.xhtml" media-type="application/xhtml+xml"/>`
+  ).join('\n');
+
+  const appendixSpine = appendix.map((_, i) =>
+    `    <itemref idref="appendix${i + 1}"/>`
+  ).join('\n');
+
   zip.addFile('OEBPS/content.opf', Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -76,11 +87,11 @@ export async function generateEpubBuffer(options: EpubExportOptions): Promise<Bu
   <manifest>
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="style" href="style.css" media-type="text/css"/>${coverManifest}
-${manifestItems}
+${manifestItems}${appendixManifest ? '\n' + appendixManifest : ''}
     ${authorBio ? '<item id="about" href="about.xhtml" media-type="application/xhtml+xml"/>' : ''}
   </manifest>
   <spine>
-${spineItems}
+${spineItems}${appendixSpine ? '\n' + appendixSpine : ''}
     ${authorBio ? '<itemref idref="about"/>' : ''}
   </spine>
 </package>`, 'utf-8'));
@@ -198,7 +209,27 @@ ${chapterHtml}
 </html>`, 'utf-8'));
   }
 
-  // ── 8. Cover image (if provided) ──
+  // ── 8. World Appendix XHTML pages (after About the Author) ──
+  appendix.forEach((entry, i) => {
+    const bodyHtml = markdownToXhtml(entry.body);
+    const attrib = entry.attribution
+      ? `  <p class="appendix-attribution"><em>${escapeXml(entry.attribution)}</em></p>\n`
+      : '';
+    zip.addFile(`OEBPS/appendix${i + 1}.xhtml`, Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>${escapeXml(entry.title)}</title>
+  <link rel="stylesheet" href="style.css" type="text/css"/>
+</head>
+<body>
+  <h1>${escapeXml(entry.title)}</h1>
+${attrib}${bodyHtml}
+</body>
+</html>`, 'utf-8'));
+  });
+
+  // ── 9. Cover image (if provided) ──
   if (coverImageBuffer) {
     zip.addFile('OEBPS/images/cover.jpg', coverImageBuffer);
   }

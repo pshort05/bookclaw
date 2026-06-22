@@ -1,8 +1,8 @@
 import { Button } from '@bookclaw/shared';
 import styles from '../../routes/NewBook.module.css';
 
-export function SnapshotSummary({ title, author, voice, genre, pipeline, sectionCount, skills, canCreate, busy, onCreate }: {
-  title: string; author?: string; voice?: string; genre?: string | null; pipeline?: string;
+export function SnapshotSummary({ title, author, voice, genre, world, pipeline, sectionCount, skills, canCreate, busy, onCreate }: {
+  title: string; author?: string; voice?: string; genre?: string | null; world?: string | null; pipeline?: string;
   sectionCount: number; skills: string[]; canCreate: boolean; busy: boolean; onCreate: () => void;
 }) {
   return (
@@ -16,6 +16,7 @@ export function SnapshotSummary({ title, author, voice, genre, pipeline, section
         <div className={styles.srow}><span>Author</span><b>{author || '—'}</b></div>
         <div className={styles.srow}><span>Voice</span><b>{voice || '—'}</b></div>
         <div className={styles.srow}><span>Genre</span><b>{genre || '—'}</b></div>
+        <div className={styles.srow}><span>World</span><b>{world || '—'}</b></div>
         <div className={styles.srow}><span>Pipeline</span><b>{pipeline || '—'}</b></div>
         <div className={styles.srow}><span>Sections</span><b>{sectionCount}</b></div>
         <div className={styles.srow}><span>Skills</span><b>{skills.length ? `${skills.length} (from pipeline)` : '—'}</b></div>

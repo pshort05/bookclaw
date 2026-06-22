@@ -5,7 +5,9 @@
  * injected (the editor replaces the author voice). A session-mode directive
  * (brainstorm vs critique) is appended next, followed by an optional "Active book
  * context" block (opt-in active-book context: its genre guide + recent notes),
- * recent conversation memory, and the heartbeat status line.
+ * an optional "World authoring context" block (world format/taxonomy + catalog,
+ * injected when the active editor is some world's authoringEditor), recent
+ * conversation memory, and the heartbeat status line.
  */
 
 export type EditorMode = 'brainstorm' | 'critique';
@@ -21,13 +23,16 @@ You are in a critique / developmental-edit session focused on the author's exist
 
 export function composeEditorPrompt(
   editorPrompt: string,
-  ctx: { memories?: string; heartbeat?: string; manuscript?: string },
+  ctx: { memories?: string; heartbeat?: string; manuscript?: string; worldContext?: string },
   mode: EditorMode = 'brainstorm',
 ): string {
   let p = editorPrompt.trim();
   p += `\n\n${MODE_DIRECTIVE[mode] ?? MODE_DIRECTIVE.brainstorm}`;
   if (ctx.manuscript && ctx.manuscript.trim()) {
     p += `\n\n# Active book context\n${ctx.manuscript.trim()}`;
+  }
+  if (ctx.worldContext && ctx.worldContext.trim()) {
+    p += `\n\n# World authoring context\n${ctx.worldContext.trim()}`;
   }
   if (ctx.memories && ctx.memories.trim()) {
     p += `\n\n# Recent conversation context\n${ctx.memories.trim()}`;

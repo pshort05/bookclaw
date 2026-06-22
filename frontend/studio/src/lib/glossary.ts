@@ -38,4 +38,8 @@ export const GLOSSARY: Record<LibraryKind, { canon: string; def: string }> = {
     canon: 'Prompt',
     def: 'A reusable writing-craft prompt you run against a book file.',
   },
+  world: {
+    canon: 'World',
+    def: 'A reusable worldbuilding repository — the single source of truth for a setting. Books pull a relevant subset as their bible and select documents as reader-facing appendixes. Distinct from Genre (market) and Voice (style).',
+  },
 };

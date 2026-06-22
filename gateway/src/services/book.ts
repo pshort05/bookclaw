@@ -22,6 +22,8 @@ import {
 } from './book-types.js';
 import { pipelinePhases, type LibraryPipeline } from './library-types.js';
 import { listRunnerFiles as listRunnerFilesAt } from './runner-files.js';
+import type { WorldService } from './world.js';
+import { parseWorldDoc, serializeWorldDoc } from './world-parse.js';
 
 export interface BookSelection {
   title: string;
@@ -47,7 +49,7 @@ export type RepullStatus =
   | 'library-removed' | 'no-baseline';
 
 export interface RepullAsset {
-  kind: 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill';
+  kind: 'author' | 'voice' | 'genre' | 'pipeline' | 'section' | 'skill' | 'world';
   name: string;
   status: RepullStatus;
   libraryPresent: boolean;
@@ -118,6 +120,10 @@ export class BookService {
   // the active-book pointers; used to steer chat prompts and pre-fill new books.
   private channelGenres: Map<string, string> = new Map();
   private readonly channelGenrePath: string;
+  // World Repository Phase 3: optional WorldService reference (setter-injected),
+  // used by the re-pull library side to read world documents. Fail-soft when
+  // absent — world assets classify `library-removed` rather than throwing.
+  private worldService: WorldService | null = null;
 
   constructor(booksDir: string, library: LibraryService, appVersion: string) {
     this.booksDir = booksDir;
@@ -792,6 +798,141 @@ export class BookService {
   }
 
   /**
+   * World Repository Phase 3: inject a WorldService so the re-pull library side
+   * can read world documents. Optional/fail-soft — unit tests that don't exercise
+   * world re-pull can omit it (world assets then classify `library-removed`).
+   */
+  setWorldService(world: WorldService): void {
+    this.worldService = world;
+  }
+
+  /**
+   * Composes a book's curated world-doc snapshot (templates/world/*.md BODIES,
+   * codes kept for AI context) into a single string for prompt injection (World
+   * Repository Phase 3). Each doc goes under a "## World Document — <title>"
+   * header (title from the snapshotted frontmatter; on parse failure the docId
+   * stem is the title and the raw file is the body — fail-soft, never throws).
+   * Skips world.json. Alphabetical by docId. Reads fresh each call. Null when
+   * slug is null/invalid, no templates/world dir, or no non-empty bodies.
+   */
+  worldDocsOf(slug: string | null): string | null {
+    if (!slug) return null;
+    const dir = this.bookDir(slug);
+    if (!dir) return null;
+    const wdir = join(dir, 'templates', 'world');
+    if (!existsSync(wdir)) return null;
+    let names: string[];
+    try {
+      names = readdirSync(wdir, { withFileTypes: true })
+        .filter((e) => e.isFile() && e.name.endsWith('.md'))
+        .map((e) => e.name)
+        .sort();
+    } catch {
+      return null;
+    }
+    if (names.length === 0) return null;
+    const parts: string[] = [];
+    for (const file of names) {
+      let raw: string;
+      try { raw = readFileSync(join(wdir, file), 'utf-8'); } catch { continue; }
+      let title: string;
+      let body: string;
+      try {
+        const parsed = parseWorldDoc(raw);
+        title = parsed.meta.title || file.replace(/\.md$/, '');
+        body = parsed.body.trim();
+      } catch {
+        title = file.replace(/\.md$/, '');
+        body = raw.trim();
+      }
+      if (!body) continue;
+      parts.push(`## World Document — ${title}\n\n${body}`);
+    }
+    return parts.length ? parts.join('\n\n') : null;
+  }
+
+  /** The active book's composed world docs (World Repository Phase 3). */
+  getActiveWorldDocs(): string | null {
+    return this.worldDocsOf(this.activeBookSlug);
+  }
+
+  /**
+   * World Repository Phase 3: snapshot the curated world bible for a book.
+   * Replaces templates/world/ with world.json + one <docId>.md per resolved doc,
+   * mirrors it into .baseline/world/ for 3-way re-pull, then sets the manifest's
+   * pulledFrom.world + worldDocs and appends a `world-pull` history entry. The
+   * (de)serialization is delegated through closures so the route owns the
+   * WorldService accessor surface. Schema-gated via assertWritable (matches repull).
+   */
+  async snapshotWorldDocs(
+    slug: string,
+    world: { name: string; source: PulledRef['source'] },
+    docIds: string[],
+    getConfigRaw: (name: string) => string | null,
+    getDocSerialized: (name: string, docId: string) => string | null,
+  ): Promise<{ written: string[]; missing: string[] }> {
+    await this.assertWritable(slug);
+    const base = this.bookDir(slug);
+    if (!base) throw new Error(`Invalid slug: ${slug}`);
+
+    const worldTpl = join(base, 'templates', 'world');
+    const worldBase = join(base, '.baseline', 'world');
+    await rm(worldTpl, { recursive: true, force: true });
+    await rm(worldBase, { recursive: true, force: true });
+    await mkdir(worldTpl, { recursive: true });
+
+    const cfg = getConfigRaw(world.name);
+    if (cfg != null) await writeFile(join(worldTpl, 'world.json'), cfg, 'utf-8');
+
+    const written: string[] = [];
+    const missing: string[] = [];
+    for (const docId of docIds) {
+      // Defense-in-depth: only accept catalog-shaped doc ids (mirrors ENTRY_NAME_RE)
+      // before composing a path. The sole caller already validates via WorldService;
+      // this keeps the snapshot method self-safe against a traversal-shaped docId.
+      if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(docId)) { missing.push(docId); continue; }
+      const serialized = getDocSerialized(world.name, docId);
+      if (serialized == null) { missing.push(docId); continue; }
+      await writeFile(join(worldTpl, `${docId}.md`), serialized, 'utf-8');
+      written.push(docId);
+    }
+
+    // Mirror the snapshot into the re-pull baseline.
+    await cp(worldTpl, worldBase, { recursive: true });
+
+    const opened = await this.open(slug);
+    if (opened) {
+      const m = opened.manifest;
+      m.pulledFrom.world = { name: world.name, source: world.source };
+      m.worldDocs = written;
+      m.lastWrittenByApp = this.appVersion;
+      m.history.push({ at: new Date().toISOString(), event: 'world-pull', detail: written.join(',') });
+      await writeFile(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
+    }
+    return { written, missing };
+  }
+
+  /**
+   * World Repository Phase 5: save the ordered appendix selection on the book manifest.
+   * Read-modify-write of books/<slug>/book.json. Entries are stored sorted by order asc.
+   * Returns the updated manifest, or undefined when the slug has no readable book.
+   * No schema bump (additive-optional field).
+   */
+  async setAppendix(
+    slug: string,
+    entries: Array<{ docId: string; title?: string; order: number }>,
+  ): Promise<BookManifest | undefined> {
+    const opened = await this.open(slug);
+    if (!opened) return undefined;
+    const manifest = opened.manifest;
+    manifest.appendix = [...entries].sort((a, b) => a.order - b.order);
+    const base = this.bookDir(slug);
+    if (!base) return undefined;
+    await writeFile(join(base, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    return manifest;
+  }
+
+  /**
    * Composes a book's snapshotted sections (templates/sections/*.md) into a single
    * string for prompt injection (config-not-code pipelines, Task 11). Each .md file
    * goes under a "## Section — <name>" header (alphabetical by name); *.meta.json
@@ -1079,7 +1220,16 @@ export class BookService {
   // ── Phase 4: per-asset re-pull from the library ────────────────────────────
 
   /** The library's current files/content for an asset, normalised to a file map. */
-  private libraryFiles(kind: RepullAsset['kind'], name: string): Record<string, string> | null {
+  private libraryFiles(kind: RepullAsset['kind'], name: string, worldName?: string | null): Record<string, string> | null {
+    // World docs live in WorldService (not the library overlay): the asset `name`
+    // is the docId, resolved against the book's bound world. Fail-soft to null
+    // (→ `library-removed`) when the world service or world name is absent.
+    if (kind === 'world') {
+      if (!this.worldService || !worldName) return null;
+      const doc = this.worldService.getDocument(worldName, name);
+      if (!doc) return null;
+      return { [`${name}.md`]: serializeWorldDoc(doc.meta, doc.body) };
+    }
     const e = this.library.get(kind, name);
     if (!e) return null;
     if (e.files) return e.files;
@@ -1088,10 +1238,21 @@ export class BookService {
     return null;
   }
 
+  /** Synchronously read the book's bound world name from book.json, or null. */
+  private boundWorldName(slug: string): string | null {
+    const base = this.bookDir(slug);
+    if (!base) return null;
+    try {
+      const m = JSON.parse(readFileSync(join(base, 'book.json'), 'utf-8')) as BookManifest;
+      return m.pulledFrom?.world?.name ?? null;
+    } catch { return null; }
+  }
+
   /** templates/ (or .baseline/) relative dir for an asset's files. */
   private assetRel(kind: RepullAsset['kind'], name: string): string {
     if (kind === 'pipeline') return 'pipeline';    // v2: file lives at <root>/pipeline/<name>.json
     if (kind === 'section') return 'sections';
+    if (kind === 'world') return 'world';          // file lives at <root>/world/<docId>.md
     if (kind === 'skill') return join('skills', name);
     return kind;                                   // author/voice/genre dir
   }
@@ -1100,6 +1261,7 @@ export class BookService {
   private assetFileName(kind: RepullAsset['kind'], libFileName: string, name: string): string {
     if (kind === 'pipeline') return `${name}.json`; // v2: per-name file
     if (kind === 'section') return `${name}.md`;
+    if (kind === 'world') return `${name}.md`;      // world doc: <docId>.md
     return libFileName;
   }
 
@@ -1121,6 +1283,10 @@ export class BookService {
     }
     if (kind === 'section') {
       const p = join(base, root, 'sections', `${name}.md`);
+      return existsSync(p) ? { [`${name}.md`]: readFileSync(p, 'utf-8') } : null;
+    }
+    if (kind === 'world') {
+      const p = join(base, root, 'world', `${name}.md`);
       return existsSync(p) ? { [`${name}.md`]: readFileSync(p, 'utf-8') } : null;
     }
     // author/voice/genre dir, or skill dir (skills/<name>/) — read all .md
@@ -1145,14 +1311,16 @@ export class BookService {
     if (pf.genre?.name) out.push({ kind: 'genre', name: pf.genre.name });
     for (const s of pf.sections || []) out.push({ kind: 'section', name: s });
     for (const s of pf.skills || []) out.push({ kind: 'skill', name: s });
+    for (const id of opened.manifest.worldDocs || []) out.push({ kind: 'world', name: id });
     return out;
   }
 
   /** Per-asset re-pull status for a book. */
   async repullStatus(slug: string): Promise<RepullAsset[]> {
     const assets = await this.assetsOf(slug);
+    const worldName = this.boundWorldName(slug);
     return assets.map(({ kind, name }) => {
-      const lib = this.libraryFiles(kind, name);
+      const lib = this.libraryFiles(kind, name, worldName);
       const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
       const book = this.readAssetFrom(slug, 'templates', kind, name);
       const hasBaseline = !!baseline;
@@ -1199,7 +1367,7 @@ export class BookService {
     const base = this.bookDir(slug);
     if (!base) throw new Error(`Invalid slug: ${slug}`);
     await this.assertWritable(slug); // schemaVersion gate (no-op today; see assertWritable)
-    const lib = this.libraryFiles(kind, name);
+    const lib = this.libraryFiles(kind, name, this.boundWorldName(slug));
     if (!lib) throw new Error(`Library no longer has ${kind}/${name}`);
     const baseline = this.readAssetFrom(slug, '.baseline', kind, name);
     const book = this.readAssetFrom(slug, 'templates', kind, name);
@@ -1328,6 +1496,11 @@ export class BookService {
     const tdir = this.templatesDir(slug);
     if (!tdir) throw new Error('invalid: no active/valid book');
     await this.assertWritable(slug); // schemaVersion gate (no-op today; see assertWritable)
+    // World docs are snapshotted via snapshotWorldDocs (which mirrors .baseline/world/
+    // for the 3-way re-pull). Routing them through the generic template writer would
+    // skip that baseline discipline and desync re-pull — reject explicitly so adding
+    // 'world' to TEMPLATE_KINDS can never silently open that bypass.
+    if (kind === 'world') throw new Error('invalid: world docs are managed via snapshotWorldDocs, not writeTemplate');
     const wired = WIRED_KINDS.has(kind);
     if (kind === 'pipeline') {
       const raw = String(body.content ?? '');
@@ -1384,6 +1557,16 @@ export class BookService {
     else if (kind === 'voice') m.pulledFrom.voice = ref;
     else if (kind === 'genre') m.pulledFrom.genre = ref;
     else if (kind === 'pipeline') m.pulledFrom.pipeline = ref;
+    else if (kind === 'world') {
+      // The asset `name` here is the docId; the per-doc identity stays in
+      // worldDocs. Refresh pulledFrom.world (the bound world) by NAME, preserving
+      // its source — the docId never becomes the world ref name.
+      const wname = m.pulledFrom.world?.name;
+      if (wname) {
+        const wsource: PulledRef['source'] = this.library.get('world', wname)?.source ?? m.pulledFrom.world?.source ?? 'workspace';
+        m.pulledFrom.world = { name: wname, source: wsource };
+      }
+    }
     m.lastWrittenByApp = this.appVersion;
     m.history.push({ at: new Date().toISOString(), event: 'repull', detail: `${kind}/${name}` });
     const dir = this.bookDir(slug);

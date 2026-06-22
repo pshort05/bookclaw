@@ -85,6 +85,9 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
     await appVersion(),
   );
   await gw.books.initialize();
+  // World Repository Phase 3: wire the WorldService into BookService so world-doc
+  // re-pull can read the library document side (setter injection, fail-soft).
+  gw.books.setWorldService(gw.world);
   console.log(`  ✓ Books: ${gw.books.list().length} book(s)`);
 
   // ── Phase 3a: resolve the active book (seed a Default Book on first run) ──

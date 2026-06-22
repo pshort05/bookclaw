@@ -4,6 +4,8 @@ import { api, useStore, type LibraryEntry, type LibraryKind, type LibraryEntryFu
 import { GLOSSARY } from '../lib/glossary.js';
 import { OptionCard } from '../components/newbook/OptionCard.js';
 import { SnapshotSummary } from '../components/newbook/SnapshotSummary.js';
+import { WorldPicker } from '../components/newbook/WorldPicker.js';
+import { listWorlds, type WorldListRow } from '../lib/worldApi.js';
 import { GENRE_GROUPS } from '../lib/genreGroups.js';
 import styles from './NewBook.module.css';
 
@@ -12,7 +14,8 @@ export function NewBook() {
   const loadBooks = useStore((s) => s.loadBooks);
   const [opts, setOpts] = useState<Partial<Record<LibraryKind, LibraryEntry[]>>>({});
   const [title, setTitle] = useState('');
-  const [sel, setSel] = useState<Record<LibraryKind, string>>({ author: '', voice: '', genre: '', pipeline: '', sequence: '', section: '', skill: '', editor: '', prompt: '' } as Record<LibraryKind, string>);
+  const [sel, setSel] = useState<Record<LibraryKind, string>>({ author: '', voice: '', genre: '', pipeline: '', sequence: '', section: '', skill: '', editor: '', prompt: '', world: '' } as Record<LibraryKind, string>);
+  const [worlds, setWorlds] = useState<WorldListRow[]>([]);
   const [sections, setSections] = useState<string[]>([]);
   const [pipelineSkills, setPipelineSkills] = useState<string[]>([]);
   // The composed, editable ordered list of pipeline names this book will run.
@@ -23,12 +26,13 @@ export function NewBook() {
   const [error, setError] = useState<string | null>(null);
   const [genreQuery, setGenreQuery] = useState('');
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
-  type SeriesOpt = { id: string; title: string; pulledFrom: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; pipeline?: { name: string } | null } };
+  type SeriesOpt = { id: string; title: string; pulledFrom: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; world?: { name: string } | null; pipeline?: { name: string } | null } };
   const [seriesList, setSeriesList] = useState<SeriesOpt[]>([]);
   const [seriesId, setSeriesId] = useState('');
 
   useEffect(() => {
     api<{ series: SeriesOpt[] }>('/api/series').then((r) => setSeriesList(r.series ?? [])).catch(() => {});
+    listWorlds().then(setWorlds).catch(() => {});
   }, []);
 
   // Choosing a series reflects its shared assets into the pickers (server is
@@ -41,6 +45,7 @@ export function NewBook() {
       author: s.pulledFrom.author?.name ?? prev.author,
       voice: s.pulledFrom.voice?.name ?? prev.voice,
       genre: s.pulledFrom.genre?.name ?? prev.genre,
+      world: s.pulledFrom.world?.name ?? prev.world,
     }));
   };
 
@@ -93,8 +98,8 @@ export function NewBook() {
   // When a series is chosen, author/voice/genre come FROM the series (server-authoritative),
   // so those pickers are locked to keep the preview honest.
   const pickSingle = (kind: LibraryKind, name: string) => {
-    if (seriesId && (kind === 'author' || kind === 'voice' || kind === 'genre')) return;
-    setSel((s) => ({ ...s, [kind]: s[kind] === name && kind === 'genre' ? '' : name }));
+    if (seriesId && (kind === 'author' || kind === 'voice' || kind === 'genre' || kind === 'world')) return;
+    setSel((s) => ({ ...s, [kind]: s[kind] === name && (kind === 'genre' || kind === 'world') ? '' : name }));
   };
 
   const toggleSection = (name: string) =>
@@ -115,6 +120,7 @@ export function NewBook() {
     try {
       await api<{ book: BookManifest }>('/api/books', { method: 'POST', body: JSON.stringify({
         title: title.trim(), author: sel.author, voice: sel.voice, genre: sel.genre || null,
+        ...(sel.world ? { world: sel.world } : {}),
         pipelineSequence: pipelineSeq,
         ...(seqPreset ? { sequence: seqPreset } : {}),
         sections,
@@ -254,6 +260,7 @@ export function NewBook() {
           {pick('author')}
           {pick('voice')}
           {pickGenre()}
+          <WorldPicker worlds={worlds} value={sel.world} onChange={(n) => pickSingle('world', n)} locked={!!seriesId} />
 
           {/* Sequence: pick a preset, then edit the ordered pipeline list. */}
           <section className={styles.pick}>
@@ -300,6 +307,7 @@ export function NewBook() {
           author={sel.author}
           voice={sel.voice}
           genre={sel.genre || null}
+          world={sel.world || null}
           pipeline={pipelineSeq.length ? pipelineSeq.join(' → ') : undefined}
           sectionCount={sections.length}
           skills={pipelineSkills}

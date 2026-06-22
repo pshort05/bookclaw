@@ -1,0 +1,15 @@
+{
+  "id": "series-1782104526935-jxug",
+  "title": "Smoke Series 503670",
+  "description": "Smoke series for CI.",
+  "pulledFrom": {
+    "world": {
+      "name": "smoke-world-503670",
+      "source": "workspace"
+    }
+  },
+  "bookSlugs": [],
+  "readingOrder": [],
+  "createdAt": "2026-06-22T05:02:06.935Z",
+  "updatedAt": "2026-06-22T05:02:07.019Z"
+}

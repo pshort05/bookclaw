@@ -3,6 +3,7 @@ import multer from 'multer';
 import { safePath, upload, serveFile } from './_shared.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { generateEpubBuffer } from '../../services/epub-export.js';
+import { resolveBookAppendix, type AppendixEntry } from '../../services/world-appendix.js';
 
 /** Document library (large-manuscript storage), project/library uploads, and the Context Engine / continuity checker. */
 export function mountDocuments(app: Application, gateway: any, baseDir: string): void {
@@ -781,6 +782,14 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
 
       const exportFiles = [`${outputBaseName}.md`];
 
+      // Resolve world appendix back-matter (best-effort; never blocks compile)
+      let appendix: AppendixEntry[] = [];
+      try {
+        if (project.bookSlug && services.books && services.world) {
+          appendix = await resolveBookAppendix(services.books, services.world, project.bookSlug);
+        }
+      } catch { /* appendix is best-effort back-matter; never block compile */ }
+
       // Generate DOCX
       try {
         const docxBuffer = await generateDocxBuffer({
@@ -789,6 +798,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
           content: compiledMd,
           authorBio: persona?.bio,
           alsoBy: persona?.alsoBy,
+          appendix,
         });
         await wf(j(projectDir, `${outputBaseName}.docx`), docxBuffer);
         exportFiles.push(`${outputBaseName}.docx`);
@@ -802,6 +812,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
           content: compiledMd,
           description: project.description,
           authorBio: persona?.bio,
+          appendix,
         });
         await wf(j(projectDir, `${outputBaseName}.epub`), epubBuffer);
         exportFiles.push(`${outputBaseName}.epub`);

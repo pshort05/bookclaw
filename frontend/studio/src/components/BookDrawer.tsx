@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, useStore, useActiveBook, useCosts, money, LIFECYCLE_PHASES, type BookDetail, type NextStep } from '@bookclaw/shared';
 import { Button } from '@bookclaw/shared';
+import { BuildBiblePanel } from './book/BuildBiblePanel.js';
+import { AppendixPanel } from './book/AppendixPanel.js';
 import styles from './BookDrawer.module.css';
 
 export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
@@ -9,6 +11,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
   const [next, setNext] = useState<NextStep | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
+  const [panel, setPanel] = useState<'bible' | 'appendix' | null>(null);
   const activeBook = useActiveBook();
   const costs = useCosts();
   const loadBooks = useStore((s) => s.loadBooks);
@@ -16,7 +19,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
 
   useEffect(() => {
     let cancelled = false;
-    setData(null); setNext(null); setError(null);
+    setData(null); setNext(null); setError(null); setPanel(null);
     api<BookDetail>(`/api/books/${encodeURIComponent(slug)}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => { if (!cancelled) setError(String(e)); });
@@ -25,6 +28,11 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
       .catch(() => {});
     return () => { cancelled = true; };
   }, [slug]);
+
+  // Re-fetch the book after a World panel saves so counts/refs reflect the change.
+  const refreshBook = () => {
+    api<BookDetail>(`/api/books/${encodeURIComponent(slug)}`).then(setData).catch(() => {});
+  };
 
   // Close on Escape.
   useEffect(() => {
@@ -86,6 +94,10 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                   {data.descriptions?.genre && <div className={styles.adesc}>{data.descriptions.genre}</div>}
                 </div>
                 <div className={styles.asset}>
+                  <div className={styles.l}>World</div>
+                  <div className={styles.v}>{pf?.world?.name ?? '—'}</div>
+                </div>
+                <div className={styles.asset}>
                   <div className={styles.l}>Pipeline</div>
                   <div className={styles.v}>{pf?.pipeline?.name ?? '—'}</div>
                 </div>
@@ -94,6 +106,37 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                   <div className={styles.v}>{money(costs?.byBook?.[slug] ?? 0)}</div>
                 </div>
               </div>
+
+              {/* World repository panels — only when the book is bound to a world */}
+              {pf?.world?.name && (
+                <>
+                  <div className={styles.sec}>World repository</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                    <Button variant={panel === 'bible' ? 'primary' : 'secondary'} onClick={() => setPanel(panel === 'bible' ? null : 'bible')}>
+                      Build bible from world
+                    </Button>
+                    <Button variant={panel === 'appendix' ? 'primary' : 'secondary'} onClick={() => setPanel(panel === 'appendix' ? null : 'appendix')}>
+                      Edit appendix
+                    </Button>
+                  </div>
+                  {panel === 'bible' && (
+                    <BuildBiblePanel
+                      slug={slug}
+                      current={data.book.worldDocs}
+                      onSaved={refreshBook}
+                      onClose={() => setPanel(null)}
+                    />
+                  )}
+                  {panel === 'appendix' && (
+                    <AppendixPanel
+                      slug={slug}
+                      worldName={pf.world.name}
+                      current={data.book.appendix}
+                      onSaved={refreshBook}
+                    />
+                  )}
+                </>
+              )}
 
               {/* Suggested next step */}
               {next && (

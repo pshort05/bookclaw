@@ -40,6 +40,7 @@ import { BookService } from './services/book.js';
 import { matchGenre } from './services/genre-match.js';
 import { EditorService } from './services/editor.js';
 import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
+import { composeWorldAuthoringContext, worldForAuthoringEditor } from './services/world-authoring.js';
 import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
 import { isChatCommand } from './services/chat-command.js';
 import { DISPLAY_VERSION, BREAKING_VERSION, formatVersionInfo } from './version.js';
@@ -646,6 +647,24 @@ class BookClawGateway {
       } catch { /* best-effort: omit book context on any failure */ }
     }
 
+    // World-aware authoring: if the active editor is some world's authoringEditor,
+    // prime the prompt with that world's format/taxonomy + document catalog so the
+    // editor drafts in-format and stays continuity-aware. Fail-soft: any miss just
+    // omits the world context — it never blocks the reply.
+    let editorWorldContext: string | undefined;
+    if (activeEditor && this.world) {
+      try {
+        const cfg = worldForAuthoringEditor(
+          activeEditor.editor,
+          this.world.list(),
+          (name) => this.world!.getConfig(name),
+        );
+        if (cfg) {
+          editorWorldContext = composeWorldAuthoringContext(cfg, this.world.listDocuments(cfg.name));
+        }
+      } catch { /* best-effort: omit world context on any failure */ }
+    }
+
     // Attribute spend only when the book actually resolves; an unresolvable/deleted
     // book's spend goes to 'unattributed' (reachable + resettable in the UI) instead
     // of a stranded orphan byBook bucket. Genre/world still key off overrideSlug — do
@@ -663,9 +682,15 @@ class BookClawGateway {
       ? (this.books?.genreGuideOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveGenreGuide() ?? undefined))
       ?? (this.books?.getChannelGenreGuide(channel) ?? undefined);
-    const worldGuide = overrideSlug
+    // worldGuide = freeform world-building blob + the curated world-repository
+    // bible (World Repository Phase 3), both flowing through the same rail.
+    const wbGuide = overrideSlug
       ? (this.books?.worldbuildingOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveWorldbuilding() ?? undefined);
+    const wdGuide = overrideSlug
+      ? (this.books?.worldDocsOf(overrideSlug) ?? undefined)
+      : (this.books?.getActiveWorldDocs() ?? undefined);
+    const worldGuide = [wbGuide, wdGuide].filter(Boolean).join('\n\n') || undefined;
     const sectionsGuide = overrideSlug
       ? (this.books?.sectionsOf(overrideSlug) ?? undefined)
       : (this.books?.getActiveSections() ?? undefined);
@@ -706,7 +731,7 @@ class BookClawGateway {
       skills,
       heartbeatContext,
       channel,
-      ...(editorCfg ? { editorPrompt: editorCfg.systemPrompt, editorMode: activeEditor!.mode, manuscript: editorManuscript } : {}),
+      ...(editorCfg ? { editorPrompt: editorCfg.systemPrompt, editorMode: activeEditor!.mode, manuscript: editorManuscript, worldContext: editorWorldContext } : {}),
     });
 
     if (extraContext) {
@@ -1044,16 +1069,18 @@ class BookClawGateway {
     editorPrompt?: string;
     editorMode?: EditorMode;
     manuscript?: string;
+    worldContext?: string;
   }): string {
     // Editor mode: the developmental-editor persona REPLACES the author voice —
     // no soul/genre/world/sections, just the editor prompt + a session-mode
-    // directive + memory/heartbeat (and opt-in manuscript context). See
+    // directive + memory/heartbeat (and opt-in manuscript and world context). See
     // composeEditorPrompt.
     if (context.editorPrompt) {
       return composeEditorPrompt(context.editorPrompt, {
         memories: context.memories,
         heartbeat: context.heartbeatContext,
         manuscript: context.manuscript,
+        worldContext: context.worldContext,
       }, context.editorMode);
     }
 

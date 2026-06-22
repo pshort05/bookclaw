@@ -1,0 +1,182 @@
+/* World repository browser — styles with no existing analog in AssetStudio.module.css.
+   Reuses token vars (--bg, --panel, --line-2, --text, --dim, --faint, --alert, --ember). */
+
+.tab {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--dim);
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  padding: 7px 13px;
+  cursor: pointer;
+  transition: .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.on {
+  color: var(--ember);
+  border-color: rgba(240, 145, 58, .4);
+}
+
+.docbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+.docbar input { margin-bottom: 0; }
+
+.typegroup { margin-bottom: 22px; }
+.typehead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'Fraunces', serif;
+  font-weight: 460;
+  font-size: 17px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line-2);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.domainblock { margin: 0 0 12px; }
+.domainlbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 6px 2px;
+}
+
+.docrow {
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-bottom: 7px;
+  cursor: pointer;
+  transition: .15s;
+}
+.docrow:hover { border-color: rgba(240, 145, 58, .35); }
+
+.doctitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.docbadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.classchip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: .05em;
+  color: var(--dim);
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.clr {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  padding: 2px 7px;
+}
+.clrGeneral { color: var(--dim); }
+.clrMid { color: var(--teal); border-color: rgba(121, 176, 162, .4); }
+.clrRestricted { color: var(--alert); border-color: rgba(214, 110, 92, .45); }
+
+.apx {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ember);
+  border: 1px solid rgba(240, 145, 58, .4);
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+
+.attn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--alert);
+  border: 1px solid rgba(214, 110, 92, .45);
+  border-radius: 20px;
+  padding: 1px 7px;
+}
+
+.docsum {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin-top: 6px;
+}
+
+.back {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+}
+.back:hover { color: var(--ember); }
+
+.typerow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 7px;
+  align-items: center;
+}
+.chiplist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  padding: 3px 8px;
+}
+.chip button {
+  border: none;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+}

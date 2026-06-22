@@ -126,4 +126,74 @@ export class WorldService {
     rmSync(p);
     return true;
   }
+
+  /**
+   * World Repository Phase 3: hybrid relevance-pull. Sends the book's signals +
+   * the world catalog (title/type/summary/tags only — no bodies) to ONE AI call
+   * and maps the returned ranked docIds back to the catalog. FAIL-SOFT: on any AI
+   * failure OR unparseable/empty JSON, returns the FULL catalog unranked (rank =
+   * catalog order) with reason 'manual'. NEVER throws.
+   */
+  async proposeWorldDocs(
+    slug: string,
+    signals: { title: string; description?: string; genre?: string | null; knownEntities?: string },
+    worldName: string,
+    ai: {
+      complete: (req: { provider: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number }) => Promise<{ content: string }>,
+      select: (taskType: string) => { id: string },
+    },
+  ): Promise<Array<{ docId: string; title: string; rank: number; reason: string }>> {
+    const catalog = this.listDocuments(worldName);
+    const fallback = () => catalog.map((r, i) => ({ docId: r.docId, title: r.title, rank: i, reason: 'manual' }));
+    if (catalog.length === 0) return [];
+
+    try {
+      const catalogLines = catalog
+        .map((r) => `- ${r.docId} · ${r.title} · ${r.type} · ${r.summary} · [${r.tags.join(', ')}]`)
+        .join('\n');
+      const system = [
+        'You are a worldbuilding librarian. Given a book and a catalog of world',
+        'documents, select the documents most relevant to writing this book and',
+        'rank them. Return ONLY a JSON array of objects with keys docId, rank',
+        '(1 = most relevant), and reason (one short clause). No prose, no fences.',
+      ].join(' ');
+      const userParts = [
+        `Book title: ${signals.title}`,
+        signals.description ? `Premise: ${signals.description}` : '',
+        signals.genre ? `Genre: ${signals.genre}` : '',
+        signals.knownEntities ? `Known characters/places:\n${signals.knownEntities}` : '',
+        '',
+        'World document catalog:',
+        catalogLines,
+      ].filter(Boolean).join('\n');
+
+      const provider = ai.select('consistency'); // mid tier — closest match for ranking against a manuscript
+      const { content } = await ai.complete({
+        provider: provider.id,
+        system,
+        messages: [{ role: 'user', content: userParts }],
+        maxTokens: 2000,
+      });
+
+      const cleaned = String(content || '').replace(/```(?:json)?/gi, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (!Array.isArray(parsed) || parsed.length === 0) return fallback();
+
+      const byId = new Map(catalog.map((r) => [r.docId, r]));
+      const out: Array<{ docId: string; title: string; rank: number; reason: string }> = [];
+      for (const item of parsed) {
+        const docId = item && typeof item.docId === 'string' ? item.docId : '';
+        const row = byId.get(docId);
+        if (!row) continue; // drop ids not in the catalog
+        const rank = typeof item.rank === 'number' ? item.rank : out.length + 1;
+        const reason = (typeof item.reason === 'string' && item.reason.trim()) ? item.reason.trim() : 'manual';
+        out.push({ docId, title: row.title, rank, reason });
+      }
+      if (out.length === 0) return fallback();
+      return out;
+    } catch (err) {
+      console.log(`  ⚠ World: relevance-pull fell back to manual (${(err as Error)?.message || err})`);
+      return fallback();
+    }
+  }
 }
