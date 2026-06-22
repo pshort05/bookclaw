@@ -1,0 +1,22 @@
+# BookClaw — "Writing" instance override (a second, isolated, pinned instance).
+#
+# Layered on top of docker-compose.yml for a separate compose project so it is
+# fully isolated from the dev/Mercury deploy (own container, vault volume,
+# network, ports, workspace, and DB). It NEVER auto-rebuilds on a dev push —
+# you rebuild it deliberately.
+#
+# Run (on the writing host, with a secrets env-file kept OUTSIDE any synced/git tree):
+#   docker compose -p bookclaw-writing \
+#     --env-file /mnt/bckup1/bookclaw-writing/.env.writing \
+#     -f docker/docker-compose.yml -f docker/docker-compose.writing.yml up -d --build
+#
+# The env-file supplies: BOOKCLAW_HTTP_PORT, BOOKCLAW_WORKSPACE_PATH,
+# BOOKCLAW_BACKUP_PATH, BOOKCLAW_DB_DIR=/app/db, BOOKCLAW_DB_HOST_PATH,
+# BOOKCLAW_VAULT_KEY, BOOKCLAW_AUTH_TOKEN, AUTHOR_OS_PATH, BOOKCLAW_VERSION.
+services:
+  bookclaw:
+    container_name: bookclaw-writing
+    volumes:
+      # Live SQLite FTS index on a local (non-synced) disk — paired with
+      # BOOKCLAW_DB_DIR=/app/db so the workspace can live in a cloud-synced folder.
+      - ${BOOKCLAW_DB_HOST_PATH:-/mnt/bckup1/bookclaw-db}:/app/db
