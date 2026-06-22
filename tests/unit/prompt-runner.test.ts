@@ -9,7 +9,7 @@ test('runPrompt sends the prompt system + user content and returns text', async 
   };
   const prompts = { get: (n: string) => (n === 'p' ? { name: 'p', systemPrompt: 'SYS' } : null) };
   const out = await runPrompt({ prompts, aiRouter }, 'p', 'INPUT');
-  assert.deepEqual(out, { text: 'OUT' });
+  assert.equal(out?.text, 'OUT');
   assert.equal(captured.system, 'SYS');
   assert.equal(captured.messages[0].content, 'INPUT');
 });

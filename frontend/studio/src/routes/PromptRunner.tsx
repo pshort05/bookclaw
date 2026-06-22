@@ -6,6 +6,16 @@ import styles from './PromptRunner.module.css';
 
 interface RunnerFile { path: string; group: 'Outputs' | 'Templates'; bytes: number; modified?: string }
 interface Version { id: string; at: string; bytes: number }
+interface RunMeta {
+  provider: string;
+  model?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  tokensUsed: number;
+  estimatedCost: number;
+  ms: number;
+  tokensPerSecond?: number;
+}
 
 // The runner sends file text in and writes file text back; api() parses JSON,
 // so fetch the raw body directly (with the bearer header), matching Files.tsx.
@@ -36,6 +46,7 @@ export function PromptRunner() {
 
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
+  const [meta, setMeta] = useState<RunMeta | null>(null);
   const [original, setOriginal] = useState('');   // the file text we sent in (for the diff)
   const [showDiff, setShowDiff] = useState(false);
 
@@ -72,7 +83,7 @@ export function PromptRunner() {
 
   // Reset run state + reload versions whenever the selected file changes.
   useEffect(() => {
-    setOutput(null); setShowDiff(false); setOriginal(''); setMsg(null); setErr(null);
+    setOutput(null); setMeta(null); setShowDiff(false); setOriginal(''); setMsg(null); setErr(null);
     loadVersions();
   }, [loadVersions]);
 
@@ -83,15 +94,16 @@ export function PromptRunner() {
 
   async function run() {
     if (!canRun) return;
-    setRunning(true); setErr(null); setMsg(null); setOutput(null); setShowDiff(false);
+    setRunning(true); setErr(null); setMsg(null); setOutput(null); setMeta(null); setShowDiff(false);
     try {
       const text = await fetchText(`/api/books/${encodeURIComponent(slug)}/file?path=${encodeURIComponent(file)}`);
       setOriginal(text);
-      const r = await api<{ output: string }>('/api/prompts/run', {
+      const r = await api<{ output: string; meta?: RunMeta }>('/api/prompts/run', {
         method: 'POST',
         body: JSON.stringify({ prompt: promptName, content: text, bookSlug: slug }),
       });
       setOutput(r.output ?? '');
+      setMeta(r.meta ?? null);
     } catch (e) {
       setErr(`Run failed — ${String(e)}`);
     } finally {
@@ -109,7 +121,7 @@ export function PromptRunner() {
     if (output === null) return;
     try {
       await writeFile(file, output);
-      setShowDiff(false); setOutput(null);
+      setShowDiff(false); setOutput(null); setMeta(null);
       setMsg(`Replaced ${file}.`);
       loadVersions();
     } catch (e) { setErr(`Replace failed — ${String(e)}`); }
@@ -129,7 +141,7 @@ export function PromptRunner() {
   }
 
   function discard() {
-    setOutput(null); setShowDiff(false); setOriginal('');
+    setOutput(null); setMeta(null); setShowDiff(false); setOriginal('');
   }
 
   async function restore(id: string) {
@@ -245,6 +257,21 @@ export function PromptRunner() {
                   <button className={styles.act} onClick={discard}>Discard</button>
                 </div>
               </div>
+              {meta && (() => {
+                const parts: string[] = [];
+                parts.push(`${(meta.ms / 1000).toFixed(1)}s`);
+                let tokStr = meta.tokensUsed.toLocaleString() + ' tokens';
+                if (meta.promptTokens != null && meta.completionTokens != null) {
+                  tokStr += ` (${meta.promptTokens.toLocaleString()} prompt + ${meta.completionTokens.toLocaleString()} completion)`;
+                }
+                parts.push(tokStr);
+                if (meta.tokensPerSecond != null && isFinite(meta.tokensPerSecond)) {
+                  parts.push(`~${meta.tokensPerSecond.toFixed(1)} tok/s (est.)`);
+                }
+                parts.push(`${meta.provider}${meta.model ? '/' + meta.model : ''}`);
+                parts.push(`~$${meta.estimatedCost.toFixed(4)} (est.)`);
+                return <div className={styles.vmeta} style={{ marginBottom: 10 }}>{parts.join(' · ')}</div>;
+              })()}
               <pre className={styles.pre}>{output}</pre>
             </>
           )}

@@ -62,6 +62,9 @@ interface CompletionResponse {
   tokensUsed: number;
   estimatedCost: number;
   provider: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  model?: string;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -556,11 +559,16 @@ export class AIRouter {
       );
     }
 
+    const promptTokens = data.prompt_eval_count || 0;
+    const completionTokens = data.eval_count || 0;
     return {
       text,
-      tokensUsed: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+      tokensUsed: promptTokens + completionTokens,
       estimatedCost: 0,
       provider: 'ollama',
+      promptTokens,
+      completionTokens,
+      model: provider.model,
     };
   }
 
@@ -625,11 +633,16 @@ export class AIRouter {
       throw new Error('Gemini returned an empty response. Try again or fall back to another provider.');
     }
     const usage = data.usageMetadata;
+    const promptTokens = usage?.promptTokenCount || 0;
+    const completionTokens = usage?.candidatesTokenCount || 0;
     return {
       text,
-      tokensUsed: (usage?.promptTokenCount || 0) + (usage?.candidatesTokenCount || 0),
+      tokensUsed: promptTokens + completionTokens,
       estimatedCost: 0, // Free tier
       provider: 'gemini',
+      promptTokens,
+      completionTokens,
+      model: provider.model,
     };
   }
 
@@ -694,6 +707,9 @@ export class AIRouter {
       estimatedCost: (inputTokens / 1000) * provider.costPer1kInput +
                      (outputTokens / 1000) * provider.costPer1kOutput,
       provider: 'claude',
+      promptTokens: inputTokens,
+      completionTokens: outputTokens,
+      model: provider.model,
     };
   }
 
@@ -795,6 +811,9 @@ export class AIRouter {
         : (inputTokens / 1000) * provider.costPer1kInput +
           (outputTokens / 1000) * provider.costPer1kOutput,
       provider: provider.id,
+      promptTokens: inputTokens,
+      completionTokens: outputTokens,
+      model: effectiveModel,
     };
   }
 

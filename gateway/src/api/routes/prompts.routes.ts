@@ -16,7 +16,7 @@ export function mountPrompts(app: Application, gateway: any, _baseDir: string): 
         prompt, content, typeof bookSlug === 'string' ? bookSlug : undefined,
       );
       if (out === null) return res.status(404).json({ error: 'Unknown prompt' });
-      res.json({ output: out.text });
+      res.json({ output: out.text, meta: out.meta });
     } catch (err: any) {
       res.status(500).json({ error: 'Prompt run failed: ' + String(err?.message || err) });
     }
