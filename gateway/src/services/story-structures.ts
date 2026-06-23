@@ -42,6 +42,7 @@ export type StructureId =
   | 'fichtean'
   | 'kishotenketsu'
   | 'in_medias_res'
+  | 'lester_dent'
   | 'custom'
   | 'none';
 
@@ -359,6 +360,25 @@ const STRUCTURES: StoryStructure[] = [
       { name: 'Catch-Up Point', expectedPct: 55, pctRange: [45, 65], description: 'The narrative catches up to the opening moment and pushes past it.', keywords: ['present', 'catch up', 'now', 'forward'], mustHave: true },
       { name: 'Climax', expectedPct: 88, pctRange: [80, 96], description: 'Climactic confrontation.', keywords: ['climax', 'confront', 'final'], mustHave: true },
       { name: 'Resolution', expectedPct: 98, pctRange: [94, 100], description: 'Resolution.', keywords: ['resolution', 'end', 'after'], mustHave: false },
+    ],
+  },
+  {
+    id: 'lester_dent',
+    name: 'Lester Dent Master Plot (pulp 4-quarter)',
+    oneLiner: 'Dent\'s pulp formula: four equal quarters, each piling grief on the hero and ending on a surprise twist, then a final snapper.',
+    recommendedFor: ['pulp', 'action', 'thriller', 'mystery', 'adventure', 'noir', 'short story', 'crime'],
+    worksLessWellFor: ['literary fiction', 'slow-burn character study', 'slice of life'],
+    alsoConsiderWhen: 'Fast, plot-forward stories where momentum and reversals matter more than interiority — a natural fit for the Pulp form.',
+    why: 'Lester Dent\'s "Master Fiction Plot" (Writer\'s Digest, 1936), used across his ~150 Doc Savage novels. A 6,000-word story split into four 1,500-word quarters; each quarter shovels more trouble onto the hero and ends on a complete surprise twist. The third quarter is the hero\'s worst beating ("gets it in the neck"); in the fourth the hero extricates himself through his OWN skill, capped by a final twist and a punch-line snapper.',
+    beats: [
+      { name: 'Hook & First Trouble', expectedPct: 6, pctRange: [0, 15], description: 'Open by introducing the hero and hitting him with a fistful of trouble; hint at the mystery, menace, or problem and bring the supporting cast into action fast.', keywords: ['hook', 'opens', 'trouble', 'menace', 'mystery', 'problem'], mustHave: true },
+      { name: 'First-Quarter Twist', expectedPct: 25, pctRange: [20, 30], description: 'A complete surprise twist in the plot development ends the first quarter.', keywords: ['twist', 'surprise', 'reversal'], mustHave: true },
+      { name: 'Grief Doubled (Complications)', expectedPct: 40, pctRange: [28, 50], description: 'Shovel more grief onto the hero; he struggles heroically against mounting obstacles, building to another physical clash.', keywords: ['complication', 'grief', 'struggle', 'obstacle', 'worse'], mustHave: true },
+      { name: 'Second-Quarter Twist (Midpoint)', expectedPct: 50, pctRange: [45, 55], description: 'Another surprising plot twist ends the second quarter.', keywords: ['twist', 'surprise', 'reversal', 'midpoint'], mustHave: true },
+      { name: 'Hero\'s Worst Beating', expectedPct: 65, pctRange: [55, 78], description: 'Heap still more difficulties on the hero; he makes progress and corners the menace, but takes a brutal beating.', keywords: ['beating', 'worse', 'corner', 'pressure', 'dire'], mustHave: true },
+      { name: 'Black Moment ("Gets It in the Neck")', expectedPct: 75, pctRange: [70, 82], description: 'A surprise twist where the hero gets it in the neck bad — things look blackest, all appears lost — ends the third quarter.', keywords: ['black moment', 'all is lost', 'twist', 'hopeless', 'defeat'], mustHave: true },
+      { name: 'Self-Rescue (His Own Skill)', expectedPct: 88, pctRange: [80, 96], description: 'Almost buried in his troubles, the hero extricates himself through HIS OWN skill, training, or brawn, resolving the menace in a climactic confrontation.', keywords: ['climax', 'escape', 'skill', 'confront', 'resolve'], mustHave: true },
+      { name: 'Final Twist & Snapper', expectedPct: 98, pctRange: [92, 100], description: 'A final big-surprise twist (the villain is the unexpected person, the treasure is a dud, etc.), then the snapper — the punch line that ends it.', keywords: ['twist', 'snapper', 'reveal', 'ending', 'final'], mustHave: true },
     ],
   },
   {
