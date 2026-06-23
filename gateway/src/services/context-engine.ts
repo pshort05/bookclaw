@@ -172,7 +172,7 @@ export class ContextEngine {
    * while skipping any that appear inside string literals. Returns -1 if the
    * object never balances (truncated output).
    */
-  private findObjectEnd(s: string, start: number): number {
+  protected findObjectEnd(s: string, start: number): number {
     let depth = 0;
     let inStr = false;
     let esc = false;
@@ -194,7 +194,7 @@ export class ContextEngine {
     return -1;
   }
 
-  private parseAIJson(text: string): any {
+  protected parseAIJson(text: string): any {
     // Empty / whitespace-only response — bail with a clear error rather than
     // letting JSON.parse('{}') succeed silently.
     if (!text || !text.trim()) {
@@ -267,7 +267,7 @@ export class ContextEngine {
    * but for entity extraction we frequently get N-1 complete entities and
    * one half-finished one. This salvages the N-1.
    */
-  private recoverTruncatedJson(s: string): string | null {
+  protected recoverTruncatedJson(s: string): string | null {
     if (!s || s[0] !== '{') return null;
 
     // Walk the string tracking string-literal context, escape sequences, and

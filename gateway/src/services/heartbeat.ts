@@ -577,7 +577,7 @@ export class HeartbeatService {
    * Score a project for priority-based selection.
    * Higher score = picked first.
    */
-  private scoreProject(project: { status: string; progressNum: number; type: string; stepsRemaining: number }): number {
+  protected scoreProject(project: { status: string; progressNum: number; type: string; stepsRemaining: number }): number {
     let score = 0;
     // Active projects get strong priority
     if (project.status === 'active') score += 100;

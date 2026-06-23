@@ -1,0 +1,72 @@
+# Test-coverage audit (2026-06-23)
+
+> **Status (2026-06-23): Batch A DONE.** 13 pure-logic characterization test files added (+205 tests; full unit suite **831/0**, `tsc` clean), fanned out over 5 agents: `safe-path`, `permissions`, `orchestrator-scan`, `disclosures`, `ams-optimize`, `writing-judge`, `context-engine`, `heartbeat-score`, `dialogue-auditor`, `style-clone-analyze`, `character-voices`, `cron-parser`, `track-changes`. Behavior-neutral testability seams only (3× `private→protected`, 1× `export`). Findings surfaced: a real bug in `track-changes.ts` (rejected/pending deletion drops restored text → TODO bug queue) and documented threshold quirks in `writing-judge` (lone "was" → weak_verb warning) and the passive-voice regex (misses irregular participles). **Next: Batch B (fake-AI seam + the `/execute` retry pin-drop fix), then Batch C (gate smokes).**
+
+Audit of the unit suite (`tests/unit/*.test.ts`, `node --test` via tsx) and smoke suite (`tests/*.sh`). Gaps ranked **most-significant → least**, weighting **blast radius** (security/data-loss/silent-irreversible > silent quality drift > visible failure) × **current coverage** (zero is worst) × **ROI** (pure-logic wins need no server/AI seam).
+
+**Method:** cross-referenced every `gateway/src` module against unit-test imports and smoke references, then three domain deep-reads (side-effects/security, generation core, routes/voice-craft). Counts: ~88 service files (26K LOC), 23 route files (7.4K LOC), 107 unit-test files, 24 smokes.
+
+**Already solid — do not re-test (baseline confirmed):** data-integrity layer (`book.ts`, `world*`, `backup.ts`, `consistency/` — the strongest-tested layer, ~35 test files); security *perimeter* (auth/CORS/IP allowlist via `smoke-test.sh`); `ai/router.ts` (`router.test.ts`); `ProjectEngine` orchestration + the sequence-ordering gate (`sequence-ordering.test.ts`); `costs.ts`; wordcount util.
+
+---
+
+## Tier 1 — Security primitives & destructive paths with ZERO test (highest blast radius; mostly pure-logic = quick wins)
+
+1. **`safePath()` / `serveFile()` — `api/routes/_shared.ts:56`.** The 5-line path-traversal guard fronting `GET/DELETE /api/documents/:filename`, `/api/images/:filename`, `/api/audio/file/:filename`. A regression (e.g. the `startsWith(base + sep)` prefix check weakened to `includes`) silently re-opens **arbitrary file read AND delete** outside the workspace. **Coverage: none. Effort: trivial (pure fn).** Test `../`, `..%2f`, absolute paths, valid names → assert null on escape; + `serveFile` inert-vs-active MIME header selection.
+
+2. **`security/permissions.ts` — `PermissionManager` presets (81 LOC).** Governs least-privilege flags (`shell`, `deleteFiles`, `filesFullAccess`, `selfModify`, `network`) per preset + a 30/min limiter. If the default `standard` preset silently gains `shell:true`/`filesFullAccess:true`, or `check()` returns true for an unset key, the whole sandbox posture collapses. **Coverage: none. Effort: trivial (pure).** Snapshot each preset's exact flag set; `check()` unknown key → false; limiter allows 30, blocks 31st, resets.
+
+3. **`documents.routes.ts:` `DELETE /api/workspace/clean` (908 LOC file).** `rm(targetDir, {recursive:true})` against allowlist `['projects','research','exports','audio']`. A regression widening/skipping the `allowed.includes(target)` check recursively wipes user work. Upload filename sanitization (`^\.+` strip, 200-char clamp) also untested. **Coverage: smoke (upload/list only); delete+clean+sanitize none.** Unit the allowlist rejection (`..`,`''`,`vault` → 400) + tmp-workspace integration.
+
+4. **`disclosures.ts` — `checkCompliance()` legal hard-gate (252 LOC).** The shared gate every Wave-3 publish/marketing action consults. A regression in `banned → mustReject` (scraped quotes) or `required`-but-unacknowledged → fail lets AI-content uploads / scraped-quote ads pass as compliant. **Coverage: none. Effort: trivial (pure fn).** Table: banned→fail+mustReject; required-unacked→fail; acked→pass; recommended→warning; platform fuzzy-match.
+
+## Tier 2 — Irreversible external side-effects: gate wiring not tested end-to-end
+
+5. **`website-deploy` finalize gate (303 LOC) — the one true server-issued irreversible action.** Shells `rsync -avz --delete` / `netlify --prod` / `vercel --prod`. Correctly gated today (create → `/finalize` + `requireApprovedConfirmation`), but a wiring regression could push a site live (or `--delete` wipe a remote) **without an approved confirmation**, and nothing tests it. **Coverage: none. Effort: needs fake/`none`-target seam → smoke.** Smoke: POST deploy → assert `202 + pendingConfirmation`; finalize `409` while pending; approve → runs once; wrong id → `404`.
+
+6. **Wave-3 route↔gate wiring — `knowledge.routes.ts` (988 LOC, ~75 endpoints).** Hosts `launches/*`, `ams/*`, `bookbub`, `calendar`, `translation`, `reader-intel`, `confirmations`, cron CRUD, `DELETE /api/user-model`, `skill-drafts accept/reject`. **No route-level test that `ConfirmationGateService` actually fronts the publish/submit/spend endpoints** — a regression detaching one from the gate ships silently. Only `plot-promises` (smoke) + `confirmations` (backup/wave smokes) are touched. **Coverage: mostly none.** Smoke: each Wave-3 endpoint returns a pending-confirmation (not an executed action) without approval; cron round-trip.
+
+7. **`launch-orchestrator.ts` `proposeStep` (391 LOC).** Publish/ARC-email/ad-spend pipeline. The disclosure pre-gate + `gate.createRequest` + `isReversible: phase!=='launch_day'` branch is untested; a regression could let an operator proceed with disclosures un-acknowledged. **Coverage: none.** `buildPlan` is pure (easy); `proposeStep` needs stub gate/disclosures.
+
+8. **`ams-ads.ts` `optimize()` spend-cap suppression (275 LOC).** The post-loop rail flipping `increase_bid→keep` is the only thing stopping a recommended bid set from blowing the user's daily budget cap (a human then executes it in AMS — real money). Also "never >2× bid", "no pause if clicks<5". **Coverage: none. Effort: trivial (pure fn).** Feed over-ceiling performance → assert all increases suppressed; clicks<5→keep; zero-sales+spend→pause.
+
+## Tier 3 — The generation core (product's money-burning hot path), no deterministic coverage
+
+9. **Multi-pass continuation + `[AI provider failure]` sentinel + fallback-cost recording.** Inline in `index.ts` (`handleMessage` continuation ~2228-2264, fallback/cost ~857-916) and `projects.routes.ts` `/auto-execute` (~682-726). Risks: `wordCountTarget` under-delivers silently / `appendContinuation` duplicates prose; the failure sentinel written into the manuscript file instead of failing the step; fallback-provider spend **not recorded → budget gate defeated**. **Coverage: none (smoke happy-path only).** **Blocked on a fake-AI seam** — there is no injection point (`handleMessage` calls `this.aiRouter.complete` by direct property access). **Adding one injectable completion fn unlocks #9, #10, and the judge/context loops at once — the single highest-leverage infra investment.**
+
+10. **BUG + gap: `/execute` short-response retry drops the per-step model pin — `projects.routes.ts:455-458`.** The `<50`-char retry calls `handleMessage(..., 'general', undefined, undefined, ...)`, discarding the step's pinned provider/model — whereas `/auto-execute` preserves `stepProvider, stepModel` on the same retry. A model-pinned step silently retries on tier-default routing (may hit a paid provider the user pinned away from). **Fix the line regardless; test once the seam exists.**
+
+11. **`writing-judge.ts` mechanical screen + scoring/retry threshold (659 LOC).** `mechanicalScreen()` + `evaluate()` + `mechanical*0.3 + judge*0.7` + threshold + dual-judge fallback. Mis-scoring burns an extra draft+judge call per chapter (unattended spend) or ships sub-threshold prose; a lexicon regex regression silently stops matching. **Coverage: none. Effort: easy (mechanical path is pure; judge path with a stubbed `aiComplete` returning canned JSON).**
+
+12. **`context-engine.ts` (930 LOC) — truncated-JSON recovery + `getRelevantContext` budget selection.** `parseAIJson`/`recoverTruncatedJson`/`findObjectEnd` salvage entities when extraction is cut mid-object; a regression discards the whole batch + the (paid) AI call. `getRelevantContext` is fully synchronous: overflow → prompt bloat/cost, or drops the previous-chapter summary → continuity drift. **Coverage: none. Effort: easy (both pure / synchronous).** (Note: `consistency-extractor-parse.test.ts` tests a *different* parser.)
+
+## Tier 4 — Autonomous & process safety (pure logic, zero test)
+
+13. **`heartbeat.ts` `scoreProject` + idle-task guard (756 LOC).** Wrong overnight project (scoring inversion) or a regressed once-per-day idle guard → unattended AI spend. `scoreProject` is a pure fn; the wake cycle uses already-injected callbacks (no network). **Coverage: none** (the sequence *gate* it consumes is tested; the scorer/selector are not).
+
+14. **`orchestrator.ts` `scanCommand` destructive-command blocklist (535 LOC).** Pre-exec gate for user-managed scripts; a regex regression lets `rm -rf /`, `dd of=/dev/sda`, fork-bomb, `curl|sh` through. Exported pure fn. **Coverage: none. Effort: trivial.**
+
+## Tier 5 — Voice/craft differentiators (pure logic, zero test, roadmap-relevant)
+
+15. **`style-clone.ts` `analyze()` + `track-changes.ts` `parseDocx()` — roadmap #2 (Voice DNA / adaptive auto-tuning) foundation.** `analyze()` is 100% pure (47-marker fingerprint); a tokenization regression silently skews every voice-similarity score → corrupts auto-tuning invisibly. `parseDocx` re-applies Word revisions by index (explicit empty-insert/delete index comments) — an off-by-one mangles author edits on `/api/track-changes/apply`. **Coverage: none. Effort: easy** (marker assertions on a hand-counted sample; golden-fixture DOCX).
+
+16. **`character-voices.ts` (528) + `dialogue-auditor.ts` (322) — local (no-AI) speaker attribution + drift scoring.** Feed the writing-judge; a parse regression mis-attributes speakers / emits bogus drift, quietly degrading critique. Pure on string input. **Coverage: none. Effort: easy.**
+
+17. **`CronParser` in `cron-scheduler.ts` (387) — `parse()` / `nextRun()` + missed-run recovery.** Author scheduled tasks either never fire or fire catch-up storms (POSIX DOM/DOW OR-semantics; missed-run-while-down recompute). Pure static methods. **Coverage: none. Effort: easy.**
+
+## Tier 6 — Persistent state & external wrappers (lower; data regenerable or failures visible)
+
+18. **`user-model.ts` / `memory.ts` / `preferences.ts` / `goals.ts` — atomic-write + `consolidate()`.** Tmp-file+rename atomic-write claim unverified; partial write / bad consolidate loses learned prefs (regenerable). Round-trip + malformed-load fail-soft + consolidate idempotence.
+
+19. **`media.routes.ts` (413) / `heartbeat.routes.ts` (421).** Image filename regex `^cover-[a-f0-9]+\.png$` + traversal is the only gate on serving generated files; autonomous enable/pause toggles the self-running loop with no test that disable halts it. **Coverage: api (tools/ingest only).**
+
+20. **External-API wrappers / draft-builders (visible failures, human-in-loop):** `image-gen` (750), `video-research` (401), `research-lookup` (362, SSRF surface — note `ssrf-guard` itself IS tested), `translation-pipeline` (295), `audiobook-prep` (495), `tts` (476), `cover-typography` (311), `kdp-exporter` (184), `bookbub-submitter` (156), `blog-post-drafter` (351), `beta-reader` (322), `reader-intel` (304), `release-calendar` (203), `manuscript-hub` (219), `external-tools` (216, local-Python spawn — sandbox/path concern). Mostly thin formatters or provider wrappers; pure helpers (e.g. `kdp` HTML sanitize, `bookbub` price normalization) are easy units if prioritized.
+
+---
+
+## Recommended attack order (max coverage per effort)
+
+- **Batch A — pure-logic units, no server/AI seam, do today (covers Tier 1–5 cheaply):** `safePath`/`serveFile`, `permissions` presets, `disclosures.checkCompliance`, `ams.optimize` cap, `orchestrator.scanCommand`, `writing-judge` mechanical screen, `context-engine` JSON-recovery + `getRelevantContext`, `heartbeat.scoreProject`, `style-clone.analyze`, `track-changes.parseDocx`, `character-voices`/`dialogue-auditor` parsers, `CronParser`. ~13 deterministic test files; the highest-blast-radius gaps are mostly in here.
+- **Batch B — one infra investment:** add an injectable completion fn (fake-AI seam) to `handleMessage`/the step handlers → unlocks the generation-loop tests (#9, #11, #12 loop, #10) deterministically. Fix the `/execute` retry pin-drop line (#10) immediately, independent of the seam.
+- **Batch C — gate smokes:** `website-deploy` finalize gate + a Wave-3 route↔ConfirmationGate smoke (each publish/submit/spend endpoint returns a pending confirmation, never an executed action). Plus `documents` clean/delete data-loss integration.
+- **Batch D — lower priority:** persistent-state round-trips, media/autonomous route smokes, external-wrapper pure helpers; the data-integrity thin sub-paths (backup restore preserves `.vault`/`.audit`; world relevance-pull edge cases).

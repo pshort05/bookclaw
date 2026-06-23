@@ -66,7 +66,7 @@ interface ParsedField {
   values: Set<number>;
 }
 
-class CronParser {
+export class CronParser {
   static parse(expression: string): {
     minute: ParsedField;
     hour: ParsedField;
