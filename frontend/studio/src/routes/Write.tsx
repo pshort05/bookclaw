@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { api, useStore, useActiveBook, useBooksLoaded, type BookManifest, type Project } from '@bookclaw/shared';
 import { OutlinePane } from '../components/write/OutlinePane.js';
 import { ChatThread } from '../components/write/ChatThread.js';
@@ -18,6 +18,21 @@ export function Write() {
   const [ready, setReady] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
   const slug = paramSlug || active?.slug;
+
+  // Easy Button hand-off: ?autostart=1 (+ optional premise in navigation state)
+  // tells PipelineRail to start the pipeline once. Capture both on first render,
+  // then strip the query param so a refresh doesn't restart generation.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [autoStart] = useState(() => searchParams.get('autostart') === '1');
+  const [autoStartPremise] = useState<string | undefined>(
+    () => (location.state as { premise?: string } | null)?.premise,
+  );
+  useEffect(() => {
+    if (searchParams.get('autostart')) setSearchParams({}, { replace: true });
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Stable callback so PipelineRail's poll effect doesn't re-fire on re-renders.
   const handleProjectChange = useCallback((p: Project) => { setProject(p); }, []);
@@ -90,6 +105,8 @@ export function Write() {
         slug={slug}
         activeProject={project}
         onProjectChange={handleProjectChange}
+        autoStart={autoStart}
+        autoStartPremise={autoStartPremise}
       />
     </div>
   );

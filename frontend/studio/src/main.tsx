@@ -8,6 +8,7 @@ import { DialogProvider } from './components/Dialog.js';
 import { Board } from './routes/Board.js';
 import { Activity } from './routes/Activity.js';
 import { NewBook } from './routes/NewBook.js';
+import { EasyStart } from './routes/EasyStart.js';
 import { AssetStudio } from './routes/AssetStudio.js';
 import { Write } from './routes/Write.js';
 import { Insights } from './routes/Insights.js';
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<Board />} />
           <Route path="activity" element={<Activity />} />
           <Route path="new-book" element={<NewBook />} />
+          <Route path="start" element={<EasyStart />} />
           <Route path="library" element={<AssetStudio />} />
           <Route path="files" element={<Files />} />
           <Route path="prompt-runner" element={<PromptRunner />} />

@@ -69,6 +69,18 @@ export function Rail() {
           Write
         </NavLink>
 
+        {/* New Book — Easy: the 3-click Starter-Bundle wizard */}
+        <NavLink
+          to="/start"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v18M3 12h18"/>
+            <path d="M19 5l.8 1.7L21.5 7.5l-1.7.8L19 10l-.8-1.7L16.5 7.5l1.7-.8z"/>
+          </svg>
+          New (Easy)
+        </NavLink>
+
         {/* Chat — external link to the standalone Chat app on BOOKCLAW_CHAT_PORT
             (injected at serve time). Hidden when chat is disabled (port unset). */}
         {chatHref && (

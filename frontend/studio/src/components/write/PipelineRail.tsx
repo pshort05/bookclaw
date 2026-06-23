@@ -17,9 +17,13 @@ interface Props {
   slug: string;
   activeProject?: Project;
   onProjectChange: (p: Project) => void;
+  // Easy Button: auto-start the pipeline once on mount (single owner of the
+  // create->start->auto-run path). autoStartPremise seeds the planning prompt.
+  autoStart?: boolean;
+  autoStartPremise?: string;
 }
 
-export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
+export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, autoStartPremise }: Props) {
   const [detail, setDetail] = useState<BookDetail | null>(null);
   const [pipeline, setPipeline] = useState<LibraryPipeline | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
@@ -141,8 +145,8 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
     }
   };
 
-  const startPipeline = async () => {
-    if (busyRef.current) return;
+  const startPipeline = async (descriptionOverride?: string): Promise<Project | undefined> => {
+    if (busyRef.current) return undefined;
     busyRef.current = true;
     setActionBusy(true); setError(null);
     try {
@@ -150,11 +154,12 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
       // create does NOT auto-execute. We must call /start to move it to 'active'
       // (marks status='active' + marks first step active). /start returns { step, project }.
       // After onProjectChange with status='active', the poll effect fires automatically.
+      const title = detail?.book.title ?? slug;
       const r = await api<{ project: Project; planning: string }>('/api/projects/create', {
         method: 'POST',
         body: JSON.stringify({
-          title: detail?.book.title ?? slug,
-          description: `Generate the book "${detail?.book.title ?? slug}" using the active pipeline.`,
+          title,
+          description: descriptionOverride?.trim() || `Generate the book "${title}" using the active pipeline.`,
         }),
       });
       // /start returns { step, project }; on 404/error catch returns the create response
@@ -163,13 +168,33 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
         method: 'POST', body: '{}',
       }).catch(() => r as unknown as { step: unknown; project: Project });
       onProjectChange(started.project);
+      return started.project;
     } catch (e) {
       setError(String(e));
+      return undefined;
     } finally {
       busyRef.current = false;
       setActionBusy(false);
     }
   };
+
+  // Easy Button: fire the create->start->auto-run path exactly once, after the
+  // book detail loads (so the real title is used) and only when nothing is
+  // already tracked. This is the single owner of project creation, so the wizard
+  // never orphans a project or spawns a duplicate.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStartedRef.current || activeProject || !detail) return;
+    autoStartedRef.current = true;
+    (async () => {
+      const p = await startPipeline(autoStartPremise);
+      if (p) {
+        await api(`/api/projects/${encodeURIComponent(p.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
+      }
+    })();
+    // startPipeline is stable enough; the ref guard ensures a single fire.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, detail, activeProject, autoStartPremise]);
 
   const setStepModel = async (stepId: string, provider: Provider | '') => {
     if (!activeProject) return;
@@ -336,7 +361,7 @@ export function PipelineRail({ slug, activeProject, onProjectChange }: Props) {
         {!activeProject ? (
           <button
             className={`${styles.ctrlBtn} ${styles.ctrlBtnPrimary}`}
-            onClick={startPipeline}
+            onClick={() => startPipeline()}
             disabled={actionBusy}
           >
             {actionBusy ? 'Starting…' : 'Start pipeline'}
