@@ -80,8 +80,12 @@ describe('ConfirmationGateService', () => {
   });
 
   test('sanitizePayload redacts a secret-shaped string value under a benign key', async () => {
+    // Gemini-shaped fake key, assembled at runtime so the contiguous literal
+    // never appears in source (avoids GitHub secret-scanning false positives).
+    // Matches the sanitizer's /AIza[a-zA-Z0-9_-]{35}/ branch; not a real credential.
+    const geminiShapedFake = 'AIza' + 'x'.repeat(35);
     const req = await svc.createRequest(baseInput({
-      payload: { description: 'key is AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456' },
+      payload: { description: `key is ${geminiShapedFake}` },
     }));
     assert.equal(req.payload.description, '[REDACTED]'); // value matches AIza... pattern
   });
