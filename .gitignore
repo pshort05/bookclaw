@@ -36,6 +36,7 @@ workspace/library/
 workspace/books/
 workspace/series/
 workspace/costs.json
+workspace/*.json
 *.log
 .DS_Store
 nul
