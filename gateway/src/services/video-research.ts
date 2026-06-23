@@ -38,6 +38,7 @@ import { mkdir, writeFile, readFile, unlink, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
+import { assertPublicUrl } from '../security/ssrf-guard.js';
 import type { Vault } from '../security/vault.js';
 import type { AIRouter } from '../ai/router.js';
 
@@ -179,6 +180,12 @@ export class VideoResearchService {
     }
 
     const sanitizedUrl = this.sanitizeUrl(url);
+    // SSRF guard: yt-dlp will fetch whatever URL it is given, so block private/
+    // internal/metadata targets (the research allowlist does not cover this path).
+    const ssrf = await assertPublicUrl(sanitizedUrl);
+    if (!ssrf.ok) {
+      throw new Error(`Refusing to fetch video URL (${ssrf.reason}). Provide a public video URL.`);
+    }
     const id = randomBytes(6).toString('hex');
     const workDir = join(this.workspaceDir, 'video-research', id);
     await mkdir(workDir, { recursive: true });

@@ -11,6 +11,16 @@ export function validatePath(path: string): string | null {
   if (path.includes('://')) return 'path must be a relative /api/ path, not a full URL';
   // fetch() normalizes dot-segments, so '/api/../admin' would escape the /api/ namespace.
   if (path.split('/').includes('..')) return 'path must not contain ".." segments';
+  // The confirmation gate is the human-in-the-loop safety rail. The escape hatch
+  // must never be able to approve/reject a gated action — otherwise an LLM
+  // driving this tool (on possibly injected content) could self-approve its own
+  // irreversible external actions. Approvals must come from the dashboard.
+  // Lower-case the path: Express routes are case-insensitive, so a guard that is
+  // not would be trivially bypassed (.../APPROVE, /api/Confirmations/...).
+  const lowerPath = path.split('?')[0].toLowerCase();
+  if (/^\/api\/confirmations\/[^/]+\/(approve|reject)\b/.test(lowerPath)) {
+    return 'confirmation approve/reject is not allowed via the MCP escape hatch — a human must approve gated actions in the BookClaw dashboard';
+  }
   return null;
 }
 

@@ -7,6 +7,7 @@
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { AuditLog } from '../security/audit.js';
+import { assertPublicUrl, isPrivateIp } from '../security/ssrf-guard.js';
 
 export class ResearchGate {
   private allowlistPath: string;
@@ -64,31 +65,9 @@ export class ResearchGate {
    * that isn't a recognized IP literal (i.e. a normal DNS name) returns false.
    */
   private isPrivateIpLiteral(hostname: string): boolean {
-    // IPv6 literals arrive bracket-stripped from URL.hostname; normalize.
-    const host = hostname.toLowerCase();
-
-    // IPv4 dotted-quad
-    const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (v4) {
-      const [a, b] = [Number(v4[1]), Number(v4[2])];
-      if (a === 10) return true;                          // 10/8
-      if (a === 127) return true;                         // 127/8 loopback
-      if (a === 172 && b >= 16 && b <= 31) return true;   // 172.16/12
-      if (a === 192 && b === 168) return true;            // 192.168/16
-      if (a === 169 && b === 254) return true;            // 169.254/16 link-local
-      return false;
-    }
-
-    // IPv6 literals (only actual IPv6 literals contain ':'; a normal DNS name
-    // like 'fda.gov' must not be matched by the ULA/link-local prefix checks)
-    if (host === '::1') return true;                       // loopback
-    if (host.includes(':')) {
-      if (host.startsWith('fc') || host.startsWith('fd')) return true; // fc00::/7 ULA
-      if (host.startsWith('fe8') || host.startsWith('fe9') ||
-          host.startsWith('fea') || host.startsWith('feb')) return true; // fe80::/10 link-local
-    }
-
-    return false;
+    // Delegate to the canonical SSRF guard so the literal pre-check here and the
+    // DNS-resolved check in fetch() share one definition (no weaker duplicate).
+    return isPrivateIp(hostname);
   }
 
   isAllowed(url: string): boolean {
@@ -135,13 +114,39 @@ export class ResearchGate {
     }
 
     try {
-      const response = await globalThis.fetch(url, {
-        headers: { 'User-Agent': 'BookClaw-Research/1.0' },
-        signal: AbortSignal.timeout(15000),
-      });
-      const text = await response.text();
-      await this.audit.log('research', 'fetch_success', { url, status: response.status });
-      return { ok: true, text: text.substring(0, 50000) }; // Cap response size
+      // Follow redirects manually so the allowlist + SSRF guard are re-checked on
+      // every hop — an allowlisted origin must not be able to redirect us to an
+      // internal address (defeats redirect-based SSRF and most DNS rebinding).
+      let current = url;
+      let lastStatus = 0;
+      for (let hop = 0; hop < 6; hop++) {
+        if (hop > 0 && !this.isAllowed(current)) {
+          await this.audit.log('research', 'blocked_redirect', { url, to: current });
+          return { ok: false, error: `Redirect to non-allowlisted domain blocked: ${current}` };
+        }
+        const guard = await assertPublicUrl(current);
+        if (!guard.ok) {
+          await this.audit.log('research', 'blocked_ssrf', { url: current, reason: guard.reason });
+          return { ok: false, error: `Blocked (SSRF guard): ${guard.reason}` };
+        }
+        const response = await globalThis.fetch(current, {
+          headers: { 'User-Agent': 'BookClaw-Research/1.0' },
+          signal: AbortSignal.timeout(15000),
+          redirect: 'manual',
+        });
+        lastStatus = response.status;
+        if (response.status >= 300 && response.status < 400) {
+          const loc = response.headers.get('location');
+          if (!loc) break;
+          current = new URL(loc, current).toString();
+          continue;
+        }
+        const text = await response.text();
+        await this.audit.log('research', 'fetch_success', { url, status: response.status });
+        return { ok: true, text: text.substring(0, 50000) }; // Cap response size
+      }
+      await this.audit.log('research', 'fetch_error', { url, error: 'too many redirects', status: lastStatus });
+      return { ok: false, error: 'Too many redirects' };
     } catch (error) {
       await this.audit.log('research', 'fetch_error', { url, error: String(error) });
       return { ok: false, error: String(error) };

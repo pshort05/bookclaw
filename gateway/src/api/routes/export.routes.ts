@@ -273,7 +273,13 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
     const { join: j } = await import('path');
     const { readFile: rf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
-    const file = j(baseDir, 'workspace', 'beta-reports', `${req.params.id}.json`);
+    // Validate the id (path-traversal guard) — it is interpolated into a filename,
+    // and Express URL-decodes route params, so reject anything outside a safe slug.
+    const projectId = String(req.params.id);
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(projectId)) {
+      return res.status(400).json({ error: 'Invalid project id' });
+    }
+    const file = j(baseDir, 'workspace', 'beta-reports', `${projectId}.json`);
     if (!ex(file)) return res.json({ report: null });
     try {
       const raw = await rf(file, 'utf-8');
