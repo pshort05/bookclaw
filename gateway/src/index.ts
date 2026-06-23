@@ -97,7 +97,8 @@ import { runConsistencyAudit, type AuditReport } from './services/consistency/au
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
-import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from './util/wordcount.js';
+import { countWords } from './util/wordcount.js';
+import { classifyStepResponse, runWordTargetContinuation } from './util/generation-step.js';
 import { initConfig } from './init/phase-01-config.js';
 import { initSecurity } from './init/phase-02-security.js';
 import { initSoulMemory } from './init/phase-03-soul-memory.js';
@@ -2212,8 +2213,9 @@ class BookClawGateway {
         // primary and fallback errored. Fail the step with the real reason rather
         // than writing the error string into the chapter file and advancing
         // (mirrors the dashboard auto-execute guard).
-        if (aiResponse && aiResponse.startsWith('[AI provider failure]')) {
-          const detail = aiResponse.replace(/^\[AI provider failure\]\s*/, '').substring(0, 500);
+        const bridgeClass = classifyStepResponse(aiResponse);
+        if (bridgeClass.providerFailure) {
+          const detail = bridgeClass.detail!;
           gateway.projectEngine.failStep(projectId, activeStep.id, detail);
           gateway.activityLog.log({
             type: 'step_failed',
@@ -2228,17 +2230,15 @@ class BookClawGateway {
         // Word count continuation for novel-pipeline writing steps
         const wcTarget = (activeStep as any).wordCountTarget;
         if (wcTarget && wcTarget > 0 && !wasExecutable) {   // executable skills own their full output — no continuation
-          let wc = countWords(aiResponse);
-          let continuations = 0;
-          while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {
-            continuations++;
-            const remaining = wcTarget - wc;
-            console.log(`  [novel-pipeline] Chapter word count: ${wc}/${wcTarget} — requesting continuation #${continuations} (~${remaining} more words)`);
-            let contResponse = '';
-            try {
+          const cont = await runWordTargetContinuation({
+            initialText: aiResponse,
+            wordCountTarget: wcTarget,
+            continue: async ({ wordsSoFar, remaining, pass }) => {
+              console.log(`  [novel-pipeline] Chapter word count: ${wordsSoFar}/${wcTarget} — requesting continuation #${pass} (~${remaining} more words)`);
+              let contResponse = '';
               await new Promise<void>((resolve, reject) => {
                 gateway.handleMessage(
-                  `Continue writing from where you left off. You wrote ${wc} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize. Continue the actual prose.`,
+                  `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize. Continue the actual prose.`,
                   'goal-engine',
                   (response) => { contResponse = response; resolve(); },
                   projectContext,
@@ -2248,18 +2248,12 @@ class BookClawGateway {
                   project.bookSlug
                 ).catch(reject);
               });
-              if (contResponse.length > 100) {
-                aiResponse = appendContinuation(aiResponse, contResponse);
-                wc = countWords(aiResponse);
-              } else {
-                break; // Too short, stop trying
-              }
-            } catch {
-              break; // Continuation failed, keep what we have
-            }
-          }
-          if (continuations > 0) {
-            console.log(`  [novel-pipeline] Final word count after ${continuations} continuation(s): ${countWords(aiResponse)}`);
+              return contResponse;
+            },
+          });
+          aiResponse = cont.text;
+          if (cont.passes > 0) {
+            console.log(`  [novel-pipeline] Final word count after ${cont.passes} continuation(s): ${countWords(aiResponse)}`);
           }
         }
 

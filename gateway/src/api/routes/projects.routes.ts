@@ -2,7 +2,8 @@ import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
 import { applyStructureRail } from '../../services/format-guide.js';
-import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from '../../util/wordcount.js';
+import { countWords } from '../../util/wordcount.js';
+import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 
 // Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
@@ -453,8 +454,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             (text: string) => { response = text; },
             projectContext,
             'general',
-            undefined,
-            undefined,
+            stepProvider,  // preserve the step's pinned provider on retry (parity with /auto-execute)
+            stepModel,     // preserve the step's pinned model on retry
             project.bookSlug                  // Phase 8: keep the bound book on the retry path
           );
         }
@@ -463,8 +464,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // Detect the [AI provider failure] sentinel from handleMessage when both
       // primary and fallback errored. Treat as failure with the real reason
       // instead of writing the error message into the manuscript file.
-      if (response && response.startsWith('[AI provider failure]')) {
-        const detail = response.replace(/^\[AI provider failure\]\s*/, '').substring(0, 500);
+      const execClass = classifyStepResponse(response);
+      if (execClass.providerFailure) {
+        const detail = execClass.detail!;
         engine.failStep(project.id, activeStep.id, detail);
         return res.json({
           success: false,
@@ -473,7 +475,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           project: engine.getProject(project.id),
         });
       }
-      if ((!response || response.length < 50) && execOut === null) {
+      if (!execClass.ok && execOut === null) {
         const reason = `AI returned an unusably short response (${response?.length ?? 0} chars). ` +
           `This usually means the chosen provider hit a safety filter, ran out of context, or the model is misconfigured. ` +
           `Try a different provider in Settings, shorten the project description, or split the task.`;
@@ -664,13 +666,14 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           }
         }
 
-        if (response && response.startsWith('[AI provider failure]')) {
-          const detail = response.replace(/^\[AI provider failure\]\s*/, '').substring(0, 500);
+        const stepClass = classifyStepResponse(response);
+        if (stepClass.providerFailure) {
+          const detail = stepClass.detail!;
           engine.failStep(currentProject.id, activeStep.id, detail);
           results.push({ step: activeStep.label, success: false, error: detail });
           break;
         }
-        if ((!response || response.length < 50) && execOut === null) {
+        if (!stepClass.ok && execOut === null) {
           const reason = `AI returned an unusably short response (${response?.length ?? 0} chars). ` +
             `Cause is usually a safety filter trip, context overflow, or misconfigured provider. ` +
             `Switch providers in Settings or shorten the project description.`;
@@ -688,17 +691,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const wcTarget = (activeStep as any).wordCountTarget ||
             (isRevisionApply ? Math.floor((currentProject.context?.documentWordCount || 0) * 0.9) : 0);
           if (wcTarget && wcTarget > 0 && execOut === null) {   // executable skills own their full output — no continuation
-            let wc = countWords(response);
-            let continuations = 0;
-            while (wc < wcTarget && continuations < MAX_CONTINUATION_PASSES) {
-              continuations++;
-              const remaining = wcTarget - wc;
-              console.log(`  [${isRevisionApply ? 'revision-apply' : 'writing'}] Response word count: ${wc}/${wcTarget} — requesting continuation #${continuations} (~${remaining} more words)`);
-              let contResponse = '';
-              try {
+            const label = isRevisionApply ? 'revision-apply' : 'writing';
+            const cont = await runWordTargetContinuation({
+              initialText: response,
+              wordCountTarget: wcTarget,
+              continue: async ({ wordsSoFar, remaining, pass }) => {
+                console.log(`  [${label}] Response word count: ${wordsSoFar}/${wcTarget} — requesting continuation #${pass} (~${remaining} more words)`);
                 const contPrompt = isRevisionApply
-                  ? `Continue the revised manuscript from EXACTLY where you left off. You've produced ${wc} words so far; the target is ${wcTarget}. Output at least ${Math.min(remaining, 15000)} more words of the revised manuscript, continuing from the last chapter boundary. Do NOT repeat content. Do NOT summarize. Do NOT add commentary. Output ONLY the continued manuscript prose.`
-                  : `Continue writing from where you left off. You wrote ${wc} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize.`;
+                  ? `Continue the revised manuscript from EXACTLY where you left off. You've produced ${wordsSoFar} words so far; the target is ${wcTarget}. Output at least ${Math.min(remaining, 15000)} more words of the revised manuscript, continuing from the last chapter boundary. Do NOT repeat content. Do NOT summarize. Do NOT add commentary. Output ONLY the continued manuscript prose.`
+                  : `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize.`;
+                let contResponse = '';
                 await gateway.handleMessage(
                   contPrompt,
                   'project-engine',
@@ -709,18 +711,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
                   stepModel,
                   currentProject.bookSlug           // Phase 8: bound book on continuation
                 );
-                if (contResponse.length > 100) {
-                  response = appendContinuation(response, contResponse);
-                  wc = countWords(response);
-                } else {
-                  break;
-                }
-              } catch {
-                break;
-              }
-            }
-            if (continuations > 0) {
-              console.log(`  [${isRevisionApply ? 'revision-apply' : 'writing'}] Final word count after ${continuations} continuation(s): ${countWords(response)}`);
+                return contResponse;
+              },
+            });
+            response = cont.text;
+            if (cont.passes > 0) {
+              console.log(`  [${label}] Final word count after ${cont.passes} continuation(s): ${countWords(response)}`);
             }
           }
         }
