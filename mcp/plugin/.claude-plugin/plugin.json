@@ -1,0 +1,24 @@
+{
+  "name": "bookclaw-mcp",
+  "version": "0.1.0",
+  "description": "Connects Claude Code to a running BookClaw MCP server over Streamable HTTP.",
+  "author": {
+    "name": "Paul Short",
+    "email": "paulkshort@gmail.com"
+  },
+  "license": "MIT",
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "url": {
+      "type": "string",
+      "title": "BookClaw MCP URL",
+      "description": "Streamable HTTP endpoint of the running bookclaw-mcp server.",
+      "default": "http://127.0.0.1:3850/mcp"
+    },
+    "token": {
+      "type": "string",
+      "title": "BookClaw MCP token",
+      "description": "Bearer token that gates the MCP server (matches BOOKCLAW_MCP_TOKEN on the running server)."
+    }
+  }
+}

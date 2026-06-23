@@ -178,6 +178,10 @@ In Docker, `workspace/` is a **host bind-mount** (`BOOKCLAW_WORKSPACE_PATH`, def
 
 `gateway/src/bridges/{telegram,discord}.ts` translate channel-specific commands (`/novel`, `/project`, `/write`, `/files`, `/read`, `/export`, `/speak`, `/voice`, etc.) into calls against the same internal handlers used by the dashboard chat. Conversation history is keyed by channel name to prevent cross-contamination between Telegram users, web chat, and API callers — preserve this when touching `conversationHistories` in `index.ts`.
 
+### MCP server (`mcp/`)
+
+`mcp/` is the **vendored BookClaw MCP server** (npm `bookclaw-mcp`, also a Claude Code plugin) — a thin, stateless TypeScript façade (`@modelcontextprotocol/sdk` + express + zod) that exposes a curated subset of the gateway's REST API to MCP clients over Streamable HTTP (default) or stdio, plus a generic `bookclaw_request` escape hatch. It owns no state; BookClaw stays the source of truth. Its tool surface maps onto `gateway/src/api/routes/*.routes.ts`, so **the two change in lockstep — update `mcp/` tools in the same commit as the gateway route they wrap.** It has its own `package.json`/`tsconfig.json`/tests and `mcp/CLAUDE.md`; build/test with `cd mcp && npm install && npm run build && npm test`. It is published/installed as a package — consumers never clone the monorepo. (Vendored from the former standalone `bookclaw-mcp` repo, 2026-06-22.)
+
 ## Conventions specific to this repo
 
 - **Imports use `.js` extensions** even though source is `.ts` — required by the `NodeNext` module resolution in `tsconfig.json`. Match this when adding files.

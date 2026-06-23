@@ -1,0 +1,20 @@
+[Unit]
+Description=BookClaw MCP server (Streamable HTTP, localhost)
+Documentation=https://github.com/pshort05/bookclaw-mcp
+After=network-online.target
+Wants=network-online.target
+
+# Placeholders (@NODE@, @REPO@, @ENVFILE@) are filled in by deploy/install-service.sh.
+[Service]
+Type=simple
+WorkingDirectory=@REPO@
+EnvironmentFile=@ENVFILE@
+ExecStart=@NODE@ --import tsx @REPO@/src/index.ts
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bookclaw-mcp
+
+[Install]
+WantedBy=default.target
