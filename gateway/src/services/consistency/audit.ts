@@ -72,6 +72,23 @@ function slugify(s: string): string {
 }
 
 /**
+ * A line that begins a chapter: a top-level ATX heading (`# …`), or a bare
+ * "Chapter N" line (imported manuscripts don't always use `#` for every
+ * chapter). Returns the cleaned heading text, or null. The bare form is gated
+ * to "Chapter <number>" optionally followed by a separator + title, so a prose
+ * sentence that merely starts with "Chapter N …" is NOT treated as a heading.
+ */
+function chapterHeading(line: string): string | null {
+  const atx = line.match(/^#[ \t]+(.*\S)/);
+  if (atx) return atx[1].replace(/\{[^}]*\}\s*$/, '').replace(/[*_`]/g, '').trim(); // strip pandoc attrs + emphasis
+  const bare = line.replace(/\\+\s*$/, '').trim(); // drop a trailing markdown line-break backslash
+  if (bare.length <= 60 && /^chapter\s+\d+\b\s*(?:[:.–—-]\s*.*)?$/i.test(bare)) {
+    return bare.replace(/[*_`]/g, '').trim();
+  }
+  return null;
+}
+
+/**
  * Pick a combined single-file manuscript from a data dir's filenames — an IMPORTED
  * book keeps its whole text in one file (e.g. manuscript.md) instead of the
  * per-chapter files the generation pipeline produces. Prefers an exact
@@ -97,10 +114,9 @@ export function splitManuscriptIntoChapters(text: string): { name: string; text:
   const segments: { heading: string; body: string[] }[] = [];
   let cur: { heading: string; body: string[] } | null = null;
   for (const line of lines) {
-    const m = line.match(/^#[ \t]+(.*\S)/); // top-level ATX heading only
-    if (m) {
+    const heading = chapterHeading(line);
+    if (heading !== null) {
       if (cur) segments.push(cur);
-      const heading = m[1].replace(/\{[^}]*\}\s*$/, '').replace(/[*_`]/g, '').trim(); // strip pandoc attrs + emphasis
       cur = { heading, body: [line] };
     } else if (cur) {
       cur.body.push(line);

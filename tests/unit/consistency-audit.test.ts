@@ -234,6 +234,26 @@ test('splitManuscriptIntoChapters drops front matter + TOC and splits on top-lev
   assert.ok(segs[1].text.includes('## Ryan: Ice'), 'H2 subsection kept within the interlude segment');
 });
 
+test('splitManuscriptIntoChapters also treats a bare "Chapter N" line as a boundary', () => {
+  const ms = [
+    '# Chapter 7 *Dinner*', 'Seven prose.',
+    'Chapter 8\\',            // plain-text chapter heading (trailing markdown line-break)
+    'Eight prose.',
+    '# Chapter 9 *Summer*', 'Nine prose.',
+  ].join('\n');
+  const segs = splitManuscriptIntoChapters(ms);
+  assert.deepEqual(segs.map(s => s.name), ['chapter-7-dinner', 'chapter-8', 'chapter-9-summer']);
+  assert.ok(segs[1].text.includes('Eight prose.'));
+  assert.ok(!segs[0].text.includes('Eight prose.'), 'ch8 prose is its own segment, not merged into ch7');
+});
+
+test('splitManuscriptIntoChapters does NOT split on a prose line that merely starts with "Chapter N"', () => {
+  const ms = ['# Chapter 1 *A*', 'Chapter 8 was the hardest stretch she had ever flown.', 'More.'].join('\n');
+  const segs = splitManuscriptIntoChapters(ms);
+  assert.equal(segs.length, 1, 'a prose sentence starting "Chapter N ..." is not a boundary');
+  assert.ok(segs[0].text.includes('hardest stretch'));
+});
+
 test('imported book (single manuscript.md, no chapter files) is scanned by splitting on headings', async () => {
   const root = mkdtempSync(join(tmpdir(), 'consist-import-'));
   try {
