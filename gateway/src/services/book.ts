@@ -18,8 +18,9 @@ import { mergeText } from './merge.js';
 import {
   BOOK_SCHEMA_VERSION, BOOK_MIN_SUPPORTED, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
   suggestedNextStep,
-  type BookManifest, type BookSummary, type PulledRef, type NextStep,
+  type BookManifest, type BookSummary, type PulledRef, type NextStep, type BookFormat,
 } from './book-types.js';
+import { resolveStructure, StoryStructureService, type StoryStructure } from './story-structures.js';
 import { pipelinePhases, type LibraryPipeline } from './library-types.js';
 import { listRunnerFiles as listRunnerFilesAt } from './runner-files.js';
 import type { WorldService } from './world.js';
@@ -42,6 +43,7 @@ export interface BookSelection {
   sections: string[];
   series?: { id: string; title: string };   // Series Phase A provenance, when created in a series
   worldbuilding?: { characters?: string; places?: string; lore?: string };  // Series Phase B — snapshotted into templates/worldbuilding/
+  format?: BookFormat;   // Book Format & Structure — declared at creation, persisted on the manifest
 }
 
 export type RepullStatus =
@@ -332,10 +334,48 @@ export class BookService {
         skills: snappedSkills,
         ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
       },
+      ...(sel.format ? { format: sel.format } : {}),
       history: [{ at: now, event: 'created' }],
     };
     await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
     return manifest;
+  }
+
+  /** Persist the declared format block onto an existing book's manifest. */
+  async setFormat(slug: string, format: BookFormat): Promise<BookManifest> {
+    const opened = await this.open(slug);
+    if (!opened) throw new Error(`book not found: ${slug}`);
+    const { manifest } = opened;
+    await this.assertWritable(slug);
+    manifest.format = format;
+    manifest.history.push({ at: new Date().toISOString(), event: 'format-set', detail: `${format.formId}/${format.structureId} ${format.chapterCount}×${format.wordsPerChapter}` });
+    await writeFile(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    return manifest;
+  }
+
+  /**
+   * Derive generation inputs from the declared format: per-chapter target, chapter
+   * count, and a structure "rail" instruction (beats + expected positions) for the
+   * outline prompt. Returns null when the book has no declared format (fail-soft —
+   * generation then behaves exactly as before this feature).
+   */
+  formatGuideFor(slug: string): { chapterCount: number; wordsPerChapter: number; structureRail: string } | null {
+    try {
+      const p = join(this.booksDir, slug, 'book.json');
+      if (!existsSync(p)) return null;
+      const m = JSON.parse(readFileSync(p, 'utf-8')) as BookManifest;
+      const f = m.format;
+      if (!f) return null;
+      const structure = resolveStructure(
+        { structureId: f.structureId, customStructure: f.customStructure as StoryStructure | undefined },
+        new StoryStructureService(),
+      );
+      const rail = structure && structure.beats.length
+        ? `Plan the outline to the "${structure.name}" structure. Hit these beats at roughly these positions (% of the book):\n` +
+          structure.beats.map(b => `- ${b.name} (~${b.expectedPct}%): ${b.description}`).join('\n')
+        : '';
+      return { chapterCount: f.chapterCount, wordsPerChapter: f.wordsPerChapter, structureRail: rail };
+    } catch { return null; }
   }
 
   list(): BookSummary[] {

@@ -5,6 +5,7 @@ import { GLOSSARY } from '../lib/glossary.js';
 import { OptionCard } from '../components/newbook/OptionCard.js';
 import { SnapshotSummary } from '../components/newbook/SnapshotSummary.js';
 import { WorldPicker } from '../components/newbook/WorldPicker.js';
+import { FormatPicker, EMPTY_FORMAT, formatFit, parseCustomStructure, type FormatValue, type StructureOpt, type FormOpt } from '../components/newbook/FormatPicker.js';
 import { listWorlds, type WorldListRow } from '../lib/worldApi.js';
 import { GENRE_GROUPS } from '../lib/genreGroups.js';
 import styles from './NewBook.module.css';
@@ -29,10 +30,15 @@ export function NewBook() {
   type SeriesOpt = { id: string; title: string; pulledFrom: { author?: { name: string }; voice?: { name: string }; genre?: { name: string } | null; world?: { name: string } | null; pipeline?: { name: string } | null } };
   const [seriesList, setSeriesList] = useState<SeriesOpt[]>([]);
   const [seriesId, setSeriesId] = useState('');
+  const [structuresOpts, setStructuresOpts] = useState<StructureOpt[]>([]);
+  const [formsOpts, setFormsOpts] = useState<FormOpt[]>([]);
+  const [format, setFormat] = useState<FormatValue>(EMPTY_FORMAT);
 
   useEffect(() => {
     api<{ series: SeriesOpt[] }>('/api/series').then((r) => setSeriesList(r.series ?? [])).catch(() => {});
     listWorlds().then(setWorlds).catch(() => {});
+    api<{ structures: StructureOpt[] }>('/api/structures').then((r) => setStructuresOpts(r.structures ?? [])).catch(() => {});
+    api<{ forms: FormOpt[] }>('/api/forms').then((r) => setFormsOpts(r.forms ?? [])).catch(() => {});
   }, []);
 
   // Choosing a series reflects its shared assets into the pickers (server is
@@ -113,7 +119,8 @@ export function NewBook() {
   const removeSeq = (i: number) => setPipelineSeq((xs) => xs.filter((_, idx) => idx !== i));
   const addSeq = () => { if (!seqAddPick) return; setPipelineSeq((xs) => [...xs, seqAddPick]); setSeqAddPick(''); };
 
-  const canCreate = !!(title.trim() && sel.author && sel.voice && pipelineSeq.length > 0) && !busy;
+  const fmtFit = formatFit(format, formsOpts);
+  const canCreate = !!(title.trim() && sel.author && sel.voice && pipelineSeq.length > 0) && fmtFit.ok && !busy;
 
   const create = async () => {
     setBusy(true); setError(null);
@@ -125,6 +132,13 @@ export function NewBook() {
         ...(seqPreset ? { sequence: seqPreset } : {}),
         sections,
         ...(seriesId ? { series: seriesId } : {}),
+        ...(fmtFit.active ? {
+          structure: format.structure,
+          ...(format.structure === 'custom' ? { customStructure: parseCustomStructure(format.customStructureText) } : {}),
+          form: format.form,
+          chapterCount: format.chapterCount,
+          wordsPerChapter: format.wordsPerChapter,
+        } : {}),
       }) });
       await loadBooks();
       navigate('/');
@@ -298,6 +312,8 @@ export function NewBook() {
               </div>
             </div>
           </section>
+
+          <FormatPicker structures={structuresOpts} forms={formsOpts} value={format} onChange={setFormat} />
 
           {pick('section')}
           {error && <p className={styles.def} style={{ color: 'var(--alert)' }}>Couldn't create — {error}</p>}

@@ -160,6 +160,18 @@ export function Rail() {
           Consistency
         </NavLink>
 
+        {/* Structure & Length — per-book format review */}
+        <NavLink
+          to="/structure-length"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="M7 16l4-6 4 3 4-7"/>
+          </svg>
+          Structure &amp; Length
+        </NavLink>
+
         {/* Insights — live route */}
         <NavLink
           to="/insights"

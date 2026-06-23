@@ -38,6 +38,11 @@ export type StructureId =
   | 'story_circle'
   | 'mystery_5_stage'
   | 'martell_thematic'
+  | 'four_act'
+  | 'fichtean'
+  | 'kishotenketsu'
+  | 'in_medias_res'
+  | 'custom'
   | 'none';
 
 export interface Beat {
@@ -297,6 +302,66 @@ const STRUCTURES: StoryStructure[] = [
     ],
   },
   {
+    id: 'four_act',
+    name: 'Four-Act Structure',
+    oneLiner: 'Three-act with the long second act split at the midpoint into two distinct halves.',
+    recommendedFor: ['literary fiction', 'historical fiction', 'family saga', 'general fiction', 'drama'],
+    worksLessWellFor: ['cozy mystery'],
+    alsoConsiderWhen: 'When the middle of the book has two clearly different movements (e.g. before/after a central turn), or a time-spanning structure with distinct phases.',
+    why: 'Splitting Act 2 at the midpoint gives the back half its own rising action and prevents the "saggy middle". Common in time-spanning literary work.',
+    beats: [
+      { name: 'Setup', expectedPct: 8, pctRange: [0, 15], description: 'Establish the protagonist, world, and the dramatic question.', keywords: ['opens', 'introduce', 'world', 'home'], mustHave: true },
+      { name: 'Inciting Turn (Act 1→2)', expectedPct: 25, pctRange: [20, 30], description: 'The first major turn that launches the central conflict.', keywords: ['inciting', 'turn', 'decision', 'leave'], mustHave: true },
+      { name: 'Midpoint Turn (Act 2A→2B)', expectedPct: 50, pctRange: [45, 55], description: 'A reversal that changes the nature of the conflict; the second movement begins.', keywords: ['midpoint', 'reversal', 'reveal', 'shift'], mustHave: true },
+      { name: 'Crisis Turn (Act 3→4)', expectedPct: 75, pctRange: [70, 80], description: 'The low point / final turn into the resolution movement.', keywords: ['crisis', 'all is lost', 'low point', 'turn'], mustHave: true },
+      { name: 'Resolution', expectedPct: 92, pctRange: [85, 100], description: 'Climax and aftermath.', keywords: ['climax', 'resolution', 'end', 'aftermath'], mustHave: true },
+    ],
+  },
+  {
+    id: 'fichtean',
+    name: 'Fichtean Curve',
+    oneLiner: 'A series of escalating crises with minimal setup — start in rising action.',
+    recommendedFor: ['thriller', 'horror', 'suspense', 'action', 'short story'],
+    worksLessWellFor: ['cozy mystery', 'slice of life'],
+    why: 'Skips long exposition; a chain of crises each raising the stakes to the climax.',
+    beats: [
+      { name: 'Inciting Incident', expectedPct: 5, pctRange: [0, 12], description: 'Open near or in the first crisis — minimal setup.', keywords: ['opens', 'crisis', 'attack', 'incident'], mustHave: true },
+      { name: 'First Crisis', expectedPct: 25, pctRange: [15, 35], description: 'First escalation.', keywords: ['crisis', 'complication', 'setback'], mustHave: true },
+      { name: 'Rising Crises', expectedPct: 55, pctRange: [40, 70], description: 'Stakes escalate through repeated crises.', keywords: ['escalate', 'worse', 'pressure', 'complication'], mustHave: true },
+      { name: 'Climax', expectedPct: 88, pctRange: [80, 95], description: 'The peak crisis and turning point.', keywords: ['climax', 'confront', 'final'], mustHave: true },
+      { name: 'Denouement', expectedPct: 97, pctRange: [93, 100], description: 'Brief resolution.', keywords: ['resolution', 'after', 'end'], mustHave: false },
+    ],
+  },
+  {
+    id: 'kishotenketsu',
+    name: 'Kishōtenketsu (4-act, no conflict)',
+    oneLiner: 'Introduction → Development → Twist → Reconciliation; structure without central conflict.',
+    recommendedFor: ['literary fiction', 'slice of life', 'speculative', 'short story'],
+    worksLessWellFor: ['thriller', 'action'],
+    why: 'East Asian four-act form where the "twist" (ten) recontextualizes rather than escalates conflict — strong for mood/literary pieces.',
+    beats: [
+      { name: 'Ki (Introduction)', expectedPct: 12, pctRange: [0, 25], description: 'Introduce characters and setting.', keywords: ['introduce', 'opens', 'world'], mustHave: true },
+      { name: 'Shō (Development)', expectedPct: 38, pctRange: [25, 50], description: 'Develop the situation; no major turn yet.', keywords: ['develop', 'everyday', 'deepen'], mustHave: true },
+      { name: 'Ten (Twist)', expectedPct: 65, pctRange: [55, 80], description: 'An unexpected element recontextualizes what came before.', keywords: ['twist', 'unexpected', 'reveal', 'shift'], mustHave: true },
+      { name: 'Ketsu (Reconciliation)', expectedPct: 92, pctRange: [85, 100], description: 'The parts are reconciled into a whole.', keywords: ['reconcile', 'resolution', 'meaning', 'end'], mustHave: true },
+    ],
+  },
+  {
+    id: 'in_medias_res',
+    name: 'In Medias Res',
+    oneLiner: 'Open in the middle of the action; backfill via flashback, then carry forward.',
+    recommendedFor: ['thriller', 'action', 'sci-fi', 'epic fantasy'],
+    worksLessWellFor: ['cozy mystery', 'memoir'],
+    why: 'Hooks immediately with action, then reveals how the characters got there before driving to the climax.',
+    beats: [
+      { name: 'In-Action Open', expectedPct: 3, pctRange: [0, 10], description: 'Drop the reader into a charged moment.', keywords: ['opens', 'action', 'mid', 'chase', 'battle'], mustHave: true },
+      { name: 'Backfill', expectedPct: 25, pctRange: [12, 40], description: 'Reveal the events leading to the open.', keywords: ['flashback', 'earlier', 'backstory', 'how'], mustHave: true },
+      { name: 'Catch-Up Point', expectedPct: 55, pctRange: [45, 65], description: 'The narrative catches up to the opening moment and pushes past it.', keywords: ['present', 'catch up', 'now', 'forward'], mustHave: true },
+      { name: 'Climax', expectedPct: 88, pctRange: [80, 96], description: 'Climactic confrontation.', keywords: ['climax', 'confront', 'final'], mustHave: true },
+      { name: 'Resolution', expectedPct: 98, pctRange: [94, 100], description: 'Resolution.', keywords: ['resolution', 'end', 'after'], mustHave: false },
+    ],
+  },
+  {
     id: 'none',
     name: 'No Structure / Author\'s Choice',
     oneLiner: 'Skip beat enforcement entirely — for experimental work, literary fiction, or when the author wants full creative control.',
@@ -533,4 +598,58 @@ export class StoryStructureService {
       results, summary, needsAttention,
     };
   }
+}
+
+/**
+ * Resolve a declared structure to a StoryStructure: catalog lookup by id, or the
+ * inline custom object when structureId === 'custom'. Returns null if unknown.
+ */
+export function resolveStructure(
+  input: { structureId: string; customStructure?: StoryStructure },
+  svc: StoryStructureService,
+): StoryStructure | null {
+  if (input.structureId === 'custom') return input.customStructure ?? null;
+  return svc.get(input.structureId as StructureId);
+}
+
+/**
+ * Deterministic structure check from a confirmed beat→chapter mapping (no LLM).
+ * `mapping` is beat name → 1-based chapter numbers. A beat's position is the
+ * chapter-midpoint as a % of the book; classified against the beat's pctRange.
+ */
+export function evaluateBeatMapping(
+  structure: StoryStructure,
+  mapping: Record<string, number[]>,
+  totalChapters: number,
+): OutlineCheckReport {
+  const total = Math.max(1, totalChapters);
+  const results: BeatCheckResult[] = structure.beats.map((beat) => {
+    const chapters = (mapping[beat.name] ?? []).filter((n) => Number.isFinite(n) && n >= 1);
+    if (chapters.length === 0) {
+      return { beat, foundAtPct: null, confidence: 0, status: 'missing' as const,
+        suggestion: `Map a chapter to "${beat.name}" (${beat.description})` };
+    }
+    const mid = chapters.reduce((a, b) => a + b, 0) / chapters.length;
+    const pct = ((mid - 0.5) / total) * 100;
+    const inRange = pct >= beat.pctRange[0] && pct <= beat.pctRange[1];
+    const status: BeatCheckResult['status'] = inRange ? 'found_in_range' : 'found_misplaced';
+    return {
+      beat, foundAtPct: Math.round(pct), confidence: 1,
+      status,
+      suggestion: inRange
+        ? `"${beat.name}" is well placed (~${Math.round(pct)}%).`
+        : `"${beat.name}" sits at ~${Math.round(pct)}% but is expected near ${beat.expectedPct}% (${beat.pctRange[0]}–${beat.pctRange[1]}%).`,
+    };
+  });
+  const beatsFoundInRange = results.filter((r) => r.status === 'found_in_range').length;
+  const beatsFoundMisplaced = results.filter((r) => r.status === 'found_misplaced').length;
+  const beatsMissing = results.filter((r) => r.status === 'missing').length;
+  const mustHaveMissing = results.filter((r) => r.status === 'missing' && r.beat.mustHave).length;
+  return {
+    structureId: structure.id, structureName: structure.name,
+    totalBeats: structure.beats.length, beatsFoundInRange, beatsFoundMisplaced, beatsMissing, mustHaveMissing,
+    results,
+    summary: `${beatsFoundInRange}/${structure.beats.length} beats in range, ${beatsFoundMisplaced} misplaced, ${beatsMissing} missing${mustHaveMissing ? ` (${mustHaveMissing} required)` : ''}.`,
+    needsAttention: mustHaveMissing > 0 || beatsFoundMisplaced >= 2,
+  };
 }

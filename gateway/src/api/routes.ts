@@ -30,6 +30,7 @@ import { mountBooks } from './routes/books.routes.js';
 import { mountPrompts } from './routes/prompts.routes.js';
 import { mountBackups } from './routes/backups.routes.js';
 import { mountConsistency } from './routes/consistency.routes.js';
+import { mountFormatReview } from './routes/format-review.routes.js';
 
 /**
  * Mounts all REST API routes. This is a thin composition root: each feature
@@ -77,4 +78,6 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountBackups(app, gateway, baseDir);
   // Consistency Auditor — async audit + stored report (consistency-auditor plan Task 5)
   mountConsistency(app, gateway, baseDir);
+  // Book Format & Structure — per-book structure + length review (Phase 3)
+  mountFormatReview(app, gateway, baseDir);
 }

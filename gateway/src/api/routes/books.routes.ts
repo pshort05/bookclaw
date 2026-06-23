@@ -8,6 +8,7 @@ import { buildBookCards } from '../../services/book-card.js';
 import { writeWithVersion, listVersions, restoreVersion } from '../../services/file-versions.js';
 import { mapRunnerPath } from '../../services/runner-files.js';
 import { bindBookWorld } from './world-bind.js';
+import { buildBookFormat } from '../../services/format-input.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -105,6 +106,22 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       genre:  services.books.assetDescription(slug, 'genre'),
     };
     res.json({ book: result.manifest, status: result.status, descriptions, phases: services.books.phasesForBook(slug) });
+  });
+
+  // Book Format & Structure: set/update the declared format on an existing book
+  // (same hard-block band validation as creation).
+  app.put('/api/books/:slug/format', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const fmt = buildBookFormat(req.body || {}, services.storyStructures);
+    if (fmt.error) return res.status(400).json({ error: fmt.error });
+    if (!fmt.format) return res.status(400).json({ error: 'format fields required' });
+    try {
+      const manifest = await services.books.setFormat(slug, fmt.format);
+      res.json({ ok: true, format: manifest.format });
+    } catch (e) {
+      res.status(404).json({ error: (e as Error)?.message || 'book not found' });
+    }
   });
 
   // Composed world-building snapshot for a book (Series Phase B) — the same
@@ -328,8 +345,14 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // Keep the single `pipeline` field set to the FIRST name for back-compat.
     pipeline = resolvedNames[0];
     const pipelines = resolvedPipelines.map((p) => ({ name: p.name, pipeline: p.pipeline! }));
+
+    // Book Format & Structure: validate the declared structure × form × pacing (hard
+    // block out-of-band totals). Absent format fields → {} (format stays optional).
+    const fmt = buildBookFormat(body, services.storyStructures);
+    if (fmt.error) return res.status(400).json({ error: fmt.error });
+
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
       if (worldName && services.world?.getConfig?.(worldName)) {

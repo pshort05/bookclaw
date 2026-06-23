@@ -126,6 +126,14 @@ export interface BookManifest {
   };
   worldDocs?: string[];
   appendix?: AppendixEntry[];
+  format?: {
+    structureId: string;
+    customStructure?: unknown;   // StoryStructure shape; opaque to the shared layer
+    formId: string;
+    chapterCount: number;
+    wordsPerChapter: number;
+    totalTarget: number;
+  };
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

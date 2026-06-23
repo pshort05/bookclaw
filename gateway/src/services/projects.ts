@@ -19,6 +19,7 @@ import type { SkillCatalogEntry } from '../skills/loader.js';
 import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
 import { expandSteps } from './pipeline-expand.js';
+import { applyStructureRail } from './format-guide.js';
 import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -648,6 +649,10 @@ Description: ${description}`;
       // the bookSlug that callers thread via context (the static branch below keeps
       // it), leaving the project unbound and routing to the global active book.
       if (context?.bookSlug) novel.bookSlug = context.bookSlug;
+      // Book Format & Structure: inject the declared structure rail into the outline step.
+      if (typeof context?.structureRail === 'string' && context.structureRail) {
+        applyStructureRail(novel.steps as Array<{ prompt: string; phase?: string; skill?: string }>, context.structureRail);
+      }
       return novel;
     }
 
@@ -674,6 +679,11 @@ Description: ${description}`;
     }));
 
     if (this.authorOS) steps = this.enhanceWithAuthorOS(steps);
+
+    // Book Format & Structure: inject the declared structure rail into the outline step.
+    if (typeof context?.structureRail === 'string' && context.structureRail) {
+      applyStructureRail(steps as Array<{ prompt: string; phase?: string; skill?: string }>, context.structureRail);
+    }
 
     const project: Project = {
       id,

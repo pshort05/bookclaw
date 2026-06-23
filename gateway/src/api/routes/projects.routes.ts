@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
+import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords, appendContinuation, MAX_CONTINUATION_PASSES } from '../../util/wordcount.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 
@@ -119,6 +120,15 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const activeBook = services.books?.getActiveBook() ?? undefined;
       const contextWithSlug = { ...(context || {}), bookSlug: activeBook };
 
+      // Book Format & Structure: when the active book declares a format, use its
+      // chapter count + per-chapter target as generation defaults (user-supplied
+      // values still win) and carry the structure rail for the outline step.
+      const fmtGuide = activeBook ? services.books.formatGuideFor(activeBook) : null;
+      if (fmtGuide) {
+        if (resolvedConfig.targetChapters === undefined) resolvedConfig.targetChapters = fmtGuide.chapterCount;
+        if (resolvedConfig.targetWordsPerChapter === undefined) resolvedConfig.targetWordsPerChapter = fmtGuide.wordsPerChapter;
+      }
+
       // Config-not-code pipelines (Task 10): when the active book has a non-empty
       // pipelineSequence, chain one Project per sequence entry from the book's own
       // snapshots. Takes precedence over the legacy single-pipeline / template
@@ -130,7 +140,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           ? opened!.manifest.pipelineSequence
           : [];
         if (pipelineSequence.length > 0) {
-          const seqContext = { ...(context || {}), ...resolvedConfig };
+          const seqContext = { ...(context || {}), ...resolvedConfig, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
           const { pipelineId, projects } = engine.createBookSequence(
             { slug: activeBook, pipelineSequence },
             title,
@@ -153,6 +163,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const project = engine.createNovelPipeline(title, description, resolvedConfig);
         // createNovelPipeline takes no context; stamp bookSlug directly.
         if (activeBook) project.bookSlug = activeBook;
+        if (fmtGuide?.structureRail) applyStructureRail(project.steps as Array<{ prompt: string; phase?: string; skill?: string }>, fmtGuide.structureRail);
         applyProjectOptions(project);
         return res.json({ project, planning: 'novel-pipeline' });
       }
@@ -162,6 +173,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const project = engine.createBookProduction(title, description, resolvedConfig);
         // createBookProduction takes no context; stamp bookSlug directly.
         if (activeBook) project.bookSlug = activeBook;
+        if (fmtGuide?.structureRail) applyStructureRail(project.steps as Array<{ prompt: string; phase?: string; skill?: string }>, fmtGuide.structureRail);
         applyProjectOptions(project);
         return res.json({ project, planning: 'book-production' });
       }

@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import path from 'path';
 import { addWaveDisclaimer } from './_shared.js';
+import { listForms } from '../../services/story-forms.js';
 
 /** Memory search, user model, cron scheduler, auto-skill drafts, writing judge, character voices, research lookup (+runMarketingPreset), video research, story structures, plot promises. */
 export function mountKnowledge(app: Application, gateway: any, baseDir: string): void {
@@ -430,6 +431,10 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
   app.get('/api/structures', (_req: Request, res: Response) => {
     if (!services.storyStructures) return res.status(503).json({ error: 'Not initialized' });
     res.json({ structures: services.storyStructures.list() });
+  });
+
+  app.get('/api/forms', (_req: Request, res: Response) => {
+    res.json({ forms: listForms() });
   });
 
   app.post('/api/structures/recommend', (req: Request, res: Response) => {

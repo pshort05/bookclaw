@@ -20,6 +20,20 @@ export interface PulledRef {
   version?: number; // pipelines carry one; prose templates don't
 }
 
+/**
+ * Declared structure × form × pacing for a book (Book Format & Structure feature).
+ * `customStructure` is a full StoryStructure when `structureId === 'custom'`; typed
+ * opaquely here to avoid a service→types import cycle.
+ */
+export interface BookFormat {
+  structureId: string;             // story-structures id or 'custom'
+  customStructure?: unknown;       // StoryStructure shape when structureId === 'custom'
+  formId: string;                  // story-forms id
+  chapterCount: number;
+  wordsPerChapter: number;
+  totalTarget: number;             // chapterCount * wordsPerChapter
+}
+
 export interface BookManifest {
   id: string;                 // stable id (= slug at creation)
   slug: string;               // dir name under workspace/books/
@@ -43,6 +57,7 @@ export interface BookManifest {
   };
   worldDocs?: string[];       // World Repository Phase 3 — curated doc ids = the bible (additive-optional, no schema bump)
   appendix?: Array<{ docId: string; title?: string; order: number }>; // World Repository Phase 5 — ordered back-matter selection (additive-optional, no schema bump)
+  format?: BookFormat;        // Book Format & Structure — declared structure × form × pacing (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 
