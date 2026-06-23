@@ -17,12 +17,14 @@ export interface StructureReport {
   needsAttention: boolean;
 }
 export interface StructureReview {
+  configured?: false;   // present + false when the book has no declared format
   structure: { id: string; name: string; beats: BeatResult['beat'][] } | null;
   outline: { chapter: number; summary: string }[];
   mapping: Record<string, number[]>;
   report: StructureReport | null;
 }
 export interface LengthReview {
+  configured?: false;   // present + false when the book has no declared format
   perChapter: { chapter: string; words: number; target: number; delta: number }[];
   totalWords: number;
   totalTarget: number;

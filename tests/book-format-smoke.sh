@@ -173,6 +173,24 @@ if [ -n "${OK_SLUG}" ]; then
   [ "${LT_CODE}" = "400" ] && pass "out-of-band length-targets edit hard-blocked (400)" || fail "expected 400 on out-of-band length-targets, got ${LT_CODE}"
 fi
 
+# A book WITHOUT a declared format must read as a clean empty state (200 configured:false),
+# never a 400 — this is what the studio panel renders for legacy/unconfigured books.
+NOFMT_RESP="$(curl -fsS "${AUTH[@]}" -H 'Content-Type: application/json' -X POST "${BASE}/api/books" \
+  -d '{"title":"No Format Book","author":"default","voice":"default","genre":null,"pipeline":"novel-pipeline"}' 2>/dev/null || true)"
+NOFMT_SLUG="$(printf '%s' "${NOFMT_RESP}" | sed -n 's/.*"slug":"\([^"]*\)".*/\1/p')"
+if [ -n "${NOFMT_SLUG}" ]; then
+  SLUGS+=("${NOFMT_SLUG}")
+  SRC="$(curl -s -o /tmp/nofmt.$$ -w '%{http_code}' "${AUTH[@]}" "${BASE}/api/books/${NOFMT_SLUG}/structure-review")"
+  SRB="$(cat /tmp/nofmt.$$ 2>/dev/null)"; rm -f /tmp/nofmt.$$
+  if [ "${SRC}" = "200" ] && printf '%s' "${SRB}" | grep -q '"configured":false'; then
+    pass "unconfigured book → 200 {configured:false} (no 400, no console error)"
+  else
+    fail "unconfigured structure-review should be 200 configured:false, got ${SRC} (${SRB})"
+  fi
+  LRC="$(curl -s -o /dev/null -w '%{http_code}' "${AUTH[@]}" "${BASE}/api/books/${NOFMT_SLUG}/length-review")"
+  [ "${LRC}" = "200" ] && pass "unconfigured length-review → 200" || fail "unconfigured length-review should be 200, got ${LRC}"
+fi
+
 stop_server
 log ""
 if [ "$FAILED" -eq 0 ]; then log "PASS: book-format smoke — all checks passed"; exit 0; fi

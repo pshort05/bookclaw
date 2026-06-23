@@ -28,7 +28,10 @@ export function mountFormatReview(app: Application, gateway: any, _baseDir: stri
   app.get('/api/books/:slug/structure-review', async (req: Request, res: Response) => {
     try {
       const c = await ctx(String(req.params.slug));
-      if ('error' in c) return res.status(c.code).json({ error: c.error });
+      if ('error' in c) {
+        if (c.code === 400) return res.json({ configured: false });
+        return res.status(c.code).json({ error: c.error });
+      }
       const sr = loadStructureReview(c.dataDir);
       // Guard against a malformed custom structure (no beats array) — report stays null rather than 500.
       const report = (c.structure && Array.isArray(c.structure.beats) && c.structure.beats.length > 0)
@@ -89,7 +92,10 @@ export function mountFormatReview(app: Application, gateway: any, _baseDir: stri
     try {
       const slug = String(req.params.slug);
       const c = await ctx(slug);
-      if ('error' in c) return res.status(c.code).json({ error: c.error });
+      if ('error' in c) {
+        if (c.code === 400) return res.json({ configured: false });
+        return res.status(c.code).json({ error: c.error });
+      }
       const chapters = countChapterWords(c.dataDir);
       const overrides = loadLengthOverrides(c.dataDir);
       const form = getForm(c.format.formId);

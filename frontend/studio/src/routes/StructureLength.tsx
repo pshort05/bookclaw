@@ -37,10 +37,23 @@ export function StructureLength() {
 
   if (!slug) return <div style={{ padding: 24 }}>Select a book to review its structure and length.</div>;
 
+  const notConfigured = sr?.configured === false || lr?.configured === false;
+  if (notConfigured) {
+    return (
+      <div style={{ padding: 24, maxWidth: 920 }}>
+        <h1>Structure &amp; Length</h1>
+        <p style={{ opacity: 0.8 }}>
+          <strong>{activeBook?.title ?? 'This book'}</strong> has no declared format yet. Choose a Structure and Form
+          (with chapter count and words-per-chapter) when creating a book to enable this review.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: 24, maxWidth: 920 }}>
       <h1>Structure &amp; Length</h1>
-      {err && <p style={{ color: 'var(--alert)' }}>{err === 'format not configured' ? 'This book has no declared format yet. Set one when creating the book (Structure × Form) or via the API.' : err}</p>}
+      {err && <p style={{ color: 'var(--alert)' }}>{err}</p>}
 
       <section style={{ marginTop: 24 }}>
         <h2>Structure {sr?.structure ? `· ${sr.structure.name}` : ''}</h2>
