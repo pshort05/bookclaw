@@ -64,6 +64,65 @@ export function selectChapterFiles(names: string[]): string[] {
     .map(([, v]) => v.name);
 }
 
+/** Non-prose heading labels to skip when splitting a combined manuscript. */
+const MANUSCRIPT_NOISE = /\b(contents|table of contents|toc|copyright|dedication|acknowledg|about the author|also by|title page|epigraph|colophon)\b/i;
+
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+}
+
+/**
+ * Pick a combined single-file manuscript from a data dir's filenames — an IMPORTED
+ * book keeps its whole text in one file (e.g. manuscript.md) instead of the
+ * per-chapter files the generation pipeline produces. Prefers an exact
+ * `manuscript.md`, else the first `.md` whose stem contains "manuscript".
+ */
+export function findCombinedManuscript(names: string[]): string | null {
+  const md = names.filter(n => n.toLowerCase().endsWith('.md'));
+  const exact = md.find(n => n.toLowerCase() === 'manuscript.md');
+  if (exact) return exact;
+  const cand = md.filter(n => /manuscript/.test(n.toLowerCase().replace(/\.md$/, ''))).sort();
+  return cand[0] ?? null;
+}
+
+/**
+ * Split a combined manuscript into chapter-sized segments by its top-level ATX
+ * headings (`# …`). Front matter before the first heading is dropped; TOC /
+ * copyright / etc. heading sections are skipped; lower-level headings (`## …`)
+ * stay inside their chapter segment. Each segment is named from a slug of its
+ * heading. Lets an imported single-file book scan like a generated one.
+ */
+export function splitManuscriptIntoChapters(text: string): { name: string; text: string }[] {
+  const lines = text.split(/\r?\n/);
+  const segments: { heading: string; body: string[] }[] = [];
+  let cur: { heading: string; body: string[] } | null = null;
+  for (const line of lines) {
+    const m = line.match(/^#[ \t]+(.*\S)/); // top-level ATX heading only
+    if (m) {
+      if (cur) segments.push(cur);
+      const heading = m[1].replace(/\{[^}]*\}\s*$/, '').replace(/[*_`]/g, '').trim(); // strip pandoc attrs + emphasis
+      cur = { heading, body: [line] };
+    } else if (cur) {
+      cur.body.push(line);
+    }
+    // lines before the first heading (title page / copyright) are dropped
+  }
+  if (cur) segments.push(cur);
+
+  const out: { name: string; text: string }[] = [];
+  const used = new Map<string, number>();
+  for (const seg of segments) {
+    if (MANUSCRIPT_NOISE.test(seg.heading) || CHAPTER_NOISE.test(seg.heading.toLowerCase())) continue;
+    const body = seg.body.join('\n').trim();
+    if (!body) continue;
+    const base = slugify(seg.heading) || 'section';
+    const n = (used.get(base) ?? 0) + 1;
+    used.set(base, n);
+    out.push({ name: n > 1 ? `${base}-${n}` : base, text: body });
+  }
+  return out;
+}
+
 /**
  * Infer a story-clock Gap from two consecutive scene timeLabels.
  * Deterministic — no LLM.
@@ -197,10 +256,30 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   }
 
   // --- Enumerate chapters (I1) ---
-  let chapterFiles: string[];
+  // Per-chapter files (generation-pipeline output) are preferred. An IMPORTED book
+  // keeps its whole manuscript in ONE file (e.g. manuscript.md) — when there are no
+  // per-chapter files, split that combined manuscript into chapter segments by its
+  // top-level headings so it scans like a generated book.
+  let chapters: { name: string; text: string }[] = [];
   try {
     const all = readdirSync(dataDir);
-    chapterFiles = selectChapterFiles(all);
+    const chapterFiles = selectChapterFiles(all);
+    if (chapterFiles.length > 0) {
+      for (const f of chapterFiles) {
+        try { chapters.push({ name: f.replace(/\.md$/, ''), text: readFileSync(join(dataDir, f), 'utf-8') }); }
+        catch { progress(`Skipping ${f}: could not read file`); }
+      }
+    } else {
+      const combined = findCombinedManuscript(all);
+      if (combined) {
+        try {
+          chapters = splitManuscriptIntoChapters(readFileSync(join(dataDir, combined), 'utf-8'));
+          progress(`No per-chapter files — split "${combined}" into ${chapters.length} chapter segment(s)`);
+        } catch (err) {
+          progress(`Could not read "${combined}": ${(err as Error)?.message ?? err}`);
+        }
+      }
+    }
   } catch {
     return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, generatedAt: new Date().toISOString() };
   }
@@ -217,17 +296,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   // Track all known aliases per entity (canonical name → set of seen aliases).
   const entityAliases = new Map<string, Set<string>>();
 
-  for (const filename of chapterFiles) {
-    const chapterName = filename.replace(/\.md$/, '');
-    const chapterPath = join(dataDir, filename);
-    let chapterText: string;
-    try {
-      chapterText = readFileSync(chapterPath, 'utf-8');
-    } catch {
-      progress(`Skipping ${filename}: could not read file`);
-      continue;
-    }
-
+  for (const { name: chapterName, text: chapterText } of chapters) {
     progress(`Scanning ${chapterName}...`);
 
     // Build known-entity digest with current stateful values from the in-memory map (M3).

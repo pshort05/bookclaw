@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConsistencyStore } from '../../gateway/src/services/consistency/fact-store.js';
 import { runConsistencyAudit } from '../../gateway/src/services/consistency/audit.js';
-import { selectChapterFiles, inferGap, loadNonCanonicalOverride } from '../../gateway/src/services/consistency/audit.js';
+import { selectChapterFiles, inferGap, loadNonCanonicalOverride, splitManuscriptIntoChapters, findCombinedManuscript } from '../../gateway/src/services/consistency/audit.js';
 
 test('audit reports a planted eye-color contradiction across two chapters', async () => {
   const root = mkdtempSync(join(tmpdir(), 'consist-audit-'));
@@ -197,6 +197,73 @@ test('I1: selectChapterFiles keeps only chapter prose, deduplicates by stage ran
     return m ? parseInt(m[1], 10) : -1;
   });
   assert.deepEqual(nums, [...nums].sort((a, b) => a - b), 'sorted ascending by chapter number');
+});
+
+// Imported single-file manuscript support: split manuscript.md by # headings.
+test('findCombinedManuscript prefers manuscript.md, ignores chapter/noise files', () => {
+  assert.equal(findCombinedManuscript(['manuscript.md', 'notes.md']), 'manuscript.md');
+  assert.equal(findCombinedManuscript(['love-between-departures-manuscript.md', 'cover.png']), 'love-between-departures-manuscript.md');
+  assert.equal(findCombinedManuscript(['chapter-1.md', 'outline.md']), null);
+  assert.equal(findCombinedManuscript([]), null);
+});
+
+test('splitManuscriptIntoChapters drops front matter + TOC and splits on top-level headings', () => {
+  const ms = [
+    'H.K. Author',                         // front matter — dropped (before first #)
+    'Copyright 2025',
+    '',
+    '# Contents {#contents .TOC-Heading}', // TOC — skipped as noise
+    '- a',
+    '',
+    '# Chapter 1 *Ferry Girl*',
+    'Opening prose here.',
+    '',
+    '# Winter Interlude I *Dormancy*',
+    'Interlude prose.',
+    '## Ryan: Ice',                        // H2 subsection stays inside the interlude segment
+    'More interlude.',
+    '',
+    '# Chapter 2 *Ferry Logic*',
+    'Second chapter prose.',
+  ].join('\n');
+  const segs = splitManuscriptIntoChapters(ms);
+  assert.deepEqual(segs.map(s => s.name), ['chapter-1-ferry-girl', 'winter-interlude-i-dormancy', 'chapter-2-ferry-logic']);
+  assert.ok(segs[0].text.includes('Opening prose here.'));
+  assert.ok(!segs[0].text.includes('Contents'), 'TOC excluded');
+  assert.ok(!segs[0].text.includes('Copyright'), 'front matter excluded');
+  assert.ok(segs[1].text.includes('## Ryan: Ice'), 'H2 subsection kept within the interlude segment');
+});
+
+test('imported book (single manuscript.md, no chapter files) is scanned by splitting on headings', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-import-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    // The whole book in ONE file (the imported layout) — no chapter-<N> files.
+    writeFileSync(join(dataDir, 'manuscript.md'), [
+      'Title Page', 'Copyright 2025', '',
+      '# Contents', '- ch1', '',
+      '# Chapter 1 *Opening*', 'John has blue eyes.', '',
+      '# Chapter 2 *Return*', 'John has green eyes.',
+    ].join('\n'));
+
+    const extract = async (text: string, _k: any[], base: number) => ({
+      scenes: [{ storyTime: base, timeLabel: null }],
+      facts: text.includes('eyes') ? [{ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable' as const,
+        valueRaw: text.includes('blue') ? 'blue' : 'green', valueNorm: text.includes('blue') ? 'blue' : 'green',
+        storyTime: base, timeLabel: null, transition: null, scene: 0, source: 'manuscript' as const, evidence: text }] : [],
+    });
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+
+    const report = await runConsistencyAudit('imported', { store, books, extract });
+    assert.equal(report.chaptersScanned, 2, 'split manuscript.md into 2 chapter segments (Contents/front-matter excluded)');
+    const c = report.findings.find(f => f.category === 'contradiction' && f.attribute === 'eye_color');
+    assert.ok(c, 'eye-color contradiction found across the two split chapters');
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 // I2: inferGap ordering — longer must be tested before day
