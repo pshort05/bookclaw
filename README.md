@@ -1,6 +1,6 @@
 # BookClaw
 
-**The Autonomous AI Writing Agent — Built for Authors**
+**The open-source, self-hosted AI writing *studio* for the prolific author.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen.svg)](https://nodejs.org)
@@ -8,29 +8,74 @@
 
 > **BookClaw is a fork of [AuthorClaw](https://github.com/Ckokoski/authorclaw) by Christopher Kokoski (Writing Secrets)** — with deep thanks for the foundation it builds on. AuthorClaw is itself a fork of OpenClaw. See [Acknowledgements](#acknowledgements).
 
-BookClaw is a security-hardened AI agent purpose-built for fiction and nonfiction authors. It doesn't just write — it runs the entire book production pipeline autonomously, from first idea to KDP-ready manuscript.
+BookClaw is a self-hosted, security-hardened AI writing studio for authors who run **more than one book at a time**. Most AI writing tools help you draft a single manuscript. BookClaw treats the **book as a first-class object** — so several novels, each under its own pen name, in its own genre, with its own editable production pipeline, can be in flight at once and run themselves from first idea to KDP-ready manuscript.
 
-**Give it an idea and a pen name. It plans, writes, revises, formats, and launches.** Pipeline mode chains 6 production phases automatically. Author personas manage multiple pen names with distinct voices. Deep revision runs 21 editing passes. Export produces professional DOCX and EPUB ready for self-publishing.
-
-Tell it what you want. It figures out the steps, picks the right skills, and executes.
-
-> **"It's not just a writing tool. It's a writing partner, research assistant, editor, and marketing team rolled into one."**
+**Give it an idea and a pen name. It plans, writes, checks its own continuity, revises, formats, and launches** — autonomously, on your hardware, with your keys. A free Google Gemini key (or a local Ollama install) can write a whole book for $0.
 
 ---
 
-## What Can It Do?
+## Why BookClaw stands out
 
-- **Pipeline** — Turn one idea + one pen name into a finished book across 6 automated phases
-- **Write** — Draft scenes, chapters, and full manuscripts in your persona's voice
-- **Revise** — 21-step deep revision: 3 passes (structural → scene-level → line-level) + AI beta readers
-- **Plan** — 6 project templates: Book Planning, Book Bible, Book Production, Deep Revision, Format & Export, Book Launch
-- **Personas** — Manage multiple pen names with distinct genres, voices, style markers, and bios
-- **Research** — Deep dives into genres, markets, historical periods, craft techniques
-- **Beta Read** — AI beta reader panel (romance super-reader, harsh critic, casual reader)
-- **Market** — Blurbs, ad copy, Amazon descriptions, keywords, social media launch posts
-- **Format** — KDP-ready DOCX (trim sizes, front/back matter) and valid EPUB3 export
-- **Manage** — Track projects, pipelines, word counts across pen names
-- **Listen** — Neural TTS voice engine with 9 author-optimized presets — hear your writing read aloud
+The 2026 AI-writing field splits into lanes — autocomplete assistants, lore/codex managers, continuity checkers, and publish-and-earn platforms — each strong in one. BookClaw's edge is combining the hardest capabilities into one self-hosted studio and going deeper than the single-lane tools:
+
+- **A multi-author, multi-book studio — not a single-document editor.** Run several books concurrently, each bound to a distinct **author voice + genre + pipeline**. Add another pen name, genre, or workflow as *configuration, not code*. This studio model is structurally absent from single-manuscript tools.
+- **The deepest continuity engine in the category.** A per-book **fact ledger**, a **Character Knowledge Matrix** ("who knows what, and when"), dream/flashback **selective exclusion**, red-herring protection, and Sanderson-style **plot-promise** tracking. Continuity tools flag contradictions; BookClaw also enforces *what a character could plausibly know* at each point in the story.
+- **The publishing last mile, end to end.** Idea → professionally typeset DOCX/EPUB → covers → blurbs → a 90-day **Launch Orchestrator** (KDP metadata, ARC seeding, AMS ads, BookBub, a release calendar). Every irreversible external action passes through a confirmation gate.
+- **A curated craft library at scale.** 190+ genre guides, named editor personas and a debating **Editorial Council**, a dozen story-structure frameworks (Three-Act, Save the Cat, Hero's Journey, Lester Dent, and more), and a manuscript-analysis suite (craft critic, dialogue auditor, pacing heatmap, AI beta-reader panel).
+- **A structured World Repository.** A reusable worldbuilding codex per series — relevance-pulled into each book's bible and optionally rendered as reader-facing appendixes.
+- **Autonomous, but yours.** Self-hosted on your LAN, API keys sealed in an AES-256 vault, manuscripts that never leave your machine, default-on local backups. Built for a trusted home-LAN, not a hostile internet.
+- **A 3-click on-ramp.** The **Easy Button** turns a beginner into a running novel from a Starter Bundle — the full engine, zero configuration — then graduates them into the studio.
+
+> **"It's not just a writing tool. It's a writing partner, research assistant, editor, and marketing team rolled into one."**
+
+For the strategy behind this positioning, see [docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md).
+
+---
+
+## What can it do?
+
+- **Run a production line** — several books in flight at once, each its own pen name, genre, and editable pipeline; idea → planning → bible → production → revision → format → launch.
+- **Write in many voices** — first-class Author and Voice profiles per book; draft scenes, chapters, and full manuscripts in each pen name's style.
+- **Hold the canon** — a World Repository, a fact-ledger consistency auditor, a Character Knowledge Matrix, plot-promise tracking, and cross-book series continuity.
+- **Plan the shape** — declare structure × form × chapter-count × words-per-chapter at creation; it drives generation and a per-book Structure & Length review.
+- **Critique and revise** — craft critic, dialogue auditor, pacing heatmap, structure check, AI beta-reader panel, named editors, and multi-pass editorial pipelines.
+- **Publish** — KDP-ready DOCX (trim sizes, front/back matter) and valid EPUB3, covers, blurbs, and a 90-day launch orchestrator (metadata, ads, BookBub, calendar).
+- **Market and research** — blurbs, ad copy, AMS campaigns, a release/price calendar, reader-review intelligence, and allowlisted deep research.
+- **Listen** — neural TTS with author-optimized voice presets and audiobook-prep passes (SSML, pronunciation, multi-voice attribution).
+- **Drive it from anywhere** — the React studio, a simple Chat app, a Telegram bot, the REST/WebSocket API, or the MCP server (Claude Desktop/Code).
+- **Stay safe** — encrypted vault, workspace sandbox, injection detection, confirmation gate, audit log, and default-on backups.
+
+See the **[Feature guides](#feature-guides)** below for an in-depth document on each.
+
+---
+
+## Feature guides
+
+In-depth, end-user documentation for each capability lives in [`docs/features/`](docs/features/):
+
+**Write**
+- [Books and pen names](docs/features/books-and-authors.md) — books as first-class containers; Author/Voice profiles; running many books at once.
+- [Genres](docs/features/genres.md) — 190+ genre guides snapshotted per book and injected into generation.
+- [Pipelines and sequences](docs/features/pipelines-and-sequences.md) — config-not-code production pipelines, per-step model overrides, and the built-in suites.
+- [Book format and structure](docs/features/book-format-and-structure.md) — declare structure × form × chapter-count × words-per-chapter; drive generation and the Structure & Length review.
+- [The Easy Button](docs/features/easy-button.md) — a 3-click novel from a Starter Bundle.
+
+**Keep the canon**
+- [World Repository](docs/features/world-repository.md) — a structured worldbuilding codex, per-book relevance-pull, and appendixes.
+- [Continuity and consistency](docs/features/continuity-and-consistency.md) — the fact ledger, Character Knowledge Matrix, selective exclusion, and plot promises.
+- [Series](docs/features/series.md) — multi-book continuity, shared refs, and divergence detection.
+
+**Polish**
+- [Craft and editorial tools](docs/features/craft-and-editorial.md) — craft critic, dialogue auditor, pacing heatmap, beta readers, editorial council, and the Prompt Runner.
+
+**Publish and grow**
+- [Publishing and launch](docs/features/publishing-and-launch.md) — DOCX/EPUB export, covers, blurbs, the launch orchestrator, AMS, BookBub, and the website builder.
+- [Audiobook and TTS](docs/features/audiobook-and-tts.md) — neural voice presets and audiobook-prep passes.
+- [Research and reader intelligence](docs/features/research-and-reader-intel.md) — allowlisted deep research and review-data analysis.
+
+**Operate**
+- [Ways to use BookClaw (the surfaces)](docs/features/surfaces.md) — Studio, Chat app, Telegram, API, and the MCP server.
+- [Backups and recovery](docs/features/backups-and-recovery.md) — default-on snapshots, per-book restore, and opt-in cloud push.
 
 ---
 
@@ -190,6 +235,7 @@ bookclaw/
 ├── tests/                # Scripted tests (unit + smoke + feature smoke)
 ├── config/               # default.json (versioned), .vault/, research allowlist
 ├── docker/               # Dockerfile + docker-compose.yml
+├── mcp/                  # Vendored MCP server (own package; exposes the API to MCP clients)
 ├── scripts/              # setup, deploy, build-watch, security-check
 └── workspace/            # Runtime data (gitignored): books, projects, soul, memory, audio, logs
 ```
@@ -269,6 +315,8 @@ This software is provided "as is" without warranty of any kind. **Use at your ow
 
 All supporting documents live in [`docs/`](docs/).
 
+**Feature guides** — in-depth, per-feature end-user documentation lives in [`docs/features/`](docs/features/); see the [Feature guides](#feature-guides) section above for the annotated list.
+
 **Getting started**
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) — Install and run your first task in minutes.
 - [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) — Step-by-step walkthrough of the full novel pipeline.
@@ -286,6 +334,8 @@ All supporting documents live in [`docs/`](docs/).
 - [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md) — The book-as-container data model and its phased roadmap toward a multi-book studio.
 - [docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md) — The incremental refactor of the former `index.ts` / `routes.ts` god classes.
 - [docs/PRODUCT-DIRECTION.md](docs/PRODUCT-DIRECTION.md) — Product vision and the North Star.
+- [docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md) — Market positioning and the differentiators behind the "Why BookClaw stands out" section.
+- [mcp/README.md](mcp/README.md) — The vendored MCP server (exposes BookClaw to MCP clients like Claude Desktop/Code); see [mcp/docs/INSTALL.md](mcp/docs/INSTALL.md) to install it.
 
 **Roadmap, research & history**
 - [docs/TODO.md](docs/TODO.md) / [docs/COMPLETED.md](docs/COMPLETED.md) — Tracked work items, and finished items by date.
