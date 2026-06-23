@@ -281,6 +281,12 @@ export class GoalsService {
 
   // ── Persistence ──
 
+  /** Test seam: cancel any pending debounced write and persist now. */
+  async flush(): Promise<void> {
+    if (this.writeTimer) { clearTimeout(this.writeTimer); this.writeTimer = null; }
+    await this.persist();
+  }
+
   private async schedulePersist(): Promise<void> {
     if (this.writeTimer) return;
     this.writeTimer = setTimeout(() => {

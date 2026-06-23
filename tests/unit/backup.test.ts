@@ -215,6 +215,81 @@ describe('BackupService', () => {
     assert.equal(r.restartRecommended, true);
   });
 
+  test('FULL-scope whole-workspace restore preserves live .vault/.audit byte-for-byte (credential-loss guard)', async () => {
+    // FULL scope is the high-value case: the snapshot DOES capture .vault/.audit
+    // (see the "full snapshot includes ... vault.enc" test), so the restore loop
+    // would copy the snapshot's stale credentials back over the live ones unless
+    // restore() explicitly skips .vault/.audit. We snapshot, then ROTATE the live
+    // credential store + tamper chain, then restore: the live (post-snapshot)
+    // bytes must survive. A regression here silently reverts every rotated/added
+    // credential to its snapshot state.
+    cfg.scope = 'full';
+    const snap = await svc.snapshot('manual', new Date('2026-06-12T09:00:00Z'));
+    // Full scope captured the credentials into the snapshot (this is what makes the guard load-bearing).
+    assert.ok(existsSync(join(root, snap.name, '.vault', 'vault.enc')));
+    assert.ok(existsSync(join(root, snap.name, '.audit', '2026-06-12.jsonl')));
+    // Mutate the live credential store + tamper chain AFTER the snapshot.
+    writeFileSync(join(ws, '.vault', 'vault.enc'), 'ROTATED-SECRET');
+    writeFileSync(join(ws, '.vault', 'newcred.enc'), 'added-after-snapshot');
+    writeFileSync(join(ws, '.audit', '2026-06-12.jsonl'), '{"event":"post-snapshot"}');
+    writeFileSync(join(ws, '.audit', '2026-06-13.jsonl'), '{"event":"new-day"}');
+    // Also corrupt a normal top so we know the restore actually ran.
+    writeFileSync(join(ws, 'soul', 'SOUL.md'), 'corrupted');
+
+    await svc.restore(snap.name);
+
+    // Normal tops reverted to snapshot state — proves the restore did run.
+    assert.equal(readFileSync(join(ws, 'soul', 'SOUL.md'), 'utf-8'), 'soul');
+    // .vault survives byte-for-byte at its post-snapshot (live) state — NOT reverted to 'secret'.
+    assert.equal(readFileSync(join(ws, '.vault', 'vault.enc'), 'utf-8'), 'ROTATED-SECRET');
+    assert.equal(readFileSync(join(ws, '.vault', 'newcred.enc'), 'utf-8'), 'added-after-snapshot');
+    // .audit survives byte-for-byte at its post-snapshot (live) state — NOT reverted.
+    assert.equal(readFileSync(join(ws, '.audit', '2026-06-12.jsonl'), 'utf-8'), '{"event":"post-snapshot"}');
+    assert.equal(readFileSync(join(ws, '.audit', '2026-06-13.jsonl'), 'utf-8'), '{"event":"new-day"}');
+  });
+
+  test('STANDARD-scope restore preserves .vault/.audit (excluded from the snapshot entirely)', async () => {
+    // In the default standard scope the protection is structural: .vault/.audit are
+    // never copied into the snapshot, so there is nothing to copy back. Live
+    // credentials are therefore untouched regardless of the restore() skip-list.
+    const snap = await svc.snapshot('manual', new Date('2026-06-12T09:10:00Z'));
+    assert.ok(!existsSync(join(root, snap.name, '.vault')));
+    assert.ok(!existsSync(join(root, snap.name, '.audit')));
+    writeFileSync(join(ws, '.vault', 'vault.enc'), 'LIVE-SECRET');
+    writeFileSync(join(ws, '.audit', '2026-06-12.jsonl'), '{"live":true}');
+    writeFileSync(join(ws, 'soul', 'SOUL.md'), 'corrupted');
+    await svc.restore(snap.name);
+    assert.equal(readFileSync(join(ws, 'soul', 'SOUL.md'), 'utf-8'), 'soul'); // restore ran
+    assert.equal(readFileSync(join(ws, '.vault', 'vault.enc'), 'utf-8'), 'LIVE-SECRET');
+    assert.equal(readFileSync(join(ws, '.audit', '2026-06-12.jsonl'), 'utf-8'), '{"live":true}');
+  });
+
+  test('whole-workspace restore creates a pre-restore snapshot capturing live state first', async () => {
+    const snap = await svc.snapshot('manual', new Date('2026-06-12T09:30:00Z'));
+    writeFileSync(join(ws, 'soul', 'SOUL.md'), 'LIVE-BEFORE-RESTORE');
+    const before = svc.list().map(s => s.name);
+    const r = await svc.restore(snap.name);
+    // A new snapshot named pre-restore now exists, and it is not the one we restored from.
+    assert.notEqual(r.preSnapshot, snap.name);
+    assert.ok(!before.includes(r.preSnapshot));
+    const pre = svc.list().find(s => s.name === r.preSnapshot)!;
+    assert.equal(pre.reason, 'pre-restore');
+    // It captured the live (pre-restore) soul, so the operator can undo the restore.
+    assert.equal(readFileSync(join(root, pre.name, 'soul', 'SOUL.md'), 'utf-8'), 'LIVE-BEFORE-RESTORE');
+  });
+
+  test('per-book restore never touches .vault/.audit (credential-loss guard)', async () => {
+    const snap = await svc.snapshot('manual', new Date('2026-06-12T09:45:00Z'));
+    writeFileSync(join(ws, '.vault', 'vault.enc'), 'LIVE-VAULT');
+    writeFileSync(join(ws, '.audit', '2026-06-12.jsonl'), '{"live":true}');
+    writeFileSync(join(ws, 'books', 'alpha', 'data', 'draft.md'), 'MANGLED');
+    await svc.restore(snap.name, { book: 'alpha' });
+    // Per-book restore only replaces books/<slug>; credentials + audit untouched.
+    assert.equal(readFileSync(join(ws, '.vault', 'vault.enc'), 'utf-8'), 'LIVE-VAULT');
+    assert.equal(readFileSync(join(ws, '.audit', '2026-06-12.jsonl'), 'utf-8'), '{"live":true}');
+    assert.equal(readFileSync(join(ws, 'books', 'alpha', 'data', 'draft.md'), 'utf-8'), 'original draft');
+  });
+
   test('a restored too-old book classifies as quarantined (version gate intact)', async () => {
     mkdirSync(join(ws, 'books', 'old'), { recursive: true });
     writeFileSync(join(ws, 'books', 'old', 'book.json'), JSON.stringify({ schemaVersion: 0, slug: 'old', title: 'Old' }));

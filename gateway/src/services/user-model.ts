@@ -451,6 +451,12 @@ export class UserModelService {
     await this.persist();
   }
 
+  /** Test seam: cancel any pending debounced write and persist now. */
+  async flush(): Promise<void> {
+    if (this.writeTimer) { clearTimeout(this.writeTimer); this.writeTimer = null; }
+    await this.persist();
+  }
+
   // ── Persistence (debounced) ──
 
   private schedulePersist(): void {
