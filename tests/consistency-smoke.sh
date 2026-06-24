@@ -29,7 +29,7 @@
 set -uo pipefail
 
 HOST="127.0.0.1"
-PORT="3849"
+PORT="${PORT:-3849}"   # overridable: 3849 may be taken on a shared host
 BASE="http://${HOST}:${PORT}"
 TEST_TOKEN="smoke-consistency-token-$$"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
