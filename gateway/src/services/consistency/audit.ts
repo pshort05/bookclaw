@@ -24,7 +24,16 @@ export interface AuditReport {
   factCount: number;
   knowledgeEventCount: number;
   nonCanonicalSceneCount: number;
+  /** Reverse index: each (entity, attribute) → the chapters that dramatize it (canon-flagged). */
+  reverseIndex: Array<{ entity: string; attribute: string; chapters: string[]; isCanon: boolean }>;
+  /** Canon/bible facts never dramatized by any chapter (Chekhov's-gun candidates). */
+  orphanFacts: Array<{ entity: string; attribute: string; valueRaw: string; world: string | null }>;
   generatedAt: string;
+}
+
+/** Empty report shape (shared by the early-return paths). */
+function emptyReport(): AuditReport {
+  return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, reverseIndex: [], orphanFacts: [], generatedAt: new Date().toISOString() };
 }
 
 // Noise labels that disqualify a file from being treated as chapter prose.
@@ -186,7 +195,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
 
   const dataDir = books.dataDirOf(slug);
   if (!dataDir || !existsSync(dataDir)) {
-    return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, generatedAt: new Date().toISOString() };
+    return emptyReport();
   }
 
   // Resolve the world name from the book manifest (used for canon scoping).
@@ -297,7 +306,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
       }
     }
   } catch {
-    return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, generatedAt: new Date().toISOString() };
+    return emptyReport();
   }
 
   const findings: ConsistencyFinding[] = [];
@@ -412,15 +421,25 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     for (const kf of evaluateKnowledge(allKnowledge)) findings.push(kf);
   }
 
+  // Reverse index + orphan-canon report — deterministic queries over the ledger
+  // just built (no extra AI). Worldfall "edit a fact → revisit these chapters" +
+  // "Chekhov's gun" (declared canon never dramatized).
+  let reverseIndex: AuditReport['reverseIndex'] = [];
+  let orphanFacts: AuditReport['orphanFacts'] = [];
+  try { reverseIndex = store.reverseIndex(scope); } catch (err) { progress(`Reverse index failed: ${(err as Error)?.message ?? err}`); }
+  try { orphanFacts = store.orphanCanonFacts(scope); } catch (err) { progress(`Orphan-fact report failed: ${(err as Error)?.message ?? err}`); }
+
   const report: AuditReport = {
     findings,
     chaptersScanned,
     factCount,
     knowledgeEventCount,
     nonCanonicalSceneCount,
+    reverseIndex,
+    orphanFacts,
     generatedAt: new Date().toISOString(),
   };
   store.saveReport(slug, report);
-  progress(`Audit complete: ${chaptersScanned} chapters, ${factCount} facts, ${findings.length} findings`);
+  progress(`Audit complete: ${chaptersScanned} chapters, ${factCount} facts, ${findings.length} findings, ${reverseIndex.length} indexed facts, ${orphanFacts.length} orphan(s)`);
   return report;
 }

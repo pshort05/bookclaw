@@ -22,8 +22,15 @@ export interface ConsistencyReport {
   findings: ConsistencyFinding[];
   chaptersScanned: number;
   factCount: number;
+  /** Each (entity, attribute) → chapters that dramatize it (canon-flagged). Optional: older reports omit it. */
+  reverseIndex?: ReverseIndexEntry[];
+  /** Canon/bible facts no chapter dramatizes (Chekhov's-gun candidates). Optional: older reports omit it. */
+  orphanFacts?: OrphanFact[];
   generatedAt: string;
 }
+
+export interface ReverseIndexEntry { entity: string; attribute: string; chapters: string[]; isCanon: boolean; }
+export interface OrphanFact { entity: string; attribute: string; valueRaw: string; world: string | null; }
 
 export const runConsistencyAudit = (slug: string) =>
   api<{ status: string; slug: string }>(

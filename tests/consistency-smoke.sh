@@ -304,6 +304,39 @@ process.stdout.write(findings.some(f => f.category === 'knowledge-violation') ? 
   else
     log "  [SKIP] extractor did not reproduce the planted knowledge-violation (model-dependent) — deterministic logic is unit-tested"
   fi
+
+  # 5e. Worldfall quick-hits: the report must carry a reverseIndex (fact → chapters)
+  #     and an orphanFacts array. Both fields are deterministic (always present on a
+  #     new report). This book seeds no canon (no world), so orphanFacts is [] — the
+  #     orphan logic itself is unit-tested. reverseIndex must be NON-EMPTY whenever the
+  #     extractor produced facts (factCount > 0); skipped on a provider too weak to
+  #     extract any (same graceful posture as the knowledge check).
+  REV_STATE="$(printf '%s' "${REPORT_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const r = d.report || {};
+if (!Array.isArray(r.reverseIndex) || !Array.isArray(r.orphanFacts)) { process.stdout.write('MISSING'); process.exit(0); }
+process.stdout.write('OK:'+(r.factCount||0)+':'+r.reverseIndex.length+':'+r.orphanFacts.length);
+" 2>/dev/null || true)"
+  case "${REV_STATE}" in
+    MISSING) fail "report is missing the reverseIndex / orphanFacts arrays" ;;
+    OK:0:*)  log "  [SKIP] no facts extracted (factCount 0) — cannot assert a populated reverse index (provider-dependent)" ;;
+    OK:*:0:*) fail "facts were extracted but reverseIndex is empty (${REV_STATE})" ;;
+    OK:*)    pass "report carries reverseIndex + orphanFacts (factCount:revLen:orphanLen = ${REV_STATE#OK:})" ;;
+    *)       fail "could not read reverseIndex/orphanFacts (got: ${REV_STATE})" ;;
+  esac
+
+  # 5f. (soft) The impact index links a recurring fact to ≥2 chapters (e.g. John's
+  #     eye_color appears in chapter-1 and chapter-2). Model-dependent grouping.
+  MULTI="$(printf '%s' "${REPORT_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const rev = ((d.report||{}).reverseIndex)||[];
+process.stdout.write(rev.some(e => Array.isArray(e.chapters) && e.chapters.length >= 2) ? 'HIT' : '');
+" 2>/dev/null || true)"
+  if [ "${MULTI}" = "HIT" ]; then
+    pass "impact index links a recurring fact across multiple chapters"
+  else
+    log "  [SKIP] no fact spanned ≥2 chapters in the index (model-dependent grouping)"
+  fi
 fi
 
 stop_server

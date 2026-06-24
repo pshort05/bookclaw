@@ -100,3 +100,52 @@ test('canon seed hash + report round-trip', async () => {
     assert.deepEqual(s.getReport('b1'), { findings: [1, 2] });
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('reverseIndex maps each entity+attribute to the chapters that assert it (canon-flagged, CANON excluded)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-rev-'));
+  try {
+    const s = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await s.initialize();
+    if (!s.isAvailable()) { console.log('better-sqlite3 unavailable — skipping'); return; }
+    s.insertFacts([
+      fact({ entity: 'Rob', attribute: 'eye_color', chapter: 'chapter-1' }),
+      fact({ entity: 'Rob', attribute: 'eye_color', chapter: 'chapter-10', valueNorm: 'grey' }),
+      fact({ entity: 'Rob', attribute: 'eye_color', chapter: 'chapter-3', valueNorm: 'grey' }),
+      fact({ entity: 'Rob', attribute: 'eye_color', chapter: 'chapter-2', valueNorm: 'blue' }),
+      fact({ entity: 'Rob', attribute: 'eye_color', chapter: 'chapter-1' }), // duplicate chapter
+      fact({ entity: 'Rob', attribute: 'location', chapter: 'chapter-2', valueNorm: 'pier' }),
+      fact({ world: 'w1', bookSlug: null, source: 'canon', chapter: 'CANON', entity: 'Rob', attribute: 'eye_color', valueNorm: 'blue' }),
+      fact({ bookSlug: 'OTHER', entity: 'Zed', attribute: 'x', chapter: 'c1' }), // different book — must not leak
+    ]);
+    const idx = s.reverseIndex({ world: 'w1', bookSlug: 'b1' });
+    const rob = idx.find(r => r.entity === 'Rob' && r.attribute === 'eye_color');
+    assert.ok(rob, 'Rob/eye_color present');
+    assert.deepEqual(rob!.chapters, ['chapter-1', 'chapter-2', 'chapter-3', 'chapter-10'], 'distinct + NUMERIC sort (10 after 2), CANON excluded');
+    assert.equal(rob!.isCanon, true, 'backed by a canon fact');
+    assert.equal(idx.find(r => r.attribute === 'location')!.isCanon, false);
+    assert.ok(!idx.some(r => r.entity === 'Zed'), 'other book excluded');
+    assert.ok(!idx.some(r => r.chapters.includes('CANON')), 'CANON pseudo-chapter never listed');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('orphanCanonFacts lists canon facts never dramatized in the manuscript (alias-aware)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-orph-'));
+  try {
+    const s = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await s.initialize();
+    if (!s.isAvailable()) { console.log('better-sqlite3 unavailable — skipping'); return; }
+    s.insertFacts([
+      // world canon: Rob Vane eye_color (dramatized via alias) + Sword material (orphan)
+      fact({ world: 'w1', bookSlug: null, source: 'canon', chapter: 'CANON', entity: 'Rob Vane', aliases: ['Rob Vane', 'Rob'], attribute: 'eye_color', valueRaw: 'blue' }),
+      fact({ world: 'w1', bookSlug: null, source: 'canon', chapter: 'CANON', entity: 'Sword', aliases: ['Sword'], attribute: 'material', valueRaw: 'steel' }),
+      // manuscript dramatizes Rob (an alias of canon Rob Vane) eye_color
+      fact({ entity: 'Rob', aliases: ['Rob'], attribute: 'eye_color', chapter: 'chapter-1' }),
+      // a different book's canon must not leak
+      fact({ bookSlug: 'OTHER', source: 'canon', chapter: 'CANON', entity: 'Wand', attribute: 'wood', valueRaw: 'oak' }),
+    ]);
+    const orphans = s.orphanCanonFacts({ world: 'w1', bookSlug: 'b1' });
+    assert.deepEqual(orphans.map(o => `${o.entity}/${o.attribute}`), ['Sword/material'], 'only the undramatized canon fact');
+    assert.equal(orphans[0].valueRaw, 'steel');
+    assert.ok(!orphans.some(o => o.attribute === 'eye_color'), 'alias match means Rob Vane eye_color is NOT orphan');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

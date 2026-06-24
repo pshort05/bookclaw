@@ -227,6 +227,39 @@ export function Consistency() {
               );
             })
           )}
+
+          {report.orphanFacts && report.orphanFacts.length > 0 && (
+            <div className={styles.group}>
+              <div className={styles.groupHeader}>
+                Orphan worldbuilding ({report.orphanFacts.length}) — declared in canon, never dramatized
+              </div>
+              {report.orphanFacts.map((o, i) => (
+                <div key={`orphan-${i}`} className={styles.finding} style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <span className={styles.entityAttr}>{o.entity} · {o.attribute}</span>
+                  <span className={styles.locQuote}>{o.valueRaw}</span>
+                  {o.world && <span className={styles.category}>World: {o.world}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {report.reverseIndex && report.reverseIndex.length > 0 && (
+            <div className={styles.group}>
+              <div className={styles.groupHeader}>
+                Impact index — edit a fact → revisit these chapters ({report.reverseIndex.length})
+              </div>
+              {report.reverseIndex.slice(0, 50).map((r, i) => (
+                <div key={`rev-${i}`} className={styles.finding} style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <span className={styles.entityAttr}>{r.entity} · {r.attribute}</span>
+                  {r.isCanon && <span className={styles.category}>canon</span>}
+                  <span className={styles.locChapter}>{r.chapters.join(', ')}</span>
+                </div>
+              ))}
+              {report.reverseIndex.length > 50 && (
+                <p className={styles.dim}>Showing the 50 most-referenced facts of {report.reverseIndex.length}.</p>
+              )}
+            </div>
+          )}
         </>
       )}
 

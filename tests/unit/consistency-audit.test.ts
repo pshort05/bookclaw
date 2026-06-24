@@ -286,6 +286,40 @@ test('imported book (single manuscript.md, no chapter files) is scanned by split
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('audit report includes the reverse index + orphan canon facts', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-rev-orph-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'chapter-1.md'), 'John has blue eyes.');
+    writeFileSync(join(dataDir, 'chapter-2.md'), 'John has green eyes.');
+
+    // Canon (via worldbuildingOf) declares John's eye_color (dramatized) AND a Sword's
+    // material (never dramatized → orphan). Chapters only mention John's eyes.
+    const extract = async (text: string, _k: any[], base: number) => {
+      const facts: any[] = [];
+      if (/eyes/.test(text)) facts.push({ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable',
+        valueRaw: text.includes('blue') ? 'blue' : 'green', valueNorm: text.includes('blue') ? 'blue' : 'green',
+        storyTime: base, timeLabel: null, transition: null, scene: 0, source: 'manuscript', evidence: text });
+      if (/Sword/.test(text)) facts.push({ entity: 'Sword', aliases: ['Sword'], attribute: 'material', type: 'immutable',
+        valueRaw: 'steel', valueNorm: 'steel', storyTime: base, timeLabel: null, transition: null, scene: 0, source: 'manuscript', evidence: text });
+      return { scenes: [{ storyTime: base, timeLabel: null }], facts };
+    };
+    const books = { dataDirOf: () => dataDir, worldbuildingOf: () => 'John has blue eyes. The Sword is steel.', worldDocsOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+
+    const report: any = await runConsistencyAudit('b1', { store, books, extract });
+    const rev = report.reverseIndex.find((r: any) => r.entity === 'John' && r.attribute === 'eye_color');
+    assert.ok(rev, 'reverse index has John/eye_color');
+    assert.deepEqual(rev.chapters, ['chapter-1', 'chapter-2'], 'lists the chapters that dramatize it');
+    assert.equal(rev.isCanon, true, 'flagged canon-backed (editable bible fact)');
+    assert.ok(report.orphanFacts.some((o: any) => o.entity === 'Sword' && o.attribute === 'material'), 'Sword material is an orphan canon fact');
+    assert.ok(!report.orphanFacts.some((o: any) => o.attribute === 'eye_color'), 'John eye_color dramatized → not orphan');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 // I2: inferGap ordering — longer must be tested before day
 test('I2: inferGap classifies multi-day spans correctly', () => {
   assert.equal(inferGap(null, 'three days later'), 'longer', '"three days later" -> longer');

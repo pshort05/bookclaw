@@ -79,6 +79,81 @@ export class ConsistencyStore {
     }));
   }
 
+  /**
+   * Reverse index (Worldfall "edit a fact → revisit these chapters"): for each
+   * (entity, attribute) the book's manuscript dramatizes, the sorted distinct
+   * chapters that assert it, flagged `isCanon` when a canon/bible fact backs that
+   * (entity, attribute) — i.e. the editable facts whose change ripples here.
+   * Sorted most-referenced first. Deterministic; no AI.
+   */
+  reverseIndex(scope: { world: string | null; bookSlug: string }): Array<{ entity: string; attribute: string; chapters: string[]; isCanon: boolean }> {
+    if (!this.db) return [];
+    const rows = this.db.prepare(
+      `SELECT entity, attribute, chapter FROM facts
+       WHERE book_slug = ? AND source = 'manuscript' AND canonical = 1`,
+    ).all(scope.bookSlug);
+    // Canon (entity, attribute) set scoped precisely: world-keyed canon by world
+    // (only when a world is bound), else this book's own book-keyed canon.
+    const canonRows = this.db.prepare(
+      `SELECT DISTINCT entity, attribute FROM facts
+       WHERE source = 'canon' AND ( (? IS NOT NULL AND world IS ?) OR book_slug = ? )`,
+    ).all(scope.world, scope.world, scope.bookSlug);
+    const canonKey = new Set(canonRows.map((r: any) => `${r.entity}\0${r.attribute}`));
+    const byKey = new Map<string, { entity: string; attribute: string; chapters: Set<string> }>();
+    for (const r of rows) {
+      if (!r.chapter || r.chapter === 'CANON') continue;
+      const key = `${r.entity}\0${r.attribute}`;
+      let e = byKey.get(key);
+      if (!e) { e = { entity: r.entity, attribute: r.attribute, chapters: new Set() }; byKey.set(key, e); }
+      e.chapters.add(r.chapter);
+    }
+    return [...byKey.values()]
+      // numeric-aware chapter order (chapter-2 before chapter-10, not lexical chapter-1, chapter-10, chapter-2)
+      .map(e => ({ entity: e.entity, attribute: e.attribute, chapters: [...e.chapters].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), isCanon: canonKey.has(`${e.entity}\0${e.attribute}`) }))
+      .filter(e => e.chapters.length > 0)
+      .sort((a, b) => b.chapters.length - a.chapters.length || a.entity.localeCompare(b.entity) || a.attribute.localeCompare(b.attribute));
+  }
+
+  /**
+   * Orphan canon facts (Worldfall "Chekhov's gun"): canon/bible facts whose
+   * (entity, attribute) is never dramatized by any manuscript chapter — declared
+   * worldbuilding that no scene uses (a cut candidate or a missing scene). Match
+   * is alias-aware (canon "Rob Vane" vs manuscript "Rob") and attribute-exact.
+   * Deterministic; no AI.
+   */
+  orphanCanonFacts(scope: { world: string | null; bookSlug: string }): Array<{ entity: string; attribute: string; valueRaw: string; world: string | null }> {
+    if (!this.db) return [];
+    const canon = this.db.prepare(
+      `SELECT entity, attribute, value_raw, aliases, world FROM facts
+       WHERE source = 'canon' AND ( (? IS NOT NULL AND world IS ?) OR book_slug = ? )
+       ORDER BY id`,
+    ).all(scope.world, scope.world, scope.bookSlug);
+    const manuscript = this.db.prepare(
+      `SELECT entity, attribute, aliases FROM facts
+       WHERE book_slug = ? AND source = 'manuscript' AND canonical = 1`,
+    ).all(scope.bookSlug);
+    // Per-attribute set of lowercased manuscript names (entity + aliases).
+    const namesByAttr = new Map<string, Set<string>>();
+    for (const m of manuscript) {
+      let set = namesByAttr.get(m.attribute);
+      if (!set) { set = new Set(); namesByAttr.set(m.attribute, set); }
+      set.add(String(m.entity).toLowerCase());
+      try { for (const a of JSON.parse(m.aliases)) set.add(String(a).toLowerCase()); } catch { /* aliases optional */ }
+    }
+    const seen = new Set<string>();
+    const out: Array<{ entity: string; attribute: string; valueRaw: string; world: string | null }> = [];
+    for (const c of canon) {
+      const key = `${c.entity}\0${c.attribute}`;
+      if (seen.has(key)) continue;
+      const names = new Set<string>([String(c.entity).toLowerCase()]);
+      try { for (const a of JSON.parse(c.aliases)) names.add(String(a).toLowerCase()); } catch { /* aliases optional */ }
+      const dramatized = namesByAttr.get(c.attribute);
+      const used = !!dramatized && [...names].some(n => dramatized.has(n));
+      if (!used) { seen.add(key); out.push({ entity: c.entity, attribute: c.attribute, valueRaw: c.value_raw, world: c.world }); }
+    }
+    return out.sort((a, b) => a.entity.localeCompare(b.entity) || a.attribute.localeCompare(b.attribute));
+  }
+
   clearBookFacts(bookSlug: string): void { if (this.db) this.db.prepare('DELETE FROM facts WHERE book_slug = ?').run(bookSlug); }
   clearWorldCanon(world: string): void {
     if (!this.db) return;
