@@ -19,7 +19,13 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       if (!services.consistencyStore?.isAvailable()) {
         return res.status(503).json({ error: 'Consistency DB unavailable' });
       }
-      res.json({ report: services.consistencyStore?.getReport(slug) ?? null });
+      // `running` lets a reconnecting client rehydrate the in-progress UI instead
+      // of offering to start a second (ledger-corrupting) run.
+      res.json({
+        report: services.consistencyStore?.getReport(slug) ?? null,
+        running: gateway.consistencyJobs.isRunning(slug),
+        job: gateway.consistencyJobs.get(slug),
+      });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
@@ -36,18 +42,50 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
         return res.status(503).json({ error: 'Consistency DB unavailable' });
       }
 
+      // Concurrency guard: a second audit for the same book while one is in
+      // flight would interleave with the leading clearBookFacts() and corrupt
+      // the ledger. Claim the slot atomically; reject if already running.
+      if (!gateway.consistencyJobs.start(slug)) {
+        return res.status(409).json({
+          error: 'A consistency audit is already running for this book',
+          running: gateway.consistencyJobs.get(slug),
+        });
+      }
+
+      gateway.activityLog?.log({
+        type: 'step_started',
+        source: 'internal',
+        message: `Consistency audit started for "${slug}"`,
+        metadata: { book: slug },
+      });
+
       // Respond immediately; audit runs in the background
       res.json({ status: 'started', slug });
 
       services.consistencyAudit(
         slug,
         (msg: string) => {
+          gateway.consistencyJobs.progress(slug, msg);
           try { (gateway as any).io?.emit?.('consistency-progress', { slug, message: msg }); } catch {}
         }
       ).then((report: any) => {
+        gateway.activityLog?.log({
+          type: 'step_completed',
+          source: 'internal',
+          message: `Consistency audit complete for "${slug}": ${report?.chaptersScanned ?? 0} chapters, ${report?.findings?.length ?? 0} findings`,
+          metadata: { book: slug, chaptersScanned: report?.chaptersScanned, findings: report?.findings?.length, factCount: report?.factCount },
+        });
         try { (gateway as any).io?.emit?.('consistency-complete', { slug, report }); } catch {}
       }).catch((err: any) => {
+        gateway.activityLog?.log({
+          type: 'step_failed',
+          source: 'internal',
+          message: `Consistency audit failed for "${slug}": ${err?.message ?? String(err)}`,
+          metadata: { book: slug },
+        });
         try { (gateway as any).io?.emit?.('consistency-error', { slug, error: err?.message ?? String(err) }); } catch {}
+      }).finally(() => {
+        gateway.consistencyJobs.finish(slug);
       });
     } catch (err) {
       res.status(500).json({ error: String(err) });

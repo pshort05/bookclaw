@@ -38,10 +38,13 @@ export const runConsistencyAudit = (slug: string) =>
     { method: 'POST', body: '{}' },
   );
 
+export interface ConsistencyJobState { slug: string; startedAt: string; lastMessage: string | null; }
+
+/** Report plus whether an audit is currently running (for reconnect rehydration). */
 export const getConsistencyReport = (slug: string) =>
-  api<{ report: ConsistencyReport | null }>(
+  api<{ report: ConsistencyReport | null; running?: boolean; job?: ConsistencyJobState | null }>(
     `/api/books/${encodeURIComponent(slug)}/consistency-report`,
-  ).then((r) => r.report);
+  );
 
 export interface ConsistencyProgressEvent { slug: string; message: string; }
 export interface ConsistencyCompleteEvent { slug: string; report: ConsistencyReport; }

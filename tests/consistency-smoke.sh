@@ -210,6 +210,29 @@ echo "${AUDIT_BODY}" | grep -q '"started"' \
   && pass "audit body contains status:started" \
   || { fail "audit body missing status:started (got: ${AUDIT_BODY})"; }
 
+# ── 3a. Concurrency guard + running flag ──────────────────────────────────────
+# Fired immediately while the first audit is still in flight (its per-chapter LLM
+# calls take seconds). A second start must be rejected 409; the report endpoint
+# must report running:true. Both are best-effort NOTES (not failures) if the
+# first run already finished (e.g. an offline/instant model), to stay hermetic.
+SECOND_CODE="$(curl -s -o /dev/null -w '%{http_code}' "${AUTH[@]}" \
+  -H 'Content-Type: application/json' \
+  -X POST "${BASE}/api/books/${BOOK_SLUG}/consistency-audit")"
+if [ "${SECOND_CODE}" = "409" ]; then
+  pass "concurrent second audit rejected with 409"
+elif [ "${SECOND_CODE}" = "200" ]; then
+  log "  [NOTE] second audit returned 200 — first run already finished; concurrency guard not exercised this run"
+else
+  fail "concurrent second audit returned ${SECOND_CODE} (expected 409)"
+fi
+
+RUN_RESP="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/consistency-report" 2>/dev/null || true)"
+if printf '%s' "${RUN_RESP}" | grep -q '"running":true'; then
+  pass "report endpoint reports running:true during audit"
+else
+  log "  [NOTE] running:true not observed — audit may have already finished (checked best-effort)"
+fi
+
 # ── 4. Poll for the report (up to 90 s) ──────────────────────────────────────
 
 log "  polling for consistency report (up to 90s)..."

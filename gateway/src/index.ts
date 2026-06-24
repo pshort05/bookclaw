@@ -94,6 +94,7 @@ import type { BackupService } from './services/backup.js';
 import { ConsistencyStore } from './services/consistency/fact-store.js';
 import { extractChapterFacts } from './services/consistency/extractor.js';
 import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
+import { ConsistencyJobRegistry } from './services/consistency/job-registry.js';
 import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
@@ -247,6 +248,8 @@ class BookClawGateway {
   public libraryTransfer?: LibraryTransferService;
   public backup?: BackupService;
   public consistencyStore?: ConsistencyStore;
+  /** Tracks in-flight consistency audits so a concurrent run is rejected (see consistency.routes). */
+  public consistencyJobs = new ConsistencyJobRegistry();
   public telegram?: TelegramBridge;
   public discord?: DiscordBridge;
 
@@ -1336,7 +1339,21 @@ class BookClawGateway {
           },
           extract: (chapterText, known, base) =>
             extractChapterFacts(
-              { ai: { complete: (r) => aiRouter.complete(r), select: (t) => aiRouter.selectProvider(t) } },
+              {
+                ai: {
+                  // Record spend per book: the audit's per-chapter + canon-seed
+                  // extractions are direct-routed AI calls that bypass the
+                  // handleMessage cost choke point, so they were uncosted.
+                  complete: async (r) => {
+                    const resp = await aiRouter.complete(r);
+                    try {
+                      this.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug);
+                    } catch { /* cost recording is best-effort */ }
+                    return resp;
+                  },
+                  select: (t) => aiRouter.selectProvider(t),
+                },
+              },
               chapterText,
               known,
               base,

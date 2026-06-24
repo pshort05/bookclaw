@@ -112,7 +112,16 @@ export function Consistency() {
     setErr(null);
     setUnavailable(false);
     getConsistencyReport(slug)
-      .then((r) => setReport(r))
+      .then(({ report, running, job }) => {
+        setReport(report);
+        // Rehydrate an audit that is still running on the server (e.g. after a
+        // reconnect): restore the running UI and resubscribe via the live socket
+        // subscription (already active for this component) for progress/complete.
+        if (running) {
+          setRunning(true);
+          setProgress(job?.lastMessage ?? 'Audit in progress…');
+        }
+      })
       .catch((e: Error & { status?: number }) => {
         if (e.status === 503) {
           setUnavailable(true);
@@ -139,6 +148,11 @@ export function Consistency() {
         setUnavailable(true);
         setRunning(false);
         setProgress(null);
+      } else if (err.status === 409) {
+        // An audit is already running for this book (e.g. started in another
+        // tab, or this one reconnected) — keep the running UI, don't error.
+        setRunning(true);
+        setProgress('Audit already running…');
       } else {
         setErr(`Failed to start audit — ${String(e)}`);
         setRunning(false);
