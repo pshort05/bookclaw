@@ -398,6 +398,32 @@ process.stdout.write(rev.some(e => Array.isArray(e.chapters) && e.chapters.lengt
   else
     log "  [SKIP] no fact spanned ≥2 chapters in the index (model-dependent grouping)"
   fi
+
+  # 5g. Downloadable reports: the audit must have emitted a consistency report
+  #     (.md + .json) under data/reports/, the reports API must list it, and the
+  #     :id endpoint must serve the markdown. (Deterministic once the audit ran;
+  #     keep-last-N pruning is unit-tested rather than run 11x here.)
+  if ls "${DATA_DIR}/reports/"consistency-*.md >/dev/null 2>&1 && ls "${DATA_DIR}/reports/"consistency-*.json >/dev/null 2>&1; then
+    pass "consistency report files written to data/reports/ (.md + .json)"
+  else
+    fail "no consistency-*.md/.json under ${DATA_DIR}/reports/"
+  fi
+
+  REPORTS_JSON="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/reports" 2>/dev/null || true)"
+  REPORT_ID="$(printf '%s' "${REPORTS_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const r = (d.reports||[]).find(x => x.kind === 'consistency');
+process.stdout.write(r ? r.id : '');
+" 2>/dev/null || true)"
+  if [ -n "${REPORT_ID}" ]; then
+    pass "GET /api/books/:slug/reports lists the consistency report (${REPORT_ID})"
+    MD="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/reports/${REPORT_ID}?format=md" 2>/dev/null || true)"
+    printf '%s' "${MD}" | grep -q "# Consistency" \
+      && pass "GET …/reports/:id?format=md serves the markdown report" \
+      || fail "report markdown did not serve as expected (got: $(printf '%s' "${MD}" | head -c 80))"
+  else
+    fail "reports API did not list a consistency report (got: ${REPORTS_JSON})"
+  fi
 fi
 
 stop_server

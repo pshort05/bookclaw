@@ -184,6 +184,18 @@ export function Rail() {
           Structure &amp; Length
         </NavLink>
 
+        {/* Reports — downloadable generated reports per book */}
+        <NavLink
+          to="/reports"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+            <path d="M14 2v6h6M9 13h6M9 17h6"/>
+          </svg>
+          Reports
+        </NavLink>
+
         {/* Insights — live route */}
         <NavLink
           to="/insights"

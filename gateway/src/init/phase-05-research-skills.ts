@@ -6,6 +6,7 @@ import { AuthorOSService } from '../services/author-os.js';
 import { LibraryService } from '../services/library.js';
 import { WorldService } from '../services/world.js';
 import { BookService } from '../services/book.js';
+import { ReportsService } from '../services/reports.js';
 import { appVersion } from './phase-01-config.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
@@ -89,6 +90,11 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   // re-pull can read the library document side (setter injection, fail-soft).
   gw.books.setWorldService(gw.world);
   console.log(`  ✓ Books: ${gw.books.list().length} book(s)`);
+
+  // Generic reports subsystem: analysis engines emit downloadable .md/.json
+  // reports under each book's data/reports/ (keep-last-N per kind).
+  gw.reports = new ReportsService(gw.books);
+  console.log('  ✓ Reports: per-book downloadable report store ready');
 
   // ── Phase 3a: resolve the active book (seed a Default Book on first run) ──
   const activeBook = await gw.books.seedDefaultBook();

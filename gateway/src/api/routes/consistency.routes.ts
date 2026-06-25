@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { SLUG_RE } from '../../services/book-types.js';
+import { renderConsistencyReport } from '../../services/reports/render-consistency.js';
 
 /**
  * Consistency Auditor API (consistency-auditor plan Task 5).
@@ -75,6 +76,11 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
           message: `Consistency audit complete for "${slug}": ${report?.chaptersScanned ?? 0} chapters, ${report?.findings?.length ?? 0} findings`,
           metadata: { book: slug, chaptersScanned: report?.chaptersScanned, findings: report?.findings?.length, factCount: report?.factCount },
         });
+        // Emit a downloadable report (fail-soft: must not break the audit).
+        try {
+          const r = renderConsistencyReport(report);
+          services.reports?.write(slug, 'consistency', { title: r.title, markdown: r.markdown, json: report, summary: r.summary });
+        } catch { /* report emission is best-effort */ }
         try { (gateway as any).io?.emit?.('consistency-complete', { slug, report }); } catch {}
       }).catch((err: any) => {
         gateway.activityLog?.log({

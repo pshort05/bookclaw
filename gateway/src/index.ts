@@ -91,6 +91,7 @@ import { WebsiteBuilderService } from './services/website-builder.js';
 import { BookTransferService } from './services/book-transfer.js';
 import type { LibraryTransferService } from './services/library-transfer.js';
 import type { BackupService } from './services/backup.js';
+import type { ReportsService } from './services/reports.js';
 import { ConsistencyStore } from './services/consistency/fact-store.js';
 import { extractChapterFacts } from './services/consistency/extractor.js';
 import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
@@ -247,6 +248,7 @@ class BookClawGateway {
   public bookTransfer!: BookTransferService;
   public libraryTransfer?: LibraryTransferService;
   public backup?: BackupService;
+  public reports?: ReportsService;
   public consistencyStore?: ConsistencyStore;
   /** Tracks in-flight consistency audits so a concurrent run is rejected (see consistency.routes). */
   public consistencyJobs = new ConsistencyJobRegistry();
@@ -1325,6 +1327,7 @@ class BookClawGateway {
       bookTransfer: this.bookTransfer,
       libraryTransfer: this.libraryTransfer,
       backup: this.backup,
+      reports: this.reports,
       consistencyStore: this.consistencyStore,
       consistencyAudit: (slug: string, onProgress?: (msg: string) => void): Promise<AuditReport> => {
         const books = this.books;

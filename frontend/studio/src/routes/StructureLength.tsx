@@ -1,11 +1,23 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useActiveBook } from '@bookclaw/shared';
+import { api, apiBase, authToken, useActiveBook } from '@bookclaw/shared';
 import {
   getStructureReview, proposeStructure, saveStructureReview, getLengthReview,
   type StructureReview, type LengthReview,
 } from '../lib/formatReviewApi.js';
 
 const statusColor = (s: string) => s === 'found_in_range' ? 'var(--ok, #2a8)' : s === 'found_misplaced' ? '#c80' : 'var(--alert)';
+
+interface ReportEntry { id: string; kind: string; formats: string[]; }
+
+// Native-download URL for the newest report of `kind`, or null if none exists.
+// Carries the auth token via the ?token= query fallback.
+function latestReportDownloadUrl(reports: ReportEntry[], slug: string, kind: string): string | null {
+  const latest = reports.find((r) => r.kind === kind && r.formats.includes('md'));
+  if (!latest) return null;
+  const t = authToken();
+  const base = `${apiBase()}/api/books/${encodeURIComponent(slug)}/reports/${encodeURIComponent(latest.id)}?format=md&download=1`;
+  return t ? `${base}&token=${encodeURIComponent(t)}` : base;
+}
 
 export function StructureLength() {
   const activeBook = useActiveBook();
@@ -14,6 +26,17 @@ export function StructureLength() {
   const [lr, setLr] = useState<LengthReview | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [reportDownload, setReportDownload] = useState<string | null>(null);
+
+  // Latest downloadable structure report (hidden when none exists yet).
+  // Re-runs when `sr` changes: saving a structure review emits a fresh report
+  // server-side, so the download link must refresh after the save lands.
+  useEffect(() => {
+    if (!slug) { setReportDownload(null); return; }
+    api<{ reports: ReportEntry[] }>(`/api/books/${encodeURIComponent(slug)}/reports`)
+      .then((r) => setReportDownload(latestReportDownloadUrl(r.reports ?? [], slug, 'structure')))
+      .catch(() => setReportDownload(null));
+  }, [slug, sr]);
 
   const load = useCallback(() => {
     if (!slug) return;
@@ -53,6 +76,11 @@ export function StructureLength() {
   return (
     <div style={{ padding: 24, maxWidth: 920 }}>
       <h1>Structure &amp; Length</h1>
+      {reportDownload && (
+        <p style={{ margin: '0 0 8px' }}>
+          <a href={reportDownload} style={{ textDecoration: 'underline' }}>Download latest report</a>
+        </p>
+      )}
       {err && <p style={{ color: 'var(--alert)' }}>{err}</p>}
 
       <section style={{ marginTop: 24 }}>

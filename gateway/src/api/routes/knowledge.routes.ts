@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import path from 'path';
 import { addWaveDisclaimer } from './_shared.js';
 import { listForms } from '../../services/story-forms.js';
+import { renderPlotPromisesReport } from '../../services/reports/render-plot-promises.js';
 
 /** Memory search, user model, cron scheduler, auto-skill drafts, writing judge, character voices, research lookup (+runMarketingPreset), video research, story structures, plot promises. */
 export function mountKnowledge(app: Application, gateway: any, baseDir: string): void {
@@ -571,12 +572,23 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.get('/api/projects/:id/plot-promises/audit', async (req: Request, res: Response) => {
     if (!services.plotPromises) return res.status(503).json({ error: 'Not initialized' });
-    const engine = gateway.getProjectEngine?.();
-    const project = engine?.getProject(req.params.id);
-    const q = Number(req.query.progress);
-    const progressPct = project?.progress ?? (Number.isFinite(q) ? q : 100);
-    const riskThreshold = Number(req.query.riskThreshold) || 80;
-    res.json(await services.plotPromises.audit(req.params.id, progressPct, riskThreshold));
+    try {
+      const engine = gateway.getProjectEngine?.();
+      const project = engine?.getProject(req.params.id);
+      const q = Number(req.query.progress);
+      const progressPct = project?.progress ?? (Number.isFinite(q) ? q : 100);
+      const riskThreshold = Number(req.query.riskThreshold) || 80;
+      const auditReport = await services.plotPromises.audit(req.params.id, progressPct, riskThreshold);
+      try {
+        if (project?.bookSlug) {
+          const r = renderPlotPromisesReport(auditReport);
+          gateway.getServices().reports?.write(project.bookSlug, 'plot-promises', { title: r.title, markdown: r.markdown, json: auditReport, summary: r.summary });
+        }
+      } catch { /* best-effort */ }
+      res.json(auditReport);
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
   });
 
   // ─── Browser Doctor ───

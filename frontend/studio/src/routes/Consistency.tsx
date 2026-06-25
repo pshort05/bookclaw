@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useStore, useActiveBook } from '@bookclaw/shared';
+import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shared';
 import {
   runConsistencyAudit,
   getConsistencyReport,
@@ -11,6 +11,18 @@ import {
 import styles from './Consistency.module.css';
 
 const SEVERITY_ORDER: Severity[] = ['high', 'medium', 'low'];
+
+interface ReportEntry { id: string; kind: string; formats: string[]; }
+
+// Build the native-download URL for the newest report of `kind`, or null if none
+// exists yet. Carries the auth token via the ?token= query fallback.
+function latestReportDownloadUrl(reports: ReportEntry[], slug: string, kind: string): string | null {
+  const latest = reports.find((r) => r.kind === kind && r.formats.includes('md'));
+  if (!latest) return null;
+  const t = authToken();
+  const base = `${apiBase()}/api/books/${encodeURIComponent(slug)}/reports/${encodeURIComponent(latest.id)}?format=md&download=1`;
+  return t ? `${base}&token=${encodeURIComponent(t)}` : base;
+}
 
 function isCanonRef(b: ConsistencyFinding['b']): b is { canonSource: string; quote: string } {
   return 'canonSource' in b;
@@ -79,8 +91,17 @@ export function Consistency() {
   const [report, setReport] = useState<ConsistencyReport | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  const [reportDownload, setReportDownload] = useState<string | null>(null);
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
+
+  // Latest downloadable consistency report (hidden when none exists yet).
+  useEffect(() => {
+    if (!slug) { setReportDownload(null); return; }
+    api<{ reports: ReportEntry[] }>(`/api/books/${encodeURIComponent(slug)}/reports`)
+      .then((r) => setReportDownload(latestReportDownloadUrl(r.reports ?? [], slug, 'consistency')))
+      .catch(() => setReportDownload(null));
+  }, [slug, report]);
 
   // Subscribe to socket events for the duration of the component's life.
   useEffect(() => {
@@ -210,6 +231,12 @@ export function Consistency() {
         >
           {running ? 'Running…' : 'Run audit'}
         </button>
+
+        {reportDownload && (
+          <a className={styles.dim} href={reportDownload} style={{ textDecoration: 'underline' }}>
+            Download latest report
+          </a>
+        )}
       </div>
 
       {progress && <p className={styles.progress}>{progress}</p>}

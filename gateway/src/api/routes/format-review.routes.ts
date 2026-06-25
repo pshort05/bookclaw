@@ -6,6 +6,7 @@ import {
   countChapterWords, loadLengthOverrides, saveLengthOverrides, buildLengthReview, parseGenreWordRange,
   loadStructureReview, saveStructureReview, parseBeatMappingResponse,
 } from '../../services/format-review.js';
+import { renderStructureReport } from '../../services/reports/render-structure.js';
 
 /**
  * Book Format & Structure — review surface (Phase 3).
@@ -23,6 +24,16 @@ export function mountFormatReview(app: Application, gateway: any, _baseDir: stri
     const structure = resolveStructure({ structureId: format.structureId, customStructure: format.customStructure as StoryStructure | undefined }, services.storyStructures);
     const dataDir = services.books.dataDirOf(slug) || '';
     return { format, structure, dataDir };
+  }
+
+  // Build the length review for an already-resolved book context. Shared by the
+  // GET /length-review surface and the structure-review report emit.
+  function lengthReviewFor(c: { format: BookFormat; dataDir: string }, slug: string) {
+    const chapters = countChapterWords(c.dataDir);
+    const overrides = loadLengthOverrides(c.dataDir);
+    const form = getForm(c.format.formId);
+    const genreRange = parseGenreWordRange(services.books.genreGuideOf(slug) ?? '');
+    return buildLengthReview({ chapters, wordsPerChapter: c.format.wordsPerChapter, overrides, form, genreRange });
   }
 
   app.get('/api/books/:slug/structure-review', async (req: Request, res: Response) => {
@@ -84,6 +95,12 @@ export function mountFormatReview(app: Application, gateway: any, _baseDir: stri
         }
         await services.books.setFormat(slug, { ...c.format, customStructure: body.customStructure });
       }
+      // Best-effort downloadable report. Skip silently on any failure.
+      try {
+        const length = lengthReviewFor(c, slug);
+        const r = renderStructureReport({ structure: c.structure, mapping, length });
+        services.reports?.write(slug, 'structure', { title: r.title, markdown: r.markdown, json: { structure: c.structure, mapping, length }, summary: r.summary });
+      } catch { /* best-effort */ }
       res.json({ ok: true });
     } catch (err) { res.status(500).json({ error: String(err) }); }
   });
@@ -96,11 +113,7 @@ export function mountFormatReview(app: Application, gateway: any, _baseDir: stri
         if (c.code === 400) return res.json({ configured: false });
         return res.status(c.code).json({ error: c.error });
       }
-      const chapters = countChapterWords(c.dataDir);
-      const overrides = loadLengthOverrides(c.dataDir);
-      const form = getForm(c.format.formId);
-      const genreRange = parseGenreWordRange(services.books.genreGuideOf(slug) ?? '');
-      res.json(buildLengthReview({ chapters, wordsPerChapter: c.format.wordsPerChapter, overrides, form, genreRange }));
+      res.json(lengthReviewFor(c, slug));
     } catch (err) { res.status(500).json({ error: String(err) }); }
   });
 

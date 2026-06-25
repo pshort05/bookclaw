@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import path from 'path';
 import { upload, makeGatherChapters } from './_shared.js';
+import { renderBetaReaderReport } from '../../services/reports/render-beta-reader.js';
 
 /** Export-side features: KDP blurb, Track Changes (DOCX roundtrip), external tool wrappers, cover typography, manuscript hub, beta reader + dialogue auditor. */
 export function mountExport(app: Application, gateway: any, baseDir: string): void {
@@ -253,6 +254,13 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
             try { (gateway as any).io?.emit?.('beta-reader-progress', { projectId: project.id, message: msg }); } catch {}
           }
         );
+        // Emit a downloadable beta-reader report, book-keyed via the project (best-effort).
+        try {
+          if (project.bookSlug) {
+            const r = renderBetaReaderReport(report);
+            gateway.getServices().reports?.write(project.bookSlug, 'beta-reader', { title: r.title, markdown: r.markdown, json: report, summary: r.summary });
+          }
+        } catch { /* report emission is best-effort */ }
         // Store the report alongside context data.
         try {
           const { join: j } = await import('path');
