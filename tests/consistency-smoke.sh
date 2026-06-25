@@ -2,12 +2,16 @@
 #
 # Consistency Auditor smoke test — Task 6
 # ───────────────────────────────────────
-# Boots the gateway, creates a 5-chapter book with a planted eye-color
+# Boots the gateway, creates a 6-chapter book with a planted eye-color
 # contradiction, a legitimate clothing-state reset (shower + next morning), a
-# dream scene with an impossibility, and a knowledge-timeline violation,
+# dream scene with an impossibility, a knowledge-timeline violation, and a
+# legitimate relationship change across a "two years later" time skip,
 # triggers a consistency audit, polls until the report is ready, then asserts:
 #   - the report flags eye_color (blue vs green) as a contradiction
 #   - the report does NOT flag clothing_state for the justified reset
+#   - the report does NOT flag the relationship change across the large time skip
+#     (story-time distance excuse — the fix); best-effort, deterministic guarantee
+#     is the unit tests
 #   - a chapter marked non-canonical via the .non-canonical.json author override
 #     contributes NO findings (Selective Exclusion)
 #   - when the extractor emits knowledge events, a knowledge-violation is reported
@@ -136,7 +140,8 @@ cat > "${DATA_DIR}/chapter-1.md" <<'MD'
 
 John stepped through the door, his piercing blue eyes scanning the room. He was still in his
 muddy work clothes, hair a mess after the shift. Exhausted but alert, he dropped into the
-chair and pulled off his boots.
+chair and pulled off his boots. His sister Elena was already there, but he could barely look
+at her; the old resentment sat cold between them.
 MD
 
 # chapter-2.md: planted eye-color contradiction (green) + legitimate reset
@@ -180,6 +185,19 @@ cat > "${DATA_DIR}/chapter-5.md" <<'MD'
 
 It was here that the inspector finally told Elena the truth: Marsh was the killer.
 She received the news as though hearing it for the very first time.
+MD
+
+# chapter-6.md: a legitimate emotional/relationship reset across a LARGE time skip.
+# John's feeling toward his sister Elena flips from cold resentment (ch-1) to warm
+# love after an explicit "Two years later" jump. The story-time elapsed clock must
+# excuse this (the change is separated from its prior by a multi-unit time jump),
+# so it must NOT produce a continuity finding — the bug this fix targets.
+cat > "${DATA_DIR}/chapter-6.md" <<'MD'
+# Chapter 6
+
+Two years later, John pulled his sister Elena into a warm embrace at the family reunion.
+Whatever had festered between them had long since healed. He loved her deeply now, and
+told her so, and she wept with relief.
 MD
 
 pass "chapter files written to ${DATA_DIR}"
@@ -294,6 +312,26 @@ process.stdout.write(hit ? JSON.stringify(hit) : '');
   [ -z "${BAD_CLOTHING}" ] \
     && pass "no unjustified continuity finding for clothing state (legitimate reset not flagged)" \
     || { fail "clothing-state continuity finding unexpectedly present (justified reset flagged): ${BAD_CLOTHING}"; }
+
+  # 5b-2. Story-time distance (THE FIX): John's feeling toward Elena legitimately
+  #       changes from cold (ch-1) to warm (ch-6) across an explicit "Two years
+  #       later" jump. The cumulative elapsed clock must excuse it, so NO continuity
+  #       finding may cite chapter-6 for that relationship/emotional change.
+  #       Best-effort: passes vacuously if the model didn't extract the relationship
+  #       state (the unit tests are the deterministic guarantee for this behavior).
+  BAD_TIMESKIP="$(printf '%s' "${REPORT_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+const findings = (d.report && d.report.findings) ? d.report.findings : [];
+const hit = findings.find(f => {
+  const citesCh6 = (f.a && f.a.chapter === 'chapter-6') || (f.b && f.b.chapter === 'chapter-6');
+  const isRel = /relationship|feeling|emotion|sister|elena|love|resent|warm|cold|affection|bond/i.test((f.attribute||'') + ' ' + (f.explanation||''));
+  return citesCh6 && isRel && f.category === 'continuity';
+});
+process.stdout.write(hit ? JSON.stringify(hit) : '');
+" 2>/dev/null || true)"
+  [ -z "${BAD_TIMESKIP}" ] \
+    && pass "relationship change across a 'two years later' skip not flagged (story-time distance excuse works)" \
+    || { fail "time-skip relationship change wrongly flagged as continuity (story-time distance not applied): ${BAD_TIMESKIP}"; }
 
   # 5c. Selective Exclusion (author override): chapter-3 is marked non-canonical,
   #     so it must contribute ZERO findings (its facts are excluded as both priors

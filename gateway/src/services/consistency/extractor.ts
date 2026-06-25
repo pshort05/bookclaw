@@ -13,7 +13,7 @@ export interface ExtractedKnowledge {
 }
 
 export interface ExtractResult {
-  facts: Omit<LedgerFact, 'world' | 'bookSlug' | 'chapter'>[];
+  facts: Omit<LedgerFact, 'world' | 'bookSlug' | 'chapter' | 'storyElapsed'>[];
   scenes: ExtractedScene[];
   knowledge: ExtractedKnowledge[];
 }
@@ -61,7 +61,7 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
   }));
 
   const rawFacts = Array.isArray(parsed.facts) ? parsed.facts : [];
-  const facts: Omit<LedgerFact, 'world' | 'bookSlug' | 'chapter'>[] = rawFacts.map((f) => {
+  const facts: Omit<LedgerFact, 'world' | 'bookSlug' | 'chapter' | 'storyElapsed'>[] = rawFacts.map((f) => {
     const entity = f.entity ?? '';
     const aliases: string[] = Array.isArray(f.aliases) && f.aliases.length > 0 ? f.aliases : [entity];
     const type: FactType = f.type === 'immutable' ? 'immutable' : 'stateful';

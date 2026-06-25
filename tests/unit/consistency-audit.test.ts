@@ -5,7 +5,22 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConsistencyStore } from '../../gateway/src/services/consistency/fact-store.js';
 import { runConsistencyAudit } from '../../gateway/src/services/consistency/audit.js';
-import { selectChapterFiles, inferGap, loadNonCanonicalOverride, splitManuscriptIntoChapters, findCombinedManuscript } from '../../gateway/src/services/consistency/audit.js';
+import { selectChapterFiles, inferGap, loadNonCanonicalOverride, splitManuscriptIntoChapters, findCombinedManuscript, accumulateElapsed } from '../../gateway/src/services/consistency/audit.js';
+
+test('accumulateElapsed: longer jumps add 30, same/unknown add 0, day adds 1', () => {
+  const r = accumulateElapsed(0, null, ['that evening', 'next morning', 'two years later', null]);
+  // same(+0)=0 ; day(+1)=1 ; longer(+30)=31 ; unknown(+0)=31
+  assert.deepEqual(r.sceneElapsed, [0, 1, 31, 31]);
+  assert.equal(r.elapsed, 31);
+  assert.equal(r.lastLabel, null);
+});
+
+test('accumulateElapsed: carries the running clock + prev label across calls (chapters)', () => {
+  const a = accumulateElapsed(0, null, ['morning']);                      // day -> 1
+  const b = accumulateElapsed(a.elapsed, a.lastLabel, ['months later']);  // longer -> 31
+  assert.equal(b.elapsed, 31);
+  assert.equal(b.sceneElapsed[0], 31);
+});
 
 test('audit reports a planted eye-color contradiction across two chapters', async () => {
   const root = mkdtempSync(join(tmpdir(), 'consist-audit-'));

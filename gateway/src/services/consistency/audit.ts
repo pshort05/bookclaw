@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { ConsistencyStore } from './fact-store.js';
-import { evaluateFact, evaluateKnowledge, type Gap } from './check-engine.js';
+import { evaluateFact, evaluateKnowledge, GAP_WEIGHT, type Gap } from './check-engine.js';
 import type { ExtractResult } from './extractor.js';
 import type { ConsistencyFinding, LedgerFact, KnowledgeEvent } from './types.js';
 
@@ -167,6 +167,22 @@ export function inferGap(prev: string | null, curr: string | null): Gap {
   return 'unknown';
 }
 
+/** Advance a cumulative elapsed story-time clock across a chapter's scenes.
+ *  Pure + deterministic. sceneElapsed[i] is the clock value at scene i. */
+export function accumulateElapsed(
+  startElapsed: number, prevLabel: string | null, sceneLabels: (string | null)[],
+): { sceneElapsed: number[]; elapsed: number; lastLabel: string | null } {
+  let elapsed = startElapsed;
+  let prev = prevLabel;
+  const sceneElapsed: number[] = [];
+  for (const lbl of sceneLabels) {
+    elapsed += GAP_WEIGHT[inferGap(prev, lbl)];
+    sceneElapsed.push(elapsed);
+    prev = lbl;
+  }
+  return { sceneElapsed, elapsed, lastLabel: prev };
+}
+
 
 /** Read data/.non-canonical.json (chapterStem -> canonical boolean). Fail-soft -> {}. */
 export function loadNonCanonicalOverride(dataDir: string): Record<string, boolean> {
@@ -246,6 +262,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
             source: 'canon',
             sourceLabel: label,
             canonical: f.canonical !== false,
+            storyElapsed: 0,   // canon has no scene clock; only used by step-1 canon-divergence
           }));
           store.insertFacts(canonFacts);
           store.setCanonSeed(seedKey, hash);
@@ -271,6 +288,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
           source: 'canon',
           sourceLabel: 'Series bible',
           canonical: f.canonical !== false,
+          storyElapsed: 0,   // canon has no scene clock; only used by step-1 canon-divergence
         }));
         store.insertFacts(canonFacts);
         progress(`Book canon seeded: ${canonFacts.length} facts`);
@@ -311,6 +329,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
 
   const findings: ConsistencyFinding[] = [];
   let storyBase = 0;
+  let elapsedClock = 0;
   let factCount = 0;
   let chaptersScanned = 0;
   // Track the last scene's timeLabel for gap inference.
@@ -346,12 +365,14 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
       continue;
     }
 
-    // Infer gap from the first scene's timeLabel vs the previous chapter's last scene.
-    const firstSceneLabel = extractResult.scenes[0]?.timeLabel ?? null;
-    const gap: Gap = inferGap(prevTimeLabel, firstSceneLabel);
-    // Update prevTimeLabel to the last scene of this chapter.
-    const lastScene = extractResult.scenes[extractResult.scenes.length - 1];
-    prevTimeLabel = lastScene?.timeLabel ?? null;
+    // Advance the cumulative elapsed story-time clock across this chapter's scenes.
+    // (Replaces the old per-chapter adjacency Gap: each fact now carries its own
+    // storyElapsed so a change is judged against the elapsed distance to the
+    // SPECIFIC prior, not the gap between adjacent chapters.)
+    const sceneLabels = extractResult.scenes.map(s => s.timeLabel ?? null);
+    const { sceneElapsed, elapsed: newElapsed, lastLabel } = accumulateElapsed(elapsedClock, prevTimeLabel, sceneLabels);
+    elapsedClock = newElapsed;
+    prevTimeLabel = lastLabel;
 
     // Effective per-scene canonical: author override (by chapter stem) wins over
     // the extractor's auto-detect. A non-canonical scene's facts are still stored
@@ -368,6 +389,12 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
         bookSlug: slug,
         chapter: chapterName,
         canonical: isCanonical,
+        // Clamp the (LLM-supplied, unbounded) scene index into the chapter's scene
+        // range so an out-of-range index maps to a real scene's clock rather than
+        // silently jumping to the chapter-end value.
+        storyElapsed: sceneElapsed.length
+          ? sceneElapsed[Math.min(Math.max(f.scene, 0), sceneElapsed.length - 1)]
+          : newElapsed,
       };
       if (isCanonical) {
         // Combine ledger priors with already-collected intra-chapter facts for the same
@@ -381,7 +408,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
           c => c.entity === full.entity && c.attribute === full.attribute && c.type === 'immutable' && c.canonical,
         );
         const priors = [...intraChapterPriors, ...ledgerPriors];
-        const finding = evaluateFact(full, priors, gap);
+        const finding = evaluateFact(full, priors);
         if (finding) findings.push(finding);
         // Update in-memory entity state for the digest (M3) from canonical facts only.
         if (!entityAliases.has(full.entity)) entityAliases.set(full.entity, new Set());

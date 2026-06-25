@@ -2,6 +2,16 @@ import type { LedgerFact, ConsistencyFinding, FindingRef, CanonRef, KnowledgeEve
 
 export type Gap = 'same' | 'day' | 'longer' | 'unknown';
 
+/** Elapsed weight per inter-scene Gap, summed into a cumulative story-time clock
+ *  (consumed by audit.ts accumulateElapsed). Co-located with ELAPSED_THRESHOLD so
+ *  the two stay in sync. */
+export const GAP_WEIGHT: Record<Gap, number> = { same: 0, day: 1, longer: 30, unknown: 0 };
+
+/** Elapsed story-time distance beyond which a stateful change is a legitimate
+ *  reset rather than a continuity error. One explicit multi-unit jump ("…later")
+ *  excuses it; derived from GAP_WEIGHT so they cannot drift apart. */
+export const ELAPSED_THRESHOLD = GAP_WEIGHT.longer;
+
 const refOf = (f: LedgerFact): FindingRef => ({ chapter: f.chapter, scene: f.scene, quote: f.evidence });
 const canonRefOf = (f: LedgerFact): CanonRef => ({ canonSource: f.sourceLabel ?? f.evidence, quote: f.evidence });
 
@@ -16,7 +26,7 @@ function finding(
   };
 }
 
-export function evaluateFact(fact: LedgerFact, priors: LedgerFact[], gap: Gap): ConsistencyFinding | null {
+export function evaluateFact(fact: LedgerFact, priors: LedgerFact[]): ConsistencyFinding | null {
   if (priors.length === 0) return null;
   const diff = priors.filter(p => p.valueNorm !== fact.valueNorm);
   if (diff.length === 0) return null; // consistent with everything
@@ -47,10 +57,17 @@ export function evaluateFact(fact: LedgerFact, priors: LedgerFact[], gap: Gap): 
   }
   // 3b) A transition justifies the change.
   if (fact.transition) return null;
-  // 3c) Change without cause — severity by elapsed gap.
-  if (gap === 'longer') return null;                 // enough time passed: legitimate reset
-  const severity = gap === 'unknown' ? 'low' : 'medium';
-  const prior = diff[0];
+  // 3c) Stateful change without cause — excuse when every differing prior is far
+  // enough back in elapsed story time; otherwise flag the nearest recent prior.
+  const recent = diff.filter(p => Math.abs(fact.storyElapsed - p.storyElapsed) < ELAPSED_THRESHOLD);
+  if (recent.length === 0) return null;              // all differing priors are far back: legitimate reset
+  const prior = recent.reduce((m, p) => (p.storyElapsed > m.storyElapsed ? p : m));
+  // Some explicit elapsed time but below the reset threshold → a real unexplained
+  // change over a short span (medium, like the old "day" gap). Zero elapsed means
+  // no time signal at all (e.g. label-free prose) → a soft review note (low, like
+  // the old "unknown" gap) so ordinary unlabeled manuscripts aren't flooded medium.
+  const severity: ConsistencyFinding['severity'] =
+    Math.abs(fact.storyElapsed - prior.storyElapsed) === 0 ? 'low' : 'medium';
   return finding('continuity', severity, fact, prior,
     `${fact.entity}'s ${fact.attribute} changed from "${prior.valueRaw}" (${prior.chapter}) to "${fact.valueRaw}" (${fact.chapter}) with no stated cause.`,
     `${fact.entity}'s ${fact.attribute} was "${prior.valueRaw}" in ${prior.chapter} and is "${fact.valueRaw}" in ${fact.chapter} with nothing in between — add a transition or fix.`);

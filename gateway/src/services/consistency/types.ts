@@ -4,7 +4,10 @@ export interface LedgerFact {
   world: string | null; bookSlug: string | null;
   entity: string; aliases: string[]; attribute: string;
   type: FactType; valueRaw: string; valueNorm: string;
-  storyTime: number; timeLabel: string | null; transition: string | null;
+  storyTime: number;
+  /** Cumulative, deterministically-weighted elapsed story-time clock at this fact's scene. */
+  storyElapsed: number;
+  timeLabel: string | null; transition: string | null;
   chapter: string; scene: number; source: FactSource; evidence: string;
   /** False for dream/flashback/hypothetical scenes — stored but excluded from the check. */
   canonical: boolean;

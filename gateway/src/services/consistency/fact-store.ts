@@ -26,7 +26,7 @@ export class ConsistencyStore {
           world TEXT, book_slug TEXT,
           entity TEXT NOT NULL, aliases TEXT NOT NULL, attribute TEXT NOT NULL,
           type TEXT NOT NULL, value_raw TEXT NOT NULL, value_norm TEXT NOT NULL,
-          story_time INTEGER NOT NULL, time_label TEXT, transition TEXT,
+          story_time INTEGER NOT NULL, story_elapsed INTEGER NOT NULL DEFAULT 0, time_label TEXT, transition TEXT,
           chapter TEXT NOT NULL, scene INTEGER NOT NULL,
           source TEXT NOT NULL, evidence TEXT NOT NULL,
           canonical INTEGER NOT NULL DEFAULT 1
@@ -45,6 +45,11 @@ export class ConsistencyStore {
         CREATE TABLE IF NOT EXISTS canon_seed (world TEXT PRIMARY KEY, hash TEXT NOT NULL, seeded_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS audit_reports (book_slug TEXT PRIMARY KEY, report TEXT NOT NULL, updated_at TEXT NOT NULL);
       `);
+      // Additive migration for DBs created before story_elapsed existed.
+      const factCols = this.db.prepare(`PRAGMA table_info(facts)`).all();
+      if (!factCols.some((c: any) => c.name === 'story_elapsed')) {
+        this.db.exec(`ALTER TABLE facts ADD COLUMN story_elapsed INTEGER NOT NULL DEFAULT 0`);
+      }
     } catch (err: any) {
       this.unavailableReason = `better-sqlite3 unavailable: ${err?.message || err}. Consistency auditor disabled.`;
       console.warn(`  ⚠ ${this.unavailableReason}`);
@@ -56,8 +61,8 @@ export class ConsistencyStore {
   insertFacts(facts: LedgerFact[]): void {
     if (!this.db || facts.length === 0) return;
     const stmt = this.db.prepare(`INSERT INTO facts
-      (world, book_slug, entity, aliases, attribute, type, value_raw, value_norm, story_time, time_label, transition, chapter, scene, source, evidence, canonical)
-      VALUES (@world,@bookSlug,@entity,@aliases,@attribute,@type,@valueRaw,@valueNorm,@storyTime,@timeLabel,@transition,@chapter,@scene,@source,@evidence,@canonical)`);
+      (world, book_slug, entity, aliases, attribute, type, value_raw, value_norm, story_time, story_elapsed, time_label, transition, chapter, scene, source, evidence, canonical)
+      VALUES (@world,@bookSlug,@entity,@aliases,@attribute,@type,@valueRaw,@valueNorm,@storyTime,@storyElapsed,@timeLabel,@transition,@chapter,@scene,@source,@evidence,@canonical)`);
     const tx = this.db.transaction((rows: LedgerFact[]) => {
       for (const f of rows) stmt.run({ ...f, aliases: JSON.stringify(f.aliases), canonical: f.canonical ? 1 : 0 });
     });
@@ -73,7 +78,7 @@ export class ConsistencyStore {
     return rows.map((r: any) => ({
       world: r.world, bookSlug: r.book_slug, entity: r.entity, aliases: JSON.parse(r.aliases),
       attribute: r.attribute, type: r.type, valueRaw: r.value_raw, valueNorm: r.value_norm,
-      storyTime: r.story_time, timeLabel: r.time_label, transition: r.transition,
+      storyTime: r.story_time, storyElapsed: r.story_elapsed ?? 0, timeLabel: r.time_label, transition: r.transition,
       chapter: r.chapter, scene: r.scene, source: r.source, evidence: r.evidence,
       canonical: r.canonical !== 0,
     }));
