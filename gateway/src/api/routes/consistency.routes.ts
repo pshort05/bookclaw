@@ -1,6 +1,28 @@
 import { Application, Request, Response } from 'express';
 import { SLUG_RE } from '../../services/book-types.js';
 import { renderConsistencyReport } from '../../services/reports/render-consistency.js';
+import { CONSISTENCY_PROVIDERS } from '../../services/consistency/model-selection.js';
+import { isValidModelId } from '../../ai/model-id.js';
+
+/**
+ * Validate an optional provider/model selection from a request body. Returns an
+ * error string (→ 400) or null when acceptable. Provider, if present, must be a
+ * known provider; model, if present, must be a safe id (it reaches the provider
+ * API verbatim — for Gemini, the request URL path). Both absent = auto.
+ */
+function validateModelSelection(body: any): string | null {
+  const provider = body?.provider;
+  const model = body?.model;
+  if (provider !== undefined && provider !== null && provider !== '') {
+    if (typeof provider !== 'string' || !(CONSISTENCY_PROVIDERS as readonly string[]).includes(provider)) {
+      return `Invalid provider. Use one of: ${CONSISTENCY_PROVIDERS.join(', ')}`;
+    }
+  }
+  if (model !== undefined && model !== null && model !== '') {
+    if (!isValidModelId(model)) return 'Invalid model id';
+  }
+  return null;
+}
 
 /**
  * Consistency Auditor API (consistency-auditor plan Task 5).
@@ -22,10 +44,13 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       }
       // `running` lets a reconnecting client rehydrate the in-progress UI instead
       // of offering to start a second (ledger-corrupting) run.
+      // `consistencyModel` rehydrates the studio's per-book model picker.
+      const consistencyModel = (await services.books.open(slug) as any)?.manifest?.consistency ?? null;
       res.json({
         report: services.consistencyStore?.getReport(slug) ?? null,
         running: gateway.consistencyJobs.isRunning(slug),
         job: gateway.consistencyJobs.get(slug),
+        consistencyModel,
       });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -42,6 +67,15 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       if (!services.consistencyStore?.isAvailable()) {
         return res.status(503).json({ error: 'Consistency DB unavailable' });
       }
+
+      // Per-run model override (this run only; does not change the saved
+      // default). Validate before claiming the job slot or responding.
+      const selErr = validateModelSelection(req.body);
+      if (selErr) return res.status(400).json({ error: selErr });
+      const override = {
+        provider: typeof req.body?.provider === 'string' ? req.body.provider : undefined,
+        model: typeof req.body?.model === 'string' ? req.body.model : undefined,
+      };
 
       // Concurrency guard: a second audit for the same book while one is in
       // flight would interleave with the leading clearBookFacts() and corrupt
@@ -68,7 +102,8 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
         (msg: string) => {
           gateway.consistencyJobs.progress(slug, msg);
           try { (gateway as any).io?.emit?.('consistency-progress', { slug, message: msg }); } catch {}
-        }
+        },
+        override
       ).then((report: any) => {
         gateway.activityLog?.log({
           type: 'step_completed',
@@ -93,6 +128,25 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       }).finally(() => {
         gateway.consistencyJobs.finish(slug);
       });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // Persist the per-book default model for the consistency audit. Empty body clears it.
+  app.put('/api/books/:slug/consistency-model', async (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug);
+      if (!SLUG_RE.test(slug) || !services.books?.exists?.(slug)) {
+        return res.status(404).json({ error: 'Book not found' });
+      }
+      const selErr = validateModelSelection(req.body);
+      if (selErr) return res.status(400).json({ error: selErr });
+      await services.books.setConsistencyModel(slug, {
+        provider: typeof req.body?.provider === 'string' ? req.body.provider : undefined,
+        model: typeof req.body?.model === 'string' ? req.body.model : undefined,
+      });
+      res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }

@@ -353,6 +353,20 @@ export class BookService {
     return manifest;
   }
 
+  async setConsistencyModel(slug: string, sel: { provider?: string; model?: string }): Promise<BookManifest> {
+    const opened = await this.open(slug);
+    if (!opened) throw new Error(`book not found: ${slug}`);
+    const { manifest } = opened;
+    await this.assertWritable(slug);
+    const provider = sel?.provider?.trim();
+    const model = sel?.model?.trim();
+    if (provider) manifest.consistency = model ? { provider, model } : { provider };
+    else delete manifest.consistency;
+    manifest.history.push({ at: new Date().toISOString(), event: 'consistency-model-set', detail: provider ? (model ? `${provider}/${model}` : provider) : 'auto' });
+    await writeFile(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    return manifest;
+  }
+
   /**
    * Derive generation inputs from the declared format: per-chapter target, chapter
    * count, and a structure "rail" instruction (beats + expected positions) for the

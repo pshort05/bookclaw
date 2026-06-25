@@ -94,6 +94,7 @@ import type { BackupService } from './services/backup.js';
 import type { ReportsService } from './services/reports.js';
 import { ConsistencyStore } from './services/consistency/fact-store.js';
 import { extractChapterFacts } from './services/consistency/extractor.js';
+import { resolveConsistencyModel } from './services/consistency/model-selection.js';
 import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
 import { ConsistencyJobRegistry } from './services/consistency/job-registry.js';
 import { TelegramBridge } from './bridges/telegram.js';
@@ -1329,9 +1330,12 @@ class BookClawGateway {
       backup: this.backup,
       reports: this.reports,
       consistencyStore: this.consistencyStore,
-      consistencyAudit: (slug: string, onProgress?: (msg: string) => void): Promise<AuditReport> => {
+      consistencyAudit: async (slug: string, onProgress?: (msg: string) => void, override?: { provider?: string; model?: string }): Promise<AuditReport> => {
         const books = this.books;
         const aiRouter = this.aiRouter;
+        // Resolve the extraction model once: per-run override → per-book book.json → auto.
+        const manifest = (await books.open(slug) as any)?.manifest;
+        const sel = resolveConsistencyModel(override, manifest?.consistency);
         return runConsistencyAudit(slug, {
           store: this.consistencyStore!,
           books: {
@@ -1354,12 +1358,13 @@ class BookClawGateway {
                     } catch { /* cost recording is best-effort */ }
                     return resp;
                   },
-                  select: (t) => aiRouter.selectProvider(t),
+                  select: (t, pref) => aiRouter.selectProvider(t, pref),
                 },
               },
               chapterText,
               known,
               base,
+              sel,
             ),
           onProgress,
         });

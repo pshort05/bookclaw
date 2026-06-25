@@ -202,10 +202,32 @@ MD
 
 pass "chapter files written to ${DATA_DIR}"
 
+# ── 2b. Consistency model selection (per-book pin + round-trip) ────────────────
+# Pin the audit's extractor/judge model on the book, then confirm the report
+# endpoint echoes it back. Runs while the gateway is up and the book exists, but
+# before the audit is kicked off (the audit POST below carries a per-run override).
+MODEL_RESP="$(curl -fsS "${AUTH[@]}" \
+  -H 'Content-Type: application/json' \
+  -X PUT "${BASE}/api/books/${BOOK_SLUG}/consistency-model" \
+  -d '{"provider":"gemini","model":"gemini-2.5-flash"}' 2>/dev/null || true)"
+printf '%s' "${MODEL_RESP}" | node -e \
+     "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); process.exit(d.ok === true ? 0 : 1)" \
+     2>/dev/null \
+  && pass "PUT consistency-model accepted (ok:true)" \
+  || fail "PUT consistency-model did not return ok:true (got: ${MODEL_RESP})"
+
+MODEL_REPORT="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/consistency-report" 2>/dev/null || true)"
+printf '%s' "${MODEL_REPORT}" | node -e \
+     "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); const m=d.consistencyModel||{}; process.exit(m.provider === 'gemini' && m.model === 'gemini-2.5-flash' ? 0 : 1)" \
+     2>/dev/null \
+  && pass "consistency-report round-trips consistencyModel (gemini / gemini-2.5-flash)" \
+  || fail "consistency-report did not echo the pinned model (got: ${MODEL_REPORT})"
+
 # ── 3. Trigger consistency audit ──────────────────────────────────────────────
+# No per-run body override: this exercises the per-book default saved in step 2b
+# (the full precedence chain empty-override → book.json default → run).
 
 AUDIT_CODE="$(curl -s -o /tmp/audit.$$.out -w '%{http_code}' "${AUTH[@]}" \
-  -H 'Content-Type: application/json' \
   -X POST "${BASE}/api/books/${BOOK_SLUG}/consistency-audit")"
 AUDIT_BODY="$(cat /tmp/audit.$$.out 2>/dev/null)"
 rm -f "/tmp/audit.$$.out"

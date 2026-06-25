@@ -5,6 +5,7 @@ import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
+import { isValidModelId } from '../../ai/model-id.js';
 
 // Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
 // Telegram, or a double-click) from processing the same step → duplicated
@@ -1060,9 +1061,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(400).json({ error: `Invalid provider. Use one of: ${validProviders.join(', ')}` });
     }
     // Model id is free-text (OpenRouter ids are arbitrary). Validate defensively:
-    // it is sent verbatim to the provider API, so cap length and reject control chars.
+    // it is sent verbatim to the provider API, so use the shared id guard.
     if (model !== undefined && model !== null && model !== '') {
-      if (typeof model !== 'string' || model.length > 200 || /[\x00-\x1f]/.test(model)) {
+      if (!isValidModelId(model)) {
         return res.status(400).json({ error: 'Invalid model id' });
       }
     }

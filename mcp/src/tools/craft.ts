@@ -198,9 +198,28 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
     {
       title: 'Run consistency audit',
       description: 'Run the per-book consistency audit (fact-ledger continuity check) against the manuscript + canon. Runs async; fetch with get_consistency_report.',
-      inputSchema: { slug },
+      inputSchema: {
+        slug,
+        provider: z.string().optional().describe('Per-run AI provider override (this run only)'),
+        model: z.string().optional().describe('Per-run AI model override (this run only)'),
+      },
     },
-    async ({ slug: s }) => toToolResult('consistency_audit', await client.request('POST', `/api/books/${encodeURIComponent(s)}/consistency-audit`, {})),
+    async ({ slug: s, ...body }) =>
+      toToolResult('consistency_audit', await client.request('POST', `/api/books/${encodeURIComponent(s)}/consistency-audit`, body)),
+  );
+
+  server.registerTool('set_consistency_model',
+    {
+      title: 'Set consistency audit model',
+      description: 'Save the per-book default AI provider/model for the consistency audit. Omit both to clear the saved default.',
+      inputSchema: {
+        slug,
+        provider: z.string().optional().describe('AI provider (omit to clear)'),
+        model: z.string().optional().describe('AI model (omit to clear)'),
+      },
+    },
+    async ({ slug: s, ...body }) =>
+      toToolResult('set_consistency_model', await client.request('PUT', `/api/books/${encodeURIComponent(s)}/consistency-model`, body)),
   );
 
   server.registerTool('get_consistency_report',

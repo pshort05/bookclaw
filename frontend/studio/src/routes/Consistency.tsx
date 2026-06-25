@@ -3,7 +3,10 @@ import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shar
 import {
   runConsistencyAudit,
   getConsistencyReport,
+  saveConsistencyModel,
   subscribeConsistency,
+  CONSISTENCY_PROVIDERS,
+  PROVIDER_DEFAULT_MODEL,
   type ConsistencyFinding,
   type ConsistencyReport,
   type Severity,
@@ -92,6 +95,8 @@ export function Consistency() {
   const [err, setErr] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [reportDownload, setReportDownload] = useState<string | null>(null);
+  const [provider, setProvider] = useState('');
+  const [model, setModel] = useState('');
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
 
@@ -133,8 +138,10 @@ export function Consistency() {
     setErr(null);
     setUnavailable(false);
     getConsistencyReport(slug)
-      .then(({ report, running, job }) => {
+      .then(({ report, running, job, consistencyModel }) => {
         setReport(report);
+        setProvider(consistencyModel?.provider ?? '');
+        setModel(consistencyModel?.model ?? '');
         // Rehydrate an audit that is still running on the server (e.g. after a
         // reconnect): restore the running UI and resubscribe via the live socket
         // subscription (already active for this component) for progress/complete.
@@ -161,7 +168,7 @@ export function Consistency() {
     setProgress('Starting…');
     setUnavailable(false);
     try {
-      await runConsistencyAudit(slug);
+      await runConsistencyAudit(slug, { provider: provider || undefined, model: model || undefined });
       // Progress and completion arrive via socket events.
     } catch (e: unknown) {
       const err = e as Error & { status?: number };
@@ -180,6 +187,32 @@ export function Consistency() {
         setProgress(null);
       }
     }
+  }
+
+  // Persist the per-book model choice (fire-and-forget; never block the UI).
+  function persistModel(nextProvider: string, nextModel: string) {
+    if (!slug) return;
+    saveConsistencyModel(slug, {
+      provider: nextProvider || undefined,
+      model: nextModel || undefined,
+    }).catch(() => {});
+  }
+
+  function onProviderChange(next: string) {
+    setProvider(next);
+    // Clearing the provider (auto) also clears any model override.
+    const nextModel = next ? model : '';
+    if (!next) setModel('');
+    persistModel(next, nextModel);
+  }
+
+  // Update local state on each keystroke, but only persist on blur — otherwise
+  // every character fires a PUT (a book.json read + rewrite + history entry).
+  function onModelChange(next: string) {
+    setModel(next);
+  }
+  function onModelBlur() {
+    persistModel(provider, model);
   }
 
   // Group findings by severity then category.
@@ -223,6 +256,34 @@ export function Consistency() {
             {books.map((b) => <option key={b.slug} value={b.slug}>{b.title}</option>)}
           </select>
         </div>
+
+        <div className={styles.field}>
+          <span className={styles.fl}>Model</span>
+          <select
+            className={styles.pick}
+            value={provider}
+            onChange={(e) => onProviderChange(e.target.value)}
+            disabled={running}
+          >
+            <option value="">default (auto)</option>
+            {CONSISTENCY_PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+
+        {provider !== '' && (
+          <div className={styles.field}>
+            <span className={styles.fl}>Exact model</span>
+            <input
+              className={styles.pick}
+              type="text"
+              value={model}
+              placeholder={PROVIDER_DEFAULT_MODEL[provider]}
+              onChange={(e) => onModelChange(e.target.value)}
+              onBlur={onModelBlur}
+              disabled={running}
+            />
+          </div>
+        )}
 
         <button
           className={styles.runBtn}

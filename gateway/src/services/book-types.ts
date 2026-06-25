@@ -58,6 +58,7 @@ export interface BookManifest {
   worldDocs?: string[];       // World Repository Phase 3 — curated doc ids = the bible (additive-optional, no schema bump)
   appendix?: Array<{ docId: string; title?: string; order: number }>; // World Repository Phase 5 — ordered back-matter selection (additive-optional, no schema bump)
   format?: BookFormat;        // Book Format & Structure — declared structure × form × pacing (additive-optional, no schema bump)
+  consistency?: { provider?: string; model?: string }; // Consistency audit model selection (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

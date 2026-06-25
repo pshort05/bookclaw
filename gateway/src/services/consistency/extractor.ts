@@ -195,12 +195,13 @@ export async function extractChapterFacts(
   deps: {
     ai: {
       complete(req: any): Promise<{ text: string }>;
-      select(t: string): { id: string };
+      select(t: string, preferredId?: string): { id: string };
     };
   },
   chapterText: string,
   knownEntities: { entity: string; aliases: string[]; current: Record<string, string> }[],
   chapterStoryBase: number,
+  override?: { provider?: string; model?: string },
 ): Promise<ExtractResult> {
   const digestLines = knownEntities.map((e) => {
     const attrs = Object.entries(e.current)
@@ -217,9 +218,16 @@ export async function extractChapterFacts(
 
   const content = `${digest}\n\n---\n\nChapter text:\n\n${chapterText}`;
 
-  const provider = deps.ai.select('consistency');
+  const provider = deps.ai.select('consistency', override?.provider);
+  // Only honor the pinned model when the requested provider was actually
+  // selected. If it was unavailable, selectProvider falls back to a different
+  // provider and the pinned model id would mismatch (e.g. a Gemini model name
+  // sent to Ollama → every extraction errors and the audit yields a false
+  // all-clear). Fall back to that provider's default model instead.
+  const model = override?.provider && provider.id === override.provider ? override?.model : undefined;
   const res = await deps.ai.complete({
     provider: provider.id,
+    model,
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content }],
     maxTokens: 8000,
