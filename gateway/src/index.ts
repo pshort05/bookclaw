@@ -2267,10 +2267,11 @@ class BookClawGateway {
                   'goal-engine',
                   (response) => { contResponse = response; resolve(); },
                   projectContext,
-                  undefined,
-                  undefined,
-                  undefined,
-                  project.bookSlug
+                  (activeStep as any).taskType || undefined,
+                  projectProvider,           // preserve the step's pinned provider on continuation
+                  stepModel,                 // preserve the step's pinned model on continuation
+                  project.bookSlug,
+                  stepTemp
                 ).catch(reject);
               });
               return contResponse;
@@ -2432,7 +2433,7 @@ class BookClawGateway {
        * Sends Telegram status updates via the callback after each step.
        * Now includes accurate word counts in status messages.
        */
-      async autoRunProject(projectId: string, statusCallback: (msg: string) => Promise<void>): Promise<void> {
+      async autoRunProject(projectId: string, statusCallback: (msg: string) => Promise<void>, channel?: string): Promise<void> {
         const project = gateway.projectEngine.getProject(projectId);
         if (!project) {
           await statusCallback('⚠️ Project not found');
@@ -2449,10 +2450,11 @@ class BookClawGateway {
         const totalSteps = project.steps.length;
 
         while (true) {
-          // Check BOTH the bridge flag AND the project's actual status
+          // Check BOTH this channel's bridge flag AND the project's actual status
           const currentProject = gateway.projectEngine.getProject(projectId);
-          if (gateway.telegram?.pauseRequested || currentProject?.status === 'paused') {
-            gateway.telegram && (gateway.telegram.pauseRequested = false);
+          const channelPaused = !!(channel && gateway.telegram?.pauseRequested.get(channel));
+          if (channelPaused || currentProject?.status === 'paused') {
+            if (channel) gateway.telegram?.pauseRequested.set(channel, false);
             if (currentProject?.status !== 'paused') gateway.projectEngine.pauseProject(projectId);
             await statusCallback(`⏸ Paused at step ${stepNumber}/${totalSteps}. Say "continue" to resume.`);
             return;
@@ -2480,8 +2482,9 @@ class BookClawGateway {
 
           // Re-check pause AFTER the batch completes (catches /stop during long AI call)
           const afterStepProject = gateway.projectEngine.getProject(projectId);
-          if (gateway.telegram?.pauseRequested || afterStepProject?.status === 'paused') {
-            gateway.telegram && (gateway.telegram.pauseRequested = false);
+          const afterChannelPaused = !!(channel && gateway.telegram?.pauseRequested.get(channel));
+          if (afterChannelPaused || afterStepProject?.status === 'paused') {
+            if (channel) gateway.telegram?.pauseRequested.set(channel, false);
             if (afterStepProject?.status !== 'paused') gateway.projectEngine.pauseProject(projectId);
             await statusCallback(`⏸ Paused at step ${stepNumber}/${totalSteps}. Say "continue" to resume.`);
             return;

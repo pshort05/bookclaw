@@ -524,9 +524,14 @@ export class BookService {
     throw new Error(`Could not allocate a unique slug for "${base}"`);
   }
 
-  /** Allocate a fresh, collision-free slug from a title (public wrapper over uniqueSlug). */
+  /**
+   * Allocate a fresh slug from a title and atomically claim it by creating its
+   * dir (BUG M7). Uses the same non-recursive mkdirSync lock as claimSlug so two
+   * concurrent same-title allocations can't return the same slug — the loser
+   * retries the next candidate. The now-existing dir is reused by create().
+   */
   allocateSlug(title: string): string {
-    return this.uniqueSlug(slugify(title));
+    return this.claimSlug(slugify(title));
   }
 
   /** The currently-active book slug, or null if none has been set. */
@@ -1111,6 +1116,11 @@ export class BookService {
     if (overridesChanged) await this.persistChannelBooks();
     if (this.activeBookSlug === slug) {
       this.activeBookSlug = null;
+      // BUG L10: clear the persisted pointer BEFORE reseeding so the on-disk
+      // active-book.json never references the just-deleted slug — if seeding then
+      // fails (catch branch returns null without rewriting the pointer), no stale
+      // file is left behind.
+      await rm(this.activePtrPath, { force: true });
       await this.seedDefaultBook();
     }
     return { active: this.activeBookSlug };

@@ -192,7 +192,7 @@ export function PromptRunner() {
         <div className={styles.left}>
           <div className={styles.field}>
             <span className={styles.fl}>Book</span>
-            <select className={styles.pick} value={slug} onChange={(e) => setSlug(e.target.value)}>
+            <select className={styles.pick} value={slug} onChange={(e) => setSlug(e.target.value)} disabled={running}>
               <option value="">Select a book…</option>
               {books.map((b) => <option key={b.slug} value={b.slug}>{b.title}</option>)}
             </select>
@@ -200,7 +200,7 @@ export function PromptRunner() {
 
           <div className={styles.field}>
             <span className={styles.fl}>File</span>
-            <select className={styles.pick} value={file} onChange={(e) => setFile(e.target.value)} disabled={!slug}>
+            <select className={styles.pick} value={file} onChange={(e) => setFile(e.target.value)} disabled={!slug || running}>
               <option value="">Select a file…</option>
               {outputs.length > 0 && (
                 <optgroup label="Outputs">

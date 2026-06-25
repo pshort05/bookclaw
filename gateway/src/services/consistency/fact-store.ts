@@ -73,8 +73,8 @@ export class ConsistencyStore {
     if (!this.db) return [];
     const rows = this.db.prepare(`SELECT * FROM facts
       WHERE entity = ? AND attribute = ? AND canonical = 1
-        AND ( book_slug = ? OR (source = 'canon' AND world IS ? ) )
-      ORDER BY story_time DESC, id DESC`).all(entity, attribute, scope.bookSlug, scope.world);
+        AND ( book_slug = ? OR (source = 'canon' AND ( (? IS NOT NULL AND world IS ?) OR book_slug = ? )) )
+      ORDER BY story_time DESC, id DESC`).all(entity, attribute, scope.bookSlug, scope.world, scope.world, scope.bookSlug);
     return rows.map((r: any) => ({
       world: r.world, bookSlug: r.book_slug, entity: r.entity, aliases: JSON.parse(r.aliases),
       attribute: r.attribute, type: r.type, valueRaw: r.value_raw, valueNorm: r.value_norm,

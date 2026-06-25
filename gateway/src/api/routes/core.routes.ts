@@ -132,14 +132,14 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     res.json(services.costs.getStatus());
   });
 
-  app.post('/api/costs/reset-total', async (req: Request, res: Response) => {
+  app.post('/api/costs/reset-total', asyncHandler(async (req: Request, res: Response) => {
     const body = (req.body ?? {}) as { books?: unknown; unattributed?: unknown };
     const books = Array.isArray(body.books)
       ? body.books.filter((b): b is string => typeof b === 'string')
       : [];
     await services.costs.resetLifetime({ books, unattributed: !!body.unattributed });
     res.json(services.costs.getStatus());
-  });
+  }));
 
   // ── Audit Log (last 50 entries) ──
   app.get('/api/audit', asyncHandler(async (_req: Request, res: Response) => {

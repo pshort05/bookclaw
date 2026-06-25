@@ -25,7 +25,7 @@ interface CommandHandlers {
     | { ok: false; error: string; candidates?: string[] }
   >;
   startAndRunProject: (projectId: string) => Promise<{ completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }>;
-  autoRunProject: (projectId: string, statusCallback: (msg: string) => Promise<void>) => Promise<void>;
+  autoRunProject: (projectId: string, statusCallback: (msg: string) => Promise<void>, channel?: string) => Promise<void>;
   listProjects: () => Array<{ id: string; title: string; status: string; progress: string }>;
   saveToFile: (filename: string, content: string) => Promise<void>;
   handleMessage: (content: string, channel: string, respond: (text: string) => void) => Promise<void>;
@@ -42,7 +42,8 @@ export class TelegramBridge {
   private messageHandler?: (content: string, channel: string, respond: (text: string) => void) => Promise<void>;
   private commandHandlers?: CommandHandlers;
   private lastUpdateId = 0;
-  public pauseRequested = false;
+  public pauseRequested: Map<string, boolean> = new Map(); // channel → pause flag (per-chat, so one chat's /stop can't pause another's)
+  private projectChannels: Map<string, string> = new Map(); // projectId → channel that started it
   private knownChatIds: Set<number> = new Set(); // Track chat IDs for broadcasting
   private lastFileList: Map<number, string[]> = new Map(); // chatId → file list for /read # picker
   private voiceMode: Map<number, string | boolean> = new Map(); // chatId → voice preset or false
@@ -171,9 +172,10 @@ export class TelegramBridge {
             `Starting autonomous execution...`
           );
           // Auto-run the pipeline
+          this.projectChannels.set(result.id, `telegram:${chatId}`);
           this.commandHandlers.autoRunProject(result.id, async (msg: string) => {
             await this.sendMessage(chatId, msg);
-          }).catch(async (e: any) => {
+          }, `telegram:${chatId}`).catch(async (e: any) => {
             // Swallow a failed error-notification too — if the Telegram send
             // also fails (likely, on the same network error), don't let the
             // catch handler's own rejection escape as an unhandledRejection.
@@ -201,9 +203,10 @@ export class TelegramBridge {
           await this.sendMessage(chatId, `✅ Planned ${project.steps} steps. Running autonomously...\nUse /stop to pause, /status to check progress.`);
 
           // Fire-and-forget: don't await so the poll loop can keep receiving /stop commands
+          this.projectChannels.set(project.id, `telegram:${chatId}`);
           this.commandHandlers.autoRunProject(project.id, async (msg: string) => {
             await this.sendMessage(chatId, msg);
-          }).catch(async (e: any) => {
+          }, `telegram:${chatId}`).catch(async (e: any) => {
             await this.sendMessage(chatId, `❌ Error: ${String(e)}`);
           });
         } catch (e) {
@@ -250,9 +253,10 @@ export class TelegramBridge {
             `✅ Planned ${project.steps} steps. Running autonomously...\nUse /stop to pause, /status to check progress.`);
 
           // Fire-and-forget: don't await so the poll loop can keep receiving /stop commands
+          this.projectChannels.set(project.id, `telegram:${chatId}`);
           this.commandHandlers.autoRunProject(project.id, async (msg: string) => {
             await this.sendMessage(chatId, msg);
-          }).catch(async (e: any) => {
+          }, `telegram:${chatId}`).catch(async (e: any) => {
             await this.sendMessage(chatId, `❌ ${String(e)}`);
           });
         } catch (e) {
@@ -278,7 +282,8 @@ export class TelegramBridge {
       let summary = '';
 
       if (this.commandHandlers) {
-        const projects = this.commandHandlers.listProjects();
+        const channel = `telegram:${chatId}`;
+        const projects = this.chatProjects(channel);
         const active = projects.filter(p => p.status === 'active');
         const paused = projects.filter(p => p.status === 'paused');
         const completed = projects.filter(p => p.status === 'completed');
@@ -660,14 +665,13 @@ export class TelegramBridge {
       return;
     }
 
-    // ── /stop — Pause active project ──
+    // ── /stop — Pause this chat's active project ──
     if (text.startsWith('/stop') || text.startsWith('/pause')) {
-      const activeProject = this.commandHandlers
-        ? this.commandHandlers.listProjects().find(p => p.status === 'active')
-        : undefined;
+      const channel = `telegram:${chatId}`;
+      const activeProject = this.findChatProject(channel, p => p.status === 'active');
 
       if (activeProject) {
-        this.pauseRequested = true;
+        this.pauseRequested.set(channel, true);
         try {
           await fetch(`http://localhost:3847/api/projects/${activeProject.id}/pause`, { method: 'POST', headers: this.apiHeaders() });
         } catch { /* silent */ }
@@ -682,18 +686,19 @@ export class TelegramBridge {
     const lower = text.toLowerCase().trim();
     if (lower === 'continue' || lower === 'next' || lower === 'go' || lower === 'resume') {
       if (this.commandHandlers) {
-        const projects = this.commandHandlers.listProjects();
-        const active = projects.find(p => p.status === 'active' || p.status === 'paused');
+        const channel = `telegram:${chatId}`;
+        const active = this.findChatProject(channel, p => p.status === 'active' || p.status === 'paused');
         if (!active) {
           await this.sendMessage(chatId, `No projects to continue. Create one with /project or /write`);
           return;
         }
-        this.pauseRequested = false;
+        this.pauseRequested.set(channel, false);
+        this.projectChannels.set(active.id, channel);
         await this.sendMessage(chatId, `▶️ Resuming "${active.title}"...\nUse /stop to pause again.`);
         // Fire-and-forget so poll loop stays responsive to /stop
         this.commandHandlers.autoRunProject(active.id, async (msg: string) => {
           await this.sendMessage(chatId, msg);
-        }).catch(async (e: any) => {
+        }, channel).catch(async (e: any) => {
           await this.sendMessage(chatId, `❌ ${String(e)}`);
         });
       }
@@ -858,6 +863,36 @@ export class TelegramBridge {
    * Authorization header is sent. Do NOT special-case loopback to skip auth —
    * that would reinstate the localhost-as-trust-boundary the gate removed.
    */
+  /**
+   * Projects started by a given chat. Falls back to the full project list when
+   * this chat has no recorded projects (e.g. after a restart that cleared the
+   * in-memory ownership map) — preserves the original single-chat behaviour.
+   */
+  private chatProjects(channel: string): Array<{ id: string; title: string; status: string; progress: string }> {
+    const all = this.commandHandlers ? this.commandHandlers.listProjects() : [];
+    const owned = all.filter(p => this.projectChannels.get(p.id) === channel);
+    if (owned.length > 0) return owned;
+    // No recorded ownership for this chat (e.g. after a restart). Fall back ONLY to
+    // projects not claimed by a different chat, never to another chat's project.
+    return all.filter(p => !this.projectChannels.has(p.id));
+  }
+
+  /**
+   * Project this chat owns matching the predicate. Falls back — when this chat
+   * owns none — to an UNAMBIGUOUS unclaimed match (exactly one), so /stop can
+   * never pause a different chat's run, even after a restart loses ownership.
+   */
+  private findChatProject(
+    channel: string,
+    predicate: (p: { id: string; title: string; status: string; progress: string }) => boolean,
+  ): { id: string; title: string; status: string; progress: string } | undefined {
+    const all = this.commandHandlers ? this.commandHandlers.listProjects() : [];
+    const ownedMatch = all.filter(p => this.projectChannels.get(p.id) === channel).find(predicate);
+    if (ownedMatch) return ownedMatch;
+    const unclaimed = all.filter(p => !this.projectChannels.has(p.id)).filter(predicate);
+    return unclaimed.length === 1 ? unclaimed[0] : undefined;
+  }
+
   private apiHeaders(extra: Record<string, string> = {}): Record<string, string> {
     const token = (process.env.BOOKCLAW_AUTH_TOKEN || '').trim();
     return token ? { ...extra, Authorization: `Bearer ${token}` } : { ...extra };

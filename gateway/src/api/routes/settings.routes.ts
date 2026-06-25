@@ -132,7 +132,11 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
     // Re-initialize AI providers if any API keys were loaded
     const apiKeyNames = ['gemini_api_key', 'deepseek_api_key', 'anthropic_api_key', 'openai_api_key'];
     if (loaded.some(k => apiKeyNames.some(ak => k.startsWith(ak)))) {
-      await services.aiRouter.reinitialize();
+      try {
+        await services.aiRouter.reinitialize();
+      } catch (e) {
+        errors.push(`reinitialize: ${String(e)}`);
+      }
     }
 
     res.json({ loaded, errors, message: loaded.length > 0 ? `Loaded ${loaded.length} key(s)` : 'No key files found in shared folder' });

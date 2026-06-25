@@ -110,13 +110,17 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
     const project = engine?.getProject(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
-    const chapters = await gatherChapters(project);
-    if (chapters.length === 0) {
-      return res.status(400).json({ error: 'No completed chapters found.' });
+    try {
+      const chapters = await gatherChapters(project);
+      if (chapters.length === 0) {
+        return res.status(400).json({ error: 'No completed chapters found.' });
+      }
+      const manuscript = chapters.map(c => `# Chapter ${c.number}: ${c.title}\n\n${c.text}`).join('\n\n');
+      const result = await tools.runManuscriptAutopsy(manuscript);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Pacing heatmap failed' });
     }
-    const manuscript = chapters.map(c => `# Chapter ${c.number}: ${c.title}\n\n${c.text}`).join('\n\n');
-    const result = await tools.runManuscriptAutopsy(manuscript);
-    res.json(result);
   });
 
   app.post('/api/projects/:id/format-pro', async (req: Request, res: Response) => {
@@ -133,26 +137,30 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
       return res.status(400).json({ error: 'outputFormat must be docx|epub|pdf|md' });
     }
 
-    // Compile the manuscript first so Format Pro has an input file.
-    const chapters = await gatherChapters(project);
-    if (chapters.length === 0) return res.status(400).json({ error: 'No completed chapters to format.' });
+    try {
+      // Compile the manuscript first so Format Pro has an input file.
+      const chapters = await gatherChapters(project);
+      if (chapters.length === 0) return res.status(400).json({ error: 'No completed chapters to format.' });
 
-    const { join: j, resolve: r } = await import('path');
-    const { mkdir: mkd, writeFile: wf } = await import('fs/promises');
-    const tmpDir = j(baseDir, 'workspace', 'tmp', 'format-input');
-    await mkd(tmpDir, { recursive: true });
-    const inputPath = j(tmpDir, `${project.id}.md`);
-    const manuscript = chapters.map(c => `# Chapter ${c.number}: ${c.title}\n\n${c.text}`).join('\n\n');
-    await wf(inputPath, manuscript, 'utf-8');
+      const { join: j, resolve: r } = await import('path');
+      const { mkdir: mkd, writeFile: wf } = await import('fs/promises');
+      const tmpDir = j(baseDir, 'workspace', 'tmp', 'format-input');
+      await mkd(tmpDir, { recursive: true });
+      const inputPath = j(tmpDir, `${project.id}.md`);
+      const manuscript = chapters.map(c => `# Chapter ${c.number}: ${c.title}\n\n${c.text}`).join('\n\n');
+      await wf(inputPath, manuscript, 'utf-8');
 
-    const result = await tools.runFormatPro({
-      manuscriptPath: r(inputPath),
-      outputFormat: fmt,
-      title: project.title,
-      author: author || 'Anonymous',
-      trimSize,
-    });
-    res.json(result);
+      const result = await tools.runFormatPro({
+        manuscriptPath: r(inputPath),
+        outputFormat: fmt,
+        title: project.title,
+        author: author || 'Anonymous',
+        trimSize,
+      });
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Format Pro failed' });
+    }
   });
 
   // ═══════════════════════════════════════════════════════════

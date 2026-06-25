@@ -55,6 +55,20 @@ test('parses knowledgeEvents; composes factKey; drops malformed', () => {
   assert.equal(r.knowledge[0].storyTime, 100); // base + scene 0
 });
 
+test('clamps an out-of-range scene index before deriving story-time / metadata (L9)', () => {
+  const oob = JSON.stringify({
+    scenes: [{ timeLabel: 'morning', canonical: true }, { timeLabel: 'dream', canonical: false }],
+    facts: [
+      { entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable', valueRaw: 'blue', valueNorm: 'blue', scene: 99, transition: null, evidence: 'blue eyes' },
+    ],
+  });
+  const r = parseExtractorResponse(oob, 100);
+  assert.equal(r.facts[0].scene, 1, 'clamped to last scene index');
+  assert.equal(r.facts[0].storyTime, 101, 'base + clamped scene (not base + 99)');
+  assert.equal(r.facts[0].timeLabel, 'dream', 'reads the clamped scene\'s label');
+  assert.equal(r.facts[0].canonical, false, 'reads the clamped scene\'s canonical flag');
+});
+
 test('v1 response (no canonical / no knowledge) defaults cleanly', () => {
   const r = parseExtractorResponse(SAMPLE, 0); // SAMPLE = the existing v1 fixture
   assert.equal(r.facts[0].canonical, true);

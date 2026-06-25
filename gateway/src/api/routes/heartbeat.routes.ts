@@ -42,10 +42,44 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
 
   // Update autonomous config (interval, max steps, quiet hours)
   app.post('/api/autonomous/config', (req: Request, res: Response) => {
-    const { intervalMinutes, maxStepsPerWake, quietHoursStart, quietHoursEnd } = req.body;
-    services.heartbeat.updateAutonomousConfig({
-      intervalMinutes, maxStepsPerWake, quietHoursStart, quietHoursEnd,
-    });
+    const { intervalMinutes, maxStepsPerWake, quietHoursStart, quietHoursEnd } = req.body || {};
+    const updates: {
+      intervalMinutes?: number;
+      maxStepsPerWake?: number;
+      quietHoursStart?: number;
+      quietHoursEnd?: number;
+    } = {};
+
+    if (intervalMinutes !== undefined) {
+      const n = Number(intervalMinutes);
+      if (!Number.isFinite(n) || n <= 0) {
+        return res.status(400).json({ error: 'intervalMinutes must be a positive number' });
+      }
+      updates.intervalMinutes = n;
+    }
+    if (maxStepsPerWake !== undefined) {
+      const n = Number(maxStepsPerWake);
+      if (!Number.isFinite(n) || n <= 0) {
+        return res.status(400).json({ error: 'maxStepsPerWake must be a positive number' });
+      }
+      updates.maxStepsPerWake = n;
+    }
+    if (quietHoursStart !== undefined) {
+      const n = Number(quietHoursStart);
+      if (!Number.isFinite(n) || n < 0 || n > 23) {
+        return res.status(400).json({ error: 'quietHoursStart must be between 0 and 23' });
+      }
+      updates.quietHoursStart = n;
+    }
+    if (quietHoursEnd !== undefined) {
+      const n = Number(quietHoursEnd);
+      if (!Number.isFinite(n) || n < 0 || n > 23) {
+        return res.status(400).json({ error: 'quietHoursEnd must be between 0 and 23' });
+      }
+      updates.quietHoursEnd = n;
+    }
+
+    services.heartbeat.updateAutonomousConfig(updates);
     res.json({ success: true, status: services.heartbeat.getAutonomousStatus() });
   });
 

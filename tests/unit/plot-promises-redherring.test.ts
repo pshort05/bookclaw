@@ -32,6 +32,35 @@ test('red herring "paid off" yields a warning, not a payoff', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('merge re-extraction preserves an author-added promise the LLM did not re-extract (M4)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'pp-merge-'));
+  try {
+    const svc = new PlotPromisesService(join(root, 'workspace'));
+    const author = await svc.addPromise('proj1', {
+      title: 'The lost locket', description: 'a sentimental subplot the author tracks',
+      category: 'subplot', introducedAtChapter: 1, status: 'open',
+    } as any);
+
+    // LLM re-extracts a totally different promise and never mentions the locket.
+    const extractComplete = async () => ({
+      text: JSON.stringify({ promises: [
+        { title: 'The hidden inheritance', description: 'a new mystery', category: 'mystery', confidence: 0.8 },
+      ] }),
+    });
+
+    const result = await svc.extractFromOpening({
+      projectId: 'proj1', openingChapterText: 'Once upon a time...',
+      aiComplete: extractComplete, aiSelectProvider, merge: true,
+    });
+
+    const titles = result.promises.map(p => p.title);
+    assert.ok(titles.includes('The hidden inheritance'), 'newly extracted promise present');
+    assert.ok(titles.includes('The lost locket'), 'author-added promise survived merge');
+    const survivor = result.promises.find(p => p.title === 'The lost locket')!;
+    assert.equal(survivor.id, author.id, 'preserves the original id/fields');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('non-red-herring "paid off" still closes (regression)', async () => {
   const root = mkdtempSync(join(tmpdir(), 'pp-norm-'));
   try {

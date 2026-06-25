@@ -5,7 +5,10 @@ import { isPrivateIp, assertPublicUrl } from '../../gateway/src/security/ssrf-gu
 test('isPrivateIp flags internal IPv4/IPv6 ranges', () => {
   for (const ip of ['127.0.0.1', '10.0.0.5', '192.168.1.1', '172.16.0.1', '172.31.255.255',
                      '169.254.169.254', '0.0.0.0', '100.64.0.1', '::1', '::', '::ffff:127.0.0.1',
-                     '::ffff:7f00:1', '::ffff:a9fe:a9fe', 'fd00::1', 'fe80::1']) {
+                     '::ffff:7f00:1', '::ffff:a9fe:a9fe', 'fd00::1', 'fe80::1',
+                     // IPv4-compatible IPv6 (dotted + hex) and NAT64 embedding a private v4
+                     '::127.0.0.1', '::7f00:1', '::192.168.1.1', '::c0a8:101',
+                     '64:ff9b::127.0.0.1', '64:ff9b::7f00:1', '64:ff9b::a9fe:a9fe']) {
     assert.equal(isPrivateIp(ip), true, `${ip} should be private`);
   }
 });

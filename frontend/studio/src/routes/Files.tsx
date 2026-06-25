@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, apiBase, authToken, Button, renderMarkdown, useBooks, useStore } from '@bookclaw/shared';
 import { useDialog } from '../components/Dialog.js';
 import styles from './Files.module.css';
@@ -48,6 +48,9 @@ export function Files() {
   const [previewMd, setPreviewMd] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Path of the most recent open() request; a slower preview fetch for an
+  // earlier file must not overwrite the body once a newer file is selected.
+  const openPath = useRef<string | null>(null);
 
   const loadDocs = () =>
     api<{ documents: Array<{ filename: string; size: number; wordCount?: number }> }>('/api/documents')
@@ -69,14 +72,18 @@ export function Files() {
   useEffect(() => { loadBookFiles(bookSlug); }, [bookSlug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const open = async (path: string, name: string, canDelete: boolean) => {
+    openPath.current = path;
     setSel({ path, name, canDelete });
     setErr(null);
     if (!isText(name)) { setPreview(null); setPreviewMd(false); return; }
     try {
       const text = await fetchText(path);
+      // Drop a stale response: only apply if this path is still the selection.
+      if (openPath.current !== path) return;
       setPreviewMd(MD_RE.test(name));
       setPreview(MD_RE.test(name) ? renderMarkdown(text) : text);
     } catch (e) {
+      if (openPath.current !== path) return;
       setPreview(null); setErr(`Couldn't load preview — ${String(e)}`);
     }
   };
@@ -137,7 +144,7 @@ export function Files() {
     try {
       await api(sel.path, { method: 'DELETE' });
       setSel(null); setPreview(null);
-      loadDocs();
+      if (tab === 'documents') loadDocs(); else loadBookFiles(bookSlug);
     } catch (e) { setErr(`Delete failed — ${String(e)}`); }
   };
 

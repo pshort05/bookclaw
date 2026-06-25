@@ -80,7 +80,9 @@ export async function serveFile(res: Response, filePath: string, filename: strin
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
   }
-  createReadStream(filePath).pipe(res);
+  createReadStream(filePath)
+    .on('error', () => { try { res.destroy(); } catch {} })
+    .pipe(res);
 }
 
 /** Shared multer instance: 50MB limit, .txt/.md/.docx only, in-memory storage. */

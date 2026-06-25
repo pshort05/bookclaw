@@ -288,17 +288,26 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     const LARGE_THRESHOLD = 15000; // 15K words = "large" manuscript
     const isLarge = wordCount > LARGE_THRESHOLD;
 
+    // For an already-text upload (.txt/.md) the extracted text IS the original file,
+    // so the library text file is the original itself — no separate .txt copy.
+    const isTextFormat = ext === 'txt' || ext === 'md';
+    const libraryFilename = isTextFormat ? filename : filename.replace(/\.\w+$/, '.txt');
+
     // For large manuscripts (15K+ words): save to centralized document library
     // The full text stays on disk — only smart excerpts go into AI context
     if (isLarge) {
       const docsDir = j(baseDir, 'workspace', 'documents');
       await mkd(docsDir, { recursive: true });
 
-      // Save the extracted text to the library for fast access at execution time
-      const textFilename = filename.replace(/\.\w+$/, '.txt');
-      await wf(j(docsDir, textFilename), textContent);
-      // Save original file too
-      await wf(j(docsDir, filename), req.file.buffer);
+      if (isTextFormat) {
+        // The original IS the text — write it once under its own name.
+        await wf(j(docsDir, filename), textContent);
+      } else {
+        // Save the extracted text to the library for fast access at execution time.
+        await wf(j(docsDir, libraryFilename), textContent);
+        // Save original (binary) file too.
+        await wf(j(docsDir, filename), req.file.buffer);
+      }
 
       // Save metadata
       const metaPath = j(docsDir, 'metadata.json');
@@ -306,7 +315,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       if (ex(metaPath)) {
         try { metadata = JSON.parse(await rf(metaPath, 'utf-8')); } catch { /* ok */ }
       }
-      metadata[textFilename] = {
+      metadata[libraryFilename] = {
         wordCount,
         uploadedAt: new Date().toISOString(),
         size: textContent.length,
@@ -315,7 +324,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       };
       await wf(metaPath, JSON.stringify(metadata, null, 2));
 
-      console.log(`  📚 Large manuscript saved to document library: ${textFilename} (${wordCount.toLocaleString()} words)`);
+      console.log(`  📚 Large manuscript saved to document library: ${libraryFilename} (${wordCount.toLocaleString()} words)`);
     }
 
     // Store upload info in project context
@@ -326,7 +335,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       preview: textContent.substring(0, 500),
       uploadedAt: new Date().toISOString(),
       isLarge,
-      libraryFile: isLarge ? filename.replace(/\.\w+$/, '.txt') : undefined,
+      libraryFile: isLarge ? libraryFilename : undefined,
     });
 
     // Store document content for AI steps
@@ -334,8 +343,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     // For small documents: store inline (same as before)
     if (isLarge) {
       // Store the path for on-demand reading at execution time
-      const textFilename = filename.replace(/\.\w+$/, '.txt');
-      project.context.documentLibraryFile = j(baseDir, 'workspace', 'documents', textFilename);
+      project.context.documentLibraryFile = j(baseDir, 'workspace', 'documents', libraryFilename);
       project.context.documentWordCount = wordCount;
       // Store a brief excerpt for the system context (so AI knows what it's working with)
       if (!project.context.uploadedContent) project.context.uploadedContent = '';

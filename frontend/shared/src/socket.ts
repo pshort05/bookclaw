@@ -11,3 +11,9 @@ export function socket(): Socket {
   s = io(base, { auth: { token }, transports: ['websocket', 'polling'] });
   return s;
 }
+
+/** Disconnect terminally and drop the singleton so the next socket() rebuilds.
+ *  Without nulling `s`, later socket() calls return the dead, disconnected instance. */
+export function closeSocket(): void {
+  if (s) { s.disconnect(); s = null; }
+}

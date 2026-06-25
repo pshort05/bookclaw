@@ -95,9 +95,13 @@ export function mountPersonas(app: Application, gateway: any, baseDir: string): 
   app.delete('/api/personas/:id', async (req: Request, res: Response) => {
     const personas = services.personas;
     if (!personas) return res.status(503).json({ error: 'Persona service not initialized' });
-    const deleted = await personas.delete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Persona not found' });
-    res.json({ success: true });
+    try {
+      const deleted = await personas.delete(req.params.id);
+      if (!deleted) return res.status(404).json({ error: 'Persona not found' });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to delete persona: ' + String(err) });
+    }
   });
 
   // AI-assisted bio generation for existing persona

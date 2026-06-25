@@ -294,6 +294,16 @@ export class PlotPromisesService {
         };
       });
 
+    if (input.merge) {
+      // UNION: keep prior promises (author-added/confirmed) the LLM didn't
+      // re-extract this run, so a re-extraction never drops them. Dedupe by
+      // lowercased title against what was just extracted.
+      const extractedTitles = new Set(newPromises.map(p => p.title.toLowerCase()));
+      for (const prior of project.promises) {
+        if (!extractedTitles.has(prior.title.toLowerCase())) newPromises.push(prior);
+      }
+    }
+
     project.promises = newPromises;
     project.extractedAt = new Date().toISOString();
     project.lastEvaluatedAt = new Date().toISOString();

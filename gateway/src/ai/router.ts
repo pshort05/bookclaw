@@ -431,6 +431,12 @@ export class AIRouter {
       this.savedTokens += Math.ceil(request.system.length / 4);
     } else {
       this.cacheMisses++;
+      // Bound the cache: FIFO-evict the oldest entry once we exceed the cap so
+      // the Map can't grow without limit across long-running sessions.
+      if (this.promptCache.size >= 500) {
+        const oldest = this.promptCache.keys().next().value;
+        if (oldest !== undefined) this.promptCache.delete(oldest);
+      }
       this.promptCache.set(cacheKey, { hash: promptHash, timestamp: Date.now() });
     }
 
@@ -578,6 +584,7 @@ export class AIRouter {
     request: CompletionRequest
   ): Promise<CompletionResponse> {
     const apiKey = await this.vault.get('gemini_api_key');
+    if (!apiKey) throw new Error('Gemini API key missing');
     // Reasoning effort → Gemini thinkingBudget (works on Gemini 2.5 Pro/Flash;
     // ignored / no-op on older models). thinkingBudget is in tokens.
     // -1 = "model decides" (Google's recommendation for adaptive thinking).
@@ -610,6 +617,13 @@ export class AIRouter {
         }),
       }
     );
+
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      throw new Error(
+        `Gemini HTTP ${response.status}: ${errBody.substring(0, 400) || response.statusText}`
+      );
+    }
 
     const data = await response.json() as any;
     if (data.error) {
@@ -652,6 +666,7 @@ export class AIRouter {
     request: CompletionRequest
   ): Promise<CompletionResponse> {
     const apiKey = await this.vault.get('anthropic_api_key');
+    if (!apiKey) throw new Error('Claude API key missing');
     // Reasoning effort → Claude thinking budget (tokens spent on hidden CoT).
     // Anthropic requires temperature=1 and max_tokens > thinking budget.
     const thinkingBudget = request.thinking
@@ -685,6 +700,13 @@ export class AIRouter {
       },
       body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      throw new Error(
+        `Claude HTTP ${response.status}: ${errBody.substring(0, 400) || response.statusText}`
+      );
+    }
 
     const data = await response.json() as any;
     if (data.error) {

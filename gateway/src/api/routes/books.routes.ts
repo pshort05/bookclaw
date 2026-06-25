@@ -178,8 +178,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!safePath(dataDir, filename)) return res.status(403).json({ error: 'Path traversal blocked' });
     const { content } = req.body ?? {};
     if (typeof content !== 'string') return res.status(400).json({ error: 'content required' });
-    await writeWithVersion(dataDir, filename, content);
-    res.json({ ok: true });
+    try {
+      await writeWithVersion(dataDir, filename, content);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   // List prior versions of a book data/ file (newest first).
@@ -190,7 +194,11 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!dataDir) return res.status(404).json({ error: 'Book not found' });
     const filename = String(req.params.filename);
     if (!safePath(dataDir, filename)) return res.status(403).json({ error: 'Path traversal blocked' });
-    res.json({ versions: await listVersions(dataDir, filename) });
+    try {
+      res.json({ versions: await listVersions(dataDir, filename) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   // Restore a prior version of a book data/ file (the current content is snapshotted first).
@@ -257,8 +265,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!safePath(mapped.baseDir, mapped.filename)) return res.status(403).json({ error: 'Path traversal blocked' });
     const { content } = req.body ?? {};
     if (typeof content !== 'string') return res.status(400).json({ error: 'content required' });
-    await writeWithVersion(mapped.baseDir, mapped.filename, content);
-    res.json({ ok: true });
+    try {
+      await writeWithVersion(mapped.baseDir, mapped.filename, content);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   // List prior versions of any data/ or templates/ file.
@@ -267,7 +279,11 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const mapped = resolveRunnerFile(String(req.params.slug), rel, res);
     if (!mapped) return;
     if (!safePath(mapped.baseDir, mapped.filename)) return res.status(403).json({ error: 'Path traversal blocked' });
-    res.json({ versions: await listVersions(mapped.baseDir, mapped.filename) });
+    try {
+      res.json({ versions: await listVersions(mapped.baseDir, mapped.filename) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   // Restore a prior version of any data/ or templates/ file (current content snapshotted first).

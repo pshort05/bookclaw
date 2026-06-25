@@ -21,7 +21,7 @@ import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { parseSequence } from './sequence-parse.js';
 import { parseEditor } from './editor-parse.js';
 import { parsePrompt } from './prompt-parse.js';
-import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
+import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, assertInflatedSize, type ImportFinding } from './transfer-security.js';
 import { SKILL_CATEGORIES, parseSteps } from '../skills/loader.js';
 
 export const ENTRY_FORMAT_VERSION = 1;
@@ -136,6 +136,7 @@ export class LibraryTransferService {
     try { entries = new AdmZip(zip).getEntries(); } catch { return fail('not a valid zip'); }
     const budgetError = checkZipBudget(entries);
     if (budgetError) return fail(budgetError);
+    let inflatedTotal = 0;
     for (const e of entries) {
       if (e.isDirectory) continue;
       const name = e.entryName;
@@ -144,9 +145,22 @@ export class LibraryTransferService {
       if (isSymlinkEntry(attr)) return fail(`symlink entry rejected: ${name}`);
       if (isUnsafeEntry(name, stageDir, WHITELIST_PREFIXES)) return fail(`unsafe entry rejected: ${name}`);
       const dest = join(stageDir, name);
+      let buf: Buffer;
+      try {
+        buf = e.getData();
+      } catch {
+        return fail(`failed to extract entry: ${name}`);
+      }
+      // The declared sizes checked above are attacker-controlled — re-assert the
+      // ACTUAL inflated size so a lying central directory can't smuggle a bomb.
+      try {
+        inflatedTotal = assertInflatedSize(buf.length, inflatedTotal);
+      } catch (err) {
+        return fail((err as Error).message);
+      }
       try {
         mkdirSync(dirname(dest), { recursive: true });
-        writeFileSync(dest, e.getData());
+        writeFileSync(dest, buf);
       } catch {
         return fail(`failed to extract entry: ${name}`);
       }

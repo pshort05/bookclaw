@@ -50,12 +50,15 @@ export class AuditLog {
 
       // Chain hashes for tamper detection
       const entryStr = JSON.stringify(entry);
-      this.lastHash = createHash('sha256').update(entryStr).digest('hex').substring(0, 16);
+      const newHash = createHash('sha256').update(entryStr).digest('hex').substring(0, 16);
 
-      const logLine = JSON.stringify({ ...entry, hash: this.lastHash }) + '\n';
+      const logLine = JSON.stringify({ ...entry, hash: newHash }) + '\n';
       const logFile = join(this.logDir, `${new Date().toISOString().split('T')[0]}.jsonl`);
 
       await appendFile(logFile, logLine);
+      // Advance lastHash only AFTER the append resolves, so a failed write leaves
+      // lastHash linking to the last PERSISTED entry (no gap in the chain).
+      this.lastHash = newHash;
     });
 
     // Keep the queue alive even if one append fails, so a single error doesn't

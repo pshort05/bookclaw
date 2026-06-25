@@ -17,10 +17,11 @@ export function registerProjectTools(server: McpServer, client: BookClawClient):
   server.registerTool('create_project',
     {
       title: 'Create project',
-      description: 'Create and auto-execute a project. BookClaw plans steps from the task, or a template if given.',
+      description: 'Create and auto-execute a project. BookClaw plans steps from the title + description, or a template type if given.',
       inputSchema: {
-        task: z.string().describe('What to do, in plain language'),
-        template: z.string().optional().describe('Optional project template id'),
+        title: z.string().describe('Short project title'),
+        description: z.string().describe('What to do, in plain language'),
+        type: z.string().optional().describe('Optional project template/type id'),
       },
     },
     async (args) => toToolResult('create_project', await client.request('POST', '/api/projects/create', args)),
@@ -31,8 +32,9 @@ export function registerProjectTools(server: McpServer, client: BookClawClient):
       title: 'Create pipeline',
       description: 'Create a full multi-phase book pipeline (planning → bible → production → revision → format → launch).',
       inputSchema: {
-        idea: z.string().describe('The book idea'),
-        pipeline: z.string().optional().describe('Named library pipeline; defaults to the novel pipeline'),
+        title: z.string().describe('Short pipeline title'),
+        description: z.string().describe('The book idea, in plain language'),
+        personaId: z.string().optional().describe('Optional author persona id'),
       },
     },
     async (args) => toToolResult('create_pipeline', await client.request('POST', '/api/pipeline/create', args)),

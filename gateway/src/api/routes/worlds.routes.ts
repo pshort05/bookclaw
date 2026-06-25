@@ -78,6 +78,10 @@ export function mountWorlds(app: Application, gateway: any, _baseDir: string): v
   app.delete('/api/worlds/:name/documents/:docId', (req: Request, res: Response) => {
     const world = services.world;
     if (!world) return res.status(503).json({ error: 'World service not initialized' });
+    if (!world.getConfig(req.params.name)) return res.status(404).json({ error: 'World not found' });
+    // Idempotent within an existing world: deleting an already-gone doc returns
+    // 200 {deleted:false} (the studio's api() throws on non-2xx, so a 404 here
+    // would break delete-from-a-stale-list / double-click).
     const ok = world.deleteDocument(req.params.name, req.params.docId);
     res.json({ deleted: ok });
   });
@@ -92,22 +96,26 @@ export function mountWorlds(app: Application, gateway: any, _baseDir: string): v
     if (!world || !books) return res.status(503).json({ error: 'World/Books service not initialized' });
     const slug = String(req.params.slug);
     if (!SLUG_RE.test(slug) || !books.exists?.(slug)) return res.status(404).json({ error: 'Book not found' });
-    const opened = await books.open(slug);
-    const worldName = opened?.manifest?.pulledFrom?.world?.name;
-    if (!worldName) return res.status(404).json({ error: 'Book has no bound world' });
+    try {
+      const opened = await books.open(slug);
+      const worldName = opened?.manifest?.pulledFrom?.world?.name;
+      if (!worldName) return res.status(404).json({ error: 'Book has no bound world' });
 
-    const signals = {
-      title: opened.manifest.title,
-      description: '',
-      genre: opened.manifest.pulledFrom?.genre?.name ?? null,
-      knownEntities: books.worldbuildingOf?.(slug) ?? '',
-    };
-    const ai = {
-      complete: (r: any) => services.aiRouter.complete(r),
-      select: (t: string) => services.aiRouter.selectProvider(t),
-    };
-    const proposals = await world.proposeWorldDocs(slug, signals, worldName, ai);
-    res.json({ proposals });
+      const signals = {
+        title: opened.manifest.title,
+        description: '',
+        genre: opened.manifest.pulledFrom?.genre?.name ?? null,
+        knownEntities: books.worldbuildingOf?.(slug) ?? '',
+      };
+      const ai = {
+        complete: (r: any) => services.aiRouter.complete(r),
+        select: (t: string) => services.aiRouter.selectProvider(t),
+      };
+      const proposals = await world.proposeWorldDocs(slug, signals, worldName, ai);
+      res.json({ proposals });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || 'propose failed' });
+    }
   });
 
   // Save the ordered appendix selection onto the book manifest.
@@ -131,9 +139,13 @@ export function mountWorlds(app: Application, gateway: any, _baseDir: string): v
       }
       entries.push({ docId: e.docId, order: e.order, ...(e.title ? { title: e.title } : {}) });
     }
-    const manifest = await books.setAppendix(slug, entries);
-    if (!manifest) return res.status(404).json({ error: 'book not found' });
-    res.json({ appendix: manifest.appendix ?? [] });
+    try {
+      const manifest = await books.setAppendix(slug, entries);
+      if (!manifest) return res.status(404).json({ error: 'book not found' });
+      res.json({ appendix: manifest.appendix ?? [] });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || 'set appendix failed' });
+    }
   });
 
   // Curate + snapshot: save the chosen world doc ids as the book's bible and

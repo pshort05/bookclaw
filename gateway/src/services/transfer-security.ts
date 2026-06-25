@@ -47,6 +47,25 @@ export function checkZipBudget(entries: Array<{ isDirectory: boolean; header: { 
   return null;
 }
 
+/**
+ * Post-inflation size guard. checkZipBudget() trusts the central-directory
+ * declared sizes, which an attacker controls — a crafted zip can lie about
+ * entry size and still inflate to a bomb. Call this with the ACTUAL inflated
+ * buffer length and the running total inflated so far; it throws if either the
+ * per-entry or the total uncompressed cap is exceeded. Returns the new running
+ * total so the caller can thread it through the loop.
+ */
+export function assertInflatedSize(bufLen: number, runningTotal: number): number {
+  if (bufLen > MAX_ENTRY_BYTES) {
+    throw new Error(`entry too large after inflation (${bufLen} > ${MAX_ENTRY_BYTES} bytes)`);
+  }
+  const total = runningTotal + bufLen;
+  if (total > MAX_TOTAL_UNCOMPRESSED) {
+    throw new Error(`total uncompressed too large after inflation (> ${MAX_TOTAL_UNCOMPRESSED} bytes)`);
+  }
+  return total;
+}
+
 /** True if a relative zip entry name is unsafe (traversal / absolute / off-whitelist / escapes stage). */
 export function isUnsafeEntry(name: string, stageDir: string, whitelistPrefixes: readonly string[]): boolean {
   if (!name || name.startsWith('/') || name.includes('\0')) return true;             // absolute / NUL

@@ -1,4 +1,4 @@
-import { socket } from './socket.js';
+import { socket, closeSocket } from './socket.js';
 
 export interface ChatHandlers {
   onReply: (text: string) => void;
@@ -38,7 +38,7 @@ export function subscribeChat({ onReply, onError, onDisconnect, onNotice, isWait
     // an idle network blip shouldn't append a spurious error to the thread.
     // Terminal handshake rejections always surface (we're about to stop retrying).
     if (terminal || !isWaiting || isWaiting()) onError(msg);
-    if (terminal) s.disconnect(); // stop the reconnect storm
+    if (terminal) closeSocket(); // stop the reconnect storm + drop the dead singleton
   };
   // Only announce a (re)connect once the socket has connected at least once —
   // the very first `connect` is the normal handshake, not a recovery.

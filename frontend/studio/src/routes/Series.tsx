@@ -55,7 +55,11 @@ export function Series() {
   useEffect(() => {
     setReport(null);
     if (!selId) { setWb({ characters: '', places: '', lore: '' }); return; }
-    api<Worldbuilding>(`/api/series/${selId}/worldbuilding`).then(setWb).catch(() => setWb({ characters: '', places: '', lore: '' }));
+    let cancelled = false;
+    api<Worldbuilding>(`/api/series/${selId}/worldbuilding`)
+      .then((w) => { if (!cancelled) setWb(w); })
+      .catch(() => { if (!cancelled) setWb({ characters: '', places: '', lore: '' }); });
+    return () => { cancelled = true; };
   }, [selId]);
 
   const createSeries = async () => {

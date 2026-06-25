@@ -50,6 +50,10 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   // Resolver lets createPipeline build static phases from their library
   // pipelines without the engine importing LibraryService directly.
   gw.projectEngine.setPipelineResolver((name: string) => gw.library?.get?.('pipeline', name)?.pipeline ?? null);
+  // BUG M6: resolve a project → its bound book's data/ dir so step results that
+  // were truncated for the state file can be re-hydrated from their full per-step
+  // .md output (mirrors the route layer's dataDir resolution).
+  gw.projectEngine.setDataDirResolver((p) => gw.books?.dataDirOf?.(p.bookSlug ?? null) ?? gw.books?.activeDataDir?.() ?? null);
   const templates = gw.projectEngine.getTemplates();
   console.log(`  ✓ Project engine: ${templates.length} pipeline templates + dynamic AI planning`);
 

@@ -1036,7 +1036,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const project = engine.getProject(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
     const { provider } = req.body;
-    const valid = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', '', null];
+    const valid = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter', '', null];
     if (!valid.includes(provider)) return res.status(400).json({ error: 'Invalid provider' });
     (project as any).preferredProvider = provider || undefined;
     project.updatedAt = new Date().toISOString();

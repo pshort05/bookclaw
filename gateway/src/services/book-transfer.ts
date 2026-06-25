@@ -15,7 +15,7 @@ import AdmZip from 'adm-zip';
 import type { BookService } from './book.js';
 import type { InjectionDetector } from '../security/injection.js';
 import { classifyVersion, SLUG_RE, type BookManifest } from './book-types.js';
-import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, type ImportFinding } from './transfer-security.js';
+import { isUnsafeEntry, isSymlinkEntry, scannableFiles, scanStagedText, checkZipBudget, assertInflatedSize, type ImportFinding } from './transfer-security.js';
 
 export type { ImportFinding } from './transfer-security.js';
 
@@ -74,6 +74,7 @@ export class BookTransferService {
     try { entries = new AdmZip(zip).getEntries(); } catch { return fail('not a valid zip'); }
     const budgetError = checkZipBudget(entries);
     if (budgetError) return fail(budgetError);
+    let inflatedTotal = 0;
     for (const e of entries) {
       if (e.isDirectory) continue;
       const name = e.entryName;
@@ -82,9 +83,22 @@ export class BookTransferService {
       if (isSymlinkEntry(attr)) return fail(`symlink entry rejected: ${name}`);
       if (isUnsafeEntry(name, stageDir, WHITELIST_PREFIXES)) return fail(`unsafe entry rejected: ${name}`);
       const dest = join(stageDir, name);
+      let buf: Buffer;
+      try {
+        buf = e.getData();
+      } catch {
+        return fail(`failed to extract entry: ${name}`);
+      }
+      // The declared sizes checked above are attacker-controlled — re-assert the
+      // ACTUAL inflated size so a lying central directory can't smuggle a bomb.
+      try {
+        inflatedTotal = assertInflatedSize(buf.length, inflatedTotal);
+      } catch (err) {
+        return fail((err as Error).message);
+      }
       try {
         mkdirSync(dirname(dest), { recursive: true });
-        writeFileSync(dest, e.getData());
+        writeFileSync(dest, buf);
       } catch {
         return fail(`failed to extract entry: ${name}`);
       }
@@ -117,25 +131,34 @@ export class BookTransferService {
     const mfPath = join(stageDir, 'book.json');
     if (!existsSync(mfPath)) throw new Error('staged book.json missing (expired?)');
     const manifest = JSON.parse(readFileSync(mfPath, 'utf-8')) as BookManifest;
+    // allocateSlug atomically claims an empty books/<slug> dir. If anything below
+    // fails before the staged book is moved in, remove that claimed-but-empty dir
+    // so a failed import doesn't orphan it and permanently consume the slug.
     const slug = this.books.allocateSlug(manifest.title || 'imported-book');
-    manifest.id = slug;
-    manifest.slug = slug;
-    writeFileSync(mfPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
-    // Build .baseline inside staging FIRST, so the rename lands a complete book
-    // (templates + .baseline) atomically — a cp failure leaves staging intact for the caller to purge.
-    const stageTemplates = join(stageDir, 'templates');
-    const stageBaseline = join(stageDir, '.baseline');
-    if (existsSync(stageTemplates)) cpSync(stageTemplates, stageBaseline, { recursive: true });
-    else mkdirSync(stageBaseline, { recursive: true });
     const dest = join(this.booksDir, slug);
     try {
-      renameSync(stageDir, dest);
+      manifest.id = slug;
+      manifest.slug = slug;
+      writeFileSync(mfPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+      // Build .baseline inside staging FIRST, so the rename lands a complete book
+      // (templates + .baseline) atomically — a cp failure leaves staging intact for the caller to purge.
+      const stageTemplates = join(stageDir, 'templates');
+      const stageBaseline = join(stageDir, '.baseline');
+      if (existsSync(stageTemplates)) cpSync(stageTemplates, stageBaseline, { recursive: true });
+      else mkdirSync(stageBaseline, { recursive: true });
+      try {
+        renameSync(stageDir, dest);
+      } catch (err) {
+        // Fix #7: cross-filesystem fallback (EXDEV) — copy then remove the staging dir.
+        if ((err as NodeJS.ErrnoException)?.code === 'EXDEV') {
+          cpSync(stageDir, dest, { recursive: true });
+          rmSync(stageDir, { recursive: true, force: true });
+        } else { throw err; }
+      }
     } catch (err) {
-      // Fix #7: cross-filesystem fallback (EXDEV) — copy then remove the staging dir.
-      if ((err as NodeJS.ErrnoException)?.code === 'EXDEV') {
-        cpSync(stageDir, dest, { recursive: true });
-        rmSync(stageDir, { recursive: true, force: true });
-      } else { throw err; }
+      // Roll back the claimed slug dir only if the move never populated it.
+      try { if (!existsSync(join(dest, 'book.json'))) rmSync(dest, { recursive: true, force: true }); } catch { /* best-effort */ }
+      throw err;
     }
     return manifest;
   }

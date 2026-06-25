@@ -45,7 +45,20 @@ export function StructureLength() {
     getLengthReview(slug).then(setLr).catch(() => setLr(null));
   }, [slug]);
 
-  useEffect(() => { load(); }, [load]);
+  // On slug change, guard against a stale response from the previous book
+  // overwriting the newly selected book's reviews.
+  useEffect(() => {
+    if (!slug) return;
+    setErr(null);
+    let cancelled = false;
+    getStructureReview(slug)
+      .then((r) => { if (!cancelled) setSr(r); })
+      .catch((e) => { if (!cancelled) { setSr(null); setErr(String(e)); } });
+    getLengthReview(slug)
+      .then((r) => { if (!cancelled) setLr(r); })
+      .catch(() => { if (!cancelled) setLr(null); });
+    return () => { cancelled = true; };
+  }, [slug]);
 
   const propose = async () => {
     if (!slug) return;

@@ -108,6 +108,7 @@ export class ConfirmationGateService {
   private filePath: string;
   private auditFn: AuditFn | null = null;
   private expiryMs: number;
+  private persistChain: Promise<void> = Promise.resolve();
 
   constructor(workspaceDir: string, expiryMs: number = DEFAULT_EXPIRY_MS) {
     this.filePath = join(workspaceDir, 'confirmations.json');
@@ -351,15 +352,23 @@ export class ConfirmationGateService {
   }
 
   private async persist(): Promise<void> {
-    try {
-      const tmp = this.filePath + '.tmp';
-      const data = JSON.stringify({ requests: Array.from(this.requests.values()) }, null, 2);
-      await writeFile(tmp, data, 'utf-8');
-      const { rename } = await import('fs/promises');
-      await rename(tmp, this.filePath);
-    } catch (err) {
-      console.error('  ✗ Failed to persist confirmations:', err);
-    }
+    // Serialize every persist through a single chain so concurrent calls (e.g.
+    // expireOne's fire-and-forget persist racing an approve/createRequest) can't
+    // interleave writes to the shared .tmp path and corrupt the snapshot.
+    const result = this.persistChain.then(async () => {
+      try {
+        const tmp = this.filePath + '.tmp';
+        const data = JSON.stringify({ requests: Array.from(this.requests.values()) }, null, 2);
+        await writeFile(tmp, data, 'utf-8');
+        const { rename } = await import('fs/promises');
+        await rename(tmp, this.filePath);
+      } catch (err) {
+        console.error('  ✗ Failed to persist confirmations:', err);
+      }
+    });
+    // Keep the chain alive regardless of outcome; awaited callers still see this result.
+    this.persistChain = result.catch(() => {});
+    return result;
   }
 
   private async audit(category: string, action: string, meta: Record<string, any>): Promise<void> {

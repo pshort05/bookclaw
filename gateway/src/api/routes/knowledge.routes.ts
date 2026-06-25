@@ -83,8 +83,12 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     const { personaId } = req.body || {};
     // null/empty string clears the active persona (= unscoped memory)
     const value = personaId && typeof personaId === 'string' ? personaId : null;
-    await services.memory.setActivePersona(value);
-    res.json({ personaId: services.memory.getActivePersonaId() });
+    try {
+      await services.memory.setActivePersona(value);
+      res.json({ personaId: services.memory.getActivePersonaId() });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Failed to set active persona' });
+    }
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -109,8 +113,12 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.delete('/api/user-model', async (_req: Request, res: Response) => {
     if (!services.userModel) return res.status(503).json({ error: 'User model not initialized' });
-    await services.userModel.reset();
-    res.json({ success: true });
+    try {
+      await services.userModel.reset();
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Reset failed' });
+    }
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -152,14 +160,22 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.delete('/api/cron/:id', async (req: Request, res: Response) => {
     if (!services.cronScheduler) return res.status(503).json({ error: 'Cron not initialized' });
-    const removed = await services.cronScheduler.deleteJob(req.params.id);
-    res.json({ success: removed });
+    try {
+      const removed = await services.cronScheduler.deleteJob(req.params.id);
+      res.json({ success: removed });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Delete failed' });
+    }
   });
 
   app.post('/api/cron/:id/run-now', async (req: Request, res: Response) => {
     if (!services.cronScheduler) return res.status(503).json({ error: 'Cron not initialized' });
-    const result = await services.cronScheduler.runNow(req.params.id);
-    res.json(result);
+    try {
+      const result = await services.cronScheduler.runNow(req.params.id);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Run failed' });
+    }
   });
 
   app.post('/api/cron/validate', async (req: Request, res: Response) => {
@@ -253,7 +269,11 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.get('/api/projects/:id/character-voices', async (req: Request, res: Response) => {
     if (!services.characterVoices) return res.status(503).json({ error: 'Not initialized' });
-    res.json(await services.characterVoices.getProjectVoices(req.params.id));
+    try {
+      res.json(await services.characterVoices.getProjectVoices(req.params.id));
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Failed to load character voices' });
+    }
   });
 
   /** Ingest a chapter's dialogue into the per-character corpus, refresh
@@ -501,7 +521,11 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.get('/api/projects/:id/plot-promises', async (req: Request, res: Response) => {
     if (!services.plotPromises) return res.status(503).json({ error: 'Not initialized' });
-    res.json(await services.plotPromises.getPromises(req.params.id));
+    try {
+      res.json(await services.plotPromises.getPromises(req.params.id));
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Failed to load plot promises' });
+    }
   });
 
   app.post('/api/projects/:id/plot-promises/extract', async (req: Request, res: Response) => {
@@ -540,15 +564,23 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
 
   app.patch('/api/projects/:id/plot-promises/:promiseId', async (req: Request, res: Response) => {
     if (!services.plotPromises) return res.status(503).json({ error: 'Not initialized' });
-    const updated = await services.plotPromises.updatePromise(req.params.id, req.params.promiseId, req.body || {});
-    if (!updated) return res.status(404).json({ error: 'Promise not found' });
-    res.json(updated);
+    try {
+      const updated = await services.plotPromises.updatePromise(req.params.id, req.params.promiseId, req.body || {});
+      if (!updated) return res.status(404).json({ error: 'Promise not found' });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Update failed' });
+    }
   });
 
   app.delete('/api/projects/:id/plot-promises/:promiseId', async (req: Request, res: Response) => {
     if (!services.plotPromises) return res.status(503).json({ error: 'Not initialized' });
-    const removed = await services.plotPromises.deletePromise(req.params.id, req.params.promiseId);
-    res.json({ success: removed });
+    try {
+      const removed = await services.plotPromises.deletePromise(req.params.id, req.params.promiseId);
+      res.json({ success: removed });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Delete failed' });
+    }
   });
 
   app.post('/api/projects/:id/plot-promises', async (req: Request, res: Response) => {
@@ -576,7 +608,7 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
       const engine = gateway.getProjectEngine?.();
       const project = engine?.getProject(req.params.id);
       const q = Number(req.query.progress);
-      const progressPct = project?.progress ?? (Number.isFinite(q) ? q : 100);
+      const progressPct = Number.isFinite(q) ? q : (project?.progress ?? 100);
       const riskThreshold = Number(req.query.riskThreshold) || 80;
       const auditReport = await services.plotPromises.audit(req.params.id, progressPct, riskThreshold);
       try {
@@ -755,9 +787,13 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     if (!projectId || !bookTitle || !authorName || !targetReleaseDate) {
       return res.status(400).json({ error: 'projectId, bookTitle, authorName, targetReleaseDate required' });
     }
-    const launch = await l.createLaunch({ projectId, bookTitle, authorName, targetReleaseDate, metadata });
-    addWaveDisclaimer(res);
-    res.json({ launch });
+    try {
+      const launch = await l.createLaunch({ projectId, bookTitle, authorName, targetReleaseDate, metadata });
+      addWaveDisclaimer(res);
+      res.json({ launch });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Create failed' });
+    }
   });
 
   app.get('/api/launches/:id', (req: Request, res: Response) => {
@@ -771,9 +807,13 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
   app.patch('/api/launches/:id', async (req: Request, res: Response) => {
     const l = services.launchOrchestrator;
     if (!l) return res.status(503).json({ error: 'Launch orchestrator not initialized' });
-    const result = await l.updateMetadata(req.params.id, req.body?.metadata || {});
-    if (!result) return res.status(404).json({ error: 'Not found' });
-    res.json({ launch: result });
+    try {
+      const result = await l.updateMetadata(req.params.id, req.body?.metadata || {});
+      if (!result) return res.status(404).json({ error: 'Not found' });
+      res.json({ launch: result });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Update failed' });
+    }
   });
 
   app.post('/api/launches/:id/acknowledge-disclosures', async (req: Request, res: Response) => {
@@ -781,9 +821,13 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     if (!l) return res.status(503).json({ error: 'Launch orchestrator not initialized' });
     const { scopes } = req.body || {};
     if (!Array.isArray(scopes)) return res.status(400).json({ error: 'scopes (array) required' });
-    const result = await l.acknowledgeDisclosures(req.params.id, scopes);
-    if (!result) return res.status(404).json({ error: 'Not found' });
-    res.json({ launch: result });
+    try {
+      const result = await l.acknowledgeDisclosures(req.params.id, scopes);
+      if (!result) return res.status(404).json({ error: 'Not found' });
+      res.json({ launch: result });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Acknowledge failed' });
+    }
   });
 
   app.post('/api/launches/:id/propose-step', async (req: Request, res: Response) => {
@@ -803,8 +847,12 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
   app.delete('/api/launches/:id', async (req: Request, res: Response) => {
     const l = services.launchOrchestrator;
     if (!l) return res.status(503).json({ error: 'Launch orchestrator not initialized' });
-    const removed = await l.deleteLaunch(req.params.id);
-    res.json({ success: removed });
+    try {
+      const removed = await l.deleteLaunch(req.params.id);
+      res.json({ success: removed });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Delete failed' });
+    }
   });
 
   // ── AMS Ads ──
@@ -879,24 +927,36 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     if (!projectId || !bookTitle || !releaseDate) {
       return res.status(400).json({ error: 'projectId, bookTitle, releaseDate required' });
     }
-    const events = c.buildPricePulsePlan({ projectId, bookTitle, releaseDate, launchPrice, tailPrice });
-    for (const ev of events) await c.createEvent(ev);
-    res.json({ events });
+    try {
+      const events = c.buildPricePulsePlan({ projectId, bookTitle, releaseDate, launchPrice, tailPrice });
+      for (const ev of events) await c.createEvent(ev);
+      res.json({ events });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Plan failed' });
+    }
   });
 
   app.patch('/api/calendar/:id', async (req: Request, res: Response) => {
     const c = services.releaseCalendar;
     if (!c) return res.status(503).json({ error: 'Calendar not initialized' });
-    const result = await c.updateEvent(req.params.id, req.body || {});
-    if (!result) return res.status(404).json({ error: 'Not found' });
-    res.json({ event: result });
+    try {
+      const result = await c.updateEvent(req.params.id, req.body || {});
+      if (!result) return res.status(404).json({ error: 'Not found' });
+      res.json({ event: result });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Update failed' });
+    }
   });
 
   app.delete('/api/calendar/:id', async (req: Request, res: Response) => {
     const c = services.releaseCalendar;
     if (!c) return res.status(503).json({ error: 'Calendar not initialized' });
-    const removed = await c.removeEvent(req.params.id);
-    res.json({ success: removed });
+    try {
+      const removed = await c.removeEvent(req.params.id);
+      res.json({ success: removed });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Delete failed' });
+    }
   });
 
   app.get('/api/calendar/export.ics', (req: Request, res: Response) => {

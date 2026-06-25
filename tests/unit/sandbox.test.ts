@@ -7,7 +7,7 @@
  */
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, rmSync, mkdirSync, symlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { SandboxGuard } from '../../gateway/src/security/sandbox.js';
@@ -63,6 +63,26 @@ describe('SandboxGuard', () => {
     const r = guard.validatePath('node_modules/evil/index.js');
     assert.equal(r.valid, false);
     assert.match(r.reason!, /forbidden/i);
+  });
+
+  test('a symlink inside the workspace pointing outside is rejected (realpath escape)', () => {
+    // Create an external target dir and a symlink under the workspace root that
+    // points at it. The lexical path stays under the root, but realpath escapes.
+    const outside = mkdtempSync(join(tmpdir(), 'bc-outside-'));
+    try {
+      symlinkSync(outside, join(root, 'escape'), 'dir');
+      const r = guard.validatePath('escape/secret.txt');
+      assert.equal(r.valid, false, 'symlink escape should be rejected');
+      assert.ok(r.reason);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  test('a path under a real (non-symlink) subdir resolves valid', () => {
+    mkdirSync(join(root, 'books', 'alpha'), { recursive: true });
+    const r = guard.validatePath('books/alpha/new-file.md');
+    assert.equal(r.valid, true, r.reason);
   });
 
   test('sanitizeFilename replaces path separators and dangerous chars', () => {

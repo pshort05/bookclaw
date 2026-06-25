@@ -50,6 +50,28 @@ test('insert + priorFacts returns scoped rows newest-first; idempotent rebuild',
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('priorFacts does not leak another worldless book\'s book-keyed canon (H1)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-h1-'));
+  try {
+    const s = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await s.initialize();
+    if (!s.isAvailable()) { console.log('better-sqlite3 unavailable — skipping'); return; }
+    // Two worldless books, same entity/attribute canon, different values.
+    s.insertFacts([
+      fact({ bookSlug: 'b1', world: null, source: 'canon', chapter: 'CANON', storyTime: -1, valueNorm: 'blue' }),
+      fact({ bookSlug: 'b2', world: null, source: 'canon', chapter: 'CANON', storyTime: -1, valueNorm: 'green' }),
+    ]);
+    const p1 = s.priorFacts({ world: null, bookSlug: 'b1' }, 'John', 'eye_color');
+    assert.equal(p1.length, 1, 'b1 sees only its own canon');
+    assert.equal(p1[0].valueNorm, 'blue');
+    assert.ok(!p1.some(p => p.bookSlug === 'b2'), 'no cross-contamination from b2');
+
+    const p2 = s.priorFacts({ world: null, bookSlug: 'b2' }, 'John', 'eye_color');
+    assert.equal(p2.length, 1);
+    assert.equal(p2[0].valueNorm, 'green');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('storyElapsed round-trips through insert + priorFacts', async () => {
   const root = mkdtempSync(join(tmpdir(), 'consist-store-'));
   try {

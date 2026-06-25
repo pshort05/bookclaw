@@ -42,6 +42,26 @@ export function isPrivateIp(ip: string): boolean {
     const hi = parseInt(mappedHex[1], 16), lo = parseInt(mappedHex[2], 16);
     return isPrivateIp(`${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`);
   }
+  // IPv4-compatible IPv6 dotted form (::127.0.0.1) — re-check the embedded v4.
+  const compatDotted = s.match(/^::(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (compatDotted) return isPrivateIp(compatDotted[1]);
+  // IPv4-compatible IPv6 hex form (::7f00:1) — new URL() normalizes the dotted
+  // form to this; decode the two 16-bit groups back to a.b.c.d and re-check.
+  // (Excludes the bare loopback/unspecified handled above.)
+  const compatHex = s.match(/^::([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (compatHex) {
+    const hi = parseInt(compatHex[1], 16), lo = parseInt(compatHex[2], 16);
+    return isPrivateIp(`${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`);
+  }
+  // NAT64 (64:ff9b::a.b.c.d or 64:ff9b::xxxx:yyyy) — the well-known prefix
+  // embeds a v4 address in its low 32 bits; decode and re-check it.
+  const nat64Dotted = s.match(/^64:ff9b::(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (nat64Dotted) return isPrivateIp(nat64Dotted[1]);
+  const nat64Hex = s.match(/^64:ff9b::([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (nat64Hex) {
+    const hi = parseInt(nat64Hex[1], 16), lo = parseInt(nat64Hex[2], 16);
+    return isPrivateIp(`${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`);
+  }
   if (s.includes(':')) {
     if (s.startsWith('fc') || s.startsWith('fd')) return true;      // fc00::/7 ULA
     if (s.startsWith('fe8') || s.startsWith('fe9') || s.startsWith('fea') || s.startsWith('feb')) return true; // fe80::/10

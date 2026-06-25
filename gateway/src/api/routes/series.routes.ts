@@ -33,8 +33,12 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
     if (!title) return res.status(400).json({ error: 'title (string) is required' });
     const description = typeof req.body?.description === 'string' ? req.body.description : '';
-    const series = await sb.createSeries({ title, description });
-    res.json({ series });
+    try {
+      const series = await sb.createSeries({ title, description });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.put('/api/series/:id', async (req: Request, res: Response) => {
@@ -43,9 +47,13 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     const patch: { title?: string; description?: string } = {};
     if (typeof req.body?.title === 'string') patch.title = req.body.title;
     if (typeof req.body?.description === 'string') patch.description = req.body.description;
-    const series = await sb.update(req.params.id, patch);
-    if (!series) return res.status(404).json({ error: 'Series not found' });
-    res.json({ series });
+    try {
+      const series = await sb.update(req.params.id, patch);
+      if (!series) return res.status(404).json({ error: 'Series not found' });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.put('/api/series/:id/refs', async (req: Request, res: Response) => {
@@ -58,9 +66,13 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
         if (r !== undefined) refs[kind] = r;
       }
     }
-    const series = await sb.setRefs(req.params.id, refs);
-    if (!series) return res.status(404).json({ error: 'Series not found' });
-    res.json({ series });
+    try {
+      const series = await sb.setRefs(req.params.id, refs);
+      if (!series) return res.status(404).json({ error: 'Series not found' });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   // Series Phase B: world-building (characters/places/lore.md) the series shares.
@@ -68,7 +80,11 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     const sb = services.seriesBible;
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
     if (!sb.getSeries(req.params.id)) return res.status(404).json({ error: 'Series not found' });
-    res.json(await sb.getWorldbuilding(req.params.id));
+    try {
+      res.json(await sb.getWorldbuilding(req.params.id));
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.put('/api/series/:id/worldbuilding', async (req: Request, res: Response) => {
@@ -79,8 +95,12 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     for (const k of ['characters', 'places', 'lore'] as const) {
       if (typeof req.body?.[k] === 'string') files[k] = req.body[k];
     }
-    await sb.setWorldbuilding(req.params.id, files);
-    res.json(await sb.getWorldbuilding(req.params.id));
+    try {
+      await sb.setWorldbuilding(req.params.id, files);
+      res.json(await sb.getWorldbuilding(req.params.id));
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.post('/api/series/:id/add-book', async (req: Request, res: Response) => {
@@ -89,9 +109,13 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     const slug = typeof req.body?.slug === 'string' ? req.body.slug : '';
     if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'slug (valid book slug) is required' });
     if (!services.books?.exists?.(slug)) return res.status(404).json({ error: 'Book not found' });
-    const series = await sb.addBook(req.params.id, slug);
-    if (!series) return res.status(404).json({ error: 'Series not found' });
-    res.json({ series });
+    try {
+      const series = await sb.addBook(req.params.id, slug);
+      if (!series) return res.status(404).json({ error: 'Series not found' });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.post('/api/series/:id/remove-book', async (req: Request, res: Response) => {
@@ -99,9 +123,13 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
     const slug = typeof req.body?.slug === 'string' ? req.body.slug : '';
     if (!slug) return res.status(400).json({ error: 'slug is required' });
-    const series = await sb.removeBook(req.params.id, slug);
-    if (!series) return res.status(404).json({ error: 'Series not found' });
-    res.json({ series });
+    try {
+      const series = await sb.removeBook(req.params.id, slug);
+      if (!series) return res.status(404).json({ error: 'Series not found' });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.post('/api/series/:id/reading-order', async (req: Request, res: Response) => {
@@ -109,9 +137,13 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
     const order = Array.isArray(req.body?.order) ? req.body.order.filter((s: unknown) => typeof s === 'string') : null;
     if (!order) return res.status(400).json({ error: 'order (array of book slugs) is required' });
-    const series = await sb.setReadingOrder(req.params.id, order);
-    if (!series) return res.status(404).json({ error: 'Series not found' });
-    res.json({ series });
+    try {
+      const series = await sb.setReadingOrder(req.params.id, order);
+      if (!series) return res.status(404).json({ error: 'Series not found' });
+      res.json({ series });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 
   app.get('/api/series/:id/report', async (req: Request, res: Response) => {
@@ -181,8 +213,12 @@ export function mountSeries(app: Application, gateway: any, _baseDir: string): v
   app.delete('/api/series/:id', async (req: Request, res: Response) => {
     const sb = services.seriesBible;
     if (!sb) return res.status(503).json({ error: 'Series service not initialized' });
-    const removed = await sb.deleteSeries(req.params.id);
-    if (!removed) return res.status(404).json({ error: 'Series not found' });
-    res.json({ success: true });
+    try {
+      const removed = await sb.deleteSeries(req.params.id);
+      if (!removed) return res.status(404).json({ error: 'Series not found' });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
   });
 }

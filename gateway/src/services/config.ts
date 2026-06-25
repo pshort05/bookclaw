@@ -31,7 +31,10 @@ export class ConfigService {
     }
 
     // Environment variable overrides
-    if (process.env.BOOKCLAW_PORT) this.set('server.port', parseInt(process.env.BOOKCLAW_PORT));
+    if (process.env.BOOKCLAW_PORT) {
+      const port = parseInt(process.env.BOOKCLAW_PORT, 10);
+      if (Number.isInteger(port) && port > 0) this.set('server.port', port);
+    }
     if (process.env.BOOKCLAW_PRESET) this.set('security.permissionPreset', process.env.BOOKCLAW_PRESET);
   }
 

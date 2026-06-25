@@ -306,23 +306,27 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
       return res.status(503).json({ error: 'TTS service not initialized' });
     }
 
-    // Resolve persona-aware voice if no explicit voice was passed.
-    const resolved = await resolveVoiceForRequest({
-      explicitVoice: voice,
-      personaId,
-      projectId,
-    });
+    try {
+      // Resolve persona-aware voice if no explicit voice was passed.
+      const resolved = await resolveVoiceForRequest({
+        explicitVoice: voice,
+        personaId,
+        projectId,
+      });
 
-    const result = await services.tts.generate(text, {
-      voice: resolved.voice,
-      provider: provider || resolved.provider,
-      rate, pitch, volume,
-      elevenLabsModel,
-    });
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json(result);
+      const result = await services.tts.generate(text, {
+        voice: resolved.voice,
+        provider: provider || resolved.provider,
+        rate, pitch, volume,
+        elevenLabsModel,
+      });
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (err) {
+      res.status(500).json({ error: 'Audio generation failed: ' + String(err) });
     }
   });
 
@@ -347,14 +351,18 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
   app.post('/api/audio/config', async (req: Request, res: Response) => {
     if (!services.tts) return res.status(503).json({ error: 'TTS service not initialized' });
     const { voice, provider } = req.body || {};
-    if (voice) await services.tts.setVoice(services.tts.resolveVoice(voice));
-    if (provider === 'edge' || provider === 'elevenlabs') {
-      await services.tts.setProvider(provider);
+    try {
+      if (voice) await services.tts.setVoice(services.tts.resolveVoice(voice));
+      if (provider === 'edge' || provider === 'elevenlabs') {
+        await services.tts.setProvider(provider);
+      }
+      res.json({
+        activeProvider: services.tts.getActiveProvider(),
+        activeVoice: services.tts.getActiveVoice(),
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Audio config update failed: ' + String(err) });
     }
-    res.json({
-      activeProvider: services.tts.getActiveProvider(),
-      activeVoice: services.tts.getActiveVoice(),
-    });
   });
 
   // Serve generated audio files
@@ -400,8 +408,12 @@ export function mountMedia(app: Application, gateway: any, baseDir: string): voi
     }
     // Resolve preset name to voice ID before saving
     const resolvedVoice = services.tts.resolveVoice(voice);
-    await services.tts.setVoice(resolvedVoice);
-    res.json({ success: true, voice: resolvedVoice, message: `Voice set to ${resolvedVoice}. This persists across restarts.` });
+    try {
+      await services.tts.setVoice(resolvedVoice);
+      res.json({ success: true, voice: resolvedVoice, message: `Voice set to ${resolvedVoice}. This persists across restarts.` });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to set voice: ' + String(err) });
+    }
   });
 
   // ── Backup & Restore ──

@@ -69,7 +69,14 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
     const valueNorm = typeof f.valueNorm === 'string' && f.valueNorm.length > 0
       ? f.valueNorm
       : valueRaw.toLowerCase();
-    const scene = f.scene ?? 0;
+    const rawScene = f.scene ?? 0;
+    // Clamp the LLM-supplied scene index into range before deriving story-time /
+    // time-label / canonical (mirrors audit.ts's storyElapsed clamp). An
+    // out-of-range index would otherwise inflate storyTime and read undefined
+    // scene metadata.
+    const scene = rawScenes.length > 0
+      ? Math.min(Math.max(rawScene, 0), rawScenes.length - 1)
+      : rawScene;
     const source: FactSource = f.source === 'canon' ? 'canon' : 'manuscript';
     return {
       entity,

@@ -133,6 +133,11 @@ const TASK_TYPE_MAP: Record<string, string> = {
 // Project Engine
 // ═══════════════════════════════════════════════════════════
 
+// Marker appended to a step's persisted result when it was truncated to fit the
+// state file. Its presence flags the value as a fragment to re-hydrate from the
+// full per-step .md output on disk (BUG M6).
+const TRUNCATION_MARKER = '\n\n[... truncated for state file — full output in project files ...]';
+
 export class ProjectEngine {
   private projects: Map<string, Project> = new Map();
   private authorOS: AuthorOSService | null;
@@ -147,6 +152,10 @@ export class ProjectEngine {
   private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private templateCatalog: Array<{ type: ProjectType; label: string; description: string; stepCount: number; stepCountLabel?: string }> = [];
   private pipelineResolver: ((name: string) => LibraryPipeline | null) | null = null;
+  // Resolves a project → its on-disk data dir (the bound book's data/ dir), so a
+  // step whose persisted result was truncated for the state file can be
+  // re-hydrated from its full per-step .md output (BUG M6). Optional + fail-soft.
+  private dataDirResolver: ((project: Project) => string | null) | null = null;
 
   /** Inject the available template catalog (sourced from the library at boot). */
   setTemplateCatalog(catalog: Array<{ type: ProjectType; label: string; description: string; stepCount: number; stepCountLabel?: string }>): void {
@@ -156,6 +165,15 @@ export class ProjectEngine {
   /** Inject a resolver that maps a pipeline name → its LibraryPipeline (or null). */
   setPipelineResolver(resolver: (name: string) => LibraryPipeline | null): void {
     this.pipelineResolver = resolver;
+  }
+
+  /**
+   * Inject a resolver that maps a project → its on-disk data dir (the bound
+   * book's data/ dir, or the legacy per-project dir). Used to re-hydrate step
+   * results that were truncated when persisted to the state file (BUG M6).
+   */
+  setDataDirResolver(resolver: (project: Project) => string | null): void {
+    this.dataDirResolver = resolver;
   }
 
   constructor(authorOS?: AuthorOSService, rootDir?: string) {
@@ -183,7 +201,7 @@ export class ProjectEngine {
             // Strip large step results to save space — they're already saved as individual files
             steps: p.steps.map(s => ({
               ...s,
-              result: s.result ? s.result.substring(0, 500) + (s.result.length > 500 ? '\n\n[... truncated for state file — full output in project files ...]' : '') : undefined,
+              result: s.result ? s.result.substring(0, 500) + (s.result.length > 500 ? TRUNCATION_MARKER : '') : undefined,
             })),
           })),
         };
@@ -980,13 +998,11 @@ Description: ${description}`;
     if (!project) return null;
     const step = project.steps.find(s => s.id === stepId);
     if (!step) return null;
-    if (step.status === 'completed') {
-      // Allow re-running completed steps too (user wants a different output).
-      // Keep the old result in step.error as a "previous attempt" marker.
-      step.error = `[Previous output preserved on retry]\n${step.result?.substring(0, 500) || ''}`;
-    }
+    // Retried steps go back to a clean pending state — never leave a stale error
+    // on a step that is no longer failed (the prior "[Previous output preserved
+    // on retry]" note left a phantom error on a pending step).
     step.status = 'pending';
-    step.error = step.error || undefined;
+    step.error = undefined;
     step.result = undefined;
     project.status = 'active';
     project.updatedAt = new Date().toISOString();
@@ -1073,16 +1089,27 @@ Description: ${description}`;
     project.progress = Math.round((done / project.steps.length) * 100);
     project.updatedAt = new Date().toISOString();
 
-    // Advance
-    const next = project.steps.find(s => s.status === 'pending');
+    // Advance — parallel-group aware, mirroring completeStep(): the runnable
+    // frontier is all pending members of an unblocked group (or the single next
+    // ordinary step). Fall back to an already-active sibling so skipping one
+    // member of an in-flight group never short-circuits the still-running ones.
+    const runnable = this.runnableSteps(project);
+    const next = runnable[0]
+              || project.steps.find(s => s.status === 'active' && s.id !== stepId);
+
     if (next) {
+      for (const r of runnable) r.status = 'active';
       next.status = 'active';
       this.persistState();
       return next;
     }
 
-    project.status = 'completed';
-    project.completedAt = new Date().toISOString();
+    // Only complete when no pending AND no active steps remain.
+    const remaining = project.steps.filter(s => s.status === 'pending' || s.status === 'active');
+    if (remaining.length === 0) {
+      project.status = 'completed';
+      project.completedAt = new Date().toISOString();
+    }
     this.persistState();
     return null;
   }
@@ -1162,7 +1189,50 @@ Description: ${description}`;
    * Build the system prompt addition for a project step.
    * This tells the AI what context it's operating in.
    */
+  /**
+   * Re-hydrate step results that were truncated when persisted to the state file
+   * (BUG M6). For each completed step whose stored result still carries the
+   * truncation marker, re-read the full text from its per-step .md output in the
+   * project's data dir (named `${step.id}-${slug(label)}.md`, with a leading
+   * `# <label>` heading the route layer writes). Fail-soft: if the resolver is
+   * unset, the dir is missing, or the file is unreadable, the truncated value is
+   * kept. Replaced results are cached back onto the step so this runs at most
+   * once per step per restart.
+   */
+  private async rehydrateTruncatedResults(project: Project): Promise<void> {
+    const needsHydration = project.steps.some(
+      s => typeof s.result === 'string' && s.result.endsWith(TRUNCATION_MARKER)
+    );
+    if (!needsHydration) return;
+
+    let dataDir: string | null = null;
+    try { dataDir = this.dataDirResolver?.(project) ?? null; } catch { dataDir = null; }
+    // Legacy fallback: per-project dir under the workspace, derived from the title.
+    if (!dataDir) {
+      const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      dataDir = join(this.rootDir, 'workspace', 'projects', projectSlug);
+    }
+    if (!existsSync(dataDir)) return;
+
+    for (const s of project.steps) {
+      if (typeof s.result !== 'string' || !s.result.endsWith(TRUNCATION_MARKER)) continue;
+      const filename = `${s.id}-${s.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+      const fullPath = join(dataDir, filename);
+      if (!existsSync(fullPath)) continue; // keep truncated value (fail-soft)
+      try {
+        const raw = await readFile(fullPath, 'utf-8');
+        const full = raw.replace(/^# .+\n\n/, ''); // strip the heading the route wrote
+        if (full) s.result = full;
+      } catch { /* unreadable → keep truncated value */ }
+    }
+  }
+
   async buildProjectContext(project: Project, step: ProjectStep): Promise<string> {
+    // BUG M6: restore any step results truncated for the state file before any
+    // sub-builder reads them, so polish/revision context isn't built from a 500-
+    // char fragment.
+    await this.rehydrateTruncatedResults(project);
+
     let context = `\n# Current Project\n\n`;
     context += `**Project**: ${project.title}\n`;
     context += `**Type**: ${project.type}\n`;
