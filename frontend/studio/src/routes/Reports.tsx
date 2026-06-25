@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shared';
 import styles from './Reports.module.css';
 
-type ReportKind = 'consistency' | 'beta-reader' | 'structure' | 'plot-promises';
+type ReportKind = 'consistency' | 'beta-reader' | 'structure' | 'plot-promises' | 'prompt-run';
 type ReportFormat = 'md' | 'json';
 
 interface ReportEntry {
@@ -19,10 +19,11 @@ const KIND_LABELS: Record<ReportKind, string> = {
   'beta-reader': 'Beta Reader',
   structure: 'Structure & Length',
   'plot-promises': 'Plot Promises',
+  'prompt-run': 'Prompt Run',
 };
 
 // Display order for the kind groups.
-const KIND_ORDER: ReportKind[] = ['consistency', 'beta-reader', 'structure', 'plot-promises'];
+const KIND_ORDER: ReportKind[] = ['consistency', 'beta-reader', 'structure', 'plot-promises', 'prompt-run'];
 
 // Native-download anchor URL with the ?token= query fallback (no Authorization
 // header on a plain <a> download), matching the rest of the app.
@@ -82,7 +83,7 @@ export function Reports() {
 
   // The API returns newest-first; preserve that order within each kind group.
   const grouped: Record<ReportKind, ReportEntry[]> = {
-    consistency: [], 'beta-reader': [], structure: [], 'plot-promises': [],
+    consistency: [], 'beta-reader': [], structure: [], 'plot-promises': [], 'prompt-run': [],
   };
   for (const r of reports) {
     if (grouped[r.kind]) grouped[r.kind].push(r);

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shared';
 import type { LibraryEntry } from '@bookclaw/shared';
 import { useDialog } from '../components/Dialog.js';
+import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from '../lib/providers.js';
 import styles from './PromptRunner.module.css';
 
 interface RunnerFile { path: string; group: 'Outputs' | 'Templates'; bytes: number; modified?: string }
@@ -44,9 +45,15 @@ export function PromptRunner() {
   const [file, setFile] = useState('');   // book-root path: data/… or templates/…
   const [promptName, setPromptName] = useState('');
 
+  const [provider, setProvider] = useState('');
+  const [model, setModel] = useState('');
+
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
   const [meta, setMeta] = useState<RunMeta | null>(null);
+  // The prompt/file the current output was actually produced from — captured at
+  // run time so a later dropdown change can't mislabel a saved report.
+  const [lastRun, setLastRun] = useState<{ prompt: string; file: string } | null>(null);
   const [original, setOriginal] = useState('');   // the file text we sent in (for the diff)
   const [showDiff, setShowDiff] = useState(false);
 
@@ -83,7 +90,7 @@ export function PromptRunner() {
 
   // Reset run state + reload versions whenever the selected file changes.
   useEffect(() => {
-    setOutput(null); setMeta(null); setShowDiff(false); setOriginal(''); setMsg(null); setErr(null);
+    setOutput(null); setMeta(null); setLastRun(null); setShowDiff(false); setOriginal(''); setMsg(null); setErr(null);
     loadVersions();
   }, [loadVersions]);
 
@@ -94,16 +101,17 @@ export function PromptRunner() {
 
   async function run() {
     if (!canRun) return;
-    setRunning(true); setErr(null); setMsg(null); setOutput(null); setMeta(null); setShowDiff(false);
+    setRunning(true); setErr(null); setMsg(null); setOutput(null); setMeta(null); setLastRun(null); setShowDiff(false);
     try {
       const text = await fetchText(`/api/books/${encodeURIComponent(slug)}/file?path=${encodeURIComponent(file)}`);
       setOriginal(text);
       const r = await api<{ output: string; meta?: RunMeta }>('/api/prompts/run', {
         method: 'POST',
-        body: JSON.stringify({ prompt: promptName, content: text, bookSlug: slug }),
+        body: JSON.stringify({ prompt: promptName, content: text, bookSlug: slug, provider: provider || undefined, model: model || undefined }),
       });
       setOutput(r.output ?? '');
       setMeta(r.meta ?? null);
+      setLastRun({ prompt: promptName, file });
     } catch (e) {
       setErr(`Run failed — ${String(e)}`);
     } finally {
@@ -140,8 +148,21 @@ export function PromptRunner() {
     } catch (e) { setErr(`Save failed — ${String(e)}`); }
   }
 
+  async function saveAsReport() {
+    // Guard empty output (a run can return '') and attribute to the run that
+    // produced this output (lastRun), not the possibly-changed dropdowns.
+    if (!output || !lastRun) return;
+    try {
+      const r = await api<{ id: string }>(`/api/books/${encodeURIComponent(slug)}/prompts/report`, {
+        method: 'POST',
+        body: JSON.stringify({ prompt: lastRun.prompt, file: lastRun.file, output, meta }),
+      });
+      setMsg(`Saved report ${r.id} — view it on the Reports page.`);
+    } catch (e) { setErr(`Save report failed — ${String(e)}`); }
+  }
+
   function discard() {
-    setOutput(null); setMeta(null); setShowDiff(false); setOriginal('');
+    setOutput(null); setMeta(null); setLastRun(null); setShowDiff(false); setOriginal('');
   }
 
   async function restore(id: string) {
@@ -203,6 +224,20 @@ export function PromptRunner() {
             {selectedPrompt?.description && <div className={styles.pdesc}>{selectedPrompt.description}</div>}
           </div>
 
+          <div className={styles.field}>
+            <span className={styles.fl}>Model</span>
+            <select className={styles.pick} value={provider} onChange={(e) => { setProvider(e.target.value); if (!e.target.value) setModel(''); }} disabled={running}>
+              <option value="">default (auto)</option>
+              {AI_PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          {provider !== '' && (
+            <div className={styles.field}>
+              <span className={styles.fl}>Exact model</span>
+              <input className={styles.pick} type="text" value={model} placeholder={PROVIDER_DEFAULT_MODEL[provider]} onChange={(e) => setModel(e.target.value)} disabled={running} />
+            </div>
+          )}
+
           <button className={styles.runBtn} onClick={run} disabled={!canRun}>
             {running ? 'Running…' : 'Run'}
           </button>
@@ -254,6 +289,7 @@ export function PromptRunner() {
                 <div className={styles.outActions}>
                   <button className={styles.act} onClick={() => setShowDiff(true)}>Replace…</button>
                   <button className={styles.act} onClick={saveAsNew}>Save as new file</button>
+                  <button className={styles.act} onClick={saveAsReport} disabled={!output || !lastRun}>Save as report</button>
                   <button className={styles.act} onClick={discard}>Discard</button>
                 </div>
               </div>

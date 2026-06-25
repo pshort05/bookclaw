@@ -1,5 +1,6 @@
 import { api } from '@bookclaw/shared';
 import { socket } from '@bookclaw/shared';
+import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from './providers.js';
 
 export type FindingCategory = 'contradiction' | 'continuity' | 'impossibility' | 'canon-divergence';
 export type Severity = 'high' | 'medium' | 'low';
@@ -32,13 +33,8 @@ export interface ConsistencyReport {
 export interface ReverseIndexEntry { entity: string; attribute: string; chapters: string[]; isCanon: boolean; }
 export interface OrphanFact { entity: string; attribute: string; valueRaw: string; world: string | null; }
 
-// Keep in sync with CONSISTENCY_PROVIDERS in gateway/src/services/consistency/model-selection.ts
-// (the studio build can't import gateway TS across packages).
-export const CONSISTENCY_PROVIDERS = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'] as const;
-export const PROVIDER_DEFAULT_MODEL: Record<string, string> = {
-  gemini: 'gemini-2.5-flash', deepseek: 'deepseek-chat', claude: 'claude-sonnet-4-5-20250929',
-  openai: 'gpt-4o', ollama: 'llama3.2', openrouter: 'anthropic/claude-sonnet-4-5',
-};
+export const CONSISTENCY_PROVIDERS = AI_PROVIDERS;
+export { PROVIDER_DEFAULT_MODEL };
 
 export interface ConsistencyModelSelection { provider?: string; model?: string; }
 

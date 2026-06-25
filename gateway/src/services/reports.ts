@@ -7,10 +7,10 @@ import { join, resolve, sep } from 'path';
  * timestamped history (keep-last-N per kind). Reports are snapshots — a re-run
  * adds a new version. Fail-soft: nothing here throws into a caller.
  */
-export type ReportKind = 'consistency' | 'beta-reader' | 'structure' | 'plot-promises';
+export type ReportKind = 'consistency' | 'beta-reader' | 'structure' | 'plot-promises' | 'prompt-run';
 export const REPORT_KEEP = 10;
 export const KIND_LABELS: Record<ReportKind, string> = {
-  consistency: 'Consistency', 'beta-reader': 'Beta Reader', structure: 'Structure & Length', 'plot-promises': 'Plot Promises',
+  consistency: 'Consistency', 'beta-reader': 'Beta Reader', structure: 'Structure & Length', 'plot-promises': 'Plot Promises', 'prompt-run': 'Prompt Run',
 };
 const KINDS = new Set<string>(Object.keys(KIND_LABELS));
 const ID_RE = /^[a-z-]+-\d{8}T\d{6}Z$/;

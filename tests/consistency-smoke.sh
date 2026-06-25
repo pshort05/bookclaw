@@ -446,6 +446,75 @@ process.stdout.write(r ? r.id : '');
   else
     fail "reports API did not list a consistency report (got: ${REPORTS_JSON})"
   fi
+
+  # 5h. Prompt Runner report-saving path (best-effort): run a prompt from the
+  #     catalog against this book, save its output as a "prompt-run" report, then
+  #     confirm the reports API lists it and serves the markdown. Fail-soft about
+  #     the catalog — if no prompt asset exists this whole block is skipped so the
+  #     hermetic smoke never hard-fails.
+  PROMPTS_JSON="$(curl -fsS "${AUTH[@]}" "${BASE}/api/library?kind=prompt" 2>/dev/null || true)"
+  PROMPT_NAME="$(printf '%s' "${PROMPTS_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const e = (d.entries||[])[0];
+process.stdout.write(e && e.name ? e.name : '');
+" 2>/dev/null || true)"
+  if [ -n "${PROMPT_NAME}" ]; then
+    # b. Run the prompt against the book.
+    RUN_OUT="$(curl -fsS "${AUTH[@]}" \
+      -H 'Content-Type: application/json' \
+      -X POST "${BASE}/api/prompts/run" \
+      -d "{\"prompt\":\"${PROMPT_NAME}\",\"content\":\"Sample text for a prompt run.\",\"bookSlug\":\"${BOOK_SLUG}\",\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash\"}" 2>/dev/null || true)"
+    PROMPT_OUTPUT="$(printf '%s' "${RUN_OUT}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+process.stdout.write(d.output || '');
+" 2>/dev/null || true)"
+    if [ -z "${PROMPT_OUTPUT}" ]; then
+      fail "prompt run returned no output (got: ${RUN_OUT})"
+    else
+      pass "POST /api/prompts/run produced output for prompt '${PROMPT_NAME}'"
+      # c. Save the run as a prompt-run report. Build the JSON body with node so
+      #    the output text is properly escaped.
+      REPORT_BODY="$(PROMPT_NAME="${PROMPT_NAME}" PROMPT_OUTPUT="${PROMPT_OUTPUT}" node -e "
+const body = {
+  prompt: process.env.PROMPT_NAME,
+  file: 'data/sample.md',
+  output: process.env.PROMPT_OUTPUT,
+  meta: { provider: 'gemini', model: 'gemini-2.5-flash' },
+};
+process.stdout.write(JSON.stringify(body));
+")"
+      SAVE_RESP="$(printf '%s' "${REPORT_BODY}" | curl -fsS "${AUTH[@]}" \
+        -H 'Content-Type: application/json' \
+        -X POST "${BASE}/api/books/${BOOK_SLUG}/prompts/report" \
+        --data-binary @- 2>/dev/null || true)"
+      PROMPT_REPORT_ID="$(printf '%s' "${SAVE_RESP}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+process.stdout.write(d.id || '');
+" 2>/dev/null || true)"
+      [ -n "${PROMPT_REPORT_ID}" ] \
+        && pass "POST /api/books/:slug/prompts/report saved a prompt-run report (${PROMPT_REPORT_ID})" \
+        || fail "prompts/report did not return an id (got: ${SAVE_RESP})"
+
+      # d. The reports API must list a prompt-run report and serve its markdown.
+      PR_REPORTS_JSON="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/reports" 2>/dev/null || true)"
+      PR_REPORT_ID="$(printf '%s' "${PR_REPORTS_JSON}" | node -e "
+const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const r = (d.reports||[]).find(x => x.kind === 'prompt-run');
+process.stdout.write(r ? r.id : '');
+" 2>/dev/null || true)"
+      if [ -n "${PR_REPORT_ID}" ]; then
+        pass "GET /api/books/:slug/reports lists a prompt-run report (${PR_REPORT_ID})"
+        PR_MD="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/reports/${PR_REPORT_ID}?format=md" 2>/dev/null || true)"
+        printf '%s' "${PR_MD}" | grep -q "# Prompt Run" \
+          && pass "GET …/reports/:id?format=md serves the prompt-run markdown" \
+          || fail "prompt-run markdown did not serve as expected (got: $(printf '%s' "${PR_MD}" | head -c 80))"
+      else
+        fail "reports API did not list a prompt-run report (got: ${PR_REPORTS_JSON})"
+      fi
+    fi
+  else
+    echo "  (skip: no prompt asset available)"
+  fi
 fi
 
 stop_server

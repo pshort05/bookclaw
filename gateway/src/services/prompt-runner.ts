@@ -28,11 +28,18 @@ export async function runPrompt(
     costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void };
   },
   promptName: string, content: string, bookSlug?: string,
+  override?: { provider?: string; model?: string },
 ): Promise<RunResult | null> {
   const prompt = deps.prompts?.get(promptName) ?? null;
   if (!prompt) return null;
-  const provider = deps.aiRouter.selectProvider?.('prompt_run', prompt.model ? 'openrouter' : undefined) ?? { id: 'openrouter' };
-  const model = prompt.model && provider.id === 'openrouter' ? prompt.model : undefined;
+  // Precedence: per-run override → the prompt asset's pinned model (openrouter) → tier default.
+  // The model is honored only when the preferred provider was actually selected;
+  // otherwise selectProvider fell back to a different provider and a pinned model
+  // id would mismatch, so we let that provider use its own default.
+  const wantProvider = override?.provider || (prompt.model ? 'openrouter' : undefined);
+  const wantModel = override?.provider ? override.model : prompt.model;
+  const provider = deps.aiRouter.selectProvider?.('prompt_run', wantProvider) ?? { id: wantProvider ?? 'openrouter' };
+  const model = wantProvider && provider.id === wantProvider ? wantModel : undefined;
   const t0 = Date.now();
   const res = await deps.aiRouter.complete({
     provider: provider.id,
