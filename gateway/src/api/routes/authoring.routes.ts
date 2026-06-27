@@ -23,7 +23,7 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
   const wsSkillsDir = join(baseDir, 'workspace', 'library', 'skills');
 
   const PROMPT_FILES = ['SOUL.md', 'STYLE-GUIDE.md', 'VOICE-PROFILE.md', 'PERSONALITY.md'];
-  const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'ops'];
+  const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'ops', 'toolkit'];
 
   // Resolve the directory a prompt file lives in, matching where SoulService
   // reads it (book-container Phase 3): when a book is active, identity files

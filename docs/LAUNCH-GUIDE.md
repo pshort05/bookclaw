@@ -100,7 +100,7 @@ ssh -L 3847:localhost:3847 user@your-vps-ip
 |---|---|
 | Main code | `gateway/src/index.ts` |
 | UI (v6 React studio) | Served statically at `/` (built from `frontend/studio/`). The old vanilla-JS dashboard was retired. |
-| Skills | `skills/{core,author,marketing,ops}/` (active categories; `premium/` is gitignored, rest in `_archived/`) |
+| Skills | `skills/{core,author,marketing,ops,toolkit}/` (active categories; `premium/` is gitignored, rest in `_archived/`) |
 | Config | `config/default.json` (public), `config/user.json` (private) |
 | Vault (encrypted keys) | `config/.vault/vault.enc` |
 | Project outputs | `workspace/projects/` |

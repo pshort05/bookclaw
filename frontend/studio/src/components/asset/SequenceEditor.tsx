@@ -45,7 +45,9 @@ export function SequenceEditor({ scope, kind, name, displayName }: Props) {
     readEntry(scope, kind, name)
       .then((entry) => {
         let seq: SequenceData | null = null;
-        if (typeof entry.content === 'string' && entry.content.trim()) {
+        if (entry.sequence) {
+          seq = entry.sequence;
+        } else if (typeof entry.content === 'string' && entry.content.trim()) {
           try { seq = JSON.parse(entry.content); } catch { /* handled below */ }
         }
         if (!seq || !Array.isArray(seq.pipelines)) {

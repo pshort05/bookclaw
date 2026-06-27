@@ -983,7 +983,7 @@ class BookClawGateway {
       refContent += `Auto-generated on startup — ${catalog.length} skills loaded\n`;
       refContent += '═'.repeat(60) + '\n\n';
 
-      for (const category of ['core', 'author', 'marketing', 'premium', 'ops']) {
+      for (const category of ['core', 'author', 'marketing', 'premium', 'ops', 'toolkit']) {
         const skills = byCategory[category];
         if (!skills || skills.length === 0) continue;
 

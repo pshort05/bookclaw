@@ -90,6 +90,27 @@ test('editing one file of a built-in multi-file author preserves siblings', asyn
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('createEntry writes a sequence; empty pipelines rejected', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
+  try {
+    const lib = await makeLib(root);
+    // A valid sequence (≥1 pipeline) is creatable in the overlay — this is the
+    // kind the studio "Add Sequence" button creates (regression: it was blocked
+    // by a route allowlist that omitted "sequence").
+    await lib.createEntry('sequence', 'my-seq', {
+      content: JSON.stringify({ schemaVersion: 1, name: 'my-seq', label: 'My Seq', description: 'd', pipelines: ['novel-pipeline'] }),
+    });
+    await lib.reload();
+    assert.deepEqual(lib.get('sequence', 'my-seq')!.sequence!.pipelines, ['novel-pipeline']);
+
+    // An empty-pipelines body must be rejected (the old starter JSON sent this).
+    await assert.rejects(
+      () => lib.createEntry('sequence', 'empty-seq', { content: JSON.stringify({ schemaVersion: 1, name: 'empty-seq', pipelines: [] }) }),
+      /non-empty/i,
+    );
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('createEntry writes a section and a pipeline; bad JSON rejected', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
   try {

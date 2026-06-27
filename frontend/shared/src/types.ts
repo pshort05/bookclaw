@@ -187,6 +187,11 @@ export interface LibraryPrompt {
   schemaVersion?: number; name: string; label?: string; description?: string;
   systemPrompt: string; model?: string; temperature?: number;
 }
+/** An ordered list of pipeline names a book runs, in sequence (mirrors backend LibrarySequence). */
+export interface LibrarySequence {
+  schemaVersion?: number; name: string; label?: string; description?: string;
+  pipelines: string[];
+}
 
 /** Mirrors gateway/src/services/world-types.ts — do not diverge. */
 export interface WorldDocumentType {
@@ -260,6 +265,7 @@ export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>;
   content?: string;
   pipeline?: LibraryPipeline;
+  sequence?: LibrarySequence;
   editor?: LibraryEditor;
   prompt?: LibraryPrompt;
   world?: LibraryWorld;

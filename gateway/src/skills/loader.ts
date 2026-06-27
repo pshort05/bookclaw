@@ -22,7 +22,7 @@ export interface SkillStep {
 export interface Skill {
   name: string;
   description: string;
-  category: 'core' | 'author' | 'marketing' | 'premium' | 'ops';
+  category: 'core' | 'author' | 'marketing' | 'premium' | 'ops' | 'toolkit';
   triggers: string[];
   permissions: string[];
   content: string;
@@ -62,7 +62,7 @@ export interface SkillCatalogEntry {
   source: SkillSource;
 }
 
-export const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops'] as const;
+export const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops', 'toolkit'] as const;
 
 export class SkillLoader {
   private skillsDir: string;
@@ -177,7 +177,7 @@ export class SkillLoader {
     return true;
   }
 
-  private parseSkill(content: string, name: string, category: 'core' | 'author' | 'marketing' | 'premium' | 'ops', source: 'builtin' | 'workspace'): Skill | null {
+  private parseSkill(content: string, name: string, category: 'core' | 'author' | 'marketing' | 'premium' | 'ops' | 'toolkit', source: 'builtin' | 'workspace'): Skill | null {
     // Parse YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!frontmatterMatch) return null;

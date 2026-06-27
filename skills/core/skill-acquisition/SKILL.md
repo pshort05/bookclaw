@@ -24,7 +24,7 @@ and present them for user review before saving.
 ## Workflow
 
 ### Step 1: Understand the Request
-- Parse: What topic? What category (core/author/marketing/ops)?
+- Parse: What topic? What category (core/author/marketing/ops/toolkit)?
 - Assess: Is this genuinely new or does an existing skill cover it?
 
 ### Step 2: Research

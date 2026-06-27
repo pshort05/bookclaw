@@ -25,7 +25,7 @@ const KIND_DEFS: Record<LibraryKind, { label: string; canon: string; def: string
 const WRITABLE_KINDS: LibraryKind[] = ['author', 'voice', 'genre', 'pipeline', 'sequence', 'section', 'editor', 'prompt', 'world'];
 
 const STARTER_PIPELINE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-pipeline', label: 'New Pipeline', description: '', steps: [] }, null, 2);
-const STARTER_SEQUENCE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-sequence', label: 'New Sequence', description: '', pipelines: [] }, null, 2);
+const STARTER_SEQUENCE_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-sequence', label: 'New Sequence', description: '', pipelines: ['novel-pipeline'] }, null, 2);
 const STARTER_EDITOR_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-editor', label: 'New Editor', description: '', systemPrompt: 'You are an interactive developmental editor.' }, null, 2);
 const STARTER_PROMPT_JSON = JSON.stringify({ schemaVersion: 1, name: 'new-prompt', label: 'New Prompt', description: '', systemPrompt: 'You are a writing-craft assistant. Return the revised text.' }, null, 2);
 const STARTER_WORLD_JSON = JSON.stringify({

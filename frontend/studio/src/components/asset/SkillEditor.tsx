@@ -7,14 +7,14 @@ interface Props { scope: string; kind: LibraryKind; name: string; displayName?: 
 interface Phase { _id: string; name?: string; model: string; temperature?: number; prompt: string }
 type WireStep = Omit<Phase, '_id'>;
 interface SkillData {
-  category: 'core' | 'author' | 'marketing' | 'premium' | 'ops';
+  category: 'core' | 'author' | 'marketing' | 'premium' | 'ops' | 'toolkit';
   content: string;
   source: string;
   steps?: WireStep[];
   retries?: number;
 }
 
-const CATEGORIES = ['core', 'author', 'marketing', 'ops'] as const; // premium excluded (read-only)
+const CATEGORIES = ['core', 'author', 'marketing', 'ops', 'toolkit'] as const; // premium excluded (read-only)
 let phaseSeq = 0;
 const newId = () => `p${phaseSeq++}`;
 const blankPhase = (): Phase => ({ _id: newId(), model: '', prompt: '' });

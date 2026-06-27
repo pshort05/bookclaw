@@ -1,7 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { uploadZip, requireApprovedConfirmation } from './_shared.js';
 import { LIBRARY_KINDS, type LibraryKind } from '../../services/library-types.js';
-import { ENTRY_NAME_RE } from '../../services/library.js';
+import { ENTRY_NAME_RE, FILE_KINDS, type FileKind } from '../../services/library.js';
 import type { ImportFinding } from '../../services/transfer-security.js';
 
 /**
@@ -132,10 +132,11 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
   });
 
   // ── Write path (Phase 4): workspace-overlay CRUD. Built-ins are read-only;
-  // skills are handled by /api/skills (SkillLoader overlay). ─────────────────
-  const WRITABLE = ['author', 'voice', 'genre', 'pipeline', 'editor', 'prompt', 'section', 'world'] as const;
-  const isWritable = (v: string): v is (typeof WRITABLE)[number] =>
-    (WRITABLE as readonly string[]).includes(v);
+  // skills are handled by /api/skills (SkillLoader overlay). Writable kinds are
+  // exactly the library's file-backed kinds (FILE_KINDS) — derive from that one
+  // source so this can't drift (it previously omitted "sequence"). ───────────
+  const isWritable = (v: string): v is FileKind =>
+    (FILE_KINDS as readonly string[]).includes(v);
 
   // Create a new entry. 409 if the name already exists in any source.
   app.post('/api/library/:kind', async (req: Request, res: Response) => {

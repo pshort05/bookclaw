@@ -176,7 +176,7 @@ Add keys in the studio's **Settings** (they are stored write-only in the encrypt
 
 ## Skills
 
-Skills are markdown files (`skills/<category>/<name>/SKILL.md`, YAML frontmatter + body) that teach the agent how to handle a specific writing task. They are matched by trigger keywords and injected into the relevant step's prompt. BookClaw ships ~29 author-centric skills across **core**, **author**, **marketing**, and **ops** categories, plus optional purchasable **premium** skills (gitignored). BookClaw can also read a tool's source code and synthesize a new skill from it.
+Skills are markdown files (`skills/<category>/<name>/SKILL.md`, YAML frontmatter + body) that teach the agent how to handle a specific writing task. They are matched by trigger keywords and injected into the relevant step's prompt. BookClaw ships ~34 author-centric skills across **core**, **author**, **marketing**, **ops**, and **toolkit** (lightweight "keep the writing mine" support roles) categories, plus optional purchasable **premium** skills (gitignored). BookClaw can also read a tool's source code and synthesize a new skill from it.
 
 ---
 
@@ -230,7 +230,7 @@ bookclaw/
 │   ├── studio/           #   the studio served at "/"
 │   └── chat/             #   standalone Chat app (own port)
 ├── dashboard/concept/    # Design source-of-truth mockups (legacy UI retired)
-├── skills/               # SKILL.md definitions (core/author/marketing/ops/premium)
+├── skills/               # SKILL.md definitions (core/author/marketing/ops/toolkit/premium)
 ├── library/              # Built-in authors/voices/genres/pipelines/sections
 ├── tests/                # Scripted tests (unit + smoke + feature smoke)
 ├── config/               # default.json (versioned), .vault/, research allowlist
