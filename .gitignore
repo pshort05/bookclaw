@@ -55,6 +55,9 @@ author-os/
 scripts/FULL-TEST-CHECKLIST.md
 ROADMAP.md
 
+# Setup-specific deployment runbook (Neptune/Mercury hosts, paths, IPs — not for repo)
+docs/DEPLOYMENT.local.md
+
 # Frontend build artifacts (built by Docker/CI; not committed)
 frontend/studio/dist/
 frontend/chat/dist/
