@@ -67,6 +67,8 @@ In the **Pipeline Editor** (Asset Studio), each step can pin a provider, model, 
 
 Resolution order for any step's AI call: **per-step override → project preferred provider → tier routing** (from the step's `taskType`). When a pinned provider isn't configured, the engine warns and falls back to tier routing rather than failing.
 
+For *which* model to pin where — provider/model pros and cons and per-task recommendations (including the cheap-draft/premium-edit cost pattern) — see the [Model guide](../MODEL-GUIDE.md).
+
 ### Edit and clone pipelines in the Asset Studio
 
 The **Asset Studio** is where you edit library assets. For pipelines, the **Pipeline Editor** supports per-step editing (prompt, taskType, model override) and editing of the `expand` group (see below). The **Sequence Editor** edits the ordered list of pipeline names. To clone, export an asset and re-import it under a new name. Assets round-trip through the library transfer paths:

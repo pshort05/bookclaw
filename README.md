@@ -320,6 +320,7 @@ All supporting documents live in [`docs/`](docs/).
 **Getting started**
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) — Install and run your first task in minutes.
 - [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) — Step-by-step walkthrough of the full novel pipeline.
+- [docs/MODEL-GUIDE.md](docs/MODEL-GUIDE.md) — Choosing models: provider/model pros and cons and which to use per task (e.g. Haiku for consistency checks), plus the cheap-draft/premium-edit cost pattern.
 - [docs/GLOSSARY.md](docs/GLOSSARY.md) — Canonical vocabulary (Book, Pipeline, Step, Author, Voice, Genre, …).
 - [docs/HOW-TO-CREATE-GENRE-GUIDES.md](docs/HOW-TO-CREATE-GENRE-GUIDES.md) — Author a genre guide: the seven files, what each contains, and how to add one.
 - [docs/HOW-TO-CREATE-AUTHOR-PROFILES.md](docs/HOW-TO-CREATE-AUTHOR-PROFILES.md) — Build an author profile: the author + voice files, what each contains, and how to add one.

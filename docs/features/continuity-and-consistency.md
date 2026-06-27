@@ -14,6 +14,8 @@ It is built from five cooperating layers, each solving a different problem:
 
 The design principle that runs through layers 3 and 4: **the LLM only extracts; every check is deterministic.** The model reads prose and emits typed facts; the comparison that flags a contradiction is plain code with no model in the loop, so the same manuscript always produces the same findings.
 
+Because extraction is the only model-driven step and it runs **once per chapter**, the audit is the prime example of "cheap model for a wide pass": a fast, large-context model such as **Haiku 4.5 or Gemini Flash** gives good results at a fraction of a premium model's cost. Set a per-book model (it persists) or override it per run in the Consistency panel. See the [Model guide](../MODEL-GUIDE.md) for the reasoning and per-task recommendations.
+
 ## Why it matters
 
 Continuity errors are the most common reason a finished draft reads as amateur, and they are the hardest for an author to catch — your brain fills in what you *meant* to write. The deeper problem is that ordinary "AI proofreaders" re-read the whole book and guess; they are non-deterministic, they miss things across long spans, and they cannot reason about a story clock or about who learned what when.
