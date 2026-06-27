@@ -517,6 +517,52 @@ process.stdout.write(r ? r.id : '');
   fi
 fi
 
+# ── Apply-Fix flow (TODO #46): propose → apply a fixable finding ──
+# Deterministic assertions when the model anchors an edit; graceful-skip when it
+# doesn't (the proposal text is model-dependent), mirroring the suite's posture.
+log ""
+log "Apply-Fix flow (propose -> apply):"
+AF_REPORT="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${BOOK_SLUG}/consistency-report" 2>/dev/null || true)"
+FIX_ID="$(printf '%s' "${AF_REPORT}" | node -e "
+const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const FIX=['contradiction','continuity','impossibility','canon-divergence'];
+const f=((d.report&&d.report.findings)||[]).find(x=>FIX.includes(x.category)&&x.id);
+process.stdout.write(f?f.id:'');" 2>/dev/null || true)"
+if [ -z "${FIX_ID}" ]; then
+  echo "  (skip: no fixable finding with an id in the report — model-dependent)"
+else
+  PROP="$(curl -fsS "${AUTH[@]}" -H 'Content-Type: application/json' \
+    -d "{\"findingIds\":[\"${FIX_ID}\"]}" \
+    -X POST "${BASE}/api/books/${BOOK_SLUG}/consistency-fix/propose" 2>/dev/null || true)"
+  ANCHORED="$(printf '%s' "${PROP}" | node -e "
+const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const p=(d.proposals||[]).find(x=>x.anchored && x.oldPhrase);
+process.stdout.write(p?JSON.stringify({findingId:p.findingId,targetChapter:p.targetChapter,oldPhrase:p.oldPhrase,newPhrase:p.newPhrase}):'');" 2>/dev/null || true)"
+  if [ -z "${ANCHORED}" ]; then
+    echo "  (skip: model produced no anchorable edit — non-deterministic)"
+  else
+    pass "consistency-fix/propose returned an anchored edit"
+    OLD_PHRASE="$(printf '%s' "${ANCHORED}" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).oldPhrase)" 2>/dev/null || true)"
+    APPLY="$(curl -fsS "${AUTH[@]}" -H 'Content-Type: application/json' \
+      -d "{\"edits\":[${ANCHORED}]}" \
+      -X POST "${BASE}/api/books/${BOOK_SLUG}/consistency-fix/apply" 2>/dev/null || true)"
+    APPLIED_N="$(printf '%s' "${APPLY}" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));process.stdout.write(String((d.applied||[]).length))" 2>/dev/null || echo 0)"
+    [ "${APPLIED_N:-0}" -ge 1 ] \
+      && pass "consistency-fix/apply applied ${APPLIED_N} edit(s)" \
+      || fail "consistency-fix/apply applied nothing (got: ${APPLY})"
+    if [ -n "${OLD_PHRASE}" ] && ! grep -qrF -- "${OLD_PHRASE}" "${DATA_DIR}"/chapter-*.md 2>/dev/null; then
+      pass "applied edit removed the old phrase from the chapter prose"
+    else
+      fail "old phrase still present after apply (or empty)"
+    fi
+    if ls "${DATA_DIR}"/.versions/*/* >/dev/null 2>&1; then
+      pass "a pre-edit version snapshot was created (.versions/)"
+    else
+      fail "no .versions snapshot found after apply"
+    fi
+  fi
+fi
+
 stop_server
 
 log ""

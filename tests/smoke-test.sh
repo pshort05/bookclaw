@@ -127,6 +127,13 @@ pass "server started and serves ${BASE}/"
 [ "$(code -X POST "$BASE/api/books/smoke/try-fail-audit")" = "401" ] \
   && pass "try-fail-audit: no token -> 401" || fail "try-fail-audit should be 401 without token"
 
+# Consistency apply-fix routes sit behind the auth gate too (gate in front of routing).
+[ "$(code -X POST "$BASE/api/books/smoke/consistency-fix/propose")" = "401" ] \
+  && pass "consistency-fix/propose: no token -> 401" || fail "consistency-fix/propose should be 401 without token"
+
+[ "$(code -X POST "$BASE/api/books/smoke/consistency-fix/apply")" = "401" ] \
+  && pass "consistency-fix/apply: no token -> 401" || fail "consistency-fix/apply should be 401 without token"
+
 HTML="$(curl -s --max-time 5 "$BASE/")"
 case "$HTML" in
   *"__BOOKCLAW_AUTH_TOKEN__"*) fail "dashboard still contains the unsubstituted token placeholder" ;;

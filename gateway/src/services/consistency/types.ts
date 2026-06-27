@@ -21,6 +21,8 @@ export interface CanonRef { canonSource: string; quote: string; }
 export interface ConsistencyFinding {
   category: FindingCategory; severity: Severity; entity: string; attribute: string;
   a: FindingRef; b: FindingRef | CanonRef; explanation: string; suggestedFix: string;
+  /** Stable hash id (computed in check-engine), used by the apply-fix round-trip. */
+  id?: string;
 }
 
 export type KnowledgeKind = 'acquire' | 'use';

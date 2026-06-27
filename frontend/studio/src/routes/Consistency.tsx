@@ -5,10 +5,16 @@ import {
   getConsistencyReport,
   saveConsistencyModel,
   subscribeConsistency,
+  proposeConsistencyFixes,
+  applyConsistencyFixes,
   CONSISTENCY_PROVIDERS,
   PROVIDER_DEFAULT_MODEL,
+  FIXABLE_CATEGORIES,
   type ConsistencyFinding,
   type ConsistencyReport,
+  type ProposedEdit,
+  type ConfirmedEdit,
+  type ApplyOutcome,
   type Severity,
 } from '../lib/consistencyApi.js';
 import { useModelCatalog, CATALOG_PROVIDERS } from '../lib/openrouterModels.js';
@@ -32,11 +38,26 @@ function isCanonRef(b: ConsistencyFinding['b']): b is { canonSource: string; quo
   return 'canonSource' in b;
 }
 
-function FindingCard({ finding }: { finding: ConsistencyFinding }) {
+function FindingCard({
+  finding,
+  fixSelected,
+  onToggleFix,
+  toggleDisabled,
+}: {
+  finding: ConsistencyFinding;
+  fixSelected: boolean;
+  onToggleFix: (next: boolean) => void;
+  toggleDisabled: boolean;
+}) {
   const tagClass =
     finding.severity === 'high' ? styles.tagHigh :
     finding.severity === 'medium' ? styles.tagMedium :
     styles.tagLow;
+  const isFixableCat = FIXABLE_CATEGORIES.has(finding.category);
+  // A fixable category only gets a working toggle when the finding carries a
+  // stable id — older reports (audited before this feature) lack ids, so the
+  // propose round-trip can't reference them; prompt a re-audit instead.
+  const fixable = isFixableCat && !!finding.id;
 
   return (
     <div className={styles.finding}>
@@ -44,6 +65,30 @@ function FindingCard({ finding }: { finding: ConsistencyFinding }) {
         <span className={`${styles.tag} ${tagClass}`}>{finding.severity}</span>
         <span className={styles.entityAttr}>{finding.entity} · {finding.attribute}</span>
         <span className={styles.category}>{finding.category}</span>
+        {fixable ? (
+          <div className={styles.fixToggle}>
+            <button
+              type="button"
+              className={`${styles.fixToggleBtn} ${!fixSelected ? styles.fixToggleActive : ''}`}
+              onClick={() => onToggleFix(false)}
+              disabled={toggleDisabled}
+            >
+              Ignore
+            </button>
+            <button
+              type="button"
+              className={`${styles.fixToggleBtn} ${fixSelected ? styles.fixToggleActive : ''}`}
+              onClick={() => onToggleFix(true)}
+              disabled={toggleDisabled}
+            >
+              Fix
+            </button>
+          </div>
+        ) : isFixableCat ? (
+          <span className={styles.manualBadge}>re-run audit to enable fixes</span>
+        ) : (
+          <span className={styles.manualBadge}>manual — needs a plot change</span>
+        )}
       </div>
 
       <div className={styles.locations}>
@@ -101,6 +146,79 @@ export function Consistency() {
   // Model catalog for the exact-model picker (lazy-fetched for providers with a
   // catalog proxy; gateway-cached). Fail-soft to free-text.
   const catalogModels = useModelCatalog(provider);
+
+  // Apply-fix flow: which findings are toggled to Fix, the proposed preview, and
+  // the apply lifecycle. All keyed by the finding's stable id.
+  const [fixSelected, setFixSelected] = useState<Set<string>>(new Set());
+  const [proposals, setProposals] = useState<ProposedEdit[] | null>(null);
+  const [proposing, setProposing] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [applyResult, setApplyResult] = useState<ApplyOutcome | null>(null);
+  const [fixErr, setFixErr] = useState<string | null>(null);
+
+  // Reset the whole fix flow whenever the report changes (new book or re-audit).
+  useEffect(() => {
+    setFixSelected(new Set());
+    setProposals(null);
+    setApplyResult(null);
+    setFixErr(null);
+  }, [report]);
+
+  function toggleFix(id: string, next: boolean) {
+    setFixSelected((prev) => {
+      const out = new Set(prev);
+      if (next) out.add(id); else out.delete(id);
+      return out;
+    });
+  }
+
+  async function prepareFixes() {
+    if (!slug || fixSelected.size === 0 || proposing) return;
+    setProposing(true);
+    setFixErr(null);
+    setApplyResult(null);
+    try {
+      const { proposals } = await proposeConsistencyFixes(slug, [...fixSelected], {
+        provider: provider || undefined,
+        model: model || undefined,
+      });
+      setProposals(proposals);
+    } catch (e: unknown) {
+      setFixErr(`Failed to prepare fixes — ${String(e)}`);
+    } finally {
+      setProposing(false);
+    }
+  }
+
+  async function confirmApply() {
+    if (!slug || !proposals || applying) return;
+    const edits: ConfirmedEdit[] = proposals
+      .filter((p) => p.anchored)
+      .map((p) => ({
+        findingId: p.findingId,
+        targetChapter: p.targetChapter,
+        oldPhrase: p.oldPhrase,
+        newPhrase: p.newPhrase,
+      }));
+    if (edits.length === 0) return;
+    setApplying(true);
+    setFixErr(null);
+    try {
+      const outcome = await applyConsistencyFixes(slug, edits);
+      setApplyResult(outcome);
+      setProposals(null);
+      setFixSelected(new Set());
+    } catch (e: unknown) {
+      setFixErr(`Failed to apply fixes — ${String(e)}`);
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function cancelFixes() {
+    setProposals(null);
+    setFixErr(null);
+  }
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
 
@@ -378,12 +496,100 @@ export function Consistency() {
                   <div className={styles.groupHeader}>{sev} severity</div>
                   {Object.entries(categories).map(([cat, findings]) =>
                     findings.map((f, i) => (
-                      <FindingCard key={`${cat}-${i}`} finding={f} />
+                      <FindingCard
+                        key={f.id || `${cat}-${i}`}
+                        finding={f}
+                        fixSelected={fixSelected.has(f.id)}
+                        onToggleFix={(next) => toggleFix(f.id, next)}
+                        toggleDisabled={proposing || applying || !!proposals}
+                      />
                     ))
                   )}
                 </div>
               );
             })
+          )}
+
+          {report.findings.length > 0 && (
+            <div className={styles.fixFlow}>
+              {fixErr && <p className={styles.err}>{fixErr}</p>}
+
+              {!proposals && !applyResult && (
+                <button
+                  className={styles.runBtn}
+                  onClick={prepareFixes}
+                  disabled={fixSelected.size === 0 || proposing}
+                >
+                  {proposing
+                    ? 'Preparing…'
+                    : `Prepare fixes${fixSelected.size ? ` (${fixSelected.size})` : ''}`}
+                </button>
+              )}
+
+              {proposals && (
+                <div className={styles.preview}>
+                  <div className={styles.groupHeader}>Proposed fixes ({proposals.length})</div>
+                  {proposals.map((p) => (
+                    <div
+                      key={p.findingId}
+                      className={`${styles.proposal} ${p.anchored ? '' : styles.proposalSkipped}`}
+                    >
+                      <div className={styles.proposalHead}>
+                        <span className={styles.entityAttr}>{p.entity} · {p.attribute}</span>
+                        <span className={styles.category}>{p.targetChapter}</span>
+                        {!p.anchored && (
+                          <span className={styles.skipTag}>couldn't anchor — will be skipped</span>
+                        )}
+                      </div>
+                      <div className={styles.diff}>
+                        <span className={styles.diffOld}>{p.oldPhrase}</span>
+                        <span className={styles.diffArrow}>→</span>
+                        <span className={styles.diffNew}>{p.newPhrase}</span>
+                      </div>
+                      {p.note && <div className={styles.proposalNote}>{p.note}</div>}
+                    </div>
+                  ))}
+
+                  <div className={styles.fixActions}>
+                    <button
+                      className={styles.runBtn}
+                      onClick={confirmApply}
+                      disabled={applying || proposals.every((p) => !p.anchored)}
+                    >
+                      {applying
+                        ? 'Applying…'
+                        : `Confirm & apply (${proposals.filter((p) => p.anchored).length})`}
+                    </button>
+                    <button
+                      className={styles.cancelBtn}
+                      onClick={cancelFixes}
+                      disabled={applying}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {applyResult && (
+                <div className={styles.applySummary}>
+                  <p className={styles.applySummaryHead}>
+                    ✓ Applied {applyResult.applied.length} fix{applyResult.applied.length === 1 ? '' : 'es'}
+                    {' across '}{applyResult.chaptersWritten.length} chapter{applyResult.chaptersWritten.length === 1 ? '' : 's'}.
+                  </p>
+                  {applyResult.skipped.length > 0 && (
+                    <ul className={styles.skippedList}>
+                      {applyResult.skipped.map((s, i) => (
+                        <li key={`${s.findingId}-${i}`}>
+                          Skipped “{s.oldPhrase}” — {s.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className={styles.dim}>Click <strong>Run audit</strong> above to re-run the audit and verify.</p>
+                </div>
+              )}
+            </div>
           )}
 
           {report.orphanFacts && report.orphanFacts.length > 0 && (

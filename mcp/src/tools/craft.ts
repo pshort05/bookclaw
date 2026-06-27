@@ -246,4 +246,40 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
     { title: 'Get try-fail report', description: 'Get the stored try-fail & escalation report for a book (null if not run yet).', inputSchema: { slug } },
     async ({ slug: s }) => toToolResult('get_try_fail_report', await client.request('GET', `/api/books/${encodeURIComponent(s)}/try-fail-report`)),
   );
+
+  // ── Consistency apply-fix (propose → review → apply) ──
+  server.registerTool('propose_consistency_fixes',
+    {
+      title: 'Propose consistency fixes',
+      description: 'Propose surgical prose edits (temperature 0) that reconcile selected consistency findings. NO write — returns a preview of {proposals:[{findingId,category,entity,attribute,canonicalValue,targetChapter,oldPhrase,newPhrase,note,anchored}]}. Only phrase-swappable findings are fixable (contradiction/continuity/impossibility/canon-divergence); knowledge-violation ids are silently dropped. Confirm anchored edits, then apply with apply_consistency_fixes. Shares the consistency large-context model selection (gemini/claude/openai/deepseek/openrouter; Ollama rejected).',
+      inputSchema: {
+        slug,
+        findingIds: z.array(z.string()).describe('Stable finding ids (from the consistency report) to propose fixes for'),
+        provider: z.string().optional().describe('Per-run AI provider override (gemini|claude|openai|deepseek|openrouter — NOT ollama)'),
+        model: z.string().optional().describe('Per-run AI model override (this run only)'),
+      },
+    },
+    async ({ slug: s, ...body }) =>
+      toToolResult('propose_consistency_fixes',
+        await client.request('POST', `/api/books/${encodeURIComponent(s)}/consistency-fix/propose`, body)),
+  );
+
+  server.registerTool('apply_consistency_fixes',
+    {
+      title: 'Apply consistency fixes',
+      description: 'Apply author-confirmed consistency edits deterministically (string find/replace; the model is never in the write path). Each edited chapter is version-snapshotted first, so every fix is revertible. Returns {applied[],skipped[],chaptersWritten[]}. Send only the edits you confirmed from propose_consistency_fixes.',
+      inputSchema: {
+        slug,
+        edits: z.array(z.object({
+          findingId: z.string(),
+          targetChapter: z.string().describe('Chapter label of the chapter to edit'),
+          oldPhrase: z.string().describe('Exact verbatim substring to replace'),
+          newPhrase: z.string().describe('Replacement text'),
+        })).describe('The confirmed edits to apply'),
+      },
+    },
+    async ({ slug: s, ...body }) =>
+      toToolResult('apply_consistency_fixes',
+        await client.request('POST', `/api/books/${encodeURIComponent(s)}/consistency-fix/apply`, body)),
+  );
 }

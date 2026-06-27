@@ -1,8 +1,22 @@
 # Consistency Apply-Fix (v1) — Design Spec
 
-- **Date:** 2026-06-26
-- **Status:** Approved design; pending implementation plan.
+- **Date:** 2026-06-26 (reconciled 2026-06-27)
+- **Status:** Approved design; implementing. Plan: `docs/superpowers/plans/2026-06-27-consistency-apply-fix.md`.
 - **Owner ask:** A way to act on consistency findings — a per-finding fix/ignore toggle plus a button that applies the selected fixes to the prose. Must be very specific (low model temperature) and operate at the chapter level.
+
+## 0. Reconciliation with current code (2026-06-27)
+
+Verified against the engine as it stands; the design holds. Concrete bindings:
+
+- **Findings persist in SQLite**, not the ReportsService: `services.consistencyStore.getReport(slug)` returns the full `AuditReport` (with `findings[]`), `saveReport(slug, report)` writes it (`gateway/src/services/consistency/fact-store.ts`). The propose endpoint reloads findings from here and filters by the new stable `id` — no re-audit. (The downloadable `ReportsService` 'consistency' report is a separate projection; the SQLite store is authoritative.)
+- **`ConsistencyFinding`** (`consistency/types.ts`): `{ category, severity, entity, attribute, a: FindingRef, b: FindingRef | CanonRef, explanation, suggestedFix }`; `FindingRef = { chapter, scene, quote }`, `CanonRef = { canonSource, quote }`. The stable `id` is added here and computed at the two finding-construction sites in `check-engine.ts` (`finding()` for `evaluateFact`'s four categories; `evaluateKnowledge()` for `knowledge-violation`).
+- **Write path:** `writeWithVersion(dataDir, filename, content)` (`gateway/src/services/file-versions.ts`) snapshots the current file to `data/.versions/<filename>/…` then writes — exactly the per-chapter snapshot the design requires. Path safety via `safePath(dataDir, filename)` (`api/routes/_shared.ts`) + `BookService.dataDirOf(slug)`. Activity via `services.activityLog.log({ type:'file_saved', source:'api', message, metadata })`.
+- **Chapter → file resolution.** A finding's `a.chapter` is a chapter label (e.g. `chapter-3`), not the on-disk filename. Apply resolves it to the actual file via `selectChapterFiles(readdir(dataDir))` + matching the parsed chapter number (the same stage-ranked selection the audit used); for an imported book the target is the combined `findCombinedManuscript()` file and the edit anchors as a substring within it. A small `resolveChapterFile(dataDir, chapterLabel)` helper encapsulates this.
+- **Model selection / capability gate / chapter split** reuse the consistency helpers unchanged (`validateConsistencyModelSelection`, `resolveConsistencyModel`, `consistencyCapabilityError`, `selectChapterFiles`/`findCombinedManuscript`/`splitManuscriptIntoChapters`), same as the just-shipped try-fail auditor.
+- **Lenient JSON parse:** reuse the `JSON.parse` → `jsonrepair` fallback pattern from `consistency/extractor.ts` / `try-fail/extract.ts`.
+- **MCP lockstep:** add propose/apply tools to `mcp/src/tools/craft.ts`.
+
+No design decisions change; this section only pins the integration points.
 
 ## 1. Summary
 

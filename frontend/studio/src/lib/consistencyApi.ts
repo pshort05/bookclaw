@@ -2,13 +2,23 @@ import { api } from '@bookclaw/shared';
 import { socket } from '@bookclaw/shared';
 import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from './providers.js';
 
-export type FindingCategory = 'contradiction' | 'continuity' | 'impossibility' | 'canon-divergence';
+export type FindingCategory =
+  | 'contradiction' | 'continuity' | 'impossibility' | 'canon-divergence' | 'knowledge-violation';
 export type Severity = 'high' | 'medium' | 'low';
+
+// Categories whose findings the apply-fix flow can reconcile by a phrase swap.
+// `knowledge-violation` is excluded — it needs a plot change, not a phrase swap.
+// Keep in sync with FIXABLE in gateway/src/services/consistency/fix-types.ts
+// (cross-package; the studio can't import gateway TS — same pattern as AI_PROVIDERS).
+export const FIXABLE_CATEGORIES: ReadonlySet<FindingCategory> =
+  new Set<FindingCategory>(['contradiction', 'continuity', 'impossibility', 'canon-divergence']);
 
 export interface FindingRef { chapter: string; scene: number; quote: string; }
 export interface CanonRef { canonSource: string; quote: string; }
 
 export interface ConsistencyFinding {
+  /** Stable id (backend-computed) — keys the fix toggle + propose/apply round-trip. */
+  id: string;
   category: FindingCategory;
   severity: Severity;
   entity: string;
@@ -101,3 +111,51 @@ export function subscribeConsistency({ onProgress, onComplete, onError }: Consis
     s.off('consistency-error', onError);
   };
 }
+
+// ── Apply-fix (propose → confirm → apply) ───────────────────────────────────
+
+/** A model-proposed prose edit for one finding; `anchored:false` will be skipped. */
+export interface ProposedEdit {
+  findingId: string;
+  category: string;
+  entity: string;
+  attribute: string;
+  canonicalValue: string;
+  targetChapter: string;
+  oldPhrase: string;
+  newPhrase: string;
+  note: string;
+  anchored: boolean;
+}
+
+/** The exact edit the author confirmed (subset of a ProposedEdit). */
+export interface ConfirmedEdit {
+  findingId: string;
+  targetChapter: string;
+  oldPhrase: string;
+  newPhrase: string;
+}
+
+export interface ApplyOutcome {
+  applied: ConfirmedEdit[];
+  skipped: { findingId: string; oldPhrase: string; reason: string }[];
+  chaptersWritten: string[];
+}
+
+/** Ask the model to propose prose edits for the selected findings (no write). */
+export const proposeConsistencyFixes = (
+  slug: string,
+  findingIds: string[],
+  sel: ConsistencyModelSelection = {},
+) =>
+  api<{ proposals: ProposedEdit[] }>(
+    `/api/books/${encodeURIComponent(slug)}/consistency-fix/propose`,
+    { method: 'POST', body: JSON.stringify({ findingIds, provider: sel.provider, model: sel.model }) },
+  );
+
+/** Apply the author-confirmed edits to the prose (deterministic, version-snapshotted). */
+export const applyConsistencyFixes = (slug: string, edits: ConfirmedEdit[]) =>
+  api<ApplyOutcome>(
+    `/api/books/${encodeURIComponent(slug)}/consistency-fix/apply`,
+    { method: 'POST', body: JSON.stringify({ edits }) },
+  );

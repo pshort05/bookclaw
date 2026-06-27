@@ -1,4 +1,5 @@
 import type { LedgerFact, ConsistencyFinding, FindingRef, CanonRef, KnowledgeEvent } from './types.js';
+import { computeFindingId } from './finding-id.js';
 
 export type Gap = 'same' | 'day' | 'longer' | 'unknown';
 
@@ -19,11 +20,13 @@ function finding(
   category: ConsistencyFinding['category'], severity: ConsistencyFinding['severity'],
   fact: LedgerFact, prior: LedgerFact, explanation: string, suggestedFix: string,
 ): ConsistencyFinding {
-  return {
+  const f: ConsistencyFinding = {
     category, severity, entity: fact.entity, attribute: fact.attribute,
     a: refOf(fact), b: prior.source === 'canon' ? canonRefOf(prior) : refOf(prior),
     explanation, suggestedFix,
   };
+  f.id = computeFindingId(f);
+  return f;
 }
 
 export function evaluateFact(fact: LedgerFact, priors: LedgerFact[]): ConsistencyFinding | null {
@@ -104,11 +107,13 @@ export function evaluateKnowledge(events: KnowledgeEvent[]): ConsistencyFinding[
         ? { chapter: firstAcquire.chapter, scene: firstAcquire.scene, quote: firstAcquire.evidence }
         : { canonSource: 'never learned in-story', quote: '' };
       const where = firstAcquire ? `not until ${firstAcquire.chapter}` : 'at no point in the story';
-      findings.push({
+      const kf: ConsistencyFinding = {
         category: 'knowledge-violation', severity, entity: use.knower, attribute, a, b,
         explanation: `${use.knower} uses knowledge of "${attribute}" in ${use.chapter} but learns it ${where}.`,
         suggestedFix: `Move ${use.knower}'s discovery of "${attribute}" before ${use.chapter}, or cut the reference.`,
-      });
+      };
+      kf.id = computeFindingId(kf);
+      findings.push(kf);
     }
   }
   return findings;
