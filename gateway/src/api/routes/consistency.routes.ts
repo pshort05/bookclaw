@@ -194,6 +194,14 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       const capErr = consistencyCapabilityError(sel, availableIds);
       if (capErr) return res.status(422).json({ error: capErr });
 
+      // Resolve auto -> a concrete provider (mirrors the consistency extractor):
+      // sel.provider is undefined when the model is 'auto', and aiRouter.complete
+      // needs a real provider. Only honor the pinned model if its provider was the
+      // one actually selected (else the model id would mismatch a fallback provider).
+      const chosen = services.aiRouter.selectProvider('consistency', sel.provider);
+      const providerId: string = chosen?.id ?? sel.provider;
+      const pinnedModel = sel.provider && providerId === sel.provider ? sel.model : undefined;
+
       // Group selected findings by detection chapter (`a.chapter`): one model call
       // per chapter keeps edits coherent and the cost bounded.
       const byChapter = new Map<string, ConsistencyFinding[]>();
@@ -219,8 +227,8 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
         try {
           const { system, user } = buildFixPrompt(resolved.chapterText, chapterFindings);
           const result = await services.aiRouter.complete({
-            provider: sel.provider,
-            model: sel.model,
+            provider: providerId,
+            model: pinnedModel,
             system,
             messages: [{ role: 'user', content: user }],
             temperature: 0,
