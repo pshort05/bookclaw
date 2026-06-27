@@ -187,11 +187,20 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       'heartbeat.autonomousIntervalMinutes', 'heartbeat.maxAutonomousStepsPerWake',
       'ai.defaultTemperature', 'ai.preferredProvider', 'ai.preferredImageProvider',
       'ai.ollama.enabled', 'ai.ollama.endpoint', 'ai.ollama.model',
-      'ai.openrouter.model',
+      'ai.openrouter.model', 'ai.claude.model', 'ai.gemini.model',
       'bridges.telegram.enabled', 'bridges.telegram.pairingEnabled',
     ];
     if (!safePaths.includes(path)) {
       return res.status(403).json({ error: 'Config path not allowed' });
+    }
+    // Trust-boundary check on per-provider default-model writes: the Settings
+    // datalist is only a hint, so the value is free text. Reject anything that
+    // isn't a plausible model id before it is persisted and pushed live into the
+    // router (a bad id would silently break every generation routed there).
+    if (/^ai\.[a-z]+\.model$/.test(path)) {
+      if (typeof value !== 'string' || !/^[A-Za-z0-9._\-/:]{1,200}$/.test(value)) {
+        return res.status(400).json({ error: 'Invalid model id' });
+      }
     }
     try {
       // Persist to disk so settings survive restart (was a bug — values were
@@ -200,6 +209,11 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       // Sync global provider preference to router
       if (path === 'ai.preferredProvider') {
         services.aiRouter.setGlobalPreferredProvider(value || null);
+      }
+      // Rebuild providers so a changed per-provider default model takes effect
+      // without a restart (the router reads config.<provider>.model at build time).
+      if (/^ai\.(claude|gemini|openrouter|ollama)\.model$/.test(path)) {
+        await services.aiRouter.reinitialize();
       }
       res.json({ success: true, path, value });
     } catch (err: any) {

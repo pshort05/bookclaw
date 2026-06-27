@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Button } from '@bookclaw/shared';
 import type { Status } from '@bookclaw/shared';
 import { DeleteBooksModal } from '../components/DeleteBooksModal.js';
 import { ResetSpendModal } from '../components/ResetSpendModal.js';
 import { useDialog } from '../components/Dialog.js';
+import { useModelCatalog } from '../lib/openrouterModels.js';
 import styles from './Settings.module.css';
+
+type Provider = NonNullable<Status['providers']>[number];
 
 type BackupSnapshot = { name: string; at: string; reason: string; scope: string; books: string[] };
 
@@ -103,11 +106,15 @@ export function Settings() {
 
       <div className={styles.sec}>Providers</div>
       <div className={styles.providers}>
-        {(providers ?? []).map((p) => (
-          <span key={p.id} className={styles.provider}>
-            {p.name} <small>{p.model}</small>
-          </span>
-        ))}
+        {(providers ?? []).map((p) =>
+          p.id === 'claude' || p.id === 'gemini' ? (
+            <ProviderModelField key={p.id} provider={p} onSaved={loadStatus} />
+          ) : (
+            <span key={p.id} className={styles.provider}>
+              {p.name} <small>{p.model}</small>
+            </span>
+          ),
+        )}
         {(!providers || providers.length === 0) && (
           <p className={styles.dim}>No active providers — add an API key below.</p>
         )}
@@ -479,6 +486,44 @@ function BackupsCard() {
       )}
       {msg && <p className={styles.msg}>{msg}</p>}
     </>
+  );
+}
+
+// Editable default-model field for the first-party paid providers (claude/gemini):
+// a datalist-backed input (placeholder = the current default) that POSTs the new
+// id to ai.<provider>.model and refreshes the provider chips.
+function ProviderModelField({ provider, onSaved }: { provider: Provider; onSaved: () => Promise<void> }) {
+  const models = useModelCatalog(provider.id);
+  const listId = useId();
+  const [val, setVal] = useState('');
+
+  const commit = async () => {
+    const next = val.trim();
+    if (!next || next === provider.model) { setVal(''); return; }
+    await api('/api/config/update', {
+      method: 'POST',
+      body: JSON.stringify({ path: `ai.${provider.id}.model`, value: next }),
+    }).catch(() => {});
+    setVal('');
+    await onSaved();
+  };
+
+  return (
+    <span className={styles.provider}>
+      {provider.name}{' '}
+      <input
+        type="text"
+        list={listId}
+        value={val}
+        placeholder={provider.model}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+      />
+      <datalist id={listId}>
+        {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+      </datalist>
+    </span>
   );
 }
 

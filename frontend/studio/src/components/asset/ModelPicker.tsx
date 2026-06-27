@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from '../../lib/providers.js';
-import { useOpenRouterModels } from '../../lib/openrouterModels.js';
+import { useModelCatalog, CATALOG_PROVIDERS } from '../../lib/openrouterModels.js';
 
 export interface ModelValue { provider?: string; model?: string; temperature?: number }
 
@@ -15,7 +15,7 @@ export function ModelPicker({ value, onChange, disabled }: { value: ModelValue; 
   // OpenRouter-only). Treat "model set, provider unset" as openrouter so the pinned
   // model stays visible and is never silently hidden or dropped.
   const provider = value.provider ?? (value.model ? 'openrouter' : '');
-  const models = useOpenRouterModels(provider);
+  const models = useModelCatalog(provider);
   const listId = useId();
 
   const emit = (patch: Partial<ModelValue>) => {
@@ -39,13 +39,13 @@ export function ModelPicker({ value, onChange, disabled }: { value: ModelValue; 
         <>
           <input
             type="text"
-            list={provider === 'openrouter' ? listId : undefined}
+            list={CATALOG_PROVIDERS.has(provider) ? listId : undefined}
             value={value.model ?? ''}
             placeholder={PROVIDER_DEFAULT_MODEL[provider] ?? 'model id'}
             disabled={disabled}
             onChange={(e) => emit({ model: e.target.value })}
           />
-          {provider === 'openrouter' && (
+          {CATALOG_PROVIDERS.has(provider) && (
             <datalist id={listId}>
               {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </datalist>

@@ -3,7 +3,7 @@ import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shar
 import type { LibraryEntry } from '@bookclaw/shared';
 import { useDialog } from '../components/Dialog.js';
 import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from '../lib/providers.js';
-import { useOpenRouterModels } from '../lib/openrouterModels.js';
+import { useModelCatalog, CATALOG_PROVIDERS } from '../lib/openrouterModels.js';
 import styles from './PromptRunner.module.css';
 
 interface RunnerFile { path: string; group: 'Outputs' | 'Templates'; bytes: number; modified?: string }
@@ -48,9 +48,9 @@ export function PromptRunner() {
 
   const [provider, setProvider] = useState('');
   const [model, setModel] = useState('');
-  // OpenRouter catalog for the exact-model picker (lazy-fetched when provider is
-  // openrouter; gateway-cached 24h). Fail-soft to free-text.
-  const orModels = useOpenRouterModels(provider);
+  // Model catalog for the exact-model picker (lazy-fetched for providers with a
+  // catalog proxy; gateway-cached). Fail-soft to free-text.
+  const catalogModels = useModelCatalog(provider);
 
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
@@ -241,15 +241,15 @@ export function PromptRunner() {
               <input
                 className={styles.pick}
                 type="text"
-                list={provider === 'openrouter' ? 'openrouter-models' : undefined}
+                list={CATALOG_PROVIDERS.has(provider) ? 'openrouter-models' : undefined}
                 value={model}
                 placeholder={PROVIDER_DEFAULT_MODEL[provider]}
                 onChange={(e) => setModel(e.target.value)}
                 disabled={running}
               />
-              {provider === 'openrouter' && (
+              {CATALOG_PROVIDERS.has(provider) && (
                 <datalist id="openrouter-models">
-                  {orModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  {catalogModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </datalist>
               )}
             </div>

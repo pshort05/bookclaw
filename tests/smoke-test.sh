@@ -266,6 +266,42 @@ for i in 1 2 3 4 5; do c="$(code "$BASE/api/status")"; done
 
 stop_server
 
+# ── Phase 6: model catalog endpoints (claude/gemini live picker) ──
+# The studio exact-model pickers fetch /api/models/<provider>. claude/gemini are
+# gated by auth and fall back to a pre-seeded list when no API key is configured
+# (or a live fetch fails), so the response is always a non-empty {id,name} array —
+# never a 5xx. BOOKCLAW_MODELS_OFFLINE=1 keeps this phase hermetic: the gateway
+# serves the seed list and never touches the Anthropic/Google network, regardless
+# of whether a key is present in the dev/CI vault.
+log ""
+log "Phase 6: model catalog endpoints"
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" BOOKCLAW_MODELS_OFFLINE=1 || exit 1
+
+# models_ok <url> : 0 if the JSON body is {models:[{id,name},...]} with >=1 entry.
+models_ok() {
+  curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$1" | node -e '
+    let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+      try { const m=JSON.parse(s).models;
+        process.exit(Array.isArray(m) && m.length>0 &&
+          m.every(e=>typeof e.id==="string" && e.id && typeof e.name==="string") ? 0 : 1);
+      } catch { process.exit(1); }
+    });'
+}
+
+for prov in claude gemini; do
+  [ "$(code "$BASE/api/models/$prov")" = "401" ] \
+    && pass "models/$prov: no token -> 401" || fail "models/$prov should be 401 without token"
+  [ "$(code -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/models/$prov")" = "200" ] \
+    && pass "models/$prov: valid bearer -> 200" || fail "models/$prov should be 200 with token"
+  if models_ok "$BASE/api/models/$prov"; then
+    pass "models/$prov: returns a non-empty {id,name} list (seed or live)"
+  else
+    fail "models/$prov: missing non-empty {id,name} models array"
+  fi
+done
+
+stop_server
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

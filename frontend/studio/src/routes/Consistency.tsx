@@ -11,7 +11,7 @@ import {
   type ConsistencyReport,
   type Severity,
 } from '../lib/consistencyApi.js';
-import { useOpenRouterModels } from '../lib/openrouterModels.js';
+import { useModelCatalog, CATALOG_PROVIDERS } from '../lib/openrouterModels.js';
 import styles from './Consistency.module.css';
 
 const SEVERITY_ORDER: Severity[] = ['high', 'medium', 'low'];
@@ -98,9 +98,9 @@ export function Consistency() {
   const [reportDownload, setReportDownload] = useState<string | null>(null);
   const [provider, setProvider] = useState('');
   const [model, setModel] = useState('');
-  // OpenRouter catalog for the exact-model picker (lazy-fetched when provider is
-  // openrouter; gateway-cached 24h). Fail-soft to free-text.
-  const orModels = useOpenRouterModels(provider);
+  // Model catalog for the exact-model picker (lazy-fetched for providers with a
+  // catalog proxy; gateway-cached). Fail-soft to free-text.
+  const catalogModels = useModelCatalog(provider);
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
 
@@ -280,16 +280,16 @@ export function Consistency() {
             <input
               className={styles.pick}
               type="text"
-              list={provider === 'openrouter' ? 'openrouter-models' : undefined}
+              list={CATALOG_PROVIDERS.has(provider) ? 'openrouter-models' : undefined}
               value={model}
               placeholder={PROVIDER_DEFAULT_MODEL[provider]}
               onChange={(e) => onModelChange(e.target.value)}
               onBlur={onModelBlur}
               disabled={running}
             />
-            {provider === 'openrouter' && (
+            {CATALOG_PROVIDERS.has(provider) && (
               <datalist id="openrouter-models">
-                {orModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {catalogModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </datalist>
             )}
           </div>
