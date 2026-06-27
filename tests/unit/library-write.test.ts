@@ -90,6 +90,27 @@ test('editing one file of a built-in multi-file author preserves siblings', asyn
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('pipeline step modelOverride (incl. temperature-only) round-trips', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
+  try {
+    const lib = await makeLib(root);
+    const pipeline = {
+      schemaVersion: 1, name: 'mp', label: 'MP', description: 'd',
+      steps: [
+        { label: 'A', taskType: 'creative_writing', promptTemplate: 'a', modelOverride: { provider: 'claude', model: 'claude-sonnet-4-5', temperature: 0.4 } },
+        { label: 'B', taskType: 'creative_writing', promptTemplate: 'b', modelOverride: { temperature: 0.9 } }, // temp-only, no provider
+      ],
+    };
+    await lib.createEntry('pipeline', 'mp', { content: JSON.stringify(pipeline) });
+    await lib.reload();
+    const steps = lib.get('pipeline', 'mp')!.pipeline!.steps as Array<{ modelOverride?: { provider?: string; model?: string; temperature?: number } }>;
+    assert.equal(steps[0].modelOverride!.provider, 'claude');
+    assert.equal(steps[0].modelOverride!.temperature, 0.4);
+    assert.equal(steps[1].modelOverride!.provider, undefined);
+    assert.equal(steps[1].modelOverride!.temperature, 0.9);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('createEntry writes a sequence; empty pipelines rejected', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-libw-'));
   try {

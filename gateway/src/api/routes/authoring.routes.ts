@@ -113,7 +113,7 @@ export function mountAuthoring(app: Application, gateway: any, baseDir: string):
       if (!Array.isArray(steps)) return res.status(400).json({ error: 'steps must be an array' });
       if (steps.length > 0) {
         stepsParsed = parseSteps(JSON.stringify({ steps, retries }));
-        if (!stepsParsed) return res.status(400).json({ error: 'invalid steps: each phase needs a non-empty model + prompt' });
+        if (!stepsParsed) return res.status(400).json({ error: 'invalid steps: each phase needs a non-empty prompt (and a known provider if one is set)' });
       }
     }
     const dir = safePath(wsSkillsDir, join(category, name));

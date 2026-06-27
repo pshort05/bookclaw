@@ -4,8 +4,10 @@
 # ═══════════════════════════════════════════════════════════
 # Creates an executable 2-phase skill (steps.json via PUT /api/skills), a 1-step
 # overlay pipeline that uses it, and a book; runs the step and asserts the skill's
-# OpenRouter phase chain produced a non-empty, non-failure result. Multi-step skills
-# are OpenRouter-only, so OpenRouter must be configured. Cleans up after itself.
+# phase chain produced a non-empty, non-failure result. Also asserts the new per-step
+# controls round-trip: each skill phase carries its own `provider` (multi-provider;
+# default OpenRouter) and the pipeline step carries a `modelOverride`. The runtime
+# call uses OpenRouter, so OpenRouter must be configured. Cleans up after itself.
 #
 # Usage:  BASE_URL=http://192.168.1.32:3847 tests/skill-steps-smoke.sh
 #         CLEANUP=1 BASE_URL=... tests/skill-steps-smoke.sh   # just remove leftovers
@@ -59,17 +61,23 @@ SKILL_BODY=$(node -e '
     content:"---\ndescription: smoke 2-phase humanize\ntriggers:\n  - "+process.argv[2]+"\n---\n# "+process.argv[2]+"\n\nShared guidance: write plainly.\n",
     retries:1,
     steps:[
-      {name:"detect",   model, temperature:0.2, prompt:"List up to 2 AI-cliche phrases in this text (or write NONE):\n{{input}}"},
-      {name:"humanize", model, temperature:0.7, prompt:"Rewrite the text below in ONE short, plain sentence. Cliches to remove:\n{{previous}}\n\nGuidance: {{guidance}}\n\nText:\n{{input}}"}
+      {name:"detect",   provider:"openrouter", model, temperature:0.2, prompt:"List up to 2 AI-cliche phrases in this text (or write NONE):\n{{input}}"},
+      {name:"humanize", provider:"openrouter", model, temperature:0.7, prompt:"Rewrite the text below in ONE short, plain sentence. Cliches to remove:\n{{previous}}\n\nGuidance: {{guidance}}\n\nText:\n{{input}}"}
     ]
   }));' "$SMOKE_OR_MODEL" "$SKILL")
 SK=$(req PUT "/api/skills/$SKILL" "$SKILL_BODY")
 [ "$(printf '%s' "$SK" | jget executable)" = "true" ] && pass "executable skill created (2 phases)" || fail "executable skill created" "resp=$(printf '%s' "$SK" | head -c 160)"
+# Per-step provider round-trips through the read API (multi-provider skills).
+[ "$(req GET "/api/skills/$SKILL" | jget skill.steps[0].provider)" = "openrouter" ] \
+  && pass "skill phase provider round-trips" || fail "skill phase provider round-trip" "$(req GET "/api/skills/$SKILL" | jget skill.steps[0].provider)"
 
 # ── 2. Overlay pipeline with ONE step that uses the skill ──
-PIPE_DOC=$(node -e 'console.log(JSON.stringify({schemaVersion:1,name:process.argv[1],label:"Skill Steps Smoke",description:"d",steps:[{label:"Humanize",taskType:"general",skill:process.argv[2],phase:"revision",promptTemplate:"In todays fast-paced world, it is important to note that we must leverage synergies to humanize \"{{title}}\"."}]}))' "$PIPE" "$SKILL")
+PIPE_DOC=$(node -e 'console.log(JSON.stringify({schemaVersion:1,name:process.argv[1],label:"Skill Steps Smoke",description:"d",steps:[{label:"Humanize",taskType:"general",skill:process.argv[2],phase:"revision",modelOverride:{temperature:0.5},promptTemplate:"In todays fast-paced world, it is important to note that we must leverage synergies to humanize \"{{title}}\"."}]}))' "$PIPE" "$SKILL")
 PCODE=$(code POST /api/library/pipeline "$(node -e 'console.log(JSON.stringify({name:process.argv[1],content:process.argv[2],description:"skill-steps smoke"}))' "$PIPE" "$PIPE_DOC")")
 { [ "$PCODE" = "200" ] || [ "$PCODE" = "409" ]; } && pass "overlay pipeline provisioned" "($PCODE)" || fail "overlay pipeline" "code=$PCODE"
+# Per-step modelOverride (here temperature-only, provider omitted) round-trips through the read API.
+[ "$(req GET "/api/library/pipeline/$PIPE" | jget entry.pipeline.steps[0].modelOverride.temperature)" = "0.5" ] \
+  && pass "pipeline step modelOverride round-trips" || fail "pipeline modelOverride round-trip" "$(req GET "/api/library/pipeline/$PIPE" | jget entry.pipeline.steps[0].modelOverride.temperature)"
 
 # ── 3. Book from the pipeline + a project, then execute the step ──
 AUTHOR=$(req GET "/api/library?kind=author" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const n=(JSON.parse(s).entries||[]).map(x=>x.name);console.log(n.includes("default")?"default":(n[0]||"default"))})')

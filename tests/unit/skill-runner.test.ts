@@ -76,3 +76,28 @@ test('single-phase skill returns its output; no steps throws', async () => {
   assert.equal(await runner.run({ name: 's', steps: [{ model: 'm', prompt: 'do {{input}}' }] }, 'T', ''), 'ONLY');
   await assert.rejects(() => runner.run({ name: 'empty', steps: [] }, 'T', ''), /no executable steps/i);
 });
+
+test('failure message identifies a name/model-less phase by ordinal', async () => {
+  const { runner } = harness(() => { throw new Error('boom'); });
+  await assert.rejects(
+    () => runner.run({ name: 's', steps: [{ prompt: 'only {{input}}' }] }, 'T', ''),
+    /phase "#1"/, // no name, no model → identified by ordinal, not "undefined"
+  );
+});
+
+test('routes each phase to its own provider, defaulting to openrouter', async () => {
+  const { runner, calls } = harness((_req, n) => ({ text: n === 1 ? 'A' : 'B' }));
+  const skill = {
+    name: 'mp', retries: 0,
+    steps: [
+      { provider: 'claude', model: 'claude-sonnet-4-5', prompt: 'x {{input}}' },
+      { prompt: 'y {{previous}}' }, // no provider, no model → openrouter default
+    ],
+  };
+  const out = await runner.run(skill, 'T', '');
+  assert.equal(out, 'B');
+  assert.equal(calls[0].provider, 'claude');
+  assert.equal(calls[0].model, 'claude-sonnet-4-5');
+  assert.equal(calls[1].provider, 'openrouter'); // default
+  assert.equal(calls[1].model, undefined);        // router resolves the provider default
+});

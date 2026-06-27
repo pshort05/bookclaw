@@ -174,6 +174,7 @@ export interface LibraryEntry {
 export interface LibraryPipelineStep {
   label: string; skill?: string; toolSuggestion?: string; taskType: string;
   promptTemplate: string; phase?: string; wordCountTarget?: number; chapterNumber?: number;
+  modelOverride?: { provider?: string; model?: string; temperature?: number };
 }
 export interface LibraryPipeline {
   schemaVersion: number; name: string; label: string; description: string;

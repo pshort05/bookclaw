@@ -21,7 +21,7 @@ export interface LibraryPipelineStep {
   phase?: string;
   wordCountTarget?: number;
   chapterNumber?: number;
-  modelOverride?: { provider: string; model?: string; temperature?: number };
+  modelOverride?: { provider?: string; model?: string; temperature?: number };
 }
 
 /** A pipeline expressed as data (the eventual book `templates/pipeline.json`). */

@@ -64,10 +64,36 @@ test('invalid steps.json → passive + no throw', async () => {
   try {
     writeSkill(join(root, 'skills'), 'author', 'bad-json', '{not json');
     writeSkill(join(root, 'skills'), 'author', 'no-steps', { retries: 1, steps: [] });
-    writeSkill(join(root, 'skills'), 'author', 'no-model', { steps: [{ prompt: 'p' }] });
+    writeSkill(join(root, 'skills'), 'author', 'no-prompt', { steps: [{ model: 'm' }] });
     const l = await load(root);
     assert.equal(l.getSkillByName('bad-json')?.steps, undefined);
     assert.equal(l.getSkillByName('no-steps')?.steps, undefined);
-    assert.equal(l.getSkillByName('no-model')?.steps, undefined);
+    assert.equal(l.getSkillByName('no-prompt')?.steps, undefined); // prompt still required
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('an unknown provider is rejected at the parse trust boundary', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-ss-'));
+  try {
+    writeSkill(join(root, 'skills'), 'author', 'badprov', { steps: [{ provider: 'anthropic', model: 'm', prompt: 'p' }] });
+    assert.equal((await load(root)).getSkillByName('badprov')?.steps, undefined); // 'anthropic' is not a known provider
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('provider is captured; model optional (defaults handled at runtime)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-ss-'));
+  try {
+    writeSkill(join(root, 'skills'), 'author', 'multi', {
+      steps: [
+        { provider: 'claude', prompt: 'a {{input}}' },                 // no model — valid now
+        { provider: 'openrouter', model: 'google/gemini-2.0-flash-001', prompt: 'b {{previous}}' },
+      ],
+    });
+    const s = (await load(root)).getSkillByName('multi');
+    assert.equal(s?.steps?.length, 2);
+    assert.equal(s?.steps?.[0].provider, 'claude');
+    assert.equal(s?.steps?.[0].model, undefined);
+    assert.equal(s?.steps?.[1].provider, 'openrouter');
+    assert.equal(s?.steps?.[1].model, 'google/gemini-2.0-flash-001');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

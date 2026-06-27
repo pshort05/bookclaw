@@ -6,7 +6,8 @@
  * output is returned (becomes the pipeline step's output).
  *
  * The AI call is injected (a thin `complete` fn over AIRouter) so this is pure of
- * pipeline/provider wiring and unit-testable. Every call is forced to OpenRouter.
+ * pipeline/provider wiring and unit-testable. Each phase routes to its own provider
+ * (default OpenRouter when a phase sets none).
  */
 import type { SkillStep } from '../skills/loader.js';
 
@@ -52,7 +53,7 @@ export async function runExecutableSkillStep(
   if (!skill?.steps?.length) return null;
   const complete: SkillCompleteFn = async (req) => {
     const res = await deps.aiRouter.complete(req);
-    try { deps.costs?.record('openrouter', res.tokensUsed ?? 0, res.estimatedCost, bookSlug); } catch { /* non-fatal */ }
+    try { deps.costs?.record(req.provider, res.tokensUsed ?? 0, res.estimatedCost, bookSlug); } catch { /* non-fatal */ }
     return res;
   };
   try {
@@ -97,14 +98,14 @@ export class SkillRunner {
     const retries = Math.max(0, Math.min(4, skill.retries ?? 0));
 
     let previous = '';
-    for (const step of steps) {
+    for (const [i, step] of steps.entries()) {
       const content = renderSkillPrompt(step.prompt, { input, previous, guidance });
       let output: string | null = null;
       let lastErr: unknown;
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const res = await this.complete({
-            provider: 'openrouter',           // forced — multi-step skills are OpenRouter-only
+            provider: step.provider ?? 'openrouter',  // multi-provider; default preserves legacy OpenRouter-only skills
             system: '',
             messages: [{ role: 'user', content }],
             model: step.model,
@@ -117,7 +118,7 @@ export class SkillRunner {
         }
       }
       if (output === null) {
-        throw new Error(`Skill "${skill.name ?? '?'}" phase "${step.name ?? step.model}" failed after ${retries + 1} attempt(s): ${(lastErr as Error)?.message ?? String(lastErr)}`);
+        throw new Error(`Skill "${skill.name ?? '?'}" phase "${step.name ?? step.model ?? `#${i + 1}`}" failed after ${retries + 1} attempt(s): ${(lastErr as Error)?.message ?? String(lastErr)}`);
       }
       previous = output;
     }

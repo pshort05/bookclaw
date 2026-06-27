@@ -7,14 +7,16 @@ import { readFile, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { PermissionManager } from '../security/permissions.js';
+import { AI_PROVIDER_IDS } from '../ai/router.js';
 
 /** Where a loaded skill came from: shipped (read-only), user workspace overlay, or runtime-generated. */
 export type SkillSource = 'builtin' | 'workspace' | 'synthetic';
 
-/** One phase of an executable (multi-step) skill — its own OpenRouter model + settings. */
+/** One phase of an executable (multi-step) skill — its own provider + model + settings. */
 export interface SkillStep {
   name?: string;
-  model: string;          // OpenRouter model id
+  provider?: string;      // one of AI_PROVIDERS; absent → 'openrouter' at run time
+  model?: string;         // provider model id; absent → provider default (router resolves)
   temperature?: number;
   prompt: string;         // template: {{input}} {{previous}} {{guidance}}
 }
@@ -40,11 +42,15 @@ export function parseSteps(raw: string): { steps: SkillStep[]; retries: number }
   if (!Array.isArray(p.steps) || p.steps.length === 0) return null;
   const steps: SkillStep[] = [];
   for (const s of p.steps as unknown[]) {
-    const st = s as { name?: unknown; model?: unknown; temperature?: unknown; prompt?: unknown };
-    if (typeof st.model !== 'string' || !st.model.trim() || typeof st.prompt !== 'string' || !st.prompt.trim()) return null;
+    const st = s as { name?: unknown; provider?: unknown; model?: unknown; temperature?: unknown; prompt?: unknown };
+    if (typeof st.prompt !== 'string' || !st.prompt.trim()) return null; // prompt is the only required field
+    // Trust boundary: reject an unknown provider here (save/import time) rather than
+    // letting it surface as a runtime "Provider X not found" on every skill run.
+    if (typeof st.provider === 'string' && st.provider.trim() && !(AI_PROVIDER_IDS as readonly string[]).includes(st.provider)) return null;
     steps.push({
       ...(typeof st.name === 'string' ? { name: st.name } : {}),
-      model: st.model,
+      ...(typeof st.provider === 'string' && st.provider.trim() ? { provider: st.provider } : {}),
+      ...(typeof st.model === 'string' && st.model.trim() ? { model: st.model } : {}),
       ...(typeof st.temperature === 'number' ? { temperature: st.temperature } : {}),
       prompt: st.prompt,
     });

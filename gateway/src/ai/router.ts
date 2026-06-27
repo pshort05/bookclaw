@@ -12,6 +12,9 @@ import { CostTracker } from '../services/costs.js';
 // Types
 // ═══════════════════════════════════════════════════════════
 
+/** Canonical provider ids the router can route to (registered into `providers`). */
+export const AI_PROVIDER_IDS = ['ollama', 'gemini', 'deepseek', 'claude', 'openai', 'openrouter'] as const;
+
 interface AIProvider {
   id: string;
   name: string;

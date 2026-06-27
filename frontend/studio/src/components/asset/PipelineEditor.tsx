@@ -4,10 +4,8 @@ import type { LibraryKind, LibraryPipeline, LibraryPipelineStep } from '@bookcla
 import type { Scope } from '../../lib/assetApi.js';
 import { readEntry, writeEntry } from '../../lib/assetApi.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
+import { ModelPicker, type ModelValue } from './ModelPicker.js';
 import styles from '../../routes/AssetStudio.module.css';
-
-// NOTE: per-step model/tier override dropdowns from the concept are deferred —
-// model routing is automatic by taskType→tier; per-step model override is a separate feature.
 
 interface Props {
   scope: Scope;
@@ -49,6 +47,18 @@ function StepFields({ step, skills, chapter, onPatch }: {
       <div className={styles.field}>
         <div className={styles.fl}>Task type</div>
         <input type="text" value={step.taskType} onChange={(e) => onPatch({ taskType: e.target.value })} style={inputStyle} />
+      </div>
+      <div className={styles.field}>
+        <div className={styles.fl}>Model <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional — overrides task routing)</span></div>
+        <ModelPicker
+          value={(step.modelOverride ?? {}) as ModelValue}
+          onChange={(v) => onPatch({ modelOverride: (v.provider || v.model || v.temperature !== undefined) ? v : undefined })}
+        />
+        {step.skill && (
+          <div style={{ opacity: 0.6, fontSize: 12, marginTop: 4 }}>
+            If this skill is an executable (multi-step) skill, it runs its own per-phase models and this override is ignored.
+          </div>
+        )}
       </div>
       <div className={styles.field}>
         <div className={styles.fl}>Phase</div>

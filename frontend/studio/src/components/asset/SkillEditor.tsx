@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { api, Button, type LibraryKind } from '@bookclaw/shared';
+import { ModelPicker, type ModelValue } from './ModelPicker.js';
 import styles from './SkillEditor.module.css';
 
 interface Props { scope: string; kind: LibraryKind; name: string; displayName?: string }
 // `_id` is a client-only stable React key for the reorderable list — never sent to the server.
-interface Phase { _id: string; name?: string; model: string; temperature?: number; prompt: string }
+interface Phase { _id: string; name?: string; provider?: string; model?: string; temperature?: number; prompt: string }
 type WireStep = Omit<Phase, '_id'>;
 interface SkillData {
   category: 'core' | 'author' | 'marketing' | 'premium' | 'ops' | 'toolkit';
@@ -17,11 +18,11 @@ interface SkillData {
 const CATEGORIES = ['core', 'author', 'marketing', 'ops', 'toolkit'] as const; // premium excluded (read-only)
 let phaseSeq = 0;
 const newId = () => `p${phaseSeq++}`;
-const blankPhase = (): Phase => ({ _id: newId(), model: '', prompt: '' });
+const blankPhase = (): Phase => ({ _id: newId(), prompt: '' });
 
 /**
  * Skill editor (multi-step skills Phase B). Edits a skill's SKILL.md + its optional
- * executable phases (each an OpenRouter model + temperature + prompt) + retries.
+ * executable phases (each its own provider + model + temperature + prompt) + retries.
  * Saves via PUT /api/skills/:name (Phase A write API). Skills were previously
  * read-only in the studio; this is the first real skill editor.
  */
@@ -57,7 +58,7 @@ export function SkillEditor({ name, displayName }: Props) {
     return next;
   });
 
-  const phasesValid = phases.every((p) => p.model.trim() && p.prompt.trim());
+  const phasesValid = phases.every((p) => p.prompt.trim());
   const contentValid = /^---\r?\n[\s\S]*?\r?\n---/.test(content) && /\bdescription\s*:/.test(content) && /\btriggers\s*:/.test(content);
   const canSave = !saving && contentValid && phasesValid;
 
@@ -67,7 +68,8 @@ export function SkillEditor({ name, displayName }: Props) {
       // Normalize: drop empty temperatures; an empty phase list clears steps.json (passive).
       const steps = phases.map((p) => ({
         ...(p.name?.trim() ? { name: p.name.trim() } : {}),
-        model: p.model.trim(),
+        ...(p.provider ? { provider: p.provider } : {}),
+        ...(p.model?.trim() ? { model: p.model.trim() } : {}),
         ...(typeof p.temperature === 'number' && !Number.isNaN(p.temperature) ? { temperature: p.temperature } : {}),
         prompt: p.prompt,
       }));
@@ -114,8 +116,10 @@ export function SkillEditor({ name, displayName }: Props) {
           <div className={styles.phaseHead}>
             <span className={styles.pnum}>{i + 1}</span>
             <input className={styles.pname} placeholder="name (optional)" value={p.name ?? ''} onChange={(e) => patchPhase(i, { name: e.target.value })} />
-            <input className={styles.pmodel} placeholder="openrouter model id (e.g. google/gemini-2.0-flash-001)" value={p.model} onChange={(e) => patchPhase(i, { model: e.target.value })} />
-            <input className={styles.ptemp} type="number" step="0.1" min="0" max="2" placeholder="temp" value={p.temperature ?? ''} onChange={(e) => patchPhase(i, { temperature: e.target.value === '' ? undefined : Number(e.target.value) })} />
+            <ModelPicker
+              value={{ provider: p.provider, model: p.model, temperature: p.temperature } as ModelValue}
+              onChange={(v) => patchPhase(i, { provider: v.provider, model: v.model, temperature: v.temperature })}
+            />
             <button className={styles.icon} disabled={i === 0} onClick={() => move(i, -1)} aria-label="Up">▲</button>
             <button className={styles.icon} disabled={i === phases.length - 1} onClick={() => move(i, 1)} aria-label="Down">▼</button>
             <button className={styles.del} onClick={() => setPhases((xs) => xs.filter((_, idx) => idx !== i))}>Remove</button>

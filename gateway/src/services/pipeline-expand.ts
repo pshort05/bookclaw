@@ -3,7 +3,7 @@ import type { PipelineVars } from './pipeline-vars.js';
 export interface ResolvedStepInput {
   label: string; skill?: string; toolSuggestion?: string; taskType: string;
   prompt: string; phase?: string; wordCountTarget?: number; chapterNumber?: number;
-  modelOverride?: { provider: string; model?: string; temperature?: number };
+  modelOverride?: { provider?: string; model?: string; temperature?: number };
   // Set only on members of a `{ parallel: [...] }` group — a stable, index-based
   // id ('g'+entryIndex) shared by every member of that group. Absent on ordinary
   // steps (including the implicit join step that follows a group).

@@ -92,8 +92,9 @@ export interface ProjectStep {
   chapterNumber?: number;   // Chapter number for writing/revision steps
   // Per-step model override (cheap-draft / premium-edit). When set, this step
   // pins the given provider (and, if `model` is set, the exact model id) instead
-  // of tier routing. Unset = inherit the project/tier default (today's behavior).
-  modelOverride?: { provider: string; model?: string; temperature?: number };
+  // of tier routing. Any field is optional — e.g. temperature-only. Unset =
+  // inherit the project/tier default (today's behavior).
+  modelOverride?: { provider?: string; model?: string; temperature?: number };
   // Membership marker for a `{ parallel: [...] }` pipeline group (parallel-step
   // execution). Set to a stable group id ('g'+entryIndex) on each member; absent
   // on ordinary steps. The next ordinary step after a group is the implicit join —
