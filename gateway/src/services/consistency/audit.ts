@@ -16,11 +16,36 @@ export interface AuditDeps {
   };
   extract: (chapterText: string, known: any[], base: number) => Promise<ExtractResult>;
   onProgress?: (msg: string) => void;
+  /** Running total USD spent on this audit's AI calls (the wrapper accumulates it). */
+  costSoFar?: () => number;
+}
+
+/** One row of the per-chapter summary chart. */
+export interface ChapterSummaryRow {
+  chapter: string;
+  status: 'scanned' | 'failed' | 'skipped';
+  /** Facts (items) tracked from this chapter. */
+  itemsTracked: number;
+  high: number;
+  medium: number;
+  low: number;
 }
 
 export interface AuditReport {
   findings: ConsistencyFinding[];
+  /** Per-chapter summary: status + findings-by-severity + items tracked. */
+  chapterSummary: ChapterSummaryRow[];
   chaptersScanned: number;
+  /** Total chapter segments found (scanned + failed). Lets the UI show "4 of 23". */
+  chaptersTotal: number;
+  /** Chapters whose extraction threw (e.g. provider error, non-JSON) and were skipped. */
+  chaptersFailed: number;
+  /** Distinct sample failure messages (deduped, capped) so the report shows WHY chapters failed. */
+  failureSamples: string[];
+  /** True when the audit stopped early because the first chapters all failed (systemic error). */
+  aborted: boolean;
+  /** Estimated USD spent on this audit's AI calls (provider-reported where available). */
+  estimatedCost: number;
   factCount: number;
   knowledgeEventCount: number;
   nonCanonicalSceneCount: number;
@@ -33,11 +58,16 @@ export interface AuditReport {
 
 /** Empty report shape (shared by the early-return paths). */
 function emptyReport(): AuditReport {
-  return { findings: [], chaptersScanned: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, reverseIndex: [], orphanFacts: [], generatedAt: new Date().toISOString() };
+  return { findings: [], chapterSummary: [], chaptersScanned: 0, chaptersTotal: 0, chaptersFailed: 0, failureSamples: [], aborted: false, estimatedCost: 0, factCount: 0, knowledgeEventCount: 0, nonCanonicalSceneCount: 0, reverseIndex: [], orphanFacts: [], generatedAt: new Date().toISOString() };
 }
 
 // Noise labels that disqualify a file from being treated as chapter prose.
 const CHAPTER_NOISE = /outline|summary|brief|guide|consistency|audit|council|bible|notes|premise|dossier|plan|beta|critique|structure/;
+
+// How many times to attempt a chapter's extraction before counting it failed.
+// Retries catch a fleeting empty/parse/transient error; a deterministic failure
+// (e.g. a safety-filter block) still fails after all attempts.
+const EXTRACT_ATTEMPTS = 3;
 
 // Stage rank for choosing the best version when multiple files cover the same chapter.
 function stageRank(name: string): number {
@@ -80,16 +110,33 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
 
+/** A heading whose text names a chapter unit — used to recognize chapter
+ * boundaries at deeper ATX levels (`## Chapter N`) where a plain `##` would
+ * otherwise be an in-chapter subsection. */
+const CHAPTER_LABEL = /^(chapter\s+(?:\d+|[ivxlcdm]+)|prologue|epilogue)\b/i;
+
 /**
- * A line that begins a chapter: a top-level ATX heading (`# …`), or a bare
- * "Chapter N" line (imported manuscripts don't always use `#` for every
- * chapter). Returns the cleaned heading text, or null. The bare form is gated
- * to "Chapter <number>" optionally followed by a separator + title, so a prose
+ * A line that begins a chapter. Three forms are recognized:
+ *  - a level-1 ATX heading (`# …`) — always a chapter/section boundary;
+ *  - a deeper ATX heading (`## …`/`### …`) ONLY when its text is a chapter label
+ *    (`## Chapter 3`, `## Prologue`) — many books delimit chapters at level 2,
+ *    while their POV/scene/date subsections are also `##` and must stay inside;
+ *  - a bare "Chapter N" line (imported manuscripts don't always use `#`).
+ * A leading pandoc escape backslash (`\## …`) is tolerated. Returns the cleaned
+ * heading text, or null. The bare form is gated to "Chapter <number>" so a prose
  * sentence that merely starts with "Chapter N …" is NOT treated as a heading.
  */
 function chapterHeading(line: string): string | null {
-  const atx = line.match(/^#[ \t]+(.*\S)/);
-  if (atx) return atx[1].replace(/\{[^}]*\}\s*$/, '').replace(/[*_`]/g, '').trim(); // strip pandoc attrs + emphasis
+  const atx = line.match(/^\\?(#{1,6})[ \t]+(.*\S)/); // optional leading escape, any level
+  if (atx) {
+    const text = atx[2]
+      .replace(/\{[^}]*\}\s*$/, '')         // strip pandoc attrs
+      .replace(/\\(?=[^A-Za-z0-9\s])/g, '') // drop pandoc escape backslashes within the heading
+      .replace(/[*_`]/g, '')                // strip emphasis markers
+      .trim();
+    if (atx[1].length === 1 || CHAPTER_LABEL.test(text)) return text;
+    return null; // a non-chapter deeper heading is an in-chapter subsection
+  }
   const bare = line.replace(/\\+\s*$/, '').trim(); // drop a trailing markdown line-break backslash
   if (bare.length <= 60 && /^chapter\s+\d+\b\s*(?:[:.–—-]\s*.*)?$/i.test(bare)) {
     return bare.replace(/[*_`]/g, '').trim();
@@ -101,22 +148,29 @@ function chapterHeading(line: string): string | null {
  * Pick a combined single-file manuscript from a data dir's filenames — an IMPORTED
  * book keeps its whole text in one file (e.g. manuscript.md) instead of the
  * per-chapter files the generation pipeline produces. Prefers an exact
- * `manuscript.md`, else the first `.md` whose stem contains "manuscript".
+ * `manuscript.md`, else the first `.md` whose stem contains "manuscript", else a
+ * `draft.md` (some books store their prose in a draft file instead). The
+ * canonical `manuscript` name always wins over `draft` when both are present.
  */
 export function findCombinedManuscript(names: string[]): string | null {
   const md = names.filter(n => n.toLowerCase().endsWith('.md'));
-  const exact = md.find(n => n.toLowerCase() === 'manuscript.md');
-  if (exact) return exact;
-  const cand = md.filter(n => /manuscript/.test(n.toLowerCase().replace(/\.md$/, ''))).sort();
-  return cand[0] ?? null;
+  for (const key of ['manuscript', 'draft']) {
+    const exact = md.find(n => n.toLowerCase() === `${key}.md`);
+    if (exact) return exact;
+    const cand = md.filter(n => new RegExp(key).test(n.toLowerCase().replace(/\.md$/, ''))).sort();
+    if (cand[0]) return cand[0];
+  }
+  return null;
 }
 
 /**
- * Split a combined manuscript into chapter-sized segments by its top-level ATX
- * headings (`# …`). Front matter before the first heading is dropped; TOC /
- * copyright / etc. heading sections are skipped; lower-level headings (`## …`)
- * stay inside their chapter segment. Each segment is named from a slug of its
- * heading. Lets an imported single-file book scan like a generated one.
+ * Split a combined manuscript into chapter-sized segments by its chapter
+ * headings (see `chapterHeading`: every level-1 ATX heading, plus labeled
+ * chapter headings at deeper levels like `## Chapter N`, plus bare "Chapter N"
+ * lines — escaped or not). Front matter before the first heading is dropped;
+ * TOC / copyright / etc. heading sections are skipped; non-chapter subsections
+ * (`## Scene 2`) stay inside their chapter segment. Each segment is named from a
+ * slug of its heading. Lets an imported single-file book scan like a generated one.
  */
 export function splitManuscriptIntoChapters(text: string): { name: string; text: string }[] {
   const lines = text.split(/\r?\n/);
@@ -332,6 +386,14 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   let elapsedClock = 0;
   let factCount = 0;
   let chaptersScanned = 0;
+  let chaptersFailed = 0;
+  let aborted = false;
+  const failureSamples: string[] = [];
+  const chaptersTotal = chapters.length;
+  // Per-chapter scan outcome for the summary chart (severity counts are derived
+  // from the findings at the end). Chapters never reached (an early abort) stay
+  // out of this map and render as 'skipped'.
+  const scanInfo = new Map<string, { status: 'scanned' | 'failed'; itemsTracked: number }>();
   // Track the last scene's timeLabel for gap inference.
   let prevTimeLabel: string | null = null;
   // M3: in-memory latest stateful value per entity+attribute, updated as chapters are processed.
@@ -356,12 +418,44 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
         return { entity: e, aliases: Array.from(entityAliases.get(e) ?? [e]), current };
       });
 
-    let extractResult: ExtractResult;
-    try {
-      extractResult = await extract(chapterText, knownDigest, storyBase);
-    } catch (err) {
+    // Retry a failed extraction a couple of times before giving up — a fleeting
+    // empty response / parse blip / transient network error often succeeds on a
+    // second try. A deterministic failure (e.g. a safety-filter block on a
+    // chapter) still fails after every attempt, which confirms it's NOT fleeting.
+    // (HTTP 429/503 already get their own backoff in the router's fetchWithRetry.)
+    let extractResult: ExtractResult | undefined;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= EXTRACT_ATTEMPTS; attempt++) {
+      try {
+        extractResult = await extract(chapterText, knownDigest, storyBase);
+        lastErr = undefined;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < EXTRACT_ATTEMPTS) {
+          progress(`⚠ chapter ${chapterName}: attempt ${attempt}/${EXTRACT_ATTEMPTS} failed (${(err as Error)?.message ?? err}) — retrying`);
+        }
+      }
+    }
+    if (lastErr !== undefined || !extractResult) {
       // I4: emit a distinct diagnosable message rather than silently swallowing.
-      progress(`⚠ chapter ${chapterName}: extraction failed (${(err as Error)?.message ?? err}) — 0 facts`);
+      // Count the failure + keep a sample of the reason (prefixed with the
+      // chapter) so a mostly-failed run can't present as a clean pass and the
+      // report says WHICH chapter failed and WHY (auth, quota, safety block, …).
+      chaptersFailed++;
+      scanInfo.set(chapterName, { status: 'failed', itemsTracked: 0 });
+      const reason = (lastErr as Error)?.message ?? String(lastErr);
+      const sample = `${chapterName}: ${reason}`;
+      if (failureSamples.length < 5 && !failureSamples.includes(sample)) failureSamples.push(sample);
+      progress(`⚠ chapter ${chapterName}: extraction failed after ${EXTRACT_ATTEMPTS} attempts (${reason}) — 0 facts`);
+      // Fail fast: the first few chapters all failing with NO successes means a
+      // systemic error (bad API key, model unavailable, quota) — stop instead of
+      // burning paid calls on every remaining chapter.
+      if (chaptersScanned === 0 && chaptersFailed >= 3) {
+        aborted = true;
+        progress(`Aborting audit: first ${chaptersFailed} chapters all failed with no successes — likely a provider/config error. Last reason: ${reason}`);
+        break;
+      }
       continue;
     }
 
@@ -437,6 +531,7 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     }
 
     factCount += chapterFacts.length;
+    scanInfo.set(chapterName, { status: 'scanned', itemsTracked: chapterFacts.length });
     storyBase += extractResult.scenes.length || 1;
     chaptersScanned++;
   }
@@ -456,9 +551,38 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   try { reverseIndex = store.reverseIndex(scope); } catch (err) { progress(`Reverse index failed: ${(err as Error)?.message ?? err}`); }
   try { orphanFacts = store.orphanCanonFacts(scope); } catch (err) { progress(`Orphan-fact report failed: ${(err as Error)?.message ?? err}`); }
 
+  // Per-chapter summary chart: status + items tracked (from scanInfo) + findings
+  // by severity (grouped by each finding's detection chapter `a.chapter`).
+  const sevByChapter = new Map<string, { high: number; medium: number; low: number }>();
+  for (const f of findings) {
+    const ch = f.a?.chapter;
+    if (!ch) continue;
+    const e = sevByChapter.get(ch) ?? { high: 0, medium: 0, low: 0 };
+    e[f.severity]++;
+    sevByChapter.set(ch, e);
+  }
+  const chapterSummary: ChapterSummaryRow[] = chapters.map((c) => {
+    const info = scanInfo.get(c.name);
+    const sev = sevByChapter.get(c.name) ?? { high: 0, medium: 0, low: 0 };
+    return {
+      chapter: c.name,
+      status: info?.status ?? 'skipped',
+      itemsTracked: info?.itemsTracked ?? 0,
+      high: sev.high,
+      medium: sev.medium,
+      low: sev.low,
+    };
+  });
+
   const report: AuditReport = {
     findings,
+    chapterSummary,
     chaptersScanned,
+    chaptersTotal,
+    chaptersFailed,
+    failureSamples,
+    aborted,
+    estimatedCost: deps.costSoFar?.() ?? 0,
     factCount,
     knowledgeEventCount,
     nonCanonicalSceneCount,
@@ -467,6 +591,6 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
     generatedAt: new Date().toISOString(),
   };
   store.saveReport(slug, report);
-  progress(`Audit complete: ${chaptersScanned} chapters, ${factCount} facts, ${findings.length} findings, ${reverseIndex.length} indexed facts, ${orphanFacts.length} orphan(s)`);
+  progress(`Audit complete: ${chaptersScanned}/${chaptersTotal} chapters scanned${chaptersFailed ? ` (${chaptersFailed} failed)` : ''}, ${factCount} facts, ${findings.length} findings, ${reverseIndex.length} indexed facts, ${orphanFacts.length} orphan(s)`);
   return report;
 }

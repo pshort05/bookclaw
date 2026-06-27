@@ -1,6 +1,7 @@
 // Shared studio provider list + per-provider default model (placeholder hints).
-// Keep AI_PROVIDERS in sync with CONSISTENCY_PROVIDERS in
+// Keep AI_PROVIDERS in sync with KNOWN_PROVIDERS in
 // gateway/src/services/consistency/model-selection.ts (cross-package; can't import gateway TS).
+// The consistency-only subset (Ollama excluded) is derived in consistencyApi.ts.
 export const AI_PROVIDERS = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'] as const;
 export const PROVIDER_DEFAULT_MODEL: Record<string, string> = {
   gemini: 'gemini-2.5-flash', deepseek: 'deepseek-chat', claude: 'claude-sonnet-4-5-20250929',

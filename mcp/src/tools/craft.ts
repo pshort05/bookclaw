@@ -197,10 +197,10 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
   server.registerTool('consistency_audit',
     {
       title: 'Run consistency audit',
-      description: 'Run the per-book consistency audit (fact-ledger continuity check) against the manuscript + canon. Runs async; fetch with get_consistency_report.',
+      description: 'Run the per-book consistency audit (fact-ledger continuity check) against the manuscript + canon. Runs async; fetch with get_consistency_report. Needs a large-context model (gemini/claude/openai/deepseek/openrouter); Ollama is rejected. Returns 422 if no capable provider is configured.',
       inputSchema: {
         slug,
-        provider: z.string().optional().describe('Per-run AI provider override (this run only)'),
+        provider: z.string().optional().describe('Per-run AI provider override (gemini|claude|openai|deepseek|openrouter — NOT ollama)'),
         model: z.string().optional().describe('Per-run AI model override (this run only)'),
       },
     },
@@ -211,10 +211,10 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
   server.registerTool('set_consistency_model',
     {
       title: 'Set consistency audit model',
-      description: 'Save the per-book default AI provider/model for the consistency audit. Omit both to clear the saved default.',
+      description: 'Save the per-book default AI provider/model for the consistency audit. Omit both to clear the saved default. Must be a large-context provider (gemini/claude/openai/deepseek/openrouter); Ollama is rejected.',
       inputSchema: {
         slug,
-        provider: z.string().optional().describe('AI provider (omit to clear)'),
+        provider: z.string().optional().describe('AI provider (gemini|claude|openai|deepseek|openrouter — NOT ollama; omit to clear)'),
         model: z.string().optional().describe('AI model (omit to clear)'),
       },
     },

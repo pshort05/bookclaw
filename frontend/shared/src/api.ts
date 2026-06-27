@@ -31,7 +31,16 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
   if (!res.ok) {
-    const err = new Error(`${res.status} ${path}`);
+    // Surface the server's `error` message (the API returns { error } on 4xx/5xx)
+    // so the UI shows WHY, not a bare status code. Fall back to status+path when
+    // the body is empty or not JSON. The numeric status stays attached for the
+    // few callers that branch on it.
+    let serverMsg = '';
+    try {
+      const body: any = await res.json();
+      if (body && typeof body.error === 'string') serverMsg = body.error;
+    } catch { /* empty / non-JSON body */ }
+    const err = new Error(serverMsg || `${res.status} ${path}`);
     (err as Error & { status?: number }).status = res.status;
     throw err;
   }

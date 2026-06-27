@@ -24,7 +24,30 @@ test('parses facts with normalized values + types and assigns scene story-time o
 test('tolerates code-fenced JSON and rejects pure garbage', () => {
   const fenced = '```json\n' + SAMPLE + '\n```';
   assert.equal(parseExtractorResponse(fenced, 0).facts.length, 2);
+  // Garbage prose: jsonrepair would coerce it to a bare string, but the
+  // object guard still rejects it so the chapter is counted as a failure.
   assert.throws(() => parseExtractorResponse('not json at all', 0));
+});
+
+test('an empty model response throws a clear reason (not the cryptic jsonrepair message)', () => {
+  for (const empty of ['', '   ', '```json\n```', '\n\n']) {
+    assert.throws(() => parseExtractorResponse(empty, 0), /empty response/i);
+  }
+});
+
+test('repairs malformed model JSON (truncated string, trailing comma, unquoted key, bad escape) instead of dropping the chapter', () => {
+  // Truncated mid-string at the token cap — the dominant real-world failure.
+  const truncated = '{"scenes":[{"timeLabel":"morning"}],"facts":[{"entity":"John","aliases":["John"],"attribute":"eye_color","type":"immutable","valueRaw":"emerald","valueNorm":"green","scene":0,"transition":null,"evidence":"his emerald ey';
+  const r1 = parseExtractorResponse(truncated, 0);
+  assert.equal(r1.facts.length, 1, 'recovered the fact before the cutoff');
+  assert.equal(r1.facts[0].valueNorm, 'green');
+
+  // Trailing comma + unquoted key + a bad escape in evidence.
+  const dirty = '{"scenes":[{"timeLabel":"noon"}],"facts":[{entity:"Mae","aliases":["Mae"],"attribute":"hair_color","type":"immutable","valueRaw":"auburn","valueNorm":"auburn","scene":0,"transition":null,"evidence":"auburn hair near C:\\x"},]}';
+  const r2 = parseExtractorResponse(dirty, 0);
+  assert.equal(r2.facts.length, 1);
+  assert.equal(r2.facts[0].entity, 'Mae');
+  assert.equal(r2.facts[0].valueNorm, 'auburn');
 });
 
 const SAMPLE_V2 = JSON.stringify({

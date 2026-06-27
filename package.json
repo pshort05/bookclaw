@@ -4,7 +4,9 @@
   "description": "The Autonomous AI Writing Agent — 6 book production phases, author personas, pipeline mode, 21-step deep revision, KDP-ready export. Built for authors who scale.",
   "main": "gateway/src/index.ts",
   "type": "module",
-  "workspaces": ["frontend/*"],
+  "workspaces": [
+    "frontend/*"
+  ],
   "scripts": {
     "start": "node --import tsx gateway/src/index.ts",
     "dev": "node --watch --import tsx gateway/src/index.ts",
@@ -53,6 +55,7 @@
     "express": "^4.21.0",
     "helmet": "^8.0.0",
     "ipaddr.js": "^1.9.1",
+    "jsonrepair": "^3.14.1",
     "multer": "^2.2.0",
     "node-diff3": "^3.2.1",
     "node-edge-tts": "^1.2.10",

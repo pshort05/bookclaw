@@ -222,6 +222,17 @@ test('findCombinedManuscript prefers manuscript.md, ignores chapter/noise files'
   assert.equal(findCombinedManuscript([]), null);
 });
 
+test('findCombinedManuscript recognizes draft.md but prefers manuscript.md over it', () => {
+  // Some books store their prose in draft.md (e.g. fire-and-flesh) instead of manuscript.md.
+  assert.equal(findCombinedManuscript(['draft.md', 'outline.md']), 'draft.md');
+  assert.equal(findCombinedManuscript(['cross-lines-draft.md', 'cover.png']), 'cross-lines-draft.md');
+  // manuscript.md is the canonical pipeline output and wins when both exist.
+  assert.equal(findCombinedManuscript(['draft.md', 'manuscript.md']), 'manuscript.md');
+  // a draft must not be picked over genuine noise-only sets staying null is fine,
+  // but draft IS picked over plain noise files.
+  assert.equal(findCombinedManuscript(['world-guide.md', 'draft.md', 'blurb.md']), 'draft.md');
+});
+
 test('splitManuscriptIntoChapters drops front matter + TOC and splits on top-level headings', () => {
   const ms = [
     'H.K. Author',                         // front matter — dropped (before first #)
@@ -267,6 +278,33 @@ test('splitManuscriptIntoChapters does NOT split on a prose line that merely sta
   const segs = splitManuscriptIntoChapters(ms);
   assert.equal(segs.length, 1, 'a prose sentence starting "Chapter N ..." is not a boundary');
   assert.ok(segs[0].text.includes('hardest stretch'));
+});
+
+test('splitManuscriptIntoChapters splits on labeled level-2 chapter headings, but NOT on H2 scene subsections', () => {
+  // Many books delimit chapters with `## Chapter N`/`## Prologue`; their in-chapter
+  // POV/scene subsections are ALSO `##` but must stay inside the chapter.
+  const ms = [
+    '# Part 1: Awakening',                  // part divider (level-1, kept as boundary)
+    '## Prologue: The Angel', 'Prologue prose.',
+    '## Chapter 1: Scandals', 'One prose.',
+    '## SCENE 2: a POV subsection', 'still inside chapter one.',
+    '## Chapter 2: Brownstone', 'Two prose.',
+  ].join('\n');
+  const segs = splitManuscriptIntoChapters(ms);
+  assert.deepEqual(segs.map(s => s.name), ['part-1-awakening', 'prologue-the-angel', 'chapter-1-scandals', 'chapter-2-brownstone']);
+  assert.ok(segs[2].text.includes('still inside chapter one.'), 'a non-chapter ## scene stays inside its chapter');
+  assert.ok(!segs[2].text.includes('Two prose.'), 'chapter 2 is its own segment');
+});
+
+test('splitManuscriptIntoChapters handles pandoc-escaped chapter headings (\\## Chapter N)', () => {
+  const ms = [
+    '\\## Chapter 1: Blue Eyes in the ER', 'The radio crackles.',
+    '\\## Chapter 3: \\"Miami - Observation\\"', 'Miami prose.',
+  ].join('\n');
+  const segs = splitManuscriptIntoChapters(ms);
+  assert.deepEqual(segs.map(s => s.name), ['chapter-1-blue-eyes-in-the-er', 'chapter-3-miami-observation']);
+  assert.ok(segs[0].text.includes('The radio crackles.'));
+  assert.ok(!segs[0].text.includes('Miami prose.'), 'ch3 is its own segment, not merged into ch1');
 });
 
 test('imported book (single manuscript.md, no chapter files) is scanned by splitting on headings', async () => {
@@ -348,4 +386,124 @@ test('I2: inferGap classifies multi-day spans correctly', () => {
   assert.equal(inferGap(null, 'moments later'), 'same', '"moments later" -> same');
   assert.equal(inferGap(null, 'meanwhile'), 'same', '"meanwhile" -> same');
   assert.equal(inferGap(null, null), 'unknown', 'null -> unknown');
+});
+
+test('failed chapter extraction is counted (chaptersFailed/chaptersTotal), not silently dropped', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-fail-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    // Three chapter segments; extraction throws for the two marked BOOM (mirrors a
+    // model returning non-JSON / a provider error) and succeeds for the first.
+    writeFileSync(join(dataDir, 'manuscript.md'), [
+      '# Chapter 1 *Open*', 'John has blue eyes.', '',
+      '# Chapter 2 *BOOM*', 'unparseable for the model', '',
+      '# Chapter 3 *BOOM*', 'also fails', '',
+    ].join('\n'));
+
+    const extract = async (text: string, _k: any[], base: number) => {
+      if (text.includes('BOOM')) throw new Error('non-JSON output (simulated truncation)');
+      return {
+        scenes: [{ storyTime: base, timeLabel: null }],
+        facts: [{ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable' as const,
+          valueRaw: 'blue', valueNorm: 'blue', storyTime: base, timeLabel: null, transition: null, scene: 0,
+          source: 'manuscript' as const, evidence: text }],
+      };
+    };
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+
+    const report = await runConsistencyAudit('failbook', { store, books, extract });
+    assert.equal(report.chaptersTotal, 3, 'all 3 segments counted');
+    assert.equal(report.chaptersScanned, 1, 'only the parseable chapter scanned');
+    assert.equal(report.chaptersFailed, 2, 'the two failed chapters are counted, not silently dropped');
+    assert.equal(report.aborted, false, 'not aborted — a chapter did succeed');
+    assert.ok(report.failureSamples.some((s) => s.includes('simulated truncation')), 'captures the failure reason');
+    assert.ok(report.failureSamples.some((s) => /^chapter-2/.test(s)), 'names the failing chapter in the sample');
+    // Per-chapter summary chart: one row per chapter with status + items tracked.
+    assert.equal(report.chapterSummary.length, 3, 'a summary row per chapter');
+    const ch1 = report.chapterSummary.find((r) => r.chapter === 'chapter-1-open');
+    assert.equal(ch1?.status, 'scanned');
+    assert.equal(ch1?.itemsTracked, 1, 'tracked the one fact');
+    assert.ok(report.chapterSummary.some((r) => /chapter-2/.test(r.chapter) && r.status === 'failed' && r.itemsTracked === 0));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('audit aborts fast when the first 3 chapters all fail with no successes (systemic error)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-abort-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'manuscript.md'), [
+      '# Chapter 1', 'a', '', '# Chapter 2', 'b', '', '# Chapter 3', 'c', '', '# Chapter 4', 'd', '', '# Chapter 5', 'e', '',
+    ].join('\n'));
+
+    let calls = 0;
+    const extract = async () => { calls++; throw new Error('OpenRouter HTTP 401: Missing Authentication header'); };
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+
+    const report = await runConsistencyAudit('abortbook', { store, books, extract });
+    assert.equal(report.aborted, true, 'aborted after the systemic-failure threshold');
+    assert.equal(report.chaptersFailed, 3, 'stopped at 3 failed chapters');
+    assert.equal(report.chaptersScanned, 0);
+    // 3 chapters × 3 attempts each = 9 calls, then abort — NOT all 5 chapters.
+    assert.equal(calls, 9, 'retried each chapter but still stopped at 3 failed chapters');
+    assert.ok(report.failureSamples.some((s) => s.includes('401')), 'surfaces the auth reason');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('a fleeting extraction error is retried and recovers (chapter not counted failed)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-retry-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'manuscript.md'), '# Chapter 1\nJohn has blue eyes.\n');
+    let calls = 0;
+    const extract = async (_t: string, _k: any[], base: number) => {
+      calls++;
+      if (calls === 1) throw new Error('Extractor model returned an empty response (no content to parse)');
+      return {
+        scenes: [{ storyTime: base, timeLabel: null }],
+        facts: [{ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable' as const,
+          valueRaw: 'blue', valueNorm: 'blue', storyTime: base, timeLabel: null, transition: null, scene: 0,
+          source: 'manuscript' as const, evidence: 'blue eyes' }],
+      };
+    };
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+    const report = await runConsistencyAudit('retrybook', { store, books, extract });
+    assert.equal(calls, 2, 'failed once then retried');
+    assert.equal(report.chaptersScanned, 1, 'recovered on retry — counted as scanned');
+    assert.equal(report.chaptersFailed, 0, 'not counted as a failure');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('audit report carries the accumulated AI cost from costSoFar', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-cost-'));
+  try {
+    const store = new ConsistencyStore(join(root, 'workspace'), join(root, 'db'));
+    await store.initialize();
+    if (!store.isAvailable()) { console.log('sqlite unavailable — skipping'); return; }
+    const dataDir = join(root, 'book', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'manuscript.md'), '# Chapter 1\nJohn has blue eyes.\n');
+    const extract = async (_t: string, _k: any[], base: number) => ({
+      scenes: [{ storyTime: base, timeLabel: null }],
+      facts: [{ entity: 'John', aliases: ['John'], attribute: 'eye_color', type: 'immutable' as const,
+        valueRaw: 'blue', valueNorm: 'blue', storyTime: base, timeLabel: null, transition: null, scene: 0,
+        source: 'manuscript' as const, evidence: 'blue eyes' }],
+    });
+    const books = { dataDirOf: () => dataDir, worldDocsOf: () => null, worldbuildingOf: () => null, open: async () => ({ manifest: { pulledFrom: {} } }) };
+    const report = await runConsistencyAudit('costbook', { store, books, extract, costSoFar: () => 5.7076 });
+    assert.equal(report.estimatedCost, 5.7076, 'the run cost is recorded on the report for display');
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

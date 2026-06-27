@@ -1,4 +1,22 @@
+import { jsonrepair } from 'jsonrepair';
 import type { LedgerFact, FactType, FactSource, KnowledgeKind, KnowledgeSource } from './types.js';
+
+/**
+ * Parse JSON, falling back to a deterministic repair pass when the model emits
+ * slightly-invalid JSON. LLMs intermittently return unterminated strings (output
+ * truncated at the token cap), bad escapes, trailing commas, or unquoted keys —
+ * each of which makes strict JSON.parse throw and the whole chapter get dropped.
+ * `jsonrepair` is a pure, deterministic fixer (closes truncated strings/arrays/
+ * objects, fixes escapes/commas), so we recover the facts the model did produce
+ * instead of losing the chapter. Still throws if the text is unrecoverable.
+ */
+function parseJsonLenient(s: string): unknown {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return JSON.parse(jsonrepair(s));
+  }
+}
 
 export interface ExtractedScene {
   storyTime: number;
@@ -27,7 +45,22 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
   // Strip optional ```json ... ``` or ``` ... ``` fences.
   const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
 
-  const parsed = JSON.parse(stripped) as {
+  // An empty response has nothing to parse or repair — give a clear reason
+  // rather than the cryptic "Unexpected end of json string at position 0" that
+  // jsonrepair throws on empty input (the model returned no content, e.g. a
+  // safety-filter block on a provider that doesn't surface it as an error).
+  if (!stripped) {
+    throw new Error('Extractor model returned an empty response (no content to parse)');
+  }
+
+  const raw = parseJsonLenient(stripped);
+  // A valid extractor response is a JSON OBJECT. jsonrepair will happily coerce
+  // garbage prose into a bare JSON string, so reject anything that isn't an
+  // object — that keeps a junk response a counted failure, not a silent 0-fact pass.
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new Error('Extractor response is not a JSON object');
+  }
+  const parsed = raw as {
     scenes?: Array<{ timeLabel?: string | null; canonical?: boolean }>;
     facts?: Array<{
       entity?: string;
@@ -237,7 +270,10 @@ export async function extractChapterFacts(
     model,
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content }],
-    maxTokens: 8000,
+    // Generous output cap: a dense chapter can emit many facts + knowledge
+    // events as JSON; at 8000 the output was being truncated mid-string on busy
+    // chapters, which broke JSON.parse and dropped the chapter (see parseJsonLenient).
+    maxTokens: 16000,
     temperature: 0.1,
   });
 

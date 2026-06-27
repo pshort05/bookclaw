@@ -20,3 +20,11 @@ services:
       # Live SQLite FTS index on a local (non-synced) disk — paired with
       # BOOKCLAW_DB_DIR=/app/db so the workspace can live in a cloud-synced folder.
       - ${BOOKCLAW_DB_HOST_PATH:-/mnt/bckup1/bookclaw-db}:/app/db
+      # Encrypted vault (API keys) on a host bind-mount — overrides the base's
+      # project-scoped `bookclaw-vault` named volume. The DB + secrets already
+      # live on host binds; the vault was the lone named volume, so a deploy under
+      # the wrong compose project name (or a `docker volume prune` while down)
+      # silently orphaned/removed it and lost every stored key. A host bind
+      # survives all of that. The container runs as uid 999 — keep this dir
+      # owned 999:999 (mode 700, vault.enc 600).
+      - ${BOOKCLAW_VAULT_HOST_PATH:-/mnt/bckup1/bookclaw-writing/vault}:/app/config/.vault

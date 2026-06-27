@@ -17,10 +17,19 @@ export function Rail() {
   const loadCosts = useStore((s) => s.loadCosts);
   const loadConfirmations = useStore((s) => s.loadConfirmations);
   const loadStatus = useStore((s) => s.loadStatus);
+  // Refresh the live rail figures (AI spend, pending confirmations, providers)
+  // on an interval, not just on mount — otherwise the sidebar freezes and an
+  // in-session action (e.g. a consistency audit) won't show its spend until the
+  // page is reloaded.
   useEffect(() => {
-    loadCosts().catch(() => {});
-    loadConfirmations().catch(() => {});
-    loadStatus().catch(() => {});
+    const refresh = () => {
+      loadCosts().catch(() => {});
+      loadConfirmations().catch(() => {});
+      loadStatus().catch(() => {});
+    };
+    refresh();
+    const id = setInterval(refresh, 20000);
+    return () => clearInterval(id);
   }, [loadCosts, loadConfirmations, loadStatus]);
 
   return (

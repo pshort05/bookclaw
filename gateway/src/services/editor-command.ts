@@ -22,6 +22,18 @@ export function resolveMode(token: string): EditorMode | null {
   return MODE_SYNONYMS[token.trim().toLowerCase()] ?? null;
 }
 
+/**
+ * After the menu is shown, a bare numeric reply (e.g. "7") selects that editor.
+ * Returns the editor name for a 1-based number within range, else null. Pure so
+ * the gateway just pairs it with the per-channel "menu just shown" state.
+ */
+export function editorNumberSelection(orderedNames: string[], text: string): string | null {
+  const m = (text || '').trim().match(/^#?(\d{1,3})$/);
+  if (!m) return null;
+  const i = parseInt(m[1], 10) - 1;
+  return i >= 0 && i < orderedNames.length ? orderedNames[i] : null;
+}
+
 /** Parse the `/editor` argument string into an intent. */
 export function parseEditorCommand(args: string): ParsedEditorCommand {
   const trimmed = (args || '').trim();
@@ -75,7 +87,7 @@ export function buildEditorMenu(
 ): string {
   if (!editors.length) return '_No editors available._';
 
-  const lines: string[] = ['**Editors** — reply with a command to begin:', ''];
+  const lines: string[] = ['**Editors** — reply with a number, or a command:', ''];
   editors.forEach((e, i) => {
     lines.push(`${i + 1}. **${displayName(e)}** — ${specialtyOf(e)}`);
     lines.push(`   brainstorm: \`/editor ${e.name} brainstorm\` · critique: \`/editor ${e.name} critique\``);

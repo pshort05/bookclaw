@@ -19,9 +19,30 @@ export interface ConsistencyFinding {
   suggestedFix: string;
 }
 
+export interface ChapterSummaryRow {
+  chapter: string;
+  status: 'scanned' | 'failed' | 'skipped';
+  itemsTracked: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
 export interface ConsistencyReport {
   findings: ConsistencyFinding[];
+  /** Per-chapter summary chart. Optional: older reports omit it. */
+  chapterSummary?: ChapterSummaryRow[];
   chaptersScanned: number;
+  /** Total chapter segments found (scanned + failed). Optional: older reports omit it. */
+  chaptersTotal?: number;
+  /** Chapters whose extraction failed and were skipped. Optional: older reports omit it. */
+  chaptersFailed?: number;
+  /** Sample failure reasons (deduped) so the UI shows WHY chapters failed. Optional: older reports omit it. */
+  failureSamples?: string[];
+  /** True when the audit stopped early (first chapters all failed). Optional: older reports omit it. */
+  aborted?: boolean;
+  /** Estimated USD spent on this audit's AI calls. Optional: older reports omit it. */
+  estimatedCost?: number;
   factCount: number;
   /** Each (entity, attribute) → chapters that dramatize it (canon-flagged). Optional: older reports omit it. */
   reverseIndex?: ReverseIndexEntry[];
@@ -33,7 +54,10 @@ export interface ConsistencyReport {
 export interface ReverseIndexEntry { entity: string; attribute: string; chapters: string[]; isCanon: boolean; }
 export interface OrphanFact { entity: string; attribute: string; valueRaw: string; world: string | null; }
 
-export const CONSISTENCY_PROVIDERS = AI_PROVIDERS;
+// Consistency excludes Ollama: it lacks the context window to ingest a full
+// chapter, so a local model silently fails extraction (see backend
+// CONSISTENCY_PROVIDERS in services/consistency/model-selection.ts).
+export const CONSISTENCY_PROVIDERS = AI_PROVIDERS.filter((p) => p !== 'ollama');
 export { PROVIDER_DEFAULT_MODEL };
 
 export interface ConsistencyModelSelection { provider?: string; model?: string; }

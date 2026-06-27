@@ -3,6 +3,7 @@ import { api, apiBase, authToken, useStore, useActiveBook } from '@bookclaw/shar
 import type { LibraryEntry } from '@bookclaw/shared';
 import { useDialog } from '../components/Dialog.js';
 import { AI_PROVIDERS, PROVIDER_DEFAULT_MODEL } from '../lib/providers.js';
+import { useOpenRouterModels } from '../lib/openrouterModels.js';
 import styles from './PromptRunner.module.css';
 
 interface RunnerFile { path: string; group: 'Outputs' | 'Templates'; bytes: number; modified?: string }
@@ -47,6 +48,9 @@ export function PromptRunner() {
 
   const [provider, setProvider] = useState('');
   const [model, setModel] = useState('');
+  // OpenRouter catalog for the exact-model picker (lazy-fetched when provider is
+  // openrouter; gateway-cached 24h). Fail-soft to free-text.
+  const orModels = useOpenRouterModels(provider);
 
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<string | null>(null);
@@ -234,7 +238,20 @@ export function PromptRunner() {
           {provider !== '' && (
             <div className={styles.field}>
               <span className={styles.fl}>Exact model</span>
-              <input className={styles.pick} type="text" value={model} placeholder={PROVIDER_DEFAULT_MODEL[provider]} onChange={(e) => setModel(e.target.value)} disabled={running} />
+              <input
+                className={styles.pick}
+                type="text"
+                list={provider === 'openrouter' ? 'openrouter-models' : undefined}
+                value={model}
+                placeholder={PROVIDER_DEFAULT_MODEL[provider]}
+                onChange={(e) => setModel(e.target.value)}
+                disabled={running}
+              />
+              {provider === 'openrouter' && (
+                <datalist id="openrouter-models">
+                  {orModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </datalist>
+              )}
             </div>
           )}
 

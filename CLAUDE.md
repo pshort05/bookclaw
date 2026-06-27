@@ -93,6 +93,18 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## Build Order (before writing code)
+
+Stop at the first rung that holds:
+1. Does this need to exist? → no: skip it
+2. Stdlib does it? → use it
+3. Native platform feature? → use it
+4. Installed dependency? → use it
+5. One line? → one line
+6. Only then: the minimum that works
+
+Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are never cut for simplicity. 
+
 ## Commands
 
 ```bash

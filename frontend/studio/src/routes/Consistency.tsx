@@ -11,6 +11,7 @@ import {
   type ConsistencyReport,
   type Severity,
 } from '../lib/consistencyApi.js';
+import { useOpenRouterModels } from '../lib/openrouterModels.js';
 import styles from './Consistency.module.css';
 
 const SEVERITY_ORDER: Severity[] = ['high', 'medium', 'low'];
@@ -97,6 +98,9 @@ export function Consistency() {
   const [reportDownload, setReportDownload] = useState<string | null>(null);
   const [provider, setProvider] = useState('');
   const [model, setModel] = useState('');
+  // OpenRouter catalog for the exact-model picker (lazy-fetched when provider is
+  // openrouter; gateway-cached 24h). Fail-soft to free-text.
+  const orModels = useOpenRouterModels(provider);
 
   useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
 
@@ -276,12 +280,18 @@ export function Consistency() {
             <input
               className={styles.pick}
               type="text"
+              list={provider === 'openrouter' ? 'openrouter-models' : undefined}
               value={model}
               placeholder={PROVIDER_DEFAULT_MODEL[provider]}
               onChange={(e) => onModelChange(e.target.value)}
               onBlur={onModelBlur}
               disabled={running}
             />
+            {provider === 'openrouter' && (
+              <datalist id="openrouter-models">
+                {orModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </datalist>
+            )}
           </div>
         )}
 
@@ -305,13 +315,59 @@ export function Consistency() {
       {report && !running && (
         <>
           <p className={styles.reportMeta}>
-            {report.chaptersScanned} {report.chaptersScanned === 1 ? 'chapter' : 'chapters'} scanned
+            {report.chaptersScanned}{report.chaptersTotal ? ` of ${report.chaptersTotal}` : ''} {report.chaptersScanned === 1 ? 'chapter' : 'chapters'} scanned
             {' · '}{report.factCount} facts
+            {report.estimatedCost && report.estimatedCost > 0 ? <>{' · '}~${report.estimatedCost.toFixed(4)} (est.)</> : null}
             {' · '}{new Date(report.generatedAt).toLocaleString()}
           </p>
 
+          {report.chaptersFailed ? (
+            <div className={styles.err}>
+              <p>
+                ⚠ {report.aborted ? 'Scan aborted' : 'Incomplete scan'} — {report.chaptersFailed} chapter{report.chaptersFailed === 1 ? '' : 's'} failed extraction and {report.chaptersFailed === 1 ? 'was' : 'were'} skipped.
+                {' '}Findings below are NOT a clean bill of health.
+              </p>
+              {report.failureSamples && report.failureSamples.length > 0 && (
+                <ul>
+                  {report.failureSamples.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              )}
+            </div>
+          ) : null}
+
+          {report.chapterSummary && report.chapterSummary.length > 0 && (
+            <details className={styles.summaryWrap} open>
+              <summary>Chapter summary ({report.chapterSummary.length})</summary>
+              <table className={styles.summaryTable}>
+                <thead>
+                  <tr>
+                    <th>Chapter</th><th>Scan</th><th>High</th><th>Medium</th><th>Low</th><th>Items tracked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.chapterSummary.map((r) => (
+                    <tr key={r.chapter}>
+                      <td>{r.chapter}</td>
+                      <td>{r.status === 'scanned' ? '✓ scanned' : r.status === 'failed' ? '✗ failed' : '— skipped'}</td>
+                      <td>{r.high}</td>
+                      <td>{r.medium}</td>
+                      <td>{r.low}</td>
+                      <td>{r.itemsTracked}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          )}
+
           {report.findings.length === 0 ? (
-            <p className={styles.empty}>No findings — no inconsistencies detected.</p>
+            <p className={styles.empty}>
+              {report.chaptersScanned === 0
+                ? 'No chapters were analyzed — check the model selection and that the book has manuscript text.'
+                : report.chaptersFailed
+                  ? 'No inconsistencies in the chapters that were scanned (some chapters failed — see above).'
+                  : 'No findings — no inconsistencies detected.'}
+            </p>
           ) : (
             SEVERITY_ORDER.map((sev) => {
               const categories = grouped[sev];

@@ -785,6 +785,11 @@ export class AIRouter {
       body.max_completion_tokens = request.maxTokens ?? provider.maxTokens;
       body.reasoning_effort = reasoningEffort;
     }
+    // OpenRouter: opt into usage accounting so the response carries the ACTUAL
+    // per-model cost (usage.cost), which we prefer over the flat Sonnet-priced
+    // placeholder — the placeholder badly underprices expensive models (Opus).
+    // OpenAI/DeepSeek share this path but don't take this field, so gate it.
+    if (provider.id === 'openrouter') body.usage = { include: true };
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -817,6 +822,18 @@ export class AIRouter {
       throw new Error(`${provider.name} API error: ${data.error.message || 'Unknown error'}`);
     }
     const text = data.choices?.[0]?.message?.content || '';
+    // An empty completion is a failure, not a valid result (mirrors the Ollama
+    // path). The OpenAI-compatible shape otherwise returns '' silently, which
+    // downstream JSON parsing can't make sense of. Surface finish_reason so a
+    // safety/content-filter block or a truncated/refused call is diagnosable.
+    if (!text.trim()) {
+      const finish = data.choices?.[0]?.finish_reason;
+      throw new Error(
+        `${provider.name} returned an empty completion` +
+        (finish ? ` (finish_reason: ${finish})` : '') +
+        `. Likely a safety/content-filter block, a refusal, or a truncated/timed-out call.`
+      );
+    }
     const usage = data.usage;
     const inputTokens = usage?.prompt_tokens || 0;
     const outputTokens = usage?.completion_tokens || 0;

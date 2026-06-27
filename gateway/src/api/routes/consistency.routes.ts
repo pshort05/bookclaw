@@ -1,7 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { SLUG_RE } from '../../services/book-types.js';
 import { renderConsistencyReport } from '../../services/reports/render-consistency.js';
-import { validateModelSelection } from '../../services/consistency/model-selection.js';
+import { validateConsistencyModelSelection, resolveConsistencyModel, consistencyCapabilityError } from '../../services/consistency/model-selection.js';
 
 /**
  * Consistency Auditor API (consistency-auditor plan Task 5).
@@ -49,12 +49,22 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
 
       // Per-run model override (this run only; does not change the saved
       // default). Validate before claiming the job slot or responding.
-      const selErr = validateModelSelection(req.body);
+      const selErr = validateConsistencyModelSelection(req.body);
       if (selErr) return res.status(400).json({ error: selErr });
       const override = {
         provider: typeof req.body?.provider === 'string' ? req.body.provider : undefined,
         model: typeof req.body?.model === 'string' ? req.body.model : undefined,
       };
+
+      // Capability gate: consistency needs a large-context model (not Ollama).
+      // Resolve the effective selection (per-run → per-book → auto) and confirm a
+      // capable provider is actually configured — fail loudly up front instead of
+      // silently dropping every chapter when only an unsuitable model is present.
+      const manifest = (await services.books.open(slug) as any)?.manifest;
+      const sel = resolveConsistencyModel(override, manifest?.consistency);
+      const availableIds = (services.aiRouter?.getActiveProviders?.() ?? []).map((p: any) => p.id);
+      const capErr = consistencyCapabilityError(sel, availableIds);
+      if (capErr) return res.status(422).json({ error: capErr });
 
       // Concurrency guard: a second audit for the same book while one is in
       // flight would interleave with the leading clearBookFacts() and corrupt
@@ -119,7 +129,7 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
       if (!SLUG_RE.test(slug) || !services.books?.exists?.(slug)) {
         return res.status(404).json({ error: 'Book not found' });
       }
-      const selErr = validateModelSelection(req.body);
+      const selErr = validateConsistencyModelSelection(req.body);
       if (selErr) return res.status(400).json({ error: selErr });
       await services.books.setConsistencyModel(slug, {
         provider: typeof req.body?.provider === 'string' ? req.body.provider : undefined,

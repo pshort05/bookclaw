@@ -235,3 +235,46 @@
   color: var(--dim);
   font-weight: 600;
 }
+
+/* Per-chapter summary chart */
+.summaryWrap {
+  margin: 0 0 28px;
+}
+.summaryWrap > summary {
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.summaryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.summaryTable th,
+.summaryTable td {
+  border-bottom: 1px solid var(--line);
+  padding: 5px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+.summaryTable th:first-child,
+.summaryTable td:first-child {
+  text-align: left;
+  width: 100%;
+}
+.summaryTable th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.summaryTable td {
+  font-family: 'IBM Plex Mono', monospace;
+}

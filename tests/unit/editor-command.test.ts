@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseEditorCommand, buildEditorMenu, resolveMode } from '../../gateway/src/services/editor-command.ts';
+import { parseEditorCommand, buildEditorMenu, resolveMode, editorNumberSelection } from '../../gateway/src/services/editor-command.ts';
 
 test('bare args request the menu', () => {
   assert.deepEqual(parseEditorCommand(''), { kind: 'show' });
@@ -69,4 +69,18 @@ test('buildEditorMenu falls back to label when no specialty, and notes the activ
 
 test('buildEditorMenu reports when none exist', () => {
   assert.ok(/no editors/i.test(buildEditorMenu([], null)));
+});
+
+test('editorNumberSelection: a bare number after the menu picks the Nth editor (1-based)', () => {
+  const names = ['lily', 'maeve', 'neil', 'rosalind', 'sarah', 'world-author', 'fanfiction', 'luminarch-adept'];
+  assert.equal(editorNumberSelection(names, '7'), 'fanfiction');
+  assert.equal(editorNumberSelection(names, '1'), 'lily');
+  assert.equal(editorNumberSelection(names, ' 8 '), 'luminarch-adept');
+  assert.equal(editorNumberSelection(names, '#7'), 'fanfiction');
+  // out of range / non-numeric / empty → null (falls through to normal chat)
+  assert.equal(editorNumberSelection(names, '9'), null);
+  assert.equal(editorNumberSelection(names, '0'), null);
+  assert.equal(editorNumberSelection(names, 'write the next chapter'), null);
+  assert.equal(editorNumberSelection(names, ''), null);
+  assert.equal(editorNumberSelection(names, '7 please'), null);
 });

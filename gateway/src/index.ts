@@ -41,7 +41,7 @@ import { matchGenre } from './services/genre-match.js';
 import { EditorService } from './services/editor.js';
 import { composeEditorPrompt, type EditorMode } from './services/editor-prompt.js';
 import { composeWorldAuthoringContext, worldForAuthoringEditor } from './services/world-authoring.js';
-import { parseEditorCommand, buildEditorMenu } from './services/editor-command.js';
+import { parseEditorCommand, buildEditorMenu, editorNumberSelection } from './services/editor-command.js';
 import { isChatCommand } from './services/chat-command.js';
 import { DISPLAY_VERSION, BREAKING_VERSION, formatVersionInfo } from './version.js';
 import { AuthorOSService } from './services/author-os.js';
@@ -94,7 +94,7 @@ import type { BackupService } from './services/backup.js';
 import type { ReportsService } from './services/reports.js';
 import { ConsistencyStore } from './services/consistency/fact-store.js';
 import { extractChapterFacts } from './services/consistency/extractor.js';
-import { resolveConsistencyModel } from './services/consistency/model-selection.js';
+import { resolveConsistencyModel, CONSISTENCY_PROVIDERS } from './services/consistency/model-selection.js';
 import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
 import { ConsistencyJobRegistry } from './services/consistency/job-registry.js';
 import { TelegramBridge } from './bridges/telegram.js';
@@ -593,6 +593,16 @@ class BookClawGateway {
       return;
     }
 
+    // ── Editor menu selection ──
+    // If the editor menu was just shown and this message is a bare number (e.g.
+    // "7"), enter that editor instead of sending the number to the model. One-
+    // shot (consumed here), so a normal message is never hijacked.
+    const editorPick = this.consumePendingEditorSelection(channel, content);
+    if (editorPick) {
+      respond(await this.handleDashboardCommand(`/editor ${editorPick} brainstorm`, channel));
+      return;
+    }
+
     // ── Log the interaction ──
     this.audit.log('message', 'received', { channel, length: content.length });
 
@@ -1019,13 +1029,33 @@ class BookClawGateway {
   }
 
   /** Render the `/editor` selection menu for a channel (its current editor, if any). */
+  // Per-channel "editor menu was just shown" memory: maps the channel to the
+  // ordered editor names so the immediately-following bare-number reply (e.g.
+  // "7") selects that editor. One-shot — consumed on the next message.
+  private pendingEditorMenu = new Map<string, string[]>();
+
   public buildEditorMenuFor(channel: string): string {
     const editors = this.editors?.list() ?? [];
     const cur = this.editors?.getChannelEditor(channel) ?? null;
     const active = cur
       ? { editor: cur.editor, mode: cur.mode, label: this.editors?.get(cur.editor)?.label }
       : null;
+    // Remember the order so a numeric reply can select an editor next turn.
+    this.pendingEditorMenu.set(channel, editors.map((e: any) => e.name));
     return buildEditorMenu(editors, active);
+  }
+
+  /**
+   * If the editor menu was just shown on this channel and `text` is a bare
+   * number in range, return the selected editor's name (and clear the pending
+   * state). One-shot: any message after the menu consumes the pending state, so
+   * a stale number can't later be mistaken for a selection.
+   */
+  public consumePendingEditorSelection(channel: string, text: string): string | null {
+    const names = this.pendingEditorMenu.get(channel);
+    if (!names) return null;
+    this.pendingEditorMenu.delete(channel);
+    return editorNumberSelection(names, text);
   }
 
   /**
@@ -1336,7 +1366,11 @@ class BookClawGateway {
         // Resolve the extraction model once: per-run override → per-book book.json → auto.
         const manifest = (await books.open(slug) as any)?.manifest;
         const sel = resolveConsistencyModel(override, manifest?.consistency);
+        // Accumulate this audit's spend so the report can show it (the user
+        // shouldn't have to check the provider dashboard to learn what it cost).
+        let auditCost = 0;
         return runConsistencyAudit(slug, {
+          costSoFar: () => auditCost,
           store: this.consistencyStore!,
           books: {
             dataDirOf: (s) => books.dataDirOf(s),
@@ -1356,9 +1390,20 @@ class BookClawGateway {
                     try {
                       this.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug);
                     } catch { /* cost recording is best-effort */ }
+                    auditCost += resp.estimatedCost || 0;
                     return resp;
                   },
-                  select: (t, pref) => aiRouter.selectProvider(t, pref),
+                  // Consistency needs a large-context model: never let routing
+                  // fall back to Ollama (it truncates a full chapter → silent
+                  // extraction failure). The route already gates on a capable
+                  // provider being available; this throws as a defensive net.
+                  select: (t, pref) => {
+                    const p = aiRouter.selectProvider(t, pref);
+                    if (!(CONSISTENCY_PROVIDERS as readonly string[]).includes(p.id)) {
+                      throw new Error(`Consistency requires a large-context model; "${p.id}" is not supported. Configure one of: ${CONSISTENCY_PROVIDERS.join(', ')}.`);
+                    }
+                    return p;
+                  },
                 },
               },
               chapterText,
