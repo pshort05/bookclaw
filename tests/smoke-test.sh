@@ -123,6 +123,10 @@ pass "server started and serves ${BASE}/"
 [ "$(code -H "Authorization: Bearer wrong-token" "$BASE/api/status")" = "401" ] \
   && pass "wrong token -> 401" || fail "wrong token should be 401"
 
+# Try-Fail auditor route sits behind the auth gate too (gate is in front of routing).
+[ "$(code -X POST "$BASE/api/books/smoke/try-fail-audit")" = "401" ] \
+  && pass "try-fail-audit: no token -> 401" || fail "try-fail-audit should be 401 without token"
+
 HTML="$(curl -s --max-time 5 "$BASE/")"
 case "$HTML" in
   *"__BOOKCLAW_AUTH_TOKEN__"*) fail "dashboard still contains the unsubstituted token placeholder" ;;

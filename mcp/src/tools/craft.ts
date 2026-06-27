@@ -226,4 +226,24 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
     { title: 'Get consistency report', description: 'Get the stored consistency report for a book (null if not run yet).', inputSchema: { slug } },
     async ({ slug: s }) => toToolResult('get_consistency_report', await client.request('GET', `/api/books/${encodeURIComponent(s)}/consistency-report`)),
   );
+
+  // ── Try-Fail & Escalation auditor (per-book; synchronous) ──
+  server.registerTool('audit_try_fail',
+    {
+      title: 'Run try-fail & escalation audit',
+      description: 'Run the per-book Try-Fail & Escalation audit: detects try-fail cycles, checks early attempts genuinely fail, verifies each conflict deepens/broadens, flags too-easy resolutions, and runs a crucible check. Synchronous — returns the TryFailReport directly. Shares the consistency large-context model selection (gemini/claude/openai/deepseek/openrouter; Ollama rejected). Returns 422 if no capable provider is configured.',
+      inputSchema: {
+        slug,
+        provider: z.string().optional().describe('Per-run AI provider override (gemini|claude|openai|deepseek|openrouter — NOT ollama)'),
+        model: z.string().optional().describe('Per-run AI model override (this run only)'),
+      },
+    },
+    async ({ slug: s, ...body }) =>
+      toToolResult('audit_try_fail', await client.request('POST', `/api/books/${encodeURIComponent(s)}/try-fail-audit`, body)),
+  );
+
+  server.registerTool('get_try_fail_report',
+    { title: 'Get try-fail report', description: 'Get the stored try-fail & escalation report for a book (null if not run yet).', inputSchema: { slug } },
+    async ({ slug: s }) => toToolResult('get_try_fail_report', await client.request('GET', `/api/books/${encodeURIComponent(s)}/try-fail-report`)),
+  );
 }

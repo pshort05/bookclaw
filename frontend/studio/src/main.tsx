@@ -17,6 +17,7 @@ import { Confirmations } from './routes/Confirmations.js';
 import { Files } from './routes/Files.js';
 import { PromptRunner } from './routes/PromptRunner.js';
 import { Consistency } from './routes/Consistency.js';
+import { TryFail } from './routes/TryFail.js';
 import { StructureLength } from './routes/StructureLength.js';
 import { Reports } from './routes/Reports.js';
 import { Series } from './routes/Series.js';
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="files" element={<Files />} />
           <Route path="prompt-runner" element={<PromptRunner />} />
           <Route path="consistency" element={<Consistency />} />
+          <Route path="try-fail" element={<TryFail />} />
           <Route path="structure-length" element={<StructureLength />} />
           <Route path="reports" element={<Reports />} />
           <Route path="series" element={<Series />} />

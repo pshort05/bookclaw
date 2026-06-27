@@ -1513,6 +1513,116 @@ fi
 
 # ═══════════════════════════════════════════════════════════
 echo ""
+echo "### Tier C2 — Try-Fail & Escalation Auditor (TODO #15)"
+# The auditor is book-bound (/api/books/:slug/try-fail-audit) and reads chapters
+# from the book's data/ dir, so it needs a book-container with at least one
+# generated chapter. Build a tiny self-contained book, bind a minimal pipeline to
+# it (active-book binding), generate one short chapter, then audit and confirm a
+# `try-fail` report lands in /reports. Every gate SKIPs gracefully so older builds
+# (no endpoint) and high-latency targets (generation didn't finish) never FAIL.
+
+TF_PRESENT=$(has_endpoint POST "/api/books/zzz-not-a-real-slug/try-fail-audit")
+if [ "$TF_PRESENT" = "no" ]; then
+  skip "try-fail audit" "(endpoint absent on this build)"
+  skip "try-fail report in /reports" "(endpoint absent on this build)"
+elif [ "$(has_endpoint GET /api/books)" = "no" ] || [ -z "$PIPE_NAME" ] || [ -z "${AUTHOR_NAME:-}" ]; then
+  skip "try-fail audit" "(could not resolve books group / author / pipeline)"
+  skip "try-fail report in /reports" "(prereqs unresolved)"
+else
+  # ── Create a dedicated book + set it active so the pipeline binds to it ──
+  TF_BODY=$(node -e '
+    const [title,author,voice,pipeline]=process.argv.slice(1);
+    console.log(JSON.stringify({title,author,voice,genre:null,pipeline,sections:[]}));' \
+    "The Bridge That Would Not Hold" "$AUTHOR_NAME" "${VOICE_NAME:-default}" "$PIPE_NAME")
+  TF_BRESP=$(req POST /api/books "$TF_BODY")
+  TF_SLUG=$(printf '%s' "$TF_BRESP" | jget book.slug)
+  if [ -z "$TF_SLUG" ]; then
+    skip "try-fail audit" "(book create failed :: $(printf '%s' "$TF_BRESP" | head -c 160))"
+    skip "try-fail report in /reports" "(book create failed)"
+  else
+    CREATED_BOOKS+=("$TF_SLUG")
+    code POST /api/books/active "{\"slug\":\"$TF_SLUG\"}" >/dev/null
+
+    # ── Bind + run a minimal pipeline (1ch/300w) so the book gets one chapter ──
+    TF_MINI=$(req POST /api/pipeline/create \
+      "{\"title\":\"The Bridge That Would Not Hold\",\"description\":\"A young engineer fails, again and again, to span a river that keeps tearing her bridges apart.\",\"config\":{\"targetChapters\":1,\"targetWordsPerChapter\":300,\"genre\":\"adventure\"}}")
+    for pid in $(printf '%s' "$TF_MINI" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{(JSON.parse(s).phases||[]).forEach(p=>console.log(p.id))}catch(e){}})'); do
+      CREATED_PROJECTS+=("$pid")
+    done
+    TF_PHASE(){ printf '%s' "$TF_MINI" | node -e '
+      let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+        try{const p=(JSON.parse(s).phases||[]).find(x=>x.type===process.argv[1]);console.log(p?p.id:"")}catch(e){console.log("")}
+      })' "$1"; }
+    TF_PLAN=$(TF_PHASE book-planning)
+    TF_BIBLE=$(TF_PHASE book-bible)
+    TF_PROD=$(TF_PHASE book-production)
+
+    if [ -z "$TF_PROD" ]; then
+      skip "try-fail audit" "(mini pipeline returned no production phase)"
+      skip "try-fail report in /reports" "(no production phase)"
+    else
+      [ -n "$TF_PLAN" ]  && req POST "/api/projects/$TF_PLAN/auto-execute"  "" 600  >/dev/null
+      [ -n "$TF_BIBLE" ] && req POST "/api/projects/$TF_BIBLE/auto-execute" "" 600  >/dev/null
+      [ -n "$TF_PROD" ]  && req POST "/api/projects/$TF_PROD/auto-execute"  "" 1800 >/dev/null
+
+      # Poll the book for a generated chapter (hasOutput) — max ~90s.
+      TF_HAS_OUT=""
+      TF_POLLS=0
+      while [ "$TF_POLLS" -lt 18 ]; do
+        TF_HAS_OUT=$(req GET "/api/books/$TF_SLUG/next" | jget next.hasOutput)
+        [ "$TF_HAS_OUT" = "true" ] && break
+        sleep 5
+        TF_POLLS=$((TF_POLLS+1))
+      done
+
+      if [ "$TF_HAS_OUT" != "true" ]; then
+        skip "try-fail audit" "(generation did not produce a chapter within 90s; latency too high)"
+        skip "try-fail report in /reports" "(no chapter generated)"
+      else
+        # ── Run the audit (synchronous, single LLM call) ──
+        TF_OUT=$(reqc POST "/api/books/$TF_SLUG/try-fail-audit" '{}' 300)
+        TF_CODE=$(printf '%s' "$TF_OUT" | tail -n1)
+        TF_REPORT=$(printf '%s' "$TF_OUT" | sed '$d')
+        if [ "$TF_CODE" = "404" ]; then
+          skip "try-fail audit" "(endpoint 404 on real call)"
+          skip "try-fail report in /reports" "(audit unavailable)"
+        elif [ "$TF_CODE" = "200" ]; then
+          # Well-formed report: protagonists[] + findings[] arrays + a summary string.
+          TF_SHAPE=$(printf '%s' "$TF_REPORT" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              try{
+                const j=JSON.parse(s);
+                const ok=Array.isArray(j.protagonists)&&Array.isArray(j.findings)&&typeof j.summary==="string";
+                console.log(ok?"yes":"no");
+              }catch(e){console.log("no")}
+            })')
+          if [ "$TF_SHAPE" = "yes" ]; then
+            pass "try-fail audit" "200 + protagonists[]/findings[]/summary"
+          else
+            fail "try-fail audit" "malformed report :: $(printf '%s' "$TF_REPORT" | head -c 200)"
+          fi
+
+          # ── The audit must drop a `try-fail` report into /reports ──
+          TF_KIND=$(req GET "/api/books/$TF_SLUG/reports" | node -e '
+            let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+              try{
+                const has=(JSON.parse(s).reports||[]).some(r=>r.kind==="try-fail");
+                console.log(has?"yes":"no");
+              }catch(e){console.log("no")}
+            })')
+          [ "$TF_KIND" = "yes" ] && pass "try-fail report in /reports" "kind=try-fail present" \
+            || fail "try-fail report in /reports" "no try-fail report listed"
+        else
+          fail "try-fail audit" "code=$TF_CODE :: $(printf '%s' "$TF_REPORT" | head -c 160)"
+          skip "try-fail report in /reports" "(audit non-200)"
+        fi
+      fi
+    fi
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════
+echo ""
 echo "### Tier D — multi-book concurrency (Phase 8: per-project book binding)"
 # Phase 8 binds each project to a book at creation (Project.bookSlug) and routes
 # generation/output from that binding, NOT from the global active-book pointer. The

@@ -181,6 +181,19 @@ export function Rail() {
           Consistency
         </NavLink>
 
+        {/* Try-Fail Audit — per-protagonist try-fail / escalation / crucible auditor */}
+        <NavLink
+          to="/try-fail"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 20l5-5M4 15l3 3"/>
+            <path d="M9 15l5-5M9 10l3 3"/>
+            <path d="M14 10l5-5M14 5l3 3"/>
+          </svg>
+          Try-Fail Audit
+        </NavLink>
+
         {/* Structure & Length — per-book format review */}
         <NavLink
           to="/structure-length"
