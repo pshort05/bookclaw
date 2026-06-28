@@ -27,6 +27,7 @@ import { mountWebsite } from './routes/website.routes.js';
 import { mountAuthoring } from './routes/authoring.routes.js';
 import { mountLibrary } from './routes/library.routes.js';
 import { mountBooks } from './routes/books.routes.js';
+import { mountFormatFinisher } from './routes/format-finisher.routes.js';
 import { mountPrompts } from './routes/prompts.routes.js';
 import { mountBackups } from './routes/backups.routes.js';
 import { mountConsistency } from './routes/consistency.routes.js';
@@ -89,4 +90,6 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountReports(app, gateway, baseDir);
   // OpenRouter model catalog (cached) for the Prompt Runner exact-model picker
   mountModels(app, gateway, baseDir);
+  // Format Finisher — KDP DOCX last-mile finishing (Pro publishing last mile)
+  mountFormatFinisher(app, gateway, baseDir);
 }

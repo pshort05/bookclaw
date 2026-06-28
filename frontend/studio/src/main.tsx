@@ -20,6 +20,7 @@ import { TryFail } from './routes/TryFail.js';
 import { StructureLength } from './routes/StructureLength.js';
 import { Reports } from './routes/Reports.js';
 import { Series } from './routes/Series.js';
+import { Publish } from './routes/Publish.js';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <DialogProvider>
@@ -39,6 +40,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="try-fail" element={<TryFail />} />
           <Route path="structure-length" element={<StructureLength />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="publish" element={<Publish />} />
           <Route path="series" element={<Series />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />

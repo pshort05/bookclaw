@@ -232,6 +232,18 @@ export function Rail() {
           Reports
         </NavLink>
 
+        {/* Publish — KDP DOCX finisher + launch last-mile */}
+        <NavLink
+          to="/publish"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2c2.5 2 4 5 4 8a4 4 0 01-8 0c0-3 1.5-6 4-8z"/>
+            <path d="M9 14l-2 4 3-1 2 3 2-3 3 1-2-4"/>
+          </svg>
+          Publish
+        </NavLink>
+
         {/* Settings — live route */}
         <NavLink
           to="/settings"

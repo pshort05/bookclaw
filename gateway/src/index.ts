@@ -82,6 +82,7 @@ import { StyleCloneService } from './services/style-clone.js';
 import { ConfirmationGateService } from './services/confirmation-gate.js';
 import { DisclosuresService } from './services/disclosures.js';
 import { LaunchOrchestratorService } from './services/launch-orchestrator.js';
+import { FormatFinisher } from './services/format-finisher/index.js';
 import { AMSAdsService } from './services/ams-ads.js';
 import { BookBubSubmitterService } from './services/bookbub-submitter.js';
 import { ReleaseCalendarService } from './services/release-calendar.js';
@@ -201,6 +202,8 @@ class BookClawGateway {
   public library!: LibraryService;
   public world?: WorldService;
   public books!: BookService;
+  // Format Finisher (Pro publishing last mile) — stateless; lazily built in getServices().
+  private _formatFinisher?: FormatFinisher;
   public editors!: EditorService;
   public authorOS!: AuthorOSService;
   public tts!: TTSService;
@@ -1314,6 +1317,7 @@ class BookClawGateway {
       library: this.library,
       world: this.world,
       books: this.books,
+      formatFinisher: (this._formatFinisher ??= new FormatFinisher({ books: this.books })),
       authorOS: this.authorOS,
       tts: this.tts,
       personas: this.personas,

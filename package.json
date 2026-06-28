@@ -47,6 +47,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/multer": "^2.0.0",
+    "@xmldom/xmldom": "^0.9.10",
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^11.3.0",
     "cors": "^2.8.5",

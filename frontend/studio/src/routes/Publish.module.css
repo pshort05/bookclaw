@@ -1,0 +1,162 @@
+/* Publish route — Format Finisher + Launch */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.bookSel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.bookSel select {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.tab,
+.tabActive {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tabActive {
+  background: rgba(240, 145, 58, 0.14);
+  color: var(--text);
+}
+
+.body {
+  max-width: 720px;
+}
+
+.intro {
+  font-size: 13px;
+  color: var(--dim);
+  margin: 0 0 16px;
+  line-height: 1.55;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.group {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  margin: 0 0 14px;
+}
+
+.group legend {
+  font-size: 12px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 6px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--dim);
+  padding: 5px 0;
+}
+
+.field > span {
+  flex: 0 0 200px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+.ok {
+  color: var(--ok, #2a8);
+  font-size: 13px;
+  margin: 6px 0;
+}
+
+.err {
+  color: var(--alert);
+  font-size: 13px;
+  margin: 6px 0;
+}
+
+.out {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--dim);
+  overflow: auto;
+  max-height: 360px;
+}
