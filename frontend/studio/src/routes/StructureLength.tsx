@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { api, apiBase, authToken, useActiveBook } from '@bookclaw/shared';
+import { api, apiBase, authToken, useActiveBook, useBooks, useStore } from '@bookclaw/shared';
 import {
   getStructureReview, proposeStructure, saveStructureReview, getLengthReview,
   type StructureReview, type LengthReview,
@@ -21,12 +21,21 @@ function latestReportDownloadUrl(reports: ReportEntry[], slug: string, kind: str
 
 export function StructureLength() {
   const activeBook = useActiveBook();
-  const slug = activeBook?.slug ?? '';
+  const books = useBooks();
+  const loadBooks = useStore((s) => s.loadBooks);
+  // Defaults to the active book; the selector can switch to any other book.
+  const [slug, setSlug] = useState('');
   const [sr, setSr] = useState<StructureReview | null>(null);
   const [lr, setLr] = useState<LengthReview | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reportDownload, setReportDownload] = useState<string | null>(null);
+
+  useEffect(() => { loadBooks().catch(() => {}); }, [loadBooks]);
+  // Seed the selection from the active book once the book list loads.
+  useEffect(() => {
+    if (!slug && books.length) setSlug(activeBook?.slug ?? books[0].slug);
+  }, [books, activeBook, slug]);
 
   // Latest downloadable structure report (hidden when none exists yet).
   // Re-runs when `sr` changes: saving a structure review emits a fresh report
@@ -71,30 +80,41 @@ export function StructureLength() {
     } catch (e) { setErr(String(e)); } finally { setBusy(false); }
   };
 
-  if (!slug) return <div style={{ padding: 24 }}>Select a book to review its structure and length.</div>;
-
   const notConfigured = sr?.configured === false || lr?.configured === false;
-  if (notConfigured) {
-    return (
-      <div style={{ padding: 24, maxWidth: 920 }}>
-        <h1>Structure &amp; Length</h1>
-        <p style={{ opacity: 0.8 }}>
-          <strong>{activeBook?.title ?? 'This book'}</strong> has no declared format yet. Choose a Structure and Form
-          (with chapter count and words-per-chapter) when creating a book to enable this review.
-        </p>
-      </div>
-    );
-  }
+  const currentTitle = books.find((b) => b.slug === slug)?.title ?? activeBook?.title ?? 'This book';
 
   return (
     <div style={{ padding: 24, maxWidth: 920 }}>
-      <h1>Structure &amp; Length</h1>
-      {reportDownload && (
-        <p style={{ margin: '0 0 8px' }}>
-          <a href={reportDownload} style={{ textDecoration: 'underline' }}>Download latest report</a>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+        <h1 style={{ margin: 0 }}>Structure &amp; Length</h1>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, opacity: 0.85 }}>
+          Book
+          <select
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            style={{ background: 'var(--panel)', color: 'var(--text)', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 10px', fontSize: 13 }}
+          >
+            {!slug && <option value="">Select a book…</option>}
+            {books.map((b) => <option key={b.slug} value={b.slug}>{b.title}</option>)}
+          </select>
+        </label>
+      </div>
+
+      {!slug ? (
+        <p style={{ opacity: 0.8 }}>Select a book to review its structure and length.</p>
+      ) : notConfigured ? (
+        <p style={{ opacity: 0.8 }}>
+          <strong>{currentTitle}</strong> has no declared format yet. Choose a Structure and Form
+          (with chapter count and words-per-chapter) when creating a book to enable this review.
         </p>
-      )}
-      {err && <p style={{ color: 'var(--alert)' }}>{err}</p>}
+      ) : (
+        <>
+          {reportDownload && (
+            <p style={{ margin: '0 0 8px' }}>
+              <a href={reportDownload} style={{ textDecoration: 'underline' }}>Download latest report</a>
+            </p>
+          )}
+          {err && <p style={{ color: 'var(--alert)' }}>{err}</p>}
 
       <section style={{ marginTop: 24 }}>
         <h2>Structure {sr?.structure ? `· ${sr.structure.name}` : ''}</h2>
@@ -144,6 +164,8 @@ export function StructureLength() {
           </>
         ) : <p>No length data yet.</p>}
       </section>
+        </>
+      )}
     </div>
   );
 }

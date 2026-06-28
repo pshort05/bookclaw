@@ -49,3 +49,22 @@ export function listRunnerFiles(bookDir: string): RunnerFile[] {
   walk(join(bookDir, 'templates'), 'templates/', 'Templates');
   return out.sort((a, b) => a.path.localeCompare(b.path));
 }
+
+/** Text file kinds accepted by the per-directory upload (book file explorer). */
+export const UPLOAD_EXTS = ['.md', '.txt', '.json', '.csv'] as const;
+
+export function isUploadableName(name: string): boolean {
+  const ext = '.' + (name.split('.').pop() || '').toLowerCase();
+  return (UPLOAD_EXTS as readonly string[]).includes(ext);
+}
+
+/**
+ * Resolve a per-directory upload target to a confined { baseDir, filename } under
+ * the book's data/ or templates/ subtree, or null if it escapes. `dir` is a
+ * book-root directory (e.g. "data", "data/chapters", "templates/genre"); `name`
+ * is the (already-sanitized) filename. Reuses mapRunnerPath's confinement.
+ */
+export function resolveBookUpload(bookDir: string, dir: string, name: string): { baseDir: string; filename: string } | null {
+  const cleanDir = (dir || '').replace(/\/+$/, '');
+  return mapRunnerPath(bookDir, `${cleanDir}/${name}`);
+}

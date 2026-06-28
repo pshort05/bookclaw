@@ -1,4 +1,5 @@
 import { Application, Request, Response } from 'express';
+import multer from 'multer';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { uploadZip, requireApprovedConfirmation, safePath, serveFile } from './_shared.js';
@@ -6,7 +7,7 @@ import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
 import { writeWithVersion, listVersions, restoreVersion } from '../../services/file-versions.js';
-import { mapRunnerPath } from '../../services/runner-files.js';
+import { mapRunnerPath, isUploadableName, resolveBookUpload } from '../../services/runner-files.js';
 import { bindBookWorld } from './world-bind.js';
 import { buildBookFormat } from '../../services/format-input.js';
 
@@ -235,6 +236,44 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (files === null) return res.status(404).json({ error: 'Book not found' });
     res.json({ files });
   });
+
+  // Upload a text file into a book directory under data/ or templates/ (file explorer).
+  // Confined by resolveBookUpload (mapRunnerPath) + safePath; refuses to overwrite an
+  // existing file (409) so an upload can't silently replace book content; text-only
+  // allowlist (.md/.txt/.json/.csv), 10MB. The multer middleware is wrapped so a
+  // size/limit error returns a JSON 4xx instead of the generic error page.
+  const bookUploadMw = multer({
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => cb(null, isUploadableName(file.originalname || '')),
+    storage: multer.memoryStorage(),
+  }).single('file');
+  app.post('/api/books/:slug/upload',
+    (req: Request, res: Response, next) => bookUploadMw(req, res, (err: unknown) => {
+      if (err) return res.status((err as { code?: string })?.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: (err as Error)?.message || 'upload error' });
+      next();
+    }),
+    async (req: Request, res: Response) => {
+      const slug = String(req.params.slug);
+      if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+      const bookDir = services.books.bookDir(slug);
+      if (!bookDir || !existsSync(join(bookDir, 'book.json'))) return res.status(404).json({ error: 'Book not found' });
+      const file = (req as unknown as { file?: { originalname: string; buffer: Buffer } }).file;
+      if (!file?.buffer) return res.status(400).json({ error: 'a text file upload (field "file", .md/.txt/.json/.csv) is required' });
+      const dir = String(req.body?.dir ?? '');
+      const name = gateway.sandbox.sanitizeFilename(file.originalname || 'upload').replace(/^\.+/, '').slice(0, 200) || 'upload';
+      if (!isUploadableName(name)) return res.status(400).json({ error: 'unsupported file type (use .md/.txt/.json/.csv)' });
+      const mapped = resolveBookUpload(bookDir, dir, name);
+      if (!mapped) return res.status(400).json({ error: 'dir must be under data/ or templates/' });
+      const target = safePath(mapped.baseDir, mapped.filename);
+      if (!target) return res.status(403).json({ error: 'Path traversal blocked' });
+      if (existsSync(target)) return res.status(409).json({ error: `A file named "${name}" already exists in ${dir.replace(/\/+$/, '')}/` });
+      try {
+        await writeWithVersion(mapped.baseDir, mapped.filename, file.buffer.toString('utf-8'));
+        res.json({ ok: true, path: `${dir.replace(/\/+$/, '')}/${name}` });
+      } catch (err) {
+        res.status(500).json({ error: (err as Error)?.message || String(err) });
+      }
+    });
 
   /** Resolve ?path / body.path against a book's data|templates subtrees, or send an error. */
   const resolveRunnerFile = (slug: string, rel: string, res: Response): { baseDir: string; filename: string } | null => {

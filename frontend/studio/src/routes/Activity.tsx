@@ -53,7 +53,7 @@ export function Activity() {
       api<Status>('/api/status').catch(() => null),
       api<{ books: unknown[] }>('/api/books').catch(() => ({ books: [] })),
       api<{ series: unknown[] }>('/api/series').catch(() => ({ series: [] })),
-      api<{ entries: unknown[] }>('/api/library?kind=author').catch(() => ({ entries: [] })),
+      api<{ entries: { source?: string }[] }>('/api/library?kind=author').catch(() => ({ entries: [] })),
       api<{ entries: unknown[] }>('/api/library?kind=world').catch(() => ({ entries: [] })),
       api<{ projects: unknown[] }>('/api/projects/list').catch(() => ({ projects: [] })),
       api<{ personas: unknown[] }>('/api/personas').catch(() => ({ personas: [] })),
@@ -63,7 +63,9 @@ export function Activity() {
       setCounts({
         books: b?.books?.length,
         series: se?.series?.length,
-        authors: au?.entries?.length,
+        // Only the user's own authors (workspace overlay) — exclude the shipped
+        // built-in author presets ("defaults").
+        authors: au?.entries?.filter((e) => e.source === 'workspace').length,
         worlds: wo?.entries?.length,
         projects: p?.projects?.length,
         personas: pe?.personas?.length,

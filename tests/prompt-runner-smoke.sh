@@ -75,6 +75,35 @@ case "$RF" in *'data/probe.md'*) pass "runner-files lists the data/ output" ;; *
 TPL=$(printf '%s' "$RF" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const f=(JSON.parse(s).files||[]).find(x=>x.group==="Templates");if(f)console.log(f.path)}catch(e){}})')
 [ -n "$TPL" ] && pass "runner-files lists a templates/ snapshot" "$TPL" || fail "runner-files has no templates/ entry"
 
+# ── 5b. Files explorer: upload a text file into a book dir, read it back; reject non-text ──
+# Multipart, so use a bare curl (auth header only — not the JSON content-type in H).
+UPNAME="smoke-upload.md"
+TMP=$(mktemp --suffix=.md); printf '# Smoke Upload\n\nhello-explorer\n' > "$TMP"
+UCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -H "Authorization: Bearer $TOKEN" \
+  -F "dir=data" -F "file=@$TMP;type=text/markdown;filename=$UPNAME" "$BASE_URL/api/books/$SLUG/upload")
+rm -f "$TMP"
+[ "$UCODE" = "200" ] && pass "upload .md into book data/ dir" || fail "book-dir upload" "code=$UCODE"
+case "$(req GET "/api/books/$SLUG/runner-files")" in *"data/$UPNAME"*) pass "uploaded file appears in runner-files" ;; *) fail "uploaded file missing from runner-files" ;; esac
+case "$(req GET "/api/books/$SLUG/file?path=data/$UPNAME")" in *hello-explorer*) pass "uploaded file reads back" ;; *) fail "uploaded file read-back" ;; esac
+# Re-uploading the same name is refused (409) — no silent overwrite of book content.
+TMP4=$(mktemp --suffix=.md); printf 'changed\n' > "$TMP4"
+DCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -H "Authorization: Bearer $TOKEN" \
+  -F "dir=data" -F "file=@$TMP4;filename=$UPNAME" "$BASE_URL/api/books/$SLUG/upload")
+rm -f "$TMP4"
+[ "$DCODE" = "409" ] && pass "duplicate upload refused (409, no overwrite)" || fail "duplicate upload not refused" "code=$DCODE"
+# A non-text upload is rejected at the multer fileFilter (no file -> 400).
+TMP2=$(mktemp --suffix=.exe); printf 'x' > "$TMP2"
+BCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -H "Authorization: Bearer $TOKEN" \
+  -F "dir=data" -F "file=@$TMP2;filename=bad.exe" "$BASE_URL/api/books/$SLUG/upload")
+rm -f "$TMP2"
+[ "$BCODE" = "400" ] && pass "non-text upload rejected (400)" || fail "non-text upload not rejected" "code=$BCODE"
+# An upload aimed outside data/|templates/ is rejected.
+TMP3=$(mktemp --suffix=.md); printf 'x' > "$TMP3"
+OCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -H "Authorization: Bearer $TOKEN" \
+  -F "dir=config" -F "file=@$TMP3;filename=x.md" "$BASE_URL/api/books/$SLUG/upload")
+rm -f "$TMP3"
+[ "$OCODE" = "400" ] && pass "upload outside data/|templates/ rejected (400)" || fail "out-of-tree upload not rejected" "code=$OCODE"
+
 # ── 6. Read + write-back + version + restore a TEMPLATE file via /file?path= ──
 if [ -n "$TPL" ]; then
   ORIG=$(req GET "/api/books/$SLUG/file?path=$(node -e 'console.log(encodeURIComponent(process.argv[1]))' "$TPL")")
