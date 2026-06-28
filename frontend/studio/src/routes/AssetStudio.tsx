@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { api, useStore, useActiveBook, useBooks } from '@bookclaw/shared';
 import type { LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../lib/assetApi.js';
+import { GLOSSARY } from '../lib/glossary.js';
 import { KindRail } from '../components/asset/KindRail.js';
 import { EntryList } from '../components/asset/EntryList.js';
 import { ProseEditor } from '../components/asset/ProseEditor.js';
@@ -20,8 +22,14 @@ export function AssetStudio() {
   const books = useBooks();
   const activeSlug = activeBook?.slug;
 
+  // Deep-link support: /library/:kind opens the studio on that kind (e.g. the
+  // top-level "Worlds" nav item → /library/world). Validate against GLOSSARY so a
+  // bogus param falls back to the default rather than setting an unknown kind.
+  const { kind: kindParam } = useParams();
+  const paramKind = kindParam && kindParam in GLOSSARY ? (kindParam as LibraryKind) : null;
+
   const [scope, setScope] = useState<Scope>('library');
-  const [kind, setKind] = useState<LibraryKind>('author');
+  const [kind, setKind] = useState<LibraryKind>(paramKind ?? 'author');
   const [selectedName, setSelectedName] = useState<string | null>(null);
   // Key to force editor remount on scope/kind/name change (clears dirty state).
   const [editorKey, setEditorKey] = useState(0);
@@ -39,6 +47,13 @@ export function AssetStudio() {
     setKind(k);
     setSelectedName(null);
   }
+
+  // Keep the shown kind in sync with the URL param when it changes via navigation
+  // (e.g. clicking the top-level "Worlds" item while the studio is already mounted).
+  useEffect(() => {
+    handleKind(paramKind ?? 'author');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramKind]);
 
   function handleSelect(name: string | null) {
     setSelectedName(name);

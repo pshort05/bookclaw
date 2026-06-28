@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import '../../shared/src/tokens.css';
 import '../../shared/src/fonts.js';
 import { App } from './App.js';
@@ -11,7 +11,6 @@ import { NewBook } from './routes/NewBook.js';
 import { EasyStart } from './routes/EasyStart.js';
 import { AssetStudio } from './routes/AssetStudio.js';
 import { Write } from './routes/Write.js';
-import { Insights } from './routes/Insights.js';
 import { Settings } from './routes/Settings.js';
 import { Confirmations } from './routes/Confirmations.js';
 import { Files } from './routes/Files.js';
@@ -32,6 +31,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="new-book" element={<NewBook />} />
           <Route path="start" element={<EasyStart />} />
           <Route path="library" element={<AssetStudio />} />
+          {/* Deep-link to a specific library kind (e.g. the top-level "Worlds" item). */}
+          <Route path="library/:kind" element={<AssetStudio />} />
           <Route path="files" element={<Files />} />
           <Route path="prompt-runner" element={<PromptRunner />} />
           <Route path="consistency" element={<Consistency />} />
@@ -41,7 +42,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="series" element={<Series />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />
-          <Route path="insights" element={<Insights />} />
+          {/* Insights merged into Activity; redirect old links. */}
+          <Route path="insights" element={<Navigate to="/activity" replace />} />
           <Route path="settings" element={<Settings />} />
           <Route path="confirmations" element={<Confirmations />} />
         </Route>

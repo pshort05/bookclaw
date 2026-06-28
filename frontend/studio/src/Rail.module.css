@@ -9,6 +9,12 @@
   display: flex;
   flex-direction: column;
   padding: 22px 16px 16px;
+  /* The rail fills the 100vh grid row; when its links + footer are taller than
+     the viewport (short screens / many nav items), scroll inside the rail rather
+     than spilling off-screen. min-height:0 lets it shrink to the row and stops the
+     tall content from inflating the grid track. */
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .brand {

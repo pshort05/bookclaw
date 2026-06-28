@@ -6,6 +6,94 @@
   padding: 26px 28px 60px;
 }
 
+/* -------- Overview (merged from the former Insights screen) -------- */
+
+/* Spend cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+
+.cap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.cap b {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.bar {
+  height: 4px;
+  background: rgba(238, 229, 210, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ember-grad);
+  transition: width 0.4s var(--ease);
+}
+
+.bar i.over {
+  background: var(--alert);
+}
+
+/* Compact stats grid — smaller boxes than the old Insights screen so the
+   overview takes less vertical space above the live feed. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px 8px 8px;
+  text-align: center;
+}
+
+.statN {
+  font-family: 'Fraunces', serif;
+  font-weight: 420;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ember);
+  margin-bottom: 4px;
+}
+
+.statL {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
 .hero {
   display: flex;
   align-items: flex-end;

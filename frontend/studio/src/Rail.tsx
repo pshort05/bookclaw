@@ -122,6 +122,19 @@ export function Rail() {
           Series
         </NavLink>
 
+        {/* Worlds — deep-link into the Asset Studio's world kind (still lives under
+            Library; promoted here for prominence next to Series). */}
+        <NavLink
+          to="/library/world"
+          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/>
+          </svg>
+          Worlds
+        </NavLink>
+
         {/* Activity — live route */}
         <NavLink
           to="/activity"
@@ -138,6 +151,7 @@ export function Rail() {
         {/* Library — Asset Studio */}
         <NavLink
           to="/library"
+          end
           className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -216,17 +230,6 @@ export function Rail() {
             <path d="M14 2v6h6M9 13h6M9 17h6"/>
           </svg>
           Reports
-        </NavLink>
-
-        {/* Insights — live route */}
-        <NavLink
-          to="/insights"
-          className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-            <path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/>
-          </svg>
-          Insights
         </NavLink>
 
         {/* Settings — live route */}
