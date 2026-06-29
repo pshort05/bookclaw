@@ -19,11 +19,16 @@ export async function resolveSequencePipelines(sequence: string): Promise<string
 // Generation is NOT started here: the wizard navigates to /write/:slug?autostart=1
 // and the existing PipelineRail owns the single create->start->auto-run path, so
 // the book has exactly one tracked project (no orphaned/duplicate runs).
-export async function createBookFromBundle(bundle: StarterBundle, title: string): Promise<{ slug: string }> {
+export async function createBookFromBundle(
+  bundle: StarterBundle,
+  title: string,
+  preferredProvider?: string,
+  preferredModel?: string,
+): Promise<{ slug: string }> {
   const pipelines = await resolveSequencePipelines(bundle.sequence);
   const r = await api<{ book: { slug: string } }>('/api/books', {
     method: 'POST',
-    body: JSON.stringify(bundleToCreateBody(bundle, title, pipelines)),
+    body: JSON.stringify(bundleToCreateBody(bundle, title, pipelines, preferredProvider, preferredModel)),
   });
   return { slug: r.book.slug };
 }

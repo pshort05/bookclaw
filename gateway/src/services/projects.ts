@@ -71,6 +71,7 @@ export interface Project {
   context: Record<string, any>;
   personaId?: string;     // Author persona assigned to this project
   preferredProvider?: string; // Override AI provider: 'gemini' | 'claude' | 'openai' | 'deepseek' | 'ollama' | null (auto)
+  preferredModel?: string;    // Override model id for the chosen provider (e.g. an OpenRouter slug); applied when no per-step modelOverride.model
   pipelineId?: string;    // Parent pipeline ID (if part of a pipeline)
   pipelinePhase?: number; // Phase order within pipeline (1-6)
   bookSlug?: string;      // the book this project writes into; captured at creation, immutable
@@ -1255,11 +1256,16 @@ Description: ${description}`;
       const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result);
       if (completedSteps.length > 0) {
         context += `## Previous Steps Completed\n\n`;
+        // Keep the HEAD as well as the tail: planning outputs (character
+        // profiles, premise) state names/identities at the top, so a tail-only
+        // slice dropped them and later steps (e.g. the outline) re-invented
+        // character names. Head+tail preserves identities and recent content.
+        const HEAD = 5000, TAIL = 3000;
         for (const cs of completedSteps) {
           context += `### ${cs.label}\n`;
           const result = cs.result!;
-          if (result.length > 2000) {
-            context += `[...truncated...]\n${result.slice(-2000)}\n\n`;
+          if (result.length > HEAD + TAIL) {
+            context += `${result.slice(0, HEAD)}\n\n[...middle omitted...]\n\n${result.slice(-TAIL)}\n\n`;
           } else {
             context += `${result}\n\n`;
           }

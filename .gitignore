@@ -48,6 +48,10 @@ nul
 skills/premium/*/
 !skills/premium/README.md
 
+# Source documents — scanned to generate content, never uploaded (README tracked)
+sources/*
+!sources/README.md
+
 # Author OS tools (mounted at runtime)
 author-os/
 

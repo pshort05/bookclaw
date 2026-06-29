@@ -1,5 +1,5 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 29 skills loaded
+Auto-generated on startup — 45 skills loaded
 ════════════════════════════════════════════════════════════
 
 ── Core Skills (6) ──
@@ -28,7 +28,7 @@ Auto-generated on startup — 29 skills loaded
     Research topics and create new skills for BookClaw to learn
     Keywords: learn how to, add a skill for, find a tool for, go learn, research and create a skill, teach yourself, acquire skill, learn about
 
-── Author Skills (15) ──
+── Author Skills (26) ──
 
   beta-reader
     Simulate beta reader feedback from different reader perspectives
@@ -82,6 +82,50 @@ Auto-generated on startup — 29 skills loaded
     Multi-pass revision - developmental editing, line editing, copy editing
     Keywords: revise, edit, improve, rewrite, feedback, critique, review, developmental edit, line edit, copy edit
 
+  romance-humanize
+    Single-pass de-AI / anti-AI-detection final polish for a romance chapter — strips AI tells, varies rhythm, and humanizes prose while preserving dialogue and Markdown exactly
+    Keywords: humanize, de-ai, anti-ai-detection, final polish, humanize chapter, remove ai tells
+
+  romance-spicy-first-draft
+    Write a full first-draft chapter of a spicy (Heat Level 4) contemporary beach-read romance from a scene brief, with strict anti-AI prose laws
+    Keywords: spicy romance, steamy romance, heat level 4, first draft, write chapter, beach read, romance prose
+
+  romance-spicy-improvement-plan
+    Produce a structured 15-dimension developmental-edit critique of a spicy contemporary beach-read romance chapter
+    Keywords: spicy romance, beach read, improvement plan, developmental edit, chapter critique, romance edit, editorial review
+
+  romance-spicy-intimacy
+    Enhance a beach-read romance chapter's intimate scenes to Heat Level 4 — explicit but emotion-driven, female-gaze, consent-forward
+    Keywords: spicy romance, steamy romance, heat level 4, intimate scene, intimacy enhancer, explicit romance, open door, love scene
+
+  romance-spicy-rewrite
+    Surgically implement an improvement plan against a spicy beach-read romance chapter, changing only flagged passages
+    Keywords: spicy romance, beach read, rewrite chapter, surgical edit, implement edits, romance revision, apply improvement plan
+
+  romance-spicy-scene-brief
+    Build a comprehensive 12-section scene brief blueprint for a spicy (Heat Level 4) contemporary beach-read romance chapter
+    Keywords: spicy romance, steamy romance, heat level 4, scene brief, beach read, romance chapter brief, contemporary romance
+
+  romance-sweet-first-draft
+    Write a full sweet-romance chapter draft (spice level 2 / fade-to-black) from a scene brief, in deep first-person POV
+    Keywords: first draft, write chapter, romance draft, sweet romance, chapter draft, deep pov, draft romance chapter
+
+  romance-sweet-improvement-plan
+    Produce a line-by-line critique and improvement plan for a sweet-romance chapter draft
+    Keywords: improvement plan, chapter critique, line edit, romance critique, sweet romance, revision plan, developmental edit
+
+  romance-sweet-intimacy
+    Silently detect a chapter's intimate beat and enhance it to fade-to-black (spice level 2 / closed-door); pass non-intimate chapters through unchanged
+    Keywords: intimacy, fade to black, closed door, sweet romance, intimate scene, spice level 2, romantic tension
+
+  romance-sweet-rewrite
+    Apply an improvement plan to a sweet-romance chapter draft, reproducing the full revised chapter
+    Keywords: rewrite, apply improvement plan, revise chapter, romance rewrite, sweet romance, implement edits, revised chapter
+
+  romance-sweet-scene-brief
+    Build a sweet-romance scene brief (spice level 2 / fade-to-black) from the chapter outline, character bible, and world guide
+    Keywords: scene brief, chapter brief, romance beat sheet, sweet romance, scene planning, chapter outline, romance scene brief
+
   style-clone
     Analyze and match the author's unique writing voice
     Keywords: learn my style, match my voice, style check, voice profile, analyze my writing, sound like me
@@ -125,4 +169,26 @@ Auto-generated on startup — 29 skills loaded
   task-planner
     Break complex tasks into actionable steps with dependencies and priorities
     Keywords: plan, break down, roadmap, step by step, how do I, task list, action plan, break this into steps
+
+── Toolkit Skills (5) ──
+
+  continuity-flag
+    Catch contradictions, dropped setups, and timeline slips a writer is too close to see — flag with line refs, never fix
+    Keywords: continuity problems, check for inconsistencies, catch what I missed, contradictions, plot holes, set up but never paid off
+
+  honest-reader
+    Give an honest reader's reaction to a draft — where it hooks, where it drifts — react, never rewrite
+    Keywords: honest reaction, read this as a reader, reader reaction, react to my draft, did this land, where did I lose you
+
+  idea-outliner
+    Turn a messy idea into a through-line and ordered beats — outline only, never draft the piece
+    Keywords: outline this idea, messy idea, help me outline, structure before I draft, through-line, rough idea
+
+  line-edit
+    Tighten prose at the line level while keeping the author's voice — flag style choices, never flatten
+    Keywords: line edit, line-edit, tighten this, tighten the prose, edit this passage, cut the filler
+
+  unstick
+    Get a stuck scene or section moving with options and opening lines — never write the whole scene
+    Keywords: I'm stuck, stuck on this scene, scene won't move, help me get unstuck, where do I go from here, can't move forward
 

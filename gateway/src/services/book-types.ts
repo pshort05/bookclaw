@@ -59,6 +59,8 @@ export interface BookManifest {
   appendix?: Array<{ docId: string; title?: string; order: number }>; // World Repository Phase 5 — ordered back-matter selection (additive-optional, no schema bump)
   format?: BookFormat;        // Book Format & Structure — declared structure × form × pacing (additive-optional, no schema bump)
   consistency?: { provider?: string; model?: string }; // Consistency audit model selection (additive-optional, no schema bump)
+  preferredProvider?: string; // Default AI provider for this book's generation; inherited by projects created against it (additive-optional, no schema bump)
+  preferredModel?: string; // Default model id for the chosen provider (e.g. an OpenRouter slug); inherited by projects (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

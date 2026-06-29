@@ -89,15 +89,22 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     if (!engine) {
       return res.status(503).json({ error: 'Project engine not initialized' });
     }
-    const { type, title, description, context, planning, config, personaId, preferredProvider } = req.body;
+    const { type, title, description, context, planning, config, personaId, preferredProvider, preferredModel } = req.body;
     if (!title || !description) {
       return res.status(400).json({ error: 'title and description required' });
     }
 
+    // Effective provider/model: an explicit request value wins; otherwise inherited
+    // from the bound book's manifest below (Easy Start's LLM choice persists as the
+    // book default, so later phases reuse it without re-specifying).
+    let effectivePreferredProvider: string | undefined = preferredProvider || undefined;
+    let effectivePreferredModel: string | undefined = preferredModel || undefined;
+
     // Helper to set optional fields on newly created projects
     const applyProjectOptions = (project: any) => {
       if (personaId) project.personaId = personaId;
-      if (preferredProvider) project.preferredProvider = preferredProvider;
+      if (effectivePreferredProvider) project.preferredProvider = effectivePreferredProvider;
+      if (effectivePreferredModel) project.preferredModel = effectivePreferredModel;
     };
 
     try {
@@ -121,6 +128,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // remains bound to it even if the active book changes later.
       const activeBook = services.books?.getActiveBook() ?? undefined;
       const contextWithSlug = { ...(context || {}), bookSlug: activeBook };
+
+      // Inherit the book's default provider/model when the request didn't pin them.
+      if ((!effectivePreferredProvider || !effectivePreferredModel) && activeBook) {
+        const ob = await services.books.open(activeBook).catch(() => null);
+        if (!effectivePreferredProvider && ob?.manifest?.preferredProvider) effectivePreferredProvider = ob.manifest.preferredProvider;
+        if (!effectivePreferredModel && ob?.manifest?.preferredModel) effectivePreferredModel = ob.manifest.preferredModel;
+      }
 
       // Book Format & Structure: when the active book declares a format, use its
       // chapter count + per-chapter target as generation defaults (user-supplied

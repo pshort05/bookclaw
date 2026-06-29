@@ -185,16 +185,23 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   const autoStartedRef = useRef(false);
   useEffect(() => {
     if (!autoStart || autoStartedRef.current || activeProject || !detail) return;
+    // Guard across remounts: a chat/SSE reconnect (or navigation) re-mounts this
+    // component and resets the per-mount ref. With `?autostart=1` still in the URL
+    // and `activeProject` momentarily null during reload, the effect would re-fire
+    // and spawn a DUPLICATE pipeline run ("restarted" symptom). A per-book session
+    // guard makes autostart fire at most once per book per tab session.
+    const guardKey = `bookclaw:autostarted:${slug}`;
     autoStartedRef.current = true;
+    try { if (sessionStorage.getItem(guardKey)) return; sessionStorage.setItem(guardKey, '1'); } catch { /* sessionStorage unavailable — fall back to the ref guard */ }
     (async () => {
       const p = await startPipeline(autoStartPremise);
       if (p) {
         await api(`/api/projects/${encodeURIComponent(p.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
       }
     })();
-    // startPipeline is stable enough; the ref guard ensures a single fire.
+    // startPipeline is stable enough; the ref + session guard ensure a single fire.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, detail, activeProject, autoStartPremise]);
+  }, [autoStart, detail, activeProject, autoStartPremise, slug]);
 
   const setStepModel = async (stepId: string, provider: Provider | '') => {
     if (!activeProject) return;

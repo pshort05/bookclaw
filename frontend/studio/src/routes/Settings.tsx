@@ -44,6 +44,7 @@ export function Settings() {
   const [keyVal, setKeyVal] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
   const [costs, setCosts] = useState<{ dailyLimit?: number; monthlyLimit?: number }>({});
+  const [preferred, setPreferred] = useState<string>(''); // '' = Auto (smart routing)
   const [showDelete, setShowDelete] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const { confirm } = useDialog();
@@ -59,8 +60,11 @@ export function Settings() {
       .catch(() => {});
 
   const loadConfig = () =>
-    api<{ costs?: { dailyLimit?: number; monthlyLimit?: number } }>('/api/config')
-      .then((r) => setCosts(r.costs ?? {}))
+    api<{ costs?: { dailyLimit?: number; monthlyLimit?: number }; ai?: { preferredProvider?: string } }>('/api/config')
+      .then((r) => {
+        setCosts(r.costs ?? {});
+        setPreferred(r.ai?.preferredProvider ?? '');
+      })
       .catch(() => {});
 
   useEffect(() => {
@@ -92,6 +96,17 @@ export function Settings() {
     await loadKeys();
   };
 
+  // Set the global preferred provider (ai.preferredProvider). '' clears the
+  // override back to automatic tier-based routing; the server maps it to null.
+  const savePreferred = async (value: string) => {
+    setPreferred(value);
+    await api('/api/config/update', {
+      method: 'POST',
+      body: JSON.stringify({ path: 'ai.preferredProvider', value }),
+    }).catch(() => {});
+    await loadConfig();
+  };
+
   const saveLimit = async (path: string, value: number) => {
     await api('/api/config/update', {
       method: 'POST',
@@ -107,7 +122,7 @@ export function Settings() {
       <div className={styles.sec}>Providers</div>
       <div className={styles.providers}>
         {(providers ?? []).map((p) =>
-          p.id === 'claude' || p.id === 'gemini' ? (
+          p.id === 'claude' || p.id === 'gemini' || p.id === 'openrouter' ? (
             <ProviderModelField key={p.id} provider={p} onSaved={loadStatus} />
           ) : (
             <span key={p.id} className={styles.provider}>
@@ -118,6 +133,17 @@ export function Settings() {
         {(!providers || providers.length === 0) && (
           <p className={styles.dim}>No active providers — add an API key below.</p>
         )}
+      </div>
+      <div className={styles.limit}>
+        <label>Default provider</label>
+        <select value={preferred} onChange={(e) => savePreferred(e.target.value)}>
+          <option value="">Auto (smart routing)</option>
+          {(providers ?? []).map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className={styles.sec}>

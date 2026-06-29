@@ -156,6 +156,8 @@ class BookClawGateway {
   public io: SocketIO;
   // Second HTTP server for the standalone Chat SPA (BOOKCLAW_CHAT_PORT). Optional.
   public chatServer?: ReturnType<typeof createServer>;
+  // Event-loop-lag monitor handle (startEventLoopMonitor); cleared on shutdown.
+  private loopMonitor?: ReturnType<typeof setInterval>;
 
   // Core services
   public config!: ConfigService;
@@ -314,6 +316,13 @@ class BookClawGateway {
 
     this.io = new SocketIO(this.server, {
       cors: corsOptions,
+      // A pipeline step can briefly block the Node event loop (synchronous
+      // memory/continuity work), stalling ping replies. The default 20s
+      // pingTimeout then drops the chat socket mid-run; raise it so a transient
+      // stall doesn't read as a disconnect/reconnect. See the event-loop-lag
+      // monitor below, which logs the actual stalls so the cause can be fixed.
+      pingTimeout: 60000,
+      pingInterval: 25000,
     });
 
     // Security middleware
@@ -2219,7 +2228,7 @@ class BookClawGateway {
         // pinned model id (if any) is passed as the 7th handleMessage arg.
         const stepOverride = (activeStep as any).modelOverride;
         const projectProvider = stepOverride?.provider || (project as any).preferredProvider || undefined;
-        const stepModel = stepOverride?.model || undefined;
+        const stepModel = stepOverride?.model || (project as any).preferredModel || undefined;
         const stepTemp = typeof stepOverride?.temperature === 'number' ? stepOverride.temperature : undefined;
         let wasExecutable = false;
         try {
@@ -2789,10 +2798,34 @@ class BookClawGateway {
       // Bind address: BOOKCLAW_BIND env var, defaults to 0.0.0.0 (all interfaces).
       // Set BOOKCLAW_BIND=127.0.0.1 to restore localhost-only behavior.
     });
+    this.startEventLoopMonitor();
+  }
+
+  /**
+   * Log when the Node event loop stalls. A blocked loop is what trips the chat
+   * Socket.IO ping-timeout (the disconnect/reconnect seen during a pipeline run),
+   * so this surfaces the culprit: a warning every time a synchronous step holds
+   * the loop longer than the threshold. Interval is 1s; drift beyond ~1s means
+   * something blocked. Off-by-default-quiet (only logs on a real stall).
+   */
+  private startEventLoopMonitor(): void {
+    const intervalMs = 1000;
+    const thresholdMs = Number(process.env.BOOKCLAW_LOOP_LAG_MS || 1000);
+    let last = Date.now();
+    this.loopMonitor = setInterval(() => {
+      const now = Date.now();
+      const lag = now - last - intervalMs;
+      if (lag > thresholdMs) {
+        console.log(`  ⚠ Event loop blocked for ${(lag / 1000).toFixed(1)}s — long synchronous work is stalling streams (chat/SSE).`);
+      }
+      last = now;
+    }, intervalMs);
+    this.loopMonitor.unref?.();
   }
 
   async shutdown(): Promise<void> {
     console.log('\n  Shutting down BookClaw...');
+    if (this.loopMonitor) clearInterval(this.loopMonitor);
     this.heartbeat?.stop();
     this.telegram?.disconnect();
     this.discord?.disconnect();

@@ -44,6 +44,8 @@ export interface BookSelection {
   series?: { id: string; title: string };   // Series Phase A provenance, when created in a series
   worldbuilding?: { characters?: string; places?: string; lore?: string };  // Series Phase B — snapshotted into templates/worldbuilding/
   format?: BookFormat;   // Book Format & Structure — declared at creation, persisted on the manifest
+  preferredProvider?: string;  // default AI provider for this book, persisted on the manifest
+  preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
 }
 
 export type RepullStatus =
@@ -335,6 +337,8 @@ export class BookService {
         ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
       },
       ...(sel.format ? { format: sel.format } : {}),
+      ...(sel.preferredProvider ? { preferredProvider: sel.preferredProvider } : {}),
+      ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
       history: [{ at: now, event: 'created' }],
     };
     await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');

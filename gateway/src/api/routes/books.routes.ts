@@ -10,6 +10,7 @@ import { writeWithVersion, listVersions, restoreVersion } from '../../services/f
 import { mapRunnerPath, isUploadableName, resolveBookUpload } from '../../services/runner-files.js';
 import { bindBookWorld } from './world-bind.js';
 import { buildBookFormat } from '../../services/format-input.js';
+import { AI_PROVIDER_IDS } from '../../ai/router.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -406,8 +407,21 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const fmt = buildBookFormat(body, services.storyStructures);
     if (fmt.error) return res.status(400).json({ error: fmt.error });
 
+    // Default AI provider for the book (Easy Start LLM choice). Validated against
+    // the known provider ids; persisted on the manifest and inherited by projects.
+    const preferredProvider = (typeof body.preferredProvider === 'string' && body.preferredProvider) ? body.preferredProvider : '';
+    if (preferredProvider && !AI_PROVIDER_IDS.includes(preferredProvider as typeof AI_PROVIDER_IDS[number])) {
+      return res.status(400).json({ error: `unknown provider: ${preferredProvider}` });
+    }
+    // Optional specific model id for the chosen provider (e.g. an OpenRouter slug).
+    // Same format guard the config endpoint applies to ai.<provider>.model.
+    const preferredModel = (typeof body.preferredModel === 'string' && body.preferredModel) ? body.preferredModel : '';
+    if (preferredModel && !/^[A-Za-z0-9._\-/:]{1,200}$/.test(preferredModel)) {
+      return res.status(400).json({ error: 'invalid model id' });
+    }
+
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
       if (worldName && services.world?.getConfig?.(worldName)) {
