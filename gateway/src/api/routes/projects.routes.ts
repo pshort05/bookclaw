@@ -3,6 +3,8 @@ import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate } from '../../services/human-review.js';
+import { stripMetaCommentary } from '../../services/strip-meta.js';
+import { buildBookCanonBlock } from '../../services/book-canon.js';
 import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
@@ -665,8 +667,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       try {
         // F2: inject passive step-skill content (snapshot → global), same as the
         // bridge path — buildProjectContext alone never added it on the studio path.
+        // Pin the story canon (title/author + bible name registry + outline) so a
+        // step in this separate project doesn't re-invent the title/characters.
+        let canonBlock = '';
+        if (currentProject.bookSlug && services.books) {
+          const ob = await services.books.open(currentProject.bookSlug).catch(() => null);
+          canonBlock = buildBookCanonBlock(services.books.dataDirOf?.(currentProject.bookSlug), ob?.manifest);
+        }
         const projectContext = (await engine.buildProjectContext(currentProject, activeStep))
-          + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug);
+          + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug)
+          + (canonBlock ? `\n\n${canonBlock}` : '');
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep);
         let response = '';
@@ -846,6 +856,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           console.warn('  [judge] evaluation hook failed:', (judgeErr as Error)?.message || judgeErr);
         }
 
+        // Strip leaked chatbot framing ("Okay, let's…", "Would you like to
+        // proceed…") before saving/completing the step.
+        response = stripMetaCommentary(response);
         const wordCount = countWords(response);
 
         // Save to file

@@ -11,6 +11,8 @@ import { mapRunnerPath, isUploadableName, resolveBookUpload } from '../../servic
 import { bindBookWorld } from './world-bind.js';
 import { buildBookFormat } from '../../services/format-input.js';
 import { AI_PROVIDER_IDS } from '../../ai/router.js';
+import { assembleManuscript, validateAssembly } from '../../services/manuscript-assembly.js';
+import { generateDocxBuffer } from '../../services/docx-export.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -184,6 +186,56 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // permission race) rejects the promise — catch it so it isn't unhandled, and
     // tear down the (possibly half-written) response.
     serveFile(res, filePath, filename, !!req.query.download).catch(() => res.destroy());
+  });
+
+  // Assemble + download the latest FULL novel from the book's per-chapter files
+  // (deterministic — latest polish>write, ordered, headers stripped). The
+  // production "compile" step only wrote a report and the revision rewrites
+  // truncated, so this is the reliable full-manuscript artifact. ?format=md|docx.
+  app.get('/api/books/:slug/download/latest-manuscript', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const format = (String(req.query.format || 'md').toLowerCase() === 'docx') ? 'docx' : 'md';
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir || !existsSync(dataDir)) return res.status(404).json({ error: 'Book not found' });
+    const opened = await services.books.open(slug).catch(() => null);
+    const manifest: any = opened?.manifest ?? {};
+    const title = String(manifest.title || slug);
+    const author = String(manifest.pulledFrom?.author?.name || manifest.author?.name || 'BookClaw');
+
+    const { readdirSync, readFileSync, statSync } = await import('fs');
+    const files = readdirSync(dataDir)
+      .filter((n) => n.endsWith('.md'))
+      .map((name) => {
+        const p = safePath(dataDir, name);
+        if (!p) return null;
+        try { return { name, content: readFileSync(p, 'utf-8'), mtime: statSync(p).mtimeMs }; } catch { return null; }
+      })
+      .filter((f): f is { name: string; content: string; mtime: number } => !!f);
+
+    const assembled = assembleManuscript(files, { title, author });
+    const check = validateAssembly(assembled, { expectedChapters: manifest.format?.chapterCount });
+    if (assembled.chapterCount === 0) {
+      return res.status(404).json({ error: 'No assembled novel yet — run a production pipeline to write the chapters.' });
+    }
+    const baseName = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'manuscript';
+    res.setHeader('X-Manuscript-Chapters', String(assembled.chapterCount));
+    res.setHeader('X-Manuscript-Words', String(assembled.wordCount));
+    if (!check.ok) res.setHeader('X-Manuscript-Warnings', encodeURIComponent(check.problems.join('; ')));
+
+    if (format === 'docx') {
+      try {
+        const buf = await generateDocxBuffer({ title, author, content: assembled.markdown });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${baseName}.docx"`);
+        return res.send(buf);
+      } catch (err) {
+        return res.status(500).json({ error: `DOCX export failed: ${(err as Error)?.message || err}` });
+      }
+    }
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${baseName}.md"`);
+    return res.send(assembled.markdown);
   });
 
   // Write-back a book data/ file, snapshotting the prior content (Prompt Runner Replace).

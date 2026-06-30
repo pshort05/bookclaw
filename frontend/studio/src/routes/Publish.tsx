@@ -51,6 +51,25 @@ function buildOptions(f: Form): FinishOptions {
   return o;
 }
 
+/** Assemble + download the latest full novel (real chapters, not the LLM report). */
+function DownloadNovel({ slug }: { slug: string }) {
+  const [busy, setBusy] = useState<'md' | 'docx' | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const get = (fmt: 'md' | 'docx') => {
+    setErr(null); setBusy(fmt);
+    downloadFile(`/api/books/${encodeURIComponent(slug)}/download/latest-manuscript?format=${fmt}`, `${slug}.${fmt}`)
+      .catch((e) => setErr(String(e?.message ?? e)))
+      .finally(() => setBusy(null));
+  };
+  return (
+    <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginRight: 12 }} title="Download the latest assembled full novel">
+      <Button variant="secondary" onClick={() => get('md')} disabled={!!busy}>{busy === 'md' ? '…' : 'Full novel .md'}</Button>
+      <Button variant="secondary" onClick={() => get('docx')} disabled={!!busy}>{busy === 'docx' ? '…' : '.docx'}</Button>
+      {err && <span style={{ color: 'var(--ember, #c33)', fontSize: 11 }}>{err}</span>}
+    </span>
+  );
+}
+
 export function Publish() {
   const books = useBooks();
   const activeBook = useActiveBook();
@@ -72,6 +91,7 @@ export function Publish() {
           </select>
         </label>
         <span style={{ flex: 1 }} />
+        {slug && <DownloadNovel slug={slug} />}
         <div className={styles.tabs}>
           <button className={tab === 'finish' ? styles.tabActive : styles.tab} onClick={() => setTab('finish')}>Format Finisher</button>
           <button className={tab === 'launch' ? styles.tabActive : styles.tab} onClick={() => setTab('launch')}>Launch</button>

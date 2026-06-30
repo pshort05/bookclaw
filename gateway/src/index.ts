@@ -29,6 +29,8 @@ import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate } from './services/human-review.js';
+import { stripMetaCommentary } from './services/strip-meta.js';
+import { buildBookCanonBlock } from './services/book-canon.js';
 import { AIRouter } from './ai/router.js';
 import { Vault } from './security/vault.js';
 import { PermissionManager } from './security/permissions.js';
@@ -2209,6 +2211,14 @@ class BookClawGateway {
           project.bookSlug,
         );
 
+        // Pin the story canon (title/author + bible name registry + outline) so an
+        // autonomous step doesn't re-invent the title/characters across projects.
+        if (project.bookSlug && gateway.books) {
+          const ob = await gateway.books.open(project.bookSlug).catch(() => null);
+          const canonBlock = buildBookCanonBlock(gateway.books.dataDirOf?.(project.bookSlug), ob?.manifest);
+          if (canonBlock) projectContext += `\n\n${canonBlock}`;
+        }
+
         // Build user message with uploaded content injected directly
         // For large documents (15K+ words): read from disk with smart truncation
         let stepUserMessage = activeStep!.prompt;
@@ -2363,6 +2373,8 @@ class BookClawGateway {
           }
         }
 
+        // Strip leaked chatbot framing before saving/completing the step.
+        aiResponse = stripMetaCommentary(aiResponse);
         // Calculate word count from FULL response (not truncated)
         const wordCount = countWords(aiResponse);
 

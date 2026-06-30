@@ -92,6 +92,19 @@ if [ -n "${OK_SLUG}" ]; then
   pass "POST /api/books with a valid format → ${OK_SLUG}"
   FMT_OK="$(curl -fsS "${AUTH[@]}" "${BASE}/api/books/${OK_SLUG}" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));const f=(d.book||{}).format;process.stdout.write(f&&f.formId==='novella'&&f.totalTarget===30000?'yes':'no')" 2>/dev/null)"
   [ "${FMT_OK}" = "yes" ] && pass "book.json format block persisted (novella, 30000)" || fail "format block missing/incorrect on the created book"
+
+  # download-latest-manuscript endpoint is mounted: a book with no chapters → 404
+  # with the "run a production pipeline" hint (the assembler found nothing).
+  DL_CODE="$(curl -s -o /tmp/dl.$$ -w '%{http_code}' "${AUTH[@]}" "${BASE}/api/books/${OK_SLUG}/download/latest-manuscript?format=md")"
+  DL_BODY="$(cat /tmp/dl.$$ 2>/dev/null)"; rm -f /tmp/dl.$$
+  if [ "${DL_CODE}" = "404" ] && printf '%s' "${DL_BODY}" | grep -qi "production pipeline"; then
+    pass "download/latest-manuscript: no chapters → 404 with hint"
+  else
+    fail "download/latest-manuscript expected 404+hint (got ${DL_CODE}: ${DL_BODY})"
+  fi
+  # invalid slug → 400 (guard before any file access)
+  BAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' "${AUTH[@]}" "${BASE}/api/books/Bad_Slug/download/latest-manuscript")"
+  [ "${BAD_CODE}" = "400" ] && pass "download/latest-manuscript: invalid slug → 400" || fail "download/latest-manuscript bad slug expected 400 (got ${BAD_CODE})"
 else
   fail "valid-format create failed (got: ${OK_RESP})"
 fi

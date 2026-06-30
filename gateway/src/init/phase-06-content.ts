@@ -80,6 +80,19 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
       const nextPhase = nextBookPhaseAfter(project.type);
       if (nextPhase) await gw.books.setPhase(project.bookSlug, nextPhase).catch(() => {});
     }
+
+    // Consistency checking built into the pipeline (run-review goal #3): after the
+    // writing / revision phases finish, auto-run the consistency audit so continuity
+    // is checked WITHOUT an explicit run. Background, fail-soft, and provider-gated
+    // (the audit throws on a too-small model → caught + logged, never blocks).
+    if (gw.books && project?.bookSlug && (project.type === 'book-production' || project.type === 'deep-revision')) {
+      const svc = gw.getServices?.();
+      if (svc?.consistencyAudit) {
+        void svc.consistencyAudit(project.bookSlug, () => {})
+          .then(() => console.log(`  ✓ Auto consistency audit complete for "${project.bookSlug}"`))
+          .catch((err: any) => console.log(`  ℹ Auto consistency audit skipped for "${project.bookSlug}": ${err?.message || err}`));
+      }
+    }
   });
 
   // ── Phase 6f: Context Engine ──

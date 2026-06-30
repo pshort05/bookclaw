@@ -1,8 +1,8 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 45 skills loaded
+Auto-generated on startup — 46 skills loaded
 ════════════════════════════════════════════════════════════
 
-── Core Skills (6) ──
+── Core Skills (7) ──
 
   after-action-review
     Structured post-goal reflection that extracts lessons, evaluates quality, and feeds the self-improvement loop
@@ -11,6 +11,10 @@ Auto-generated on startup — 45 skills loaded
   error-recovery
     Intelligent error diagnosis, automatic recovery strategies, and prevention of recurring failures
     Keywords: error, fix error, something broke, failed, not working, debug, troubleshoot, diagnose, recovery
+
+  human-review
+    Pipeline checkpoint — pause the pipeline at this step and wait for a human to approve in the Confirmations screen before continuing to the next step
+    Keywords: human review, human approval, pause for review, review gate, approval gate, wait for approval
 
   preference-learner
     Track and learn user preferences for writing style, communication, and workflow
