@@ -17,7 +17,7 @@ import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
   BOOK_SCHEMA_VERSION, BOOK_MIN_SUPPORTED, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
-  suggestedNextStep,
+  suggestedNextStep, pipelineNameForPhase,
   type BookManifest, type BookSummary, type PulledRef, type NextStep, type BookFormat,
 } from './book-types.js';
 import { resolveStructure, StoryStructureService, type StoryStructure } from './story-structures.js';
@@ -1172,6 +1172,21 @@ export class BookService {
     }
   }
 
+  /** The book's current lifecycle phase from the manifest, or undefined. */
+  private phaseOf(slug: string | null): string | undefined {
+    if (!slug) return undefined;
+    const d = this.bookDir(slug);
+    if (!d) return undefined;
+    const mf = join(d, 'book.json');
+    if (!existsSync(mf)) return undefined;
+    try {
+      const m = JSON.parse(readFileSync(mf, 'utf-8')) as BookManifest;
+      return typeof m.phase === 'string' ? m.phase : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   /**
    * Parse and return one snapshotted sequence pipeline (templates/pipeline/<name>.json
    * → LibraryPipeline shape). Null if slug is null/invalid, no book exists, or the
@@ -1547,8 +1562,11 @@ export class BookService {
     const wired = WIRED_KINDS.has(kind);
     if (kind === 'pipeline') {
       // v2 layout: templates/pipeline/<name>.json. Resolve the name from the
-      // caller, else the first sequence pipeline (back-compat single-pipeline read).
-      const pname = name || this.pipelineSequenceOf(slug)[0];
+      // caller; else the pipeline matching the book's CURRENT phase (so the Write
+      // view shows the active phase's plan, e.g. book-bible once Planning is done,
+      // not always the first/completed pipeline); else the first sequence entry.
+      const seq = this.pipelineSequenceOf(slug);
+      const pname = name || pipelineNameForPhase(this.phaseOf(slug), seq) || seq[0];
       if (!pname) return null;
       const p = join(tdir, 'pipeline', `${pname}.json`);
       return existsSync(p) ? { content: readFileSync(p, 'utf-8'), wired } : null;

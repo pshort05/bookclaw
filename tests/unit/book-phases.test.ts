@@ -98,6 +98,43 @@ test('phasesForBook concatenates phases across the sequence, dedup adjacent only
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+/** A book whose sequence is the canonical phase-named pipelines (book-planning, book-bible). */
+async function makePhasePipelineBook() {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-phasepipe-'));
+  const lib = seedLibrary(root); await lib.loadAll();
+  const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+  const planning = { schemaVersion: 1, name: 'book-planning', label: 'Planning', description: 'd',
+    steps: [{ label: 'Market & genre analysis', taskType: 'general', promptTemplate: 'x' }] };
+  const bible = { schemaVersion: 1, name: 'book-bible', label: 'Bible', description: 'd',
+    steps: [{ label: 'World-building document', taskType: 'general', promptTemplate: 'x' }] };
+  const m = await svc.create({
+    title: 'PhasePipe', author: 'default', voice: 'default', pipeline: 'novel-pipeline', sections: [],
+    pipelines: [{ name: 'book-planning', pipeline: planning as never }, { name: 'book-bible', pipeline: bible as never }],
+  });
+  return { root, svc, slug: m.slug };
+}
+
+test('readTemplate(pipeline) follows the book phase — bible phase returns book-bible, not the first pipeline', async () => {
+  // Regression: the Write view ("Open in Write") rendered book-planning's steps
+  // ("Market & genre analysis") even after Planning completed, because readTemplate
+  // always defaulted to pipelineSequence[0]. It must default to the current phase.
+  const { root, svc, slug } = await makePhasePipelineBook();
+  try {
+    // Default phase=planning → the planning pipeline.
+    let t = svc.readTemplate(slug, 'pipeline');
+    assert.ok(t?.content?.includes('Market & genre analysis'), 'planning phase → book-planning');
+
+    await svc.setPhase(slug, 'bible');
+    t = svc.readTemplate(slug, 'pipeline');
+    assert.ok(t?.content?.includes('World-building document'), 'bible phase → book-bible');
+    assert.ok(!t?.content?.includes('Market & genre analysis'), 'must NOT return the completed planning pipeline');
+
+    // An explicit name still wins over the phase default.
+    const explicit = svc.readTemplate(slug, 'pipeline', 'book-planning');
+    assert.ok(explicit?.content?.includes('Market & genre analysis'), 'explicit name overrides phase');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('setPhase throws on a readonly/quarantined book (assertWritable gate)', async () => {
   const { root, svc, slug } = await makeBook();
   try {

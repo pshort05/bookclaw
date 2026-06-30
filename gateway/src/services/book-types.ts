@@ -175,6 +175,20 @@ export function nextBookPhaseAfter(projectType: string | undefined): string | nu
   return BOOK_PHASE_ORDER[Math.min(i + 1, BOOK_PHASE_ORDER.length - 1)];
 }
 
+/**
+ * The pipeline in `sequence` whose lifecycle phase matches `phase` — e.g. phase
+ * 'bible' → 'book-bible'. Lets the Write view show the book's CURRENT phase
+ * pipeline (its plan/steps) instead of always the first/completed one. Returns
+ * null when no entry matches (caller falls back to the first sequence entry).
+ */
+export function pipelineNameForPhase(phase: string | undefined, sequence: string[]): string | null {
+  if (!phase) return null;
+  for (const name of sequence) {
+    if (PROJECT_TYPE_PHASE[name] === phase) return name;
+  }
+  return null;
+}
+
 /** Derive a filesystem-safe slug from a title. Never returns ''. */
 export function slugify(title: string): string {
   const base = String(title || '')

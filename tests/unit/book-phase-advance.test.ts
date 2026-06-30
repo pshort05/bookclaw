@@ -12,7 +12,23 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { nextBookPhaseAfter } from '../../gateway/src/services/book-types.js';
+import { nextBookPhaseAfter, pipelineNameForPhase } from '../../gateway/src/services/book-types.js';
+
+const SEQ = ['book-planning', 'book-bible', 'book-production', 'deep-revision', 'format-export', 'book-launch'];
+
+test('pipelineNameForPhase maps the book phase to its sequence pipeline (the Write-view fix)', () => {
+  // A book in the bible phase must surface the book-bible pipeline, not book-planning.
+  assert.equal(pipelineNameForPhase('bible', SEQ), 'book-bible');
+  assert.equal(pipelineNameForPhase('planning', SEQ), 'book-planning');
+  assert.equal(pipelineNameForPhase('production', SEQ), 'book-production');
+  assert.equal(pipelineNameForPhase('launch', SEQ), 'book-launch');
+});
+
+test('pipelineNameForPhase returns null for unknown/empty phase or empty sequence (caller falls back to [0])', () => {
+  assert.equal(pipelineNameForPhase('nope', SEQ), null);
+  assert.equal(pipelineNameForPhase(undefined, SEQ), null);
+  assert.equal(pipelineNameForPhase('bible', []), null);
+});
 
 test('completing Planning advances the book to bible', () => {
   assert.equal(nextBookPhaseAfter('book-planning'), 'bible');
