@@ -6,6 +6,7 @@ import { BUNDLES, type StarterBundle } from '../data/bundles';
 import { createBookFromBundle } from '../lib/easyApi';
 import { useModelCatalog, CATALOG_PROVIDERS } from '../lib/openrouterModels';
 import { PROVIDER_DEFAULT_MODEL } from '../lib/providers';
+import { novelModelAdvice } from '../lib/novelModel';
 import styles from './EasyStart.module.css';
 
 // The 3-click "Easy Button": describe -> pick a Starter Bundle -> start writing.
@@ -142,6 +143,10 @@ export function EasyStart() {
               </datalist>
             </label>
           )}
+          {(() => {
+            const advice = novelModelAdvice(model.trim() || PROVIDER_DEFAULT_MODEL[provider] || '');
+            return advice.weak ? <p className={styles.modelWarn}>⚠ {advice.note}</p> : null;
+          })()}
           {error && <p className={styles.error}>{error}</p>}
           <div className={styles.actions}>
             <button className={styles.ghost} disabled={busy} onClick={() => setStep(2)}>Back</button>

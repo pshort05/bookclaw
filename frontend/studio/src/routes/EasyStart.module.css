@@ -122,3 +122,15 @@
   border-radius: var(--r-s);
   cursor: pointer;
 }
+
+/* Soft, non-blocking capability warning for a weak full-novel model. */
+.modelWarn {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #b8860b;
+  background: rgba(184, 134, 11, 0.08);
+  border: 1px solid rgba(184, 134, 11, 0.35);
+  border-radius: 8px;
+  padding: 8px 11px;
+}
