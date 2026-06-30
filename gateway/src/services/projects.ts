@@ -75,6 +75,9 @@ export interface Project {
   pipelineId?: string;    // Parent pipeline ID (if part of a pipeline)
   pipelinePhase?: number; // Phase order within pipeline (1-6)
   bookSlug?: string;      // the book this project writes into; captured at creation, immutable
+  // Human Review gate (additive-optional, no schema bump): set when the pipeline
+  // is paused awaiting a human Confirmations decision; cleared once resolved.
+  review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' };
 }
 
 export interface ProjectStep {
@@ -812,6 +815,55 @@ Description: ${description}`;
   }
 
   /**
+   * Human Review resume: apply an approved decision. For a gate step, complete it
+   * (advances the pipeline to the next step); for a step error, reset the failed
+   * step to active (retry). Clears the review marker and re-activates the project
+   * so a driver continues it. Atomic + persisted. See services/human-review.ts.
+   */
+  applyReviewResume(projectId: string, stepId: string, kind: 'pipeline-gate' | 'pipeline-error'): void {
+    const project = this.projects.get(projectId);
+    if (!project) return;
+    if (kind === 'pipeline-error') {
+      const step = project.steps.find(s => s.id === stepId);
+      if (step) { step.status = 'active'; step.error = undefined; step.result = undefined; }
+      project.status = 'active';
+    } else {
+      // Completes the gate step and activates the runnable frontier (next step).
+      // completeStep sets status='completed' when the gate was the LAST step; in
+      // that case leave it completed (so onProjectCompleted fires) rather than
+      // forcing it back to 'active'.
+      this.completeStep(projectId, stepId, '[approved by human review]');
+      if (project.status !== 'completed') project.status = 'active';
+    }
+    delete project.review;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /** Clear a project's Human Review marker (rejection/expiry — project stays paused). */
+  clearReview(projectId: string): void {
+    const project = this.projects.get(projectId);
+    if (!project) return;
+    delete project.review;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /**
+   * Park a project awaiting a Human Review decision: set it 'paused' WITHOUT
+   * demoting any steps (unlike pauseProject). The gate step stays 'active' so the
+   * resolver can complete it on approval and so /execute can still find it; an
+   * already-failed step stays 'failed'. See services/human-review.ts.
+   */
+  parkForReview(projectId: string): void {
+    const project = this.projects.get(projectId);
+    if (!project) return;
+    project.status = 'paused';
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /**
    * Cascade primitive for book deletion: remove every project bound to a book,
    * regardless of status (active/pending/completed). Without this, deleting a
    * book left its projects orphaned in projects-state.json — a ghost the book
@@ -1029,6 +1081,7 @@ Description: ${description}`;
   onStepCompleted(fn: (project: Project, completedStep: ProjectStep, next: ProjectStep | null) => void | Promise<void>): void {
     this.stepCompletionHooks.push(fn);
   }
+
 
   /**
    * Mark a step as failed

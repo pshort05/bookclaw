@@ -2,6 +2,7 @@ import { join } from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { HeartbeatService } from '../services/heartbeat.js';
+import { resolveReviewGates } from '../services/human-review.js';
 import { TelegramBridge } from '../bridges/telegram.js';
 import { DiscordBridge } from '../bridges/discord.js';
 import { ROOT_DIR } from '../paths.js';
@@ -244,6 +245,34 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
   );
 
   gw.heartbeat.start();
+
+  // Human Review resolver + driver sweep. Resolves approved/rejected/expired
+  // gates, then — when the autonomous heartbeat is NOT actively driving (it would
+  // otherwise pick up resumed projects itself, and double-driving would race) —
+  // re-drives each resumed pipeline forward to its next gate / error / end. This
+  // makes an approved gate continue even on a dashboard-only (non-autonomous)
+  // deployment. Runs regardless of mode; fail-soft.
+  const driveProject = async (projectId: string) => {
+    for (let i = 0; i < 500; i++) {
+      const p = gw.projectEngine.getProject(projectId);
+      if (!p || p.status !== 'active' || !p.steps.some((s: any) => s.status === 'active')) break;
+      const r = await commandHandlers.startAndRunProject(projectId);
+      if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
+    }
+  };
+  setInterval(async () => {
+    if (!gw.confirmationGate || !gw.projectEngine) return;
+    try {
+      const resumed = await resolveReviewGates({ gate: gw.confirmationGate, engine: gw.projectEngine });
+      const auto = gw.heartbeat?.getAutonomousStatus?.();
+      const heartbeatDriving = !!(auto?.enabled && !auto?.paused);
+      if (resumed.length && !heartbeatDriving) {
+        for (const id of resumed) await driveProject(id);
+      }
+    } catch (err) {
+      console.error('[human-review] resolver sweep error:', err);
+    }
+  }, 60_000).unref();
   const autonomousLabel = gw.config.get('heartbeat.autonomousEnabled')
     ? ` + autonomous every ${gw.config.get('heartbeat.autonomousIntervalMinutes', 30)}min`
     : '';

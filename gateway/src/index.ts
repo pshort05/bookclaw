@@ -28,6 +28,7 @@ import { CostTracker } from './services/costs.js';
 import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
+import { isHumanReviewStep, openReviewGate } from './services/human-review.js';
 import { AIRouter } from './ai/router.js';
 import { Vault } from './security/vault.js';
 import { PermissionManager } from './security/permissions.js';
@@ -2181,6 +2182,13 @@ class BookClawGateway {
         }
         if (!activeStep) return { error: 'No pending steps' };
 
+        // Human Review gate: a human-review step pauses the pipeline and raises a
+        // Confirmations request instead of generating; the resolver resumes on approval.
+        if (isHumanReviewStep(activeStep) && gateway.confirmationGate) {
+          await openReviewGate({ gate: gateway.confirmationGate, engine: gateway.projectEngine }, project, activeStep, 'pipeline-gate');
+          return { error: 'awaiting human review' };
+        }
+
         // Log step start
         gateway.activityLog.log({
           type: 'step_started',
@@ -2294,6 +2302,7 @@ class BookClawGateway {
           }
         } catch (err) {
           gateway.projectEngine.failStep(projectId, activeStep.id, String(err));
+          if (gateway.confirmationGate) await openReviewGate({ gate: gateway.confirmationGate, engine: gateway.projectEngine }, project, activeStep, 'pipeline-error', String(err));
           gateway.activityLog.log({
             type: 'step_failed',
             source: 'telegram',
@@ -2312,6 +2321,7 @@ class BookClawGateway {
         if (bridgeClass.providerFailure) {
           const detail = bridgeClass.detail!;
           gateway.projectEngine.failStep(projectId, activeStep.id, detail);
+          if (gateway.confirmationGate) await openReviewGate({ gate: gateway.confirmationGate, engine: gateway.projectEngine }, project, activeStep, 'pipeline-error', detail);
           gateway.activityLog.log({
             type: 'step_failed',
             source: 'telegram',

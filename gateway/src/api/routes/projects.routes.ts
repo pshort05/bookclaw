@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
+import { isHumanReviewStep, openReviewGate } from '../../services/human-review.js';
 import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
@@ -433,6 +434,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(400).json({ error: 'No active step. Start the project first.' });
     }
 
+    // Human Review gate: a human-review step pauses the pipeline and raises a
+    // Confirmations request instead of generating; the resolver resumes on approval.
+    if (isHumanReviewStep(activeStep) && services.confirmationGate) {
+      const conf = await openReviewGate({ gate: services.confirmationGate, engine }, project, activeStep, 'pipeline-gate');
+      return res.json({ humanReview: true, confirmationId: conf?.id ?? project.review?.confirmationId, project: engine.getProject(req.params.id) });
+    }
+
     try {
       // F2: inject passive step-skill content (snapshot → global), same as the
       // bridge path — buildProjectContext alone never added it on the studio path.
@@ -608,6 +616,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
     autoExecuteInFlight.add(project.id);
 
+    // A project paused awaiting Human Review must NOT be un-paused by "continue" —
+    // it requires a Confirmations decision. Surface the pending review instead.
+    if (project.review) {
+      autoExecuteInFlight.delete(project.id);
+      return res.status(409).json({ error: 'Awaiting human review', humanReview: true, confirmationId: project.review.confirmationId });
+    }
+
     if (project.status === 'pending') {
       engine.startProject(req.params.id);
     } else if (project.status === 'paused') {
@@ -617,6 +632,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
 
     const results: Array<{ step: string; success: boolean; wordCount?: number; error?: string }> = [];
+    let humanReviewConfId: string | undefined;
     const { join } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
     const workspaceDir = join(baseDir, 'workspace');
@@ -636,6 +652,15 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
       const activeStep = currentProject.steps.find((s: any) => s.status === 'active');
       if (!activeStep) break;
+
+      // Human Review gate: a human-review step pauses the pipeline and raises a
+      // Confirmations request instead of generating; the resolver resumes on approval.
+      if (isHumanReviewStep(activeStep) && services.confirmationGate) {
+        const conf = await openReviewGate({ gate: services.confirmationGate, engine }, currentProject, activeStep, 'pipeline-gate');
+        results.push({ step: activeStep.label, success: false, error: 'awaiting human review' });
+        humanReviewConfId = conf?.id ?? currentProject.review?.confirmationId;
+        break;
+      }
 
       try {
         // F2: inject passive step-skill content (snapshot → global), same as the
@@ -686,6 +711,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         if (stepClass.providerFailure) {
           const detail = stepClass.detail!;
           engine.failStep(currentProject.id, activeStep.id, detail);
+          if (services.confirmationGate) await openReviewGate({ gate: services.confirmationGate, engine }, currentProject, activeStep, 'pipeline-error', detail);
           results.push({ step: activeStep.label, success: false, error: detail });
           break;
         }
@@ -694,6 +720,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             `Cause is usually a safety filter trip, context overflow, or misconfigured provider. ` +
             `Switch providers in Settings or shorten the project description.`;
           engine.failStep(currentProject.id, activeStep.id, reason);
+          if (services.confirmationGate) await openReviewGate({ gate: services.confirmationGate, engine }, currentProject, activeStep, 'pipeline-error', reason);
           results.push({ step: activeStep.label, success: false, error: reason });
           break;
         }
@@ -991,6 +1018,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         if (freshProject?.status === 'paused' || freshProject?.status === 'completed') break;
       } catch (error) {
         engine.failStep(currentProject.id, activeStep.id, String(error));
+        if (services.confirmationGate) await openReviewGate({ gate: services.confirmationGate, engine }, currentProject, activeStep, 'pipeline-error', String(error));
         results.push({ step: activeStep.label, success: false, error: String(error) });
         break;
       }
@@ -999,6 +1027,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     res.json({
       success: true,
       results,
+      ...(humanReviewConfId ? { humanReview: true, confirmationId: humanReviewConfId } : {}),
       project: engine.getProject(req.params.id),
     });
     } finally {

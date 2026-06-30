@@ -712,6 +712,9 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     try {
       const result = await gate.approve(req.params.id);
       if (!result) return res.status(404).json({ error: 'Not found' });
+      // Human Review pipelines resume via the phase-10 periodic resolver (which
+      // also re-drives generation) — not from here — so resume + drive stay in one
+      // place and never race the autonomous heartbeat.
       addWaveDisclaimer(res);
       res.json({ request: result });
     } catch (err: any) {
