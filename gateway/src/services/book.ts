@@ -17,7 +17,7 @@ import type { LibraryService, LibraryEntryFull } from './library.js';
 import { mergeText } from './merge.js';
 import {
   BOOK_SCHEMA_VERSION, BOOK_MIN_SUPPORTED, WIRED_KINDS, MD_FILE_RE, SLUG_RE, parsePipelineJson, slugify, classifyVersion,
-  suggestedNextStep, pipelineNameForPhase,
+  suggestedNextStep, pipelineNameForPhase, PROJECT_TYPE_PHASE,
   type BookManifest, type BookSummary, type PulledRef, type NextStep, type BookFormat,
 } from './book-types.js';
 import { resolveStructure, StoryStructureService, type StoryStructure } from './story-structures.js';
@@ -1287,9 +1287,21 @@ export class BookService {
     if (seq.length) {
       const phases: string[] = [];
       for (const name of seq) {
-        const p = this.snapshotPipelineOf(slug, name);
-        if (!p) continue;
-        for (const ph of pipelinePhases(p)) {
+        // Prefer the canonical lifecycle phase for a known pipeline so the board
+        // segments match the manifest-phase vocabulary (planning/bible/production/
+        // revision/format/launch) — otherwise production's step sub-phases
+        // (writing/polish/assembly) leak in and `production` isn't a segment, so
+        // the drawer can't place the book. Custom pipelines fall back to their
+        // step-derived phases.
+        const canonical = PROJECT_TYPE_PHASE[name];
+        let derived: string[];
+        if (canonical) {
+          derived = [canonical];
+        } else {
+          const p = this.snapshotPipelineOf(slug, name);
+          derived = p ? pipelinePhases(p) : [];
+        }
+        for (const ph of derived) {
           if (phases[phases.length - 1] !== ph) phases.push(ph); // dedup adjacent-equal only
         }
       }

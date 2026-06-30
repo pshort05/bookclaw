@@ -114,6 +114,43 @@ async function makePhasePipelineBook() {
   return { root, svc, slug: m.slug };
 }
 
+/** A book whose sequence is the canonical 6 phase-pipelines, where production has
+ *  step-level sub-phases (writing/polish/assembly) that must NOT leak into the
+ *  board segments. */
+async function makeStandardSequenceBook() {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-stdseq-'));
+  const lib = seedLibrary(root); await lib.loadAll();
+  const svc = new BookService(join(root, 'workspace', 'books'), lib, '9.9.9');
+  const mk = (name: string, phases: string[]) => ({
+    schemaVersion: 1, name, label: name, description: 'd',
+    steps: phases.map((ph, i) => ({ label: `${name}-${i}`, taskType: 'general', promptTemplate: 'x', phase: ph })),
+  });
+  const m = await svc.create({
+    title: 'Std', author: 'default', voice: 'default', pipeline: 'novel-pipeline', sections: [],
+    pipelines: [
+      { name: 'book-planning', pipeline: mk('book-planning', []) as never },
+      { name: 'book-bible', pipeline: mk('book-bible', []) as never },
+      { name: 'book-production', pipeline: mk('book-production', ['writing', 'polish', 'assembly']) as never },
+      { name: 'deep-revision', pipeline: mk('deep-revision', ['revision_apply']) as never },
+      { name: 'format-export', pipeline: mk('format-export', ['format-export']) as never },
+      { name: 'book-launch', pipeline: mk('book-launch', []) as never },
+    ],
+  });
+  return { root, svc, slug: m.slug };
+}
+
+test('phasesForBook maps standard pipelines to canonical lifecycle phases (matches manifest phase vocab)', async () => {
+  // Regression: segments were [planning, bible, assembly, revision_apply, format-export, launch]
+  // so manifest phase 'production' wasn't in the list and the drawer fell back to planning.
+  const { root, svc, slug } = await makeStandardSequenceBook();
+  try {
+    assert.deepEqual(svc.phasesForBook(slug), ['planning', 'bible', 'production', 'revision', 'format', 'launch']);
+    // setPhase('production') must now land on a real segment.
+    await svc.setPhase(slug, 'production');
+    assert.ok(svc.phasesForBook(slug).includes('production'), 'production must be a board segment');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('readTemplate(pipeline) follows the book phase — bible phase returns book-bible, not the first pipeline', async () => {
   // Regression: the Write view ("Open in Write") rendered book-planning's steps
   // ("Market & genre analysis") even after Planning completed, because readTemplate
