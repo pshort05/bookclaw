@@ -744,9 +744,13 @@ class BookClawGateway {
       ? this.resolveEditorRouting(editorCfg.model, preferredProvider, overrideModel)
       : { provider: this.aiRouter.selectProvider(taskType, preferredProvider), model: overrideModel };
 
-    // Best-effort skill label for activity metadata: the matched skills' first
-    // lines (same shape as the skill_matched event). undefined when none matched.
-    const matchedSkillName = skills.length ? skills.map(s => s.split('\n')[0]).join(', ') : undefined;
+    // Skill label for activity metadata: the matched skills' NAMES (matchSkills
+    // returns full markdown whose first line is the '---' frontmatter delimiter,
+    // so logging that yields "---"). undefined when none matched.
+    const matchedSkillName = (() => {
+      const names = this.skills.matchSkillNames(content);
+      return names.length ? names.join(', ') : undefined;
+    })();
     // The model actually used on the primary path: the per-call override (book/
     // project pin or editor model) or the provider's configured default.
     const usedModel = editorModel || provider.model;

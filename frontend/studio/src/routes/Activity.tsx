@@ -146,6 +146,17 @@ export function Activity() {
               <i /> {c.label}
             </span>
             <span className={styles.bd}>{e.message}</span>
+            <span className={styles.tags}>
+              {e.metadata?.bookSlug ? (
+                <span className={styles.tag} title="book">book·{String(e.metadata.bookSlug)}</span>
+              ) : null}
+              {e.metadata?.skill ? (
+                <span className={styles.tag} title="skill">skill·{String(e.metadata.skill)}</span>
+              ) : null}
+              {e.metadata?.model ? (
+                <span className={styles.tag} title="model">model·{String(e.metadata.model)}</span>
+              ) : null}
+            </span>
             <span className={styles.mt}>
               {typeof e.metadata?.cost === 'number'
                 ? money(e.metadata.cost as number)

@@ -829,6 +829,48 @@ Description: ${description}`;
   }
 
   /**
+   * The book's FRONTIER project — the chained pipeline's current phase: the
+   * lowest-pipelinePhase project that isn't completed (so a finished Planning
+   * yields the Bible project). Falls back to the last phase when every phase is
+   * done (the rail shows the finished state) and to insertion order for
+   * un-phased projects. Returns null when the book has no projects. Lets the
+   * Write view bind to the live project instead of just the pipeline template.
+   */
+  frontierProjectForBook(bookSlug: string): Project | null {
+    if (!bookSlug) return null;
+    const mine = Array.from(this.projects.values()).filter(p => p.bookSlug === bookSlug);
+    if (!mine.length) return null;
+
+    // Group by pipeline (un-pipelined projects each form their own group). A book
+    // can carry duplicate pipelines when "start" was clicked repeatedly (each
+    // spawned a fresh chain) — pick the MOST-PROGRESSED chain (most completed
+    // phases, then most recent) so a fresh duplicate's phase-1 project never
+    // shadows the real chain's current phase.
+    const groups = new Map<string, Project[]>();
+    for (const p of mine) {
+      const key = p.pipelineId ?? p.id;
+      (groups.get(key) ?? groups.set(key, []).get(key)!).push(p);
+    }
+    const idNum = (p: Project) => Number(String(p.id).replace(/\D/g, '')) || 0;
+    let best: Project[] | null = null;
+    let bestDone = -1;
+    let bestRecency = -1;
+    for (const g of groups.values()) {
+      const done = g.filter(p => p.status === 'completed').length;
+      const recency = Math.max(...g.map(idNum));
+      if (done > bestDone || (done === bestDone && recency > bestRecency)) {
+        best = g; bestDone = done; bestRecency = recency;
+      }
+    }
+    const chain = best ?? mine;
+    const phased = chain
+      .filter(p => typeof p.pipelinePhase === 'number')
+      .sort((a, b) => (a.pipelinePhase as number) - (b.pipelinePhase as number));
+    const seq = phased.length ? phased : chain;
+    return seq.find(p => p.status !== 'completed') ?? seq[seq.length - 1];
+  }
+
+  /**
    * Start executing a project — marks it active and returns the first step
    */
   startProject(id: string): ProjectStep | null {

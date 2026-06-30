@@ -115,6 +115,17 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({ book: result.manifest, status: result.status, descriptions, phases: services.books.phasesForBook(slug) });
   });
 
+  // The book's current/frontier project (the chained pipeline's active phase) so
+  // the Write rail binds to the live project, not just the pipeline template.
+  // { project: null } when the book has no projects yet.
+  app.get('/api/books/:slug/current-project', (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const project = gateway.getProjectEngine?.()?.frontierProjectForBook(slug) ?? null;
+    res.json({ project });
+  });
+
   // Book Format & Structure: set/update the declared format on an existing book
   // (same hard-block band validation as creation).
   app.put('/api/books/:slug/format', async (req: Request, res: Response) => {

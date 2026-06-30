@@ -242,6 +242,28 @@ export class SkillLoader {
     return matched;
   }
 
+  /**
+   * Like matchSkills but returns the matched skills' NAMES, for activity logging
+   * and UI display. matchSkills returns each skill's full markdown, whose first
+   * line is the `---` YAML frontmatter delimiter — logging that yields "---"
+   * instead of a name. Same trigger-substring matching as matchSkills.
+   */
+  matchSkillNames(input: string): string[] {
+    const matched: string[] = [];
+    const lower = input.toLowerCase();
+
+    for (const [, skill] of this.skills) {
+      for (const trigger of skill.triggers) {
+        if (lower.includes(trigger.toLowerCase())) {
+          matched.push(skill.name);
+          break;
+        }
+      }
+    }
+
+    return matched;
+  }
+
   getLoadedCount(): number {
     return this.skills.size;
   }

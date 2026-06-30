@@ -50,6 +50,27 @@ test('SkillLoader merges a workspace overlay over built-ins and tags source', as
   }
 });
 
+test('matchSkillNames returns skill names, not "---" frontmatter (activity-log fix)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-skills-'));
+  try {
+    const builtin = join(root, 'skills');
+    writeSkill(builtin, 'author', 'book-bible', 'maintain world consistency', 'body');
+    writeSkill(builtin, 'author', 'outline', 'structure a story', 'body');
+    const loader = new SkillLoader(builtin, {} as never, join(root, 'workspace', 'skills'));
+    await loader.loadAll();
+
+    // matchSkills returns full content (first line is the '---' frontmatter delimiter).
+    const content = loader.matchSkills('please use book-bible here');
+    assert.ok(content[0]?.startsWith('---'), 'matchSkills returns content starting with frontmatter');
+
+    // matchSkillNames returns the actual skill name instead.
+    assert.deepEqual(loader.matchSkillNames('please use book-bible here'), ['book-bible']);
+    assert.deepEqual(loader.matchSkillNames('nothing matches here'), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('reload() re-reads disk and preserves runtime synthetic skills', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookclaw-skills-'));
   try {

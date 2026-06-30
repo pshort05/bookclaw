@@ -70,6 +70,22 @@ export function Write() {
     return () => { cancelled = true; };
   }, [slug, paramSlug, active?.slug, loadBooks]);
 
+  // Bind the book's current/frontier project (the chained pipeline's active phase)
+  // so the rail shows live steps/progress and its run actions target the existing
+  // project instead of creating a new one. Skipped under ?autostart=1 — the Easy
+  // Button hand-off owns project creation for a brand-new book.
+  useEffect(() => {
+    if (autoStart || !slug) return;
+    let cancelled = false;
+    (async () => {
+      const r = await api<{ project: Project | null }>(
+        `/api/books/${encodeURIComponent(slug)}/current-project`,
+      ).catch(() => null);
+      if (!cancelled && r?.project) setProject(r.project);
+    })();
+    return () => { cancelled = true; };
+  }, [slug, autoStart]);
+
   if (!slug) {
     // Don't flash "No active book" before the first books fetch resolves.
     if (!booksLoaded) return <div className={styles.empty}>Loading…</div>;
