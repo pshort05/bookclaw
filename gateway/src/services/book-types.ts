@@ -140,6 +140,41 @@ export function suggestedNextStep(phase: string, hasOutput: boolean): { label: s
   }
 }
 
+/**
+ * Pipeline phase-project type → the book lifecycle phase it represents (the
+ * board/Write vocabulary used by suggestedNextStep). createPipeline() chains
+ * these six project types in order; each one IS a book phase.
+ */
+export const PROJECT_TYPE_PHASE: Record<string, string> = {
+  'book-planning': 'planning',
+  'book-bible': 'bible',
+  'book-production': 'production',
+  'deep-revision': 'revision',
+  'format-export': 'format',
+  'book-launch': 'launch',
+};
+
+/** Ordered book lifecycle phases (the board segments / suggestedNextStep keys). */
+export const BOOK_PHASE_ORDER = ['planning', 'bible', 'production', 'revision', 'format', 'launch'] as const;
+
+/**
+ * The lifecycle phase a bound book should advance to when a pipeline
+ * phase-project of the given type COMPLETES — i.e. the NEXT segment, so the
+ * board shows the finished phase as done and the next as current, and the Write
+ * view offers the next phase's action instead of re-suggesting the first
+ * planning step. Clamps at 'launch' when the final project completes. Returns
+ * null for non-pipeline project types (custom / novel-pipeline / unknown) so the
+ * completion hook no-ops rather than clobbering an unrelated book's phase.
+ */
+export function nextBookPhaseAfter(projectType: string | undefined): string | null {
+  if (!projectType) return null;
+  const cur = PROJECT_TYPE_PHASE[projectType];
+  if (!cur) return null;
+  const i = BOOK_PHASE_ORDER.indexOf(cur as (typeof BOOK_PHASE_ORDER)[number]);
+  if (i < 0) return null;
+  return BOOK_PHASE_ORDER[Math.min(i + 1, BOOK_PHASE_ORDER.length - 1)];
+}
+
 /** Derive a filesystem-safe slug from a title. Never returns ''. */
 export function slugify(title: string): string {
   const base = String(title || '')

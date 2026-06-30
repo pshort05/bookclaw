@@ -7,6 +7,7 @@ import { PersonaService } from '../services/personas.js';
 import { ProjectEngine } from '../services/projects.js';
 import { ContextEngine } from '../services/context-engine.js';
 import { ROOT_DIR } from '../paths.js';
+import { nextBookPhaseAfter } from '../services/book-types.js';
 import { appVersion, WORKSPACE_SCHEMA_VERSION } from './phase-01-config.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -67,8 +68,18 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   // enforced for autonomous mode too: the heartbeat's project list is filtered
   // through ProjectEngine.sequencePredecessorsComplete — see phase-10-heartbeat-
   // bridges.ts — so a later pending phase is never run ahead of an earlier one.)
-  gw.projectEngine.onProjectCompleted((project: any) => {
+  gw.projectEngine.onProjectCompleted(async (project: any) => {
     if (project.pipelineId) gw.projectEngine.advancePipeline(project.pipelineId);
+    // Advance the bound book's manifest phase across the project boundary: when a
+    // phase-project (Planning/Bible/…) completes, the book moves to the next
+    // lifecycle phase. advancePipeline only marks the next PROJECT active — it
+    // never touches book.json — and onStepCompleted can't bridge projects (its
+    // `next` is null at a project's end), so without this the manifest phase
+    // sticks at 'planning' and the board/Write view never show planning as done.
+    if (gw.books && project?.bookSlug) {
+      const nextPhase = nextBookPhaseAfter(project.type);
+      if (nextPhase) await gw.books.setPhase(project.bookSlug, nextPhase).catch(() => {});
+    }
   });
 
   // ── Phase 6f: Context Engine ──

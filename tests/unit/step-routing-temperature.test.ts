@@ -57,3 +57,27 @@ test('stepRouting falls back to project preferredProvider when step has no model
   assert.equal(result.model, undefined);
   assert.equal(result.temperature, undefined);
 });
+
+/**
+ * Regression (HIGH): stepRouting() dropped project.preferredModel. The REST
+ * auto-execute/execute paths inherit a book/project model pin via
+ * project.preferredModel (not a per-step modelOverride). When that pin was set
+ * but no per-step override existed, stepRouting returned model: undefined, so
+ * the call used the provider's DEFAULT model instead of the pinned one — e.g.
+ * a book pinned to deepseek/claude via OpenRouter silently ran on the cheap
+ * default google/gemma-3-4b-it. The fix mirrors the bridge path
+ * (index.ts: stepOverride?.model || project.preferredModel).
+ */
+const pinnedProject = { preferredProvider: 'openrouter', preferredModel: 'anthropic/claude-sonnet-4.6' };
+
+test('stepRouting falls back to project preferredModel when step has no modelOverride', () => {
+  const result = stepRouting(pinnedProject, {});
+  assert.equal(result.provider, 'openrouter');
+  assert.equal(result.model, 'anthropic/claude-sonnet-4.6');
+});
+
+test('stepRouting prefers step modelOverride.model over project preferredModel', () => {
+  const step = { modelOverride: { provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' } };
+  const result = stepRouting(pinnedProject, step);
+  assert.equal(result.model, 'deepseek/deepseek-v4-pro');
+});

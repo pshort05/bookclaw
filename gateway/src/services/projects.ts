@@ -812,6 +812,23 @@ Description: ${description}`;
   }
 
   /**
+   * Cascade primitive for book deletion: remove every project bound to a book,
+   * regardless of status (active/pending/completed). Without this, deleting a
+   * book left its projects orphaned in projects-state.json — a ghost the book
+   * list no longer showed but whose projects reloaded on the next boot. Persists
+   * immediately so the removal survives restart. Returns the count removed.
+   */
+  deleteProjectsByBook(bookSlug: string): number {
+    if (!bookSlug) return 0;
+    let removed = 0;
+    for (const [id, p] of this.projects) {
+      if (p.bookSlug === bookSlug) { this.projects.delete(id); removed++; }
+    }
+    if (removed) this.persistState();
+    return removed;
+  }
+
+  /**
    * Start executing a project — marks it active and returns the first step
    */
   startProject(id: string): ProjectStep | null {

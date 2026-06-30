@@ -27,6 +27,7 @@ import { HeartbeatService } from './services/heartbeat.js';
 import { CostTracker } from './services/costs.js';
 import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
+import { generationMeta } from './services/activity-meta.js';
 import { AIRouter } from './ai/router.js';
 import { Vault } from './security/vault.js';
 import { PermissionManager } from './security/permissions.js';
@@ -743,13 +744,20 @@ class BookClawGateway {
       ? this.resolveEditorRouting(editorCfg.model, preferredProvider, overrideModel)
       : { provider: this.aiRouter.selectProvider(taskType, preferredProvider), model: overrideModel };
 
+    // Best-effort skill label for activity metadata: the matched skills' first
+    // lines (same shape as the skill_matched event). undefined when none matched.
+    const matchedSkillName = skills.length ? skills.map(s => s.split('\n')[0]).join(', ') : undefined;
+    // The model actually used on the primary path: the per-call override (book/
+    // project pin or editor model) or the provider's configured default.
+    const usedModel = editorModel || provider.model;
+
     // ── Log skill matching to activity ──
     if (skills.length > 0) {
       this.activityLog.log({
         type: 'skill_matched',
         source: channel.startsWith('telegram:') ? 'telegram' : channel === 'api' ? 'api' : 'dashboard',
         message: `Matched ${skills.length} skill(s) for message`,
-        metadata: { skillName: skills.map(s => s.split('\n')[0]).join(', ') },
+        metadata: { skillName: matchedSkillName },
       });
     }
 
@@ -854,7 +862,7 @@ class BookClawGateway {
         source: channel.startsWith('telegram:') ? 'telegram' : channel === 'api' ? 'api' : 'dashboard',
         message: `AI responded via ${provider.id}`,
         metadata: {
-          provider: provider.id,
+          ...generationMeta({ provider: provider.id, model: usedModel, bookSlug, skill: matchedSkillName }),
           tokens: response.tokensUsed,
           cost: response.estimatedCost,
           wordCount: response.text.split(/\s+/).length,
@@ -879,7 +887,7 @@ class BookClawGateway {
         type: 'error',
         source: 'internal',
         message: `AI provider ${provider.id} failed: ${String(error)}`,
-        metadata: { provider: provider.id },
+        metadata: generationMeta({ provider: provider.id, model: usedModel, bookSlug, skill: matchedSkillName }),
       });
 
       // Try fallback provider
@@ -911,7 +919,7 @@ class BookClawGateway {
             source: channel.startsWith('telegram:') ? 'telegram' : channel === 'api' ? 'api' : 'dashboard',
             message: `AI responded via ${fallback.id} (fallback)`,
             metadata: {
-              provider: fallback.id,
+              ...generationMeta({ provider: fallback.id, model: fallback.model, bookSlug, skill: matchedSkillName }),
               tokens: response.tokensUsed,
               cost: response.estimatedCost,
               wordCount: response.text.split(/\s+/).length,

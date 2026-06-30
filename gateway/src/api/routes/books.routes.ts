@@ -73,6 +73,11 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const wasActive = services.books.getActiveBook() === slug;
     try {
       const { active } = await services.books.delete(slug);
+      // Cascade: remove the book's projects too. BookService.delete() only drops
+      // the book dir + active-book pointer; without this the projects (incl. any
+      // still 'active') are orphaned in projects-state.json — the "ghost" that
+      // survives the delete and reloads on the next boot.
+      const removedProjects = gateway.getProjectEngine?.()?.deleteProjectsByBook(slug) ?? 0;
       // #10: only touch the soul when the ACTIVE book actually changed.
       if (wasActive && gateway.soul) {
         if (active) {
@@ -82,7 +87,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
           await gateway.soul.resetToInitial();
         }
       }
-      res.json({ deleted: slug, active });
+      res.json({ deleted: slug, active, removedProjects });
     } catch (err) {
       res.status(500).json({ error: (err as Error)?.message || String(err) });
     }

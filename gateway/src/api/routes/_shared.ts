@@ -127,7 +127,7 @@ export function stepRouting(
 ): { provider: string | undefined; model: string | undefined; temperature: number | undefined } {
   return {
     provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
-    model: step?.modelOverride?.model || undefined,
+    model: step?.modelOverride?.model || project?.preferredModel || undefined,
     temperature: typeof step?.modelOverride?.temperature === 'number'
       ? step.modelOverride.temperature
       : undefined,

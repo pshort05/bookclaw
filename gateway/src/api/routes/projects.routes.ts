@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting } from './_shared.js';
+import { generationMeta } from '../../services/activity-meta.js';
 import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
@@ -829,6 +830,21 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         } catch { /* non-fatal */ }
 
         engine.completeStep(currentProject.id, activeStep.id, response);
+        // Per-step activity record: which skill, book, provider, and model ran
+        // this step. The dashboard auto-execute path previously logged no
+        // step_completed for ordinary steps, so the feed couldn't show what
+        // produced a step (and a silent model fallback was invisible).
+        services.activityLog?.log({
+          type: 'step_completed',
+          source: 'dashboard',
+          goalId: currentProject.id,
+          stepLabel: activeStep.label,
+          message: `Step completed: ${activeStep.label} (~${wordCount.toLocaleString()} words)`,
+          metadata: {
+            ...generationMeta({ provider: stepProvider, model: stepModel, bookSlug: currentProject.bookSlug, skill: (activeStep as any).skill }),
+            wordCount,
+          },
+        });
         // Track words for Morning Briefing
         services.heartbeat.addWords(wordCount);
         results.push({ step: activeStep.label, success: true, wordCount });
