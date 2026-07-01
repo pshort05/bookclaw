@@ -53,6 +53,21 @@ test('normalizeChapter strips the "# Polish/Write Chapter N" step header and lea
   assert.equal(normalizeChapter('## Chapter 2: X\n\nBody.'), '## Chapter 2: X\n\nBody.');
 });
 
+test('normalizeChapter strips all working-draft headers (run-review #9: duplicate + ## level)', () => {
+  // my-fourth form: "# Polish Chapter 1" followed by a redundant "# Chapter 1"
+  // duplicate before the real titled heading.
+  const dup = '# Polish Chapter 1\n\n# Chapter 1\n\n## Chapter 1: One\n\nProse.';
+  assert.equal(normalizeChapter(dup), '## Chapter 1: One\n\nProse.');
+  // a "## Polish Chapter N" (heading-level-2 working header) is also stripped
+  assert.equal(normalizeChapter('## Polish Chapter 7\n\nProse.'), 'Prose.');
+  // a bare "# Chapter N" with no titled heading is a legit heading — keep it
+  assert.equal(normalizeChapter('# Chapter 3\n\nProse.'), '# Chapter 3\n\nProse.');
+  // review #3: a duplicate "# Chapter N" above a TITLED heading is stripped too
+  assert.equal(normalizeChapter('# Chapter 5\n\n## The Reckoning\n\nProse.'), '## The Reckoning\n\nProse.');
+  // review #4: a real titled heading that happens to start "Write Chapter N:" is NOT deleted
+  assert.equal(normalizeChapter('## Write Chapter 5: The Reckoning\n\nProse.'), '## Write Chapter 5: The Reckoning\n\nProse.');
+});
+
 test('assembleManuscript builds one ordered markdown with a title header + chapter count/word count', () => {
   const files = [
     { name: 's-polish-chapter-2.md', content: '# Polish Chapter 2\n\n## Chapter 2: Two\n\nbeta gamma', mtime: 2 },

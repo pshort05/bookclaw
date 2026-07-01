@@ -135,6 +135,96 @@ const TASK_TYPE_MAP: Record<string, string> = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// Book-production prompt builders (run-review fixes 2026-06-30)
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Write-a-chapter prompt. Beyond the word floor and outline/bible anchoring it
+ * enforces strict chronology (#5), beat-variety vs prior chapters (#4), and no
+ * reused epithets/phrases (#7) — the failure modes from the "My Fourth Medical
+ * Romance" run. `description` is appended verbatim when provided.
+ */
+export function writeChapterPrompt(ch: number, title: string, words: number, description?: string): string {
+  return `Write Chapter ${ch} of "${title}".\n\nInstructions:\n` +
+    `- Follow the outline beats and scene breakdowns for this chapter\n` +
+    `- Check the Book Bible / STORY CANON for character consistency (names, ages, physical details)\n` +
+    `- You MUST write at least ${words} words of actual prose narrative\n` +
+    `- Open with a hook — no throat-clearing\n` +
+    `- End with a reason to turn the page\n` +
+    `- Include sensory details and internal tension\n` +
+    `- Write the COMPLETE chapter as actual prose, not a summary\n` +
+    // #5 chronology
+    `- Keep strict chronological order. Do NOT open with a flashback to a scene that has not yet been shown, and make sure any day/time-of-day label matches the scene's actual time\n` +
+    // #4 beat variety
+    `- Do NOT reuse a scene structure already used in an earlier chapter (e.g. the same kind of dramatic event recurring in the same way). Vary the setting and escalate the stakes instead of repeating a beat\n` +
+    // #7 no reused epithet/phrase
+    `- Avoid reusing a distinctive epithet, nickname, or signature phrase for a person or place across chapters; vary how you refer to recurring people and things` +
+    (description ? `\n\n${description}` : '');
+}
+
+/**
+ * Polish-a-chapter prompt — redefined (#6) as a line edit + continuity
+ * normalization pass, NOT a free re-draft: it preserves structure/scenes/length
+ * while fixing prose, normalizing the narrative person to the established POV
+ * (#1), and reconciling names/ages against the STORY CANON (#2).
+ */
+export function polishChapterPrompt(ch: number | string, title: string, words: number): string {
+  return `You just wrote Chapter ${ch} of "${title}" (in your context above).\n\n` +
+    `Produce a REVISED version of THE ENTIRE chapter. This is a LINE EDIT, not a rewrite: ` +
+    `preserve the chapter's scenes, structure, plot beats, and length — change the prose, not the story. Apply:\n` +
+    `- Tighten pacing; cut throat-clearing\n` +
+    `- Strengthen weak verbs; remove unnecessary -ly adverbs\n` +
+    `- Replace filter words (saw, heard, felt, noticed, realized) with direct sensory experience\n` +
+    `- Cut repetition and redundancy, including any epithet/phrase reused from earlier chapters\n` +
+    `- Sharpen dialogue; remove "as you know Bob" exposition\n` +
+    // #1 normalize narrative person (graceful when no POV is pinned — review #9)
+    `- Keep the narrative person and POV consistent: match the Narrative POV in the STORY CANON above if one is given, otherwise keep the single narrative person already used in the draft. Convert any passage in the wrong person (e.g. first-person where the chapter is third-person) to match\n` +
+    // #2 reconcile names against canon
+    `- Reconcile every character/place name and age against the STORY CANON: fix any name or age that does not match, and do not introduce a new name for an entity that already has one\n` +
+    `- Ensure word count is at least ${words}\n\n` +
+    `CRITICAL OUTPUT RULES:\n` +
+    `1. Output the COMPLETE polished chapter as prose. No commentary. No "here's the revised version:" preamble.\n` +
+    `2. Do NOT output a list of changes or a critique.\n` +
+    `3. Do NOT shorten the chapter. The polished version should be the same length or longer.\n` +
+    `4. Start directly with the chapter content (or "# Chapter ${ch}: ..." heading).`;
+}
+
+/**
+ * Summarize prior pipeline-phase outputs for injection into a later phase
+ * (run-review #3). Each phase is a separate project; without this the bible phase
+ * never saw the planning phase's character profiles and re-invented the
+ * protagonist. Head+tail capped so the prompt stays bounded; returns '' when
+ * there's nothing to carry forward.
+ */
+export function formatPriorPhaseContext(
+  priorPhases: Array<{ label: string; steps: Array<{ label: string; result?: string }> }>,
+): string {
+  const CAP = 4000;        // per-step head+tail cap
+  const TOTAL_CAP = 24000; // hard ceiling across all prior-phase content (prompt budget)
+  let used = 0;
+  const phaseBlocks: string[] = [];
+  for (const phase of priorPhases || []) {
+    const stepBlocks: string[] = [];
+    for (const s of phase.steps || []) {
+      if (used >= TOTAL_CAP) break;
+      const r = String(s.result ?? '').trim();
+      if (!r) continue;
+      let body = r.length > CAP ? `${r.slice(0, CAP / 2)}\n…[truncated]\n${r.slice(-CAP / 2)}` : r;
+      if (used + body.length > TOTAL_CAP) body = body.slice(0, TOTAL_CAP - used) + '\n…[truncated]';
+      used += body.length;
+      stepBlocks.push(`#### ${s.label}\n${body}`);
+    }
+    if (stepBlocks.length) phaseBlocks.push(`### ${phase.label}\n${stepBlocks.join('\n\n')}`);
+  }
+  if (!phaseBlocks.length) return '';
+  return '## PRIOR PHASE OUTPUTS — build on these; do NOT replace or re-invent them\n' +
+    'These are the finished outputs of earlier phases for this same book. Reuse the established ' +
+    'character names, ages, backstories, setting, and outline exactly. Expand and add detail, but do ' +
+    'NOT rename characters, change the protagonist\'s identity/family, or contradict facts already set here.\n\n' +
+    phaseBlocks.join('\n\n');
+}
+
+// ═══════════════════════════════════════════════════════════
 // Project Engine
 // ═══════════════════════════════════════════════════════════
 
@@ -251,21 +341,7 @@ export class ProjectEngine {
                 step.label = `Polish Chapter ${ch}`;
                 step.phase = 'polish';
                 step.wordCountTarget = wpc;
-                step.prompt =
-                  `You just wrote Chapter ${ch} of "${p.title}" (in your context above).\n\n` +
-                  `Produce a REVISED, POLISHED version of THE ENTIRE chapter. Apply these fixes as you rewrite:\n` +
-                  `- Tighten pacing; cut throat-clearing\n` +
-                  `- Strengthen weak verbs; remove unnecessary -ly adverbs\n` +
-                  `- Replace filter words (saw, heard, felt, noticed, realized) with direct sensory experience\n` +
-                  `- Cut repetition and redundancy\n` +
-                  `- Sharpen dialogue; remove "as you know Bob" exposition\n` +
-                  `- Maintain the chapter's plot beats and emotional arc — don't change the story, just the prose quality\n` +
-                  `- Ensure word count is at least ${wpc}\n\n` +
-                  `CRITICAL OUTPUT RULES:\n` +
-                  `1. Output the COMPLETE polished chapter as prose. No commentary. No "here's the revised version:" preamble.\n` +
-                  `2. Do NOT output a list of changes or a critique.\n` +
-                  `3. Do NOT shorten the chapter. The polished version should be the same length or longer.\n` +
-                  `4. Start directly with the chapter content (or "# Chapter ${ch}: ..." heading).`;
+                step.prompt = polishChapterPrompt(ch, p.title, wpc);
                 migrated++;
               }
             }
@@ -413,7 +489,7 @@ export class ProjectEngine {
     // ── Phase: Writing (N steps, one per chapter) ──
     for (let ch = 1; ch <= chapters; ch++) {
       addStep(`Write Chapter ${ch}`, 'writing', 'creative_writing',
-        `Write Chapter ${ch} of "${title}".\n\nInstructions:\n- Follow the outline beats and scene breakdowns for this chapter\n- Check the Book Bible for character consistency\n- You MUST write at least ${wordsPerChapter} words of actual prose narrative\n- Open with a hook — no throat-clearing\n- End with a reason to turn the page\n- Include sensory details and internal tension\n- Write the COMPLETE chapter as actual prose, not a summary\n- Do NOT write fewer than ${wordsPerChapter} words. If running short, add more scenes, dialogue, internal monologue, sensory detail.`,
+        writeChapterPrompt(ch, title, wordsPerChapter),
         { skill: 'write', wordCountTarget: wordsPerChapter, chapterNumber: ch }
       );
     }
@@ -1385,6 +1461,32 @@ Description: ${description}`;
       }
     }
 
+    // Cross-phase handoff (run-review #3): each book phase is a SEPARATE project,
+    // so without this the BIBLE phase never saw the planning phase's character
+    // profiles and re-invented the protagonist. Inject the prior (planning) phase
+    // ONLY into the bible phase. Later phases (production/revision/format/launch)
+    // already receive the deduplicated STORY CANON block (bible/registry/outline)
+    // from the driver, so they don't need — and shouldn't double up on — this raw
+    // handoff (review #7); scoping to the bible consumer also avoids injecting a
+    // planning-vs-bible name contradiction, since the bible doesn't exist yet here
+    // (review #8).
+    if (project.type === 'book-bible' && project.pipelineId && project.pipelinePhase) {
+      const priorProjects = this.getPipelineProjects(project.pipelineId)
+        .filter(p => (p.pipelinePhase || 0) < (project.pipelinePhase || 0) &&
+                     p.status === 'completed' && p.type === 'book-planning')
+        .sort((a, b) => (a.pipelinePhase || 0) - (b.pipelinePhase || 0));
+      // Restore any state-file-truncated step results before reading them.
+      for (const p of priorProjects) await this.rehydrateTruncatedResults(p);
+      const priors = priorProjects
+        .map(p => ({
+          label: p.title,
+          steps: p.steps.filter(s => s.status === 'completed' && s.result)
+            .map(s => ({ label: s.label, result: s.result })),
+        }));
+      const priorBlock = formatPriorPhaseContext(priors);
+      if (priorBlock) context += `${priorBlock}\n\n`;
+    }
+
     // Include uploaded manuscript content (from Upload button)
     if (project.context?.uploadedContent) {
       const uploads = project.context.uploads || [];
@@ -1801,7 +1903,7 @@ Description: ${description}`;
         phase: 'writing',
         skill: 'write',
         taskType: 'creative_writing',
-        prompt: `Write Chapter ${ch} of "${title}".\n\nInstructions:\n- Follow the outline beats and book bible for this chapter\n- You MUST write at least ${wordsPerChapter} words of actual prose narrative\n- Open with a hook — no throat-clearing\n- End with a reason to turn the page\n- Include sensory details and internal tension\n- Write the COMPLETE chapter as actual prose, not a summary\n\n${description}`,
+        prompt: writeChapterPrompt(ch, title, wordsPerChapter, description),
         status: 'pending',
         wordCountTarget: wordsPerChapter,
         chapterNumber: ch,
@@ -1819,7 +1921,7 @@ Description: ${description}`;
         phase: 'polish',
         skill: 'revise',
         taskType: 'revision',
-        prompt: `You just wrote Chapter ${ch} of "${title}" (in your context above).\n\nProduce a REVISED, POLISHED version of THE ENTIRE chapter. Apply these fixes as you rewrite:\n- Tighten pacing; cut throat-clearing\n- Strengthen weak verbs; remove unnecessary -ly adverbs\n- Replace filter words (saw, heard, felt, noticed, realized) with direct sensory experience\n- Cut repetition and redundancy\n- Sharpen dialogue; remove "as you know Bob" exposition\n- Maintain the chapter's plot beats and emotional arc — don't change the story, just the prose quality\n- Ensure word count is at least ${wordsPerChapter}\n\nCRITICAL OUTPUT RULES:\n1. Output the COMPLETE polished chapter as prose. No commentary. No "here's the revised version:" preamble.\n2. Do NOT output a list of changes or a critique.\n3. Do NOT shorten the chapter. The polished version should be the same length or longer.\n4. Start directly with the chapter content (or "# Chapter ${ch}: ..." heading).`,
+        prompt: polishChapterPrompt(ch, title, wordsPerChapter),
         status: 'pending',
         wordCountTarget: wordsPerChapter,
         chapterNumber: ch,

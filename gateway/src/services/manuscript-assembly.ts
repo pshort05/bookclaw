@@ -43,14 +43,36 @@ export function pickLatestChapters(files: ChapterFile[]): ChapterFile[] {
   return [...best.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v.file);
 }
 
-/** Strip the "# Polish/Write Chapter N" step header (and any leading rule) a
- * chapter file carries above its real "## Chapter N" heading. */
+/** Strip the working-draft headers a chapter file carries above its real
+ * "## Chapter N" heading: "# Polish/Write Chapter N" step labels (any heading
+ * level, possibly repeated) and a redundant duplicate "# Chapter N" that sits
+ * directly above the titled heading. A lone "# Chapter N" that IS the heading is
+ * kept. (run-review #9, 2026-06-30.) */
 export function normalizeChapter(content: string): string {
   let text = String(content ?? '').replace(/^﻿/, '');
-  // Drop a leading "# Polish Chapter N" / "# Write Chapter N" line.
-  text = text.replace(/^\s*#\s+(?:Polish|Write)\s+Chapter\s+\d+\s*\n/i, '');
-  // Drop leading blank lines / horizontal rules left behind.
-  text = text.replace(/^(?:\s*(?:---|\*\*\*)\s*\n)+/, '');
+  const stripLeading = () => {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      // "# Polish Chapter N" / "## Write Chapter N" working header (any level).
+      // Bare only (review #4): require the line to END after the number, so a
+      // real titled heading like "# Write Chapter 5: The Reckoning" is NOT eaten.
+      const a = text.replace(/^\s*#{1,3}\s+(?:Polish|Write)\s+Chapter\s+\d+[ \t]*(?:\n|$)/i, '');
+      if (a !== text) { text = a; changed = true; }
+      // Leading blank lines / horizontal rules left behind.
+      const b = text.replace(/^(?:\s*(?:---|\*\*\*)\s*\n)+/, '').replace(/^\s*\n+/, '');
+      if (b !== text) { text = b; changed = true; }
+    }
+  };
+  stripLeading();
+  // A redundant "# Chapter N" immediately above ANY other heading (titled or
+  // numbered — review #3) is a duplicate working header — drop it. A "# Chapter N"
+  // followed by prose is the real heading and is kept.
+  text = text.replace(
+    /^\s*#{1,2}\s+Chapter\s+\d+\s*\n+(?=\s*#{1,3}\s+\S)/i,
+    '',
+  );
+  stripLeading();
   return text.trim();
 }
 
