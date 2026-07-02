@@ -120,7 +120,15 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
       const next = r.phases.find((p) => p.id !== fromId && p.status !== 'completed' && p.status !== 'failed');
       if (!next) return; // sequence finished
       const pr = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(next.id)}`).catch(() => null);
-      if (!cancelled && pr?.project) onProjectChange(pr.project);
+      if (cancelled || !pr?.project) return;
+      onProjectChange(pr.project);
+      // advancePipeline only MARKS the next phase active — it runs no AI, and with
+      // autonomous mode off nothing else drives it, so the pipeline stalled at each
+      // phase boundary (Planning→Bible→…) with the next project orphaned in 'active'.
+      // Kick /auto-execute on the followed phase to run it, mirroring the one-time
+      // autostart kick above. Fire-and-forget; the poll effect tracks progress and
+      // the server's per-project in-flight guard makes a duplicate kick a harmless 409.
+      void api(`/api/projects/${encodeURIComponent(next.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

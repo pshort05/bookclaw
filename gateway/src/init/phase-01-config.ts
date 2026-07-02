@@ -12,7 +12,12 @@ export { WORKSPACE_SCHEMA_VERSION };
 
 /** Phase 1: Configuration + workspace schema marker. */
 export async function initConfig(gw: BookClawGateway): Promise<void> {
-  gw.config = new ConfigService(join(ROOT_DIR, 'config'));
+  // Runtime overrides persist under the workspace bind-mount (survives image
+  // rebuilds); config/user.json stays a read-only baked seed. See config.ts.
+  gw.config = new ConfigService(
+    join(ROOT_DIR, 'config'),
+    join(ROOT_DIR, 'workspace', '.config', 'config-overrides.json'),
+  );
   await gw.config.load();
   console.log('  ✓ Configuration loaded');
 

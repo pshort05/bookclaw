@@ -2,17 +2,23 @@
  * BookClaw Configuration Service
  */
 
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 
 export class ConfigService {
   private configDir: string;
+  // Where runtime overrides are read from and written to. Defaults to the baked
+  // config/user.json (back-compat), but production points this at a file on the
+  // persistent workspace bind-mount so setAndPersist survives image rebuilds — the
+  // baked config/user.json is reset on every recreate (was reverting settings).
+  private overridesPath: string;
   private config: Record<string, any> = {};
   private userOverrides: Record<string, any> = {};
 
-  constructor(configDir: string) {
+  constructor(configDir: string, overridesPath?: string) {
     this.configDir = configDir;
+    this.overridesPath = overridesPath ?? join(configDir, 'user.json');
   }
 
   async load(): Promise<void> {
@@ -22,12 +28,23 @@ export class ConfigService {
       this.config = JSON.parse(raw);
     }
 
-    // Merge user overrides
-    const userPath = join(this.configDir, 'user.json');
-    if (existsSync(userPath)) {
-      const raw = await readFile(userPath, 'utf-8');
-      this.userOverrides = JSON.parse(raw);
+    // Baked user.json is a read-only seed layer (image-baked defaults). Merge it,
+    // but it is never written back to — runtime writes go to overridesPath.
+    const bakedPath = join(this.configDir, 'user.json');
+    let baked: Record<string, any> = {};
+    if (existsSync(bakedPath)) {
+      baked = JSON.parse(await readFile(bakedPath, 'utf-8'));
+      this.config = this.deepMerge(this.config, baked);
+    }
+
+    // Persistent runtime overrides win over the baked seed. If the overrides file
+    // doesn't exist yet, seed the in-memory set from the baked layer so the first
+    // setAndPersist writes a superset (no baked settings are lost on migration).
+    if (existsSync(this.overridesPath) && this.overridesPath !== bakedPath) {
+      this.userOverrides = JSON.parse(await readFile(this.overridesPath, 'utf-8'));
       this.config = this.deepMerge(this.config, this.userOverrides);
+    } else {
+      this.userOverrides = structuredClone(baked);
     }
 
     // Environment variable overrides
@@ -80,9 +97,9 @@ export class ConfigService {
     }
     current[parts[parts.length - 1]] = value;
 
-    // Write to disk
-    const userPath = join(this.configDir, 'user.json');
-    await writeFile(userPath, JSON.stringify(this.userOverrides, null, 2), 'utf-8');
+    // Write to the persistent overrides path (workspace-backed in production).
+    await mkdir(dirname(this.overridesPath), { recursive: true });
+    await writeFile(this.overridesPath, JSON.stringify(this.userOverrides, null, 2), 'utf-8');
   }
 
   private deepMerge(target: any, source: any): any {
