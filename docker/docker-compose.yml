@@ -52,6 +52,11 @@ services:
       # workspace/memory). Set to an in-container path (e.g. /app/db) and pair
       # with the /app/db bind-mount above to keep the live DB on a non-synced disk.
       - BOOKCLAW_DB_DIR=${BOOKCLAW_DB_DIR:-}
+      # Headless server-side pipeline driver (run-review B1). Set to 1 so a chained
+      # novel run advances across phase boundaries with NO browser open. Opt-in
+      # because it drives generation (spends) with no human present; unset = the
+      # cost-safe default (a browser or the autonomous heartbeat drives phases).
+      - BOOKCLAW_HEADLESS_PIPELINE=${BOOKCLAW_HEADLESS_PIPELINE:-}
     # Security: Resource limits
     deploy:
       resources:

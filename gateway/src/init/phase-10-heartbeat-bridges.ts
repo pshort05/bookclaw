@@ -273,6 +273,34 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
       console.error('[human-review] resolver sweep error:', err);
     }
   }, 60_000).unref();
+
+  // B1 (run-review 2026-07-01): headless server-side phase driver. In the default
+  // posture the ONLY thing that drives a phase-project's generation is a browser
+  // (studio PipelineRail fires /auto-execute) or the autonomous heartbeat. With
+  // neither, `advancePipeline` (the phase-06 completion hook) marks the next
+  // phase-project `active` but nothing runs it, so a chained multi-phase novel run
+  // orphans at every phase boundary when no tab is open (confirmed root cause of
+  // the 663 stall). Opt-in via BOOKCLAW_HEADLESS_PIPELINE=1: when a phase-project
+  // completes, drive the freshly-advanced next phase to its next gate / error /
+  // end, server-side. Gated behind the flag so the cost-safe default (no AI spend
+  // without a human present) is preserved, and skipped when the autonomous
+  // heartbeat is already driving (it would otherwise double-drive + race).
+  // Assumes headless use (no concurrent browser driver on the same pipeline).
+  if (process.env.BOOKCLAW_HEADLESS_PIPELINE === '1') {
+    gw.projectEngine.onProjectCompleted(async (project: any) => {
+      if (!project?.pipelineId) return;
+      const auto = gw.heartbeat?.getAutonomousStatus?.();
+      if (auto?.enabled && !auto?.paused) return; // heartbeat already drives it
+      // advancePipeline runs synchronously in the earlier-registered phase-06
+      // completion hook, so the next phase is already `active` by the time this
+      // fires. driveProject then drives it (and its completion chains onward).
+      const next = gw.projectEngine.getPipelineProjects(project.pipelineId)
+        .find((p: any) => p.status === 'active' && p.id !== project.id);
+      if (next) await driveProject(next.id);
+    });
+    console.log('  ✓ Headless pipeline driver: ON (BOOKCLAW_HEADLESS_PIPELINE=1) — phases advance server-side with no browser open');
+  }
+
   const autonomousLabel = gw.config.get('heartbeat.autonomousEnabled')
     ? ` + autonomous every ${gw.config.get('heartbeat.autonomousIntervalMinutes', 30)}min`
     : '';

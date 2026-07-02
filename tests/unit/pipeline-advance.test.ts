@@ -104,3 +104,28 @@ test('an onProjectCompleted hook calling advancePipeline auto-starts the next ph
   assert.equal(eng.getProject(projects[1].id)!.status, 'active', 'phase 2 auto-started by the hook');
   assert.equal(eng.getProject(projects[2].id)!.status, 'pending', 'phase 3 untouched');
 });
+
+// B1 (run-review 2026-07-01): the headless server-side phase driver. advancePipeline
+// alone only marks the next phase `active` (no driver) — so with no browser and the
+// heartbeat off, a chained run orphans at every boundary (the 663 stall). The phase-10
+// headless-driver hook (BOOKCLAW_HEADLESS_PIPELINE=1) finds that freshly-advanced
+// active phase and drives it to completion (production calls driveProject; here a
+// completeProject stand-in), which cascades through the whole sequence hands-off.
+test('B1: phase-06 advance + phase-10 headless-driver hooks cascade a chained pipeline to completion', () => {
+  const eng = engine();
+  // phase-06 hook (registered first): mark the next phase active, no AI.
+  eng.onProjectCompleted((p) => { if (p.pipelineId) eng.advancePipeline(p.pipelineId); });
+  // phase-10 headless-driver hook (registered after): drive the freshly-advanced
+  // active next phase to completion — the same selection the production hook uses.
+  eng.onProjectCompleted((p) => {
+    if (!p.pipelineId) return;
+    const next = eng.getPipelineProjects(p.pipelineId).find((q) => q.status === 'active' && q.id !== p.id);
+    if (next) completeProject(eng, next.id);
+  });
+  const { projects } = makeSequence(eng);
+
+  completeProject(eng, projects[0].id); // completing phase 1 kicks the cascade
+  assert.equal(eng.getProject(projects[0].id)!.status, 'completed');
+  assert.equal(eng.getProject(projects[1].id)!.status, 'completed', 'phase 2 driven headless');
+  assert.equal(eng.getProject(projects[2].id)!.status, 'completed', 'phase 3 driven headless');
+});

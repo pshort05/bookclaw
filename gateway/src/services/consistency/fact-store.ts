@@ -50,6 +50,17 @@ export class ConsistencyStore {
       if (!factCols.some((c: any) => c.name === 'story_elapsed')) {
         this.db.exec(`ALTER TABLE facts ADD COLUMN story_elapsed INTEGER NOT NULL DEFAULT 0`);
       }
+      // Additive migration for DBs created before `canonical` existed. Without this,
+      // a pre-`canonical` DB (the `CREATE TABLE IF NOT EXISTS` is a no-op against the
+      // old schema) makes every priorFacts/knowledge query fail with `no such column:
+      // canonical`, which silently disables the whole consistency audit.
+      if (!factCols.some((c: any) => c.name === 'canonical')) {
+        this.db.exec(`ALTER TABLE facts ADD COLUMN canonical INTEGER NOT NULL DEFAULT 1`);
+      }
+      const knowledgeCols = this.db.prepare(`PRAGMA table_info(knowledge)`).all();
+      if (!knowledgeCols.some((c: any) => c.name === 'canonical')) {
+        this.db.exec(`ALTER TABLE knowledge ADD COLUMN canonical INTEGER NOT NULL DEFAULT 1`);
+      }
     } catch (err: any) {
       this.unavailableReason = `better-sqlite3 unavailable: ${err?.message || err}. Consistency auditor disabled.`;
       console.warn(`  ⚠ ${this.unavailableReason}`);

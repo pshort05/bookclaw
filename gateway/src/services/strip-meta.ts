@@ -7,10 +7,14 @@
  * SAFE-FIRST: this runs on EVERY step output including chapter prose, so it must
  * never drop real content. It therefore (a) only strips a *leading* line that is
  * an unambiguous acknowledgement interjection or a colon-terminated "Here is/are"
- * lead-in, and (b) only removes *trailing* paragraphs — examined from the very
+ * lead-in, (b) only removes *trailing* paragraphs — examined from the very
  * end, stopping at the first real paragraph — whose first line is an unambiguous
  * chatbot phrase anchored to line start (so dialogue like `"Shall we proceed?"`
- * and mid-prose uses are never touched). Mid-document text is always preserved.
+ * and mid-prose uses are never touched), and (c) drops standalone production-meta
+ * lines like `**Final Word Count:** 800,000 words` that the compile/assemble step
+ * leaks into the manuscript (run-review 2026-07-01 B4) — matched only in the
+ * `**Word Count …:**` label form, which never occurs in real prose. Mid-document
+ * story text is always preserved.
  */
 
 // Leading acknowledgement interjection (these words never open real prose; a
@@ -26,8 +30,17 @@ const LEADING_STEP_HEADER = /^\s*#\s+(?:polish|write)\s+chapter\s+\d+\s*$/i;
 const TRAILING_META =
   /^\s*(?:#+\s*)?(?:\*+\s*)?(?:would you like (?:to proceed|me to)|shall we (?:proceed|move on|continue)\??$|let me know (?:which|if|what|when|whether)\b|let'?s keep (?:this|the|our) momentum|whenever you'?re ready[, ]|###?\s*saving (?:to|the)\b|i'?m ready to save|ready to be saved|i (?:have|'ve) (?:now )?saved\b)/i;
 
+// A standalone production-meta line: a bolded word-count label the compile/assemble
+// step leaks (e.g. `**Target Word Count per Chapter:** ~2500 words`, `**Final Word
+// Count:** 800,000 words`). Anchored to the `**… Word Count …:**` label form —
+// real prose never opens a line with a bolded word-count label ending in a colon.
+const PRODUCTION_META_LINE =
+  /^\s*\*{1,2}\s*(?:target|final|total|estimated)\s+word\s+count(?:\s+per\s+chapter)?\s*:?\s*\*{0,2}\s*:?/i;
+
 export function stripMetaCommentary(input: string): string {
-  const lines = String(input ?? '').replace(/\r\n/g, '\n').split('\n');
+  const lines = String(input ?? '').replace(/\r\n/g, '\n').split('\n')
+    // ── drop standalone production-meta lines anywhere (run-review B4) ──
+    .filter((line) => !PRODUCTION_META_LINE.test(line));
 
   // ── leading: drop a step header / clear preamble line (single line) ──
   let s = 0;

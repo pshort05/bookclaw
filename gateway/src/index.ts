@@ -99,7 +99,7 @@ import type { BackupService } from './services/backup.js';
 import type { ReportsService } from './services/reports.js';
 import { ConsistencyStore } from './services/consistency/fact-store.js';
 import { extractChapterFacts } from './services/consistency/extractor.js';
-import { resolveConsistencyModel, CONSISTENCY_PROVIDERS } from './services/consistency/model-selection.js';
+import { resolveConsistencyModel, CONSISTENCY_PROVIDERS, extractionProviderError } from './services/consistency/model-selection.js';
 import { runConsistencyAudit, type AuditReport } from './services/consistency/audit.js';
 import { ConsistencyJobRegistry } from './services/consistency/job-registry.js';
 import { TelegramBridge } from './bridges/telegram.js';
@@ -2426,7 +2426,18 @@ class BookClawGateway {
             ).length + 1;
 
             const aiCompleteFn = (req: any) => gateway.aiRouter.complete(req);
-            const aiSelectFn = (taskType: string) => gateway.aiRouter.selectProvider(taskType);
+            // Run-review B6: never let context/summary extraction silently fall
+            // back to Ollama — a local model truncates a whole chapter → failed
+            // extraction that corrupts continuity tracking. Refuse the fallback
+            // ONLY when a large-context provider is configured (so an Ollama-only
+            // deployment is unaffected); the fire-and-forget .catch below then logs
+            // + skips, exactly like the guarded consistency-audit path.
+            const aiSelectFn = (taskType: string) => {
+              const p = gateway.aiRouter.selectProvider(taskType);
+              const err = extractionProviderError(p.id, gateway.aiRouter.getActiveProviders().map(x => x.id));
+              if (err) throw new Error(err);
+              return p;
+            };
 
             // Fire and forget — don't block step completion
             gateway.contextEngine.generateSummary(

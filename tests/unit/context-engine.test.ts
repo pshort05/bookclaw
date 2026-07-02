@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { ContextEngine, type ProjectContext } from '../../gateway/src/services/context-engine.js';
+import { ContextEngine, coerceAttributes, type ProjectContext } from '../../gateway/src/services/context-engine.js';
 
 /** Subclass exposing the protected JSON-recovery helpers for direct testing. */
 class TestableContextEngine extends ContextEngine {
@@ -230,4 +230,25 @@ test('getRelevantContext: a low budget drops the optional entity block entirely'
   // the whole 200-char character block → addPart() rejects it (all-or-nothing).
   const out = e.getRelevantContext('p', 'c2', 'Marlow appears', 90);
   assert.doesNotMatch(out, /Key Characters in Scene/, 'oversized entity block is dropped, not truncated');
+});
+
+// Run-review B3: coerceAttributes folds off-shape AI `attributes` into a flat map.
+test('coerceAttributes: passes a flat map through, stringifying non-string values', () => {
+  assert.deepEqual(coerceAttributes({ mood: 'anxious', age: 34 }), { mood: 'anxious', age: '34' });
+});
+
+test('coerceAttributes: folds an array of {key,value} objects (the deepseek-v4-pro shape)', () => {
+  const raw = [{ key: 'engaged', value: 'yes' }, { key: 'location', value: 'hospital' }];
+  assert.deepEqual(coerceAttributes(raw), { engaged: 'yes', location: 'hospital' });
+});
+
+test('coerceAttributes: folds {name,value} objects and single-key {name:value} objects', () => {
+  assert.deepEqual(coerceAttributes([{ name: 'rank', value: 'captain' }]), { rank: 'captain' });
+  assert.deepEqual(coerceAttributes([{ hairColor: 'red' }, { eyeColor: 'green' }]), { hairColor: 'red', eyeColor: 'green' });
+});
+
+test('coerceAttributes: unusable input degrades to an empty map, never throws', () => {
+  assert.deepEqual(coerceAttributes(null), {});
+  assert.deepEqual(coerceAttributes('nope'), {});
+  assert.deepEqual(coerceAttributes(undefined), {});
 });

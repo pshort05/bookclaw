@@ -4,6 +4,8 @@ import {
   resolveConsistencyModel,
   validateConsistencyModelSelection,
   consistencyCapabilityError,
+  isLargeContextProvider,
+  extractionProviderError,
   CONSISTENCY_PROVIDERS,
   KNOWN_PROVIDERS,
 } from '../../gateway/src/services/consistency/model-selection.js';
@@ -56,4 +58,27 @@ test('consistencyCapabilityError gates on a configured capable provider', () => 
   assert.match(consistencyCapabilityError({ provider: 'claude' }, ['gemini']) ?? '', /not configured/);
   // explicit provider configured → ok
   assert.equal(consistencyCapabilityError({ provider: 'gemini' }, ['gemini']), null);
+});
+
+// ── Run-review B6: guard context/summary extraction against an Ollama fallback ──
+
+test('isLargeContextProvider: capable providers true, ollama/unknown/empty false', () => {
+  for (const p of CONSISTENCY_PROVIDERS) assert.equal(isLargeContextProvider(p), true);
+  assert.equal(isLargeContextProvider('ollama'), false);
+  assert.equal(isLargeContextProvider('bogus'), false);
+  assert.equal(isLargeContextProvider(undefined), false);
+});
+
+test('extractionProviderError: a capable selected provider is always allowed', () => {
+  assert.equal(extractionProviderError('deepseek', ['deepseek', 'ollama']), null);
+});
+
+test('extractionProviderError: ollama REFUSED when a capable provider is also available (transient fallback)', () => {
+  const err = extractionProviderError('ollama', ['ollama', 'gemini']);
+  assert.ok(err && /fell back to "ollama"/.test(err), 'refuses the degraded fallback');
+});
+
+test('extractionProviderError: ollama ALLOWED when it is the only provider (no regression for Ollama-only)', () => {
+  assert.equal(extractionProviderError('ollama', ['ollama']), null);
+  assert.equal(extractionProviderError('ollama', []), null);
 });

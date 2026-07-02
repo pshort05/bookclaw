@@ -55,3 +55,23 @@ test('empty / whitespace input is safe', () => {
   assert.equal(stripMetaCommentary(''), '');
   assert.equal(stripMetaCommentary('   \n\n  '), '');
 });
+
+test('run-review B4: drops leaked production word-count meta lines, keeps prose', () => {
+  const input = [
+    '# Compile Manuscript', '',
+    '**Target Word Count per Chapter:** ~2500 words',
+    '**Final Word Count:** 800,000 words', '',
+    '# Chapter 1', '',
+    'She checked the final word count on the ledger and sighed.',
+  ].join('\n');
+  const out = stripMetaCommentary(input);
+  assert.doesNotMatch(out, /Target Word Count/, 'target-per-chapter meta line removed');
+  assert.doesNotMatch(out, /\*\*Final Word Count/, 'bold final-count meta line removed');
+  assert.match(out, /# Chapter 1/, 'real heading preserved');
+  assert.match(out, /final word count on the ledger/, 'mid-prose mention of "word count" preserved');
+});
+
+test('run-review B4: an unbolded prose line mentioning word count is never dropped', () => {
+  const prose = 'Total word count was the last thing on her mind as she ran.';
+  assert.equal(stripMetaCommentary(prose), prose);
+});

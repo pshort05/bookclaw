@@ -42,7 +42,7 @@
     },
     {
       "label": "Book cover concepts",
-      "skill": "book-launch",
+      "skill": "cover-designer",
       "taskType": "marketing",
       "promptTemplate": "Generate 2 book cover concept ideas for: {{description}}\n\nFor each concept provide:\n1. **Visual description** — Detailed scene, composition, imagery, key visual elements\n2. **Typography recommendation** — Font style suggestions, title placement (top/center/bottom), author name placement\n3. **Color palette** — 3-5 hex color codes with mood/emotion reasoning\n4. **Comparable covers** — 2-3 bestselling covers in this genre with a similar style\n5. **AI image generation prompt** — A detailed, ready-to-use prompt for generating the cover art with AI (describe the image only, no text)\n\nMark the recommended concept clearly. Focus on genre-appropriate design that would stand out in Amazon thumbnail size."
     }

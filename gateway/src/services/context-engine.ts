@@ -93,7 +93,7 @@ For each entity, provide:
 - type: "character", "location", "item", "event", or "rule" (world-building rules)
 - aliases: other names/titles used (max 3, only if distinct)
 - description: ONE SENTENCE based on what this chapter reveals. NOT a full bio.
-- attributes: AT MOST 3 key-value pairs of NEW specifics revealed in this chapter only
+- attributes: a FLAT JSON object of AT MOST 3 name->value specifics revealed in this chapter only, e.g. {"mood":"anxious","location":"hospital"}. Do NOT use {"key":...,"value":...} objects or an array — just {"attributeName":"value",...}.
 
 CRITICAL OUTPUT CONSTRAINTS:
 - Description MUST be one sentence under 25 words
@@ -103,7 +103,7 @@ CRITICAL OUTPUT CONSTRAINTS:
 - Close every brace and bracket. Truncated JSON is unusable.
 
 Return ONLY this JSON shape:
-{"entities":[{"name":"...","type":"character","aliases":[],"description":"...","attributes":{"key":"value"}}]}`;
+{"entities":[{"name":"...","type":"character","aliases":[],"description":"...","attributes":{"mood":"anxious","location":"hospital"}}]}`;
 
 const CONTINUITY_CHARACTER_PROMPT = `You are a continuity editor. Review these character profiles tracked across multiple chapters of a novel. Identify any inconsistencies, contradictions, or errors.
 
@@ -149,6 +149,34 @@ Return ONLY valid JSON:
 { "issues": [ { "category": "...", "severity": "...", "description": "...", "chapters": [], "evidence": [], "suggestion": "..." } ] }
 
 If no issues are found, return: { "issues": [] }`;
+
+/**
+ * Coerce an entity's `attributes` (from AI JSON) into a flat Record<string,string>.
+ * The prompt asks for a flat {name:value} map, but some models emit an array of
+ * {key,value} objects (or {name,value}, or single-key {name:value} objects). This
+ * folds any of those into the flat map the rest of the engine expects, so an
+ * off-shape response degrades one entity's attributes rather than being dropped by
+ * a later Object.entries. Non-string values are stringified; unusable input → {}.
+ */
+export function coerceAttributes(raw: any): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  const put = (k: any, v: any) => {
+    if (k == null || v == null || typeof k === 'object') return;
+    out[String(k)] = typeof v === 'string' ? v : JSON.stringify(v);
+  };
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (!item || typeof item !== 'object') continue;
+      if ('key' in item && 'value' in item) put(item.key, item.value);
+      else if ('name' in item && 'value' in item) put(item.name, item.value);
+      else for (const [k, v] of Object.entries(item)) put(k, v); // single-key {name:value}
+    }
+  } else {
+    for (const [k, v] of Object.entries(raw)) put(k, v);
+  }
+  return out;
+}
 
 // ═══════════════════════════════════════════════════════════
 // Context Engine
@@ -517,6 +545,12 @@ export class ContextEngine {
       // (or returns name:null) — dereferencing it would throw and discard the
       // entire batch.
       if (!ne?.name || typeof ne.name !== 'string') continue;
+      // Run-review B3: some models (deepseek-v4-pro) return `attributes` as an
+      // array of {key,value} objects instead of the flat map the prompt asks for
+      // (the unbracketed form is a hard parse error caught upstream; the bracketed
+      // array parses but breaks Object.entries). Coerce any accepted shape to a
+      // flat Record<string,string> so entity/attribute tracking stays intact.
+      ne.attributes = coerceAttributes(ne.attributes);
       const normalizedName = ne.name.toLowerCase().trim();
       const existing = ctx.entities.find(
         e =>

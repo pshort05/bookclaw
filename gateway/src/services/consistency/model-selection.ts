@@ -14,6 +14,32 @@ export const CONSISTENCY_PROVIDERS = ['gemini','deepseek','claude','openai','ope
 
 export interface ModelSel { provider?: string; model?: string }
 
+/** True when a provider has the context window to take a whole chapter in one
+ *  call (the CONSISTENCY_PROVIDERS set — excludes Ollama/other local models). */
+export function isLargeContextProvider(providerId: string | undefined): boolean {
+  return !!providerId && (CONSISTENCY_PROVIDERS as readonly string[]).includes(providerId);
+}
+
+/**
+ * Guard for auto-routed context/summary/entity extraction (run-review 2026-07-01
+ * B6). Extraction sends a whole chapter in one call, so a small local model
+ * (Ollama) truncates it → failed/garbage extraction that corrupts continuity
+ * tracking. Returns an error string when the auto-selected provider should be
+ * REFUSED (caller skips the extraction, fail-soft), or null when it's fine.
+ *
+ * Ollama is refused ONLY when a large-context provider is actually available —
+ * i.e. routing transiently fell back to Ollama while a capable provider exists.
+ * On an Ollama-only deployment (no capable provider at all) it is allowed, so this
+ * never regresses that setup; it just stops a momentary fallback from silently
+ * degrading extraction on a deployment that has a large-context model.
+ */
+export function extractionProviderError(selectedId: string, availableProviderIds: string[]): string | null {
+  if (isLargeContextProvider(selectedId)) return null;
+  const hasCapable = availableProviderIds.some(id => isLargeContextProvider(id));
+  if (!hasCapable) return null;
+  return `Extraction skipped: routing fell back to "${selectedId}" while a large-context provider (${CONSISTENCY_PROVIDERS.join(', ')}) is configured but was unavailable for this call — a local model would truncate the chapter.`;
+}
+
 /**
  * Validate an optional provider/model selection from a request body. Returns an
  * error string (→ 400) or null when acceptable. Provider, if present, must be a

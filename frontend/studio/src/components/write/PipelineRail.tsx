@@ -31,7 +31,7 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   const [seqTotal, setSeqTotal] = useState<number | null>(null); // F1: total phases in a book sequence
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyRef = useRef(false);
-  const followedRef = useRef<string | null>(null); // F1: guard so we follow once per completed phase
+  const kickedRef = useRef<string | null>(null); // guard: fire /auto-execute once per active phase
 
   // Load book detail (author/voice/genre/pipeline names + descriptions).
   useEffect(() => {
@@ -56,37 +56,45 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
     return () => { cancelled = true; };
   }, [slug]);
 
-  // Poll the active project for progress updates while it is active.
+  // Poll the book's FRONTIER project (the live current phase) so the rail always
+  // reflects real progress and advances across phases on its own. Frontier-based
+  // (via /current-project) rather than a fixed project id, so it self-heals through
+  // phase transitions and socket reconnects — a fixed-id poll froze on the phase it
+  // started with (observed: the rail stuck on Bible step 1 while the backend was
+  // already in Production). When the frontier rolls to a NEW active phase,
+  // advancePipeline has only marked it active, so kick /auto-execute once (the
+  // server's per-project in-flight guard makes a duplicate a harmless 409).
   useEffect(() => {
-    if (!activeProject || activeProject.status !== 'active') return;
+    if (!slug) return;
     let alive = true;
-
-    const poll = () => {
+    const tick = () => {
       if (!alive) return;
-      api<{ project: Project }>(`/api/projects/${encodeURIComponent(activeProject.id)}`)
+      api<{ project: Project | null }>(`/api/books/${encodeURIComponent(slug)}/current-project`)
         .then((r) => {
-          // Check alive BEFORE any state update so a superseded effect is ignored.
           if (!alive) return;
-          onProjectChange(r.project);
-          if (r.project.status === 'active') {
-            pollRef.current = setTimeout(poll, 3000);
+          const p = r.project;
+          if (p) {
+            onProjectChange(p);
+            if (p.status === 'active' && kickedRef.current !== p.id) {
+              kickedRef.current = p.id;
+              void api(`/api/projects/${encodeURIComponent(p.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
+            }
           }
+          // Fast while work is live; slow to a heartbeat once the whole pipeline is
+          // done (current-project then returns a completed final phase).
+          const idle = !!p && p.status === 'completed';
+          pollRef.current = setTimeout(tick, idle ? 15000 : 3000);
         })
-        .catch(() => {
-          if (alive) pollRef.current = setTimeout(poll, 5000);
-        });
+        .catch(() => { if (alive) pollRef.current = setTimeout(tick, 5000); });
     };
-
-    pollRef.current = setTimeout(poll, 3000);
+    pollRef.current = setTimeout(tick, 1200);
     return () => {
       alive = false;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-    // onProjectChange is excluded intentionally: Write.tsx wraps setProject in useCallback
-    // so it is stable, but excluding it prevents the effect from re-firing if the caller
-    // ever passes a new function reference.
+    // onProjectChange is stable (useCallback in Write.tsx); excluded to avoid re-fires.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProject?.id, activeProject?.status]);
+  }, [slug]);
 
   // F1: a book whose pipelineSequence has >1 entry runs as chained Projects linked
   // by pipelineId. Load the phase count for the "Phase X / N" indicator, and when
@@ -103,36 +111,9 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
     return () => { cancelled = true; };
   }, [activeProject?.pipelineId]);
 
-  useEffect(() => {
-    const pid = activeProject?.pipelineId;
-    if (!activeProject || activeProject.status !== 'completed' || !pid) return;
-    const fromId = activeProject.id;
-    if (followedRef.current === fromId) return; // already followed from this phase
-    let cancelled = false;
-    (async () => {
-      const r = await api<{ phases: Array<{ id: string; phase: number; status: string }> }>(
-        `/api/pipeline/${encodeURIComponent(pid)}`,
-      ).catch(() => null);
-      // Mark followed only after a successful read — a transient fetch failure
-      // leaves the guard unset so a later re-render can retry instead of dead-ending.
-      if (cancelled || !r) return;
-      followedRef.current = fromId;
-      const next = r.phases.find((p) => p.id !== fromId && p.status !== 'completed' && p.status !== 'failed');
-      if (!next) return; // sequence finished
-      const pr = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(next.id)}`).catch(() => null);
-      if (cancelled || !pr?.project) return;
-      onProjectChange(pr.project);
-      // advancePipeline only MARKS the next phase active — it runs no AI, and with
-      // autonomous mode off nothing else drives it, so the pipeline stalled at each
-      // phase boundary (Planning→Bible→…) with the next project orphaned in 'active'.
-      // Kick /auto-execute on the followed phase to run it, mirroring the one-time
-      // autostart kick above. Fire-and-forget; the poll effect tracks progress and
-      // the server's per-project in-flight guard makes a duplicate kick a harmless 409.
-      void api(`/api/projects/${encodeURIComponent(next.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProject?.id, activeProject?.status, activeProject?.pipelineId]);
+  // (Phase advancement + the auto-execute kick are handled by the frontier poll
+  // above — it tracks /current-project, which returns the next phase automatically
+  // once the current one completes, so no separate "follow" effect is needed.)
 
   const action = async (url: string) => {
     if (busyRef.current) return;
@@ -234,7 +215,12 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   //   by id first, then label, then index — to survive duplicate labels.
   // - If the template is dynamic (steps: []) AND an active project has real steps,
   //   render those directly — they carry their own id/label/status/modelOverride.
-  const useDynamicSteps = planSteps.length === 0 && projectSteps.length > 0;
+  // Prefer the live project's OWN steps (they carry label + status + skill) whenever
+  // a project exists, so the rail shows real per-step progress and the correct labels
+  // for the CURRENT phase. The separately-fetched template is only a pre-run plan
+  // preview and goes stale across phase advances, so it is used only before a project
+  // exists.
+  const useDynamicSteps = projectSteps.length > 0;
 
   // Status helper for the static (plan-based) path only.
   const planStepStatus = (planStep: typeof planSteps[number], i: number): 'done' | 'cur' | 'queued' => {

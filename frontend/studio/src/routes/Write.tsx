@@ -115,6 +115,7 @@ export function Write() {
         title={book?.title ?? slug}
         subtitle={book?.pulledFrom?.genre?.name ?? undefined}
         projectId={project?.id}
+        readyCount={project?.steps?.filter((s) => s.status === 'completed').length ?? 0}
       />
       <ChatThread />
       <PipelineRail

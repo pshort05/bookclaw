@@ -1,7 +1,7 @@
 // tests/unit/consistency-fact-store.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConsistencyStore } from '../../gateway/src/services/consistency/fact-store.js';
@@ -160,6 +160,56 @@ test('reverseIndex maps each entity+attribute to the chapters that assert it (ca
     assert.equal(idx.find(r => r.attribute === 'location')!.isCanon, false);
     assert.ok(!idx.some(r => r.entity === 'Zed'), 'other book excluded');
     assert.ok(!idx.some(r => r.chapters.includes('CANON')), 'CANON pseudo-chapter never listed');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('migrates a pre-`canonical` DB (facts + knowledge) so queries do not throw (B2)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'consist-mig-'));
+  try {
+    const dbDir = join(root, 'db');
+    mkdirSync(dbDir, { recursive: true });
+    const dbPath = join(dbDir, 'consistency.db');
+
+    // Build a DB with the OLD schema — facts + knowledge WITHOUT the `canonical`
+    // column (mirrors a deployment created before canonical existed, e.g. Mercury).
+    let Database: any;
+    try {
+      const mod: any = await import('better-sqlite3');
+      Database = mod.default || mod;
+    } catch { console.log('better-sqlite3 unavailable — skipping'); return; }
+    const old = new Database(dbPath);
+    old.exec(`
+      CREATE TABLE facts (
+        id INTEGER PRIMARY KEY,
+        world TEXT, book_slug TEXT,
+        entity TEXT NOT NULL, aliases TEXT NOT NULL, attribute TEXT NOT NULL,
+        type TEXT NOT NULL, value_raw TEXT NOT NULL, value_norm TEXT NOT NULL,
+        story_time INTEGER NOT NULL, story_elapsed INTEGER NOT NULL DEFAULT 0, time_label TEXT, transition TEXT,
+        chapter TEXT NOT NULL, scene INTEGER NOT NULL,
+        source TEXT NOT NULL, evidence TEXT NOT NULL
+      );
+      CREATE TABLE knowledge (
+        id INTEGER PRIMARY KEY,
+        world TEXT, book_slug TEXT,
+        knower TEXT NOT NULL, fact_key TEXT NOT NULL,
+        kind TEXT NOT NULL, source TEXT NOT NULL,
+        story_time INTEGER NOT NULL, chapter TEXT NOT NULL, scene INTEGER NOT NULL,
+        evidence TEXT NOT NULL
+      );
+    `);
+    old.close();
+
+    // Opening the store over the old DB must add `canonical` and leave queries working.
+    const s = new ConsistencyStore(join(root, 'workspace'), dbDir);
+    await s.initialize();
+    assert.equal(s.isAvailable(), true, 'store available after migrating old DB');
+    // Before the fix these throw `no such column: canonical`.
+    s.insertFacts([fact({ chapter: 'ch1', storyTime: 0, valueNorm: 'blue' })]);
+    const priors = s.priorFacts({ world: null, bookSlug: 'b1' }, 'John', 'eye_color');
+    assert.equal(priors.length, 1);
+    assert.equal(priors[0].canonical, true, 'migrated column defaults to canonical=1');
+    s.insertKnowledge([ke({ kind: 'use', storyTime: 1, chapter: 'ch2' })]);
+    assert.equal(s.knowledgeForBook({ world: null, bookSlug: 'b1' }).length, 1);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
