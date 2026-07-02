@@ -47,6 +47,23 @@ export class CostTracker {
   }
 
   /**
+   * Update the live spend limits at runtime (e.g. after a Settings change via
+   * /api/config/update). Without this the limits are constructor-only, so a
+   * changed daily/monthly cap does not take effect — the over-budget guard keeps
+   * using the boot-time value until the next restart. Each value is applied only
+   * when it is a finite, non-negative number, so a partial/blank update leaves the
+   * other limit untouched.
+   */
+  setLimits(dailyLimit?: number, monthlyLimit?: number): void {
+    if (typeof dailyLimit === 'number' && Number.isFinite(dailyLimit) && dailyLimit >= 0) {
+      this.dailyLimit = dailyLimit;
+    }
+    if (typeof monthlyLimit === 'number' && Number.isFinite(monthlyLimit) && monthlyLimit >= 0) {
+      this.monthlyLimit = monthlyLimit;
+    }
+  }
+
+  /**
    * Hydrate state from disk. Call once at startup after construction.
    * Silently returns if no persistPath or no existing state file.
    */

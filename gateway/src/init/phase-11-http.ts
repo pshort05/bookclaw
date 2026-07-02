@@ -6,6 +6,11 @@ import { createAPIRoutes } from '../api/routes.js';
 import { ROOT_DIR, STUDIO_DIST } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
+// Match /api/* case-INSENSITIVELY, mirroring the auth/rate-limit gates in
+// index.ts (API_PATH_RE): Express routes case-insensitively, so /API/foo reaches
+// the handler and must be treated as an API path here too (bug-review #1).
+const API_PATH_RE = /^\/api\//i;
+
 /**
  * Phase 9: API routes. Phase 10: WebSocket. Phase 11: static dashboard (with
  * auth-token injection), JSON 404 + SPA fallback + global error handler. Then
@@ -67,7 +72,7 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   // JSON 404 handler for API routes — MUST run before SPA fallback
   // so unmatched /api/ requests get JSON errors instead of the dashboard HTML.
   gw.app.use((req: any, res: any, next: any) => {
-    if (req.path.startsWith('/api/')) {
+    if (API_PATH_RE.test(req.path)) {
       return res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
     }
     next();
@@ -79,7 +84,7 @@ export async function initHttp(gw: BookClawGateway): Promise<void> {
   // for an old hashed /assets/*.js after a redeploy) — return 404 rather than HTML,
   // so the browser gets a clean miss instead of "Unexpected token '<'".
   gw.app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) return; // already handled above
+    if (API_PATH_RE.test(req.path)) return; // already handled above
     if (/\.[a-zA-Z0-9]+$/.test(req.path)) {
       return res.status(404).type('txt').send('Not found');
     }

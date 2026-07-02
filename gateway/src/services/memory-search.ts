@@ -87,10 +87,11 @@ export class MemorySearchService {
   private db: any = null;
   private unavailableReason: string | null = null;
   private lastIndexedAt: string | null = null;
-  // Phase 3 read-path: optional resolver for the active book's data/ dir (where
-  // generation outputs now land). Wired in init after BookService exists. When
-  // it returns a path, that dir is indexed instead of the legacy projects/ tree.
-  private activeDataDir: (() => string | null) | null = null;
+  // Resolver for EVERY book's data/ dir (where generation outputs land). Wired in
+  // init after BookService exists. reindexAll scans them ALL, not just the active
+  // book — otherwise a concurrently-run non-active book's chapters are never
+  // indexed and search silently misses whole books (bug-review #24).
+  private dataDirs: (() => string[]) | null = null;
 
   constructor(workspaceDir: string, dbDir?: string) {
     this.workspaceDir = workspaceDir;
@@ -108,9 +109,28 @@ export class MemorySearchService {
     return this.dbPath;
   }
 
-  /** Wire the active-book data/ dir resolver (book-container Phase 3). */
-  setActiveDataDirResolver(resolver: () => string | null): void {
-    this.activeDataDir = resolver;
+  /** Wire the resolver that lists EVERY book's data/ dir (book-container Phase 3). */
+  setDataDirsResolver(resolver: () => string[]): void {
+    this.dataDirs = resolver;
+  }
+
+  /** Per-directory md-index watermark (ISO ts of the last pass), keyed by dir. */
+  private getMdWatermark(dir: string): string | null {
+    if (!this.db) return null;
+    try {
+      const row = this.db.prepare(`SELECT value FROM sync_state WHERE key = ?`).get(`md_watermark:${dir}`) as { value?: string } | undefined;
+      return row?.value ?? null;
+    } catch { return null; }
+  }
+
+  private setMdWatermark(dir: string, iso: string): void {
+    if (!this.db) return;
+    try {
+      this.db.prepare(`
+        INSERT INTO sync_state (key, value) VALUES (@key, @iso)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+      `).run({ key: `md_watermark:${dir}`, iso });
+    } catch { /* non-fatal */ }
   }
 
   /**
@@ -348,15 +368,21 @@ export class MemorySearchService {
     }
 
     // ── Project step outputs (.md files) ──
-    // Phase 3 read-path: generation outputs now land in the active book's data/
-    // dir (workspace/books/<slug>/data/, flat, project-id-prefixed files). Index
-    // that dir when a book is active; otherwise fall back to the legacy
-    // workspace/projects/<slug>/ tree. Fail-soft if the resolver throws.
-    let activeData: string | null = null;
-    try { activeData = this.activeDataDir?.() ?? null; } catch { activeData = null; }
+    // Phase 3 read-path: generation outputs land in each book's data/ dir
+    // (workspace/books/<slug>/data/, flat, project-id-prefixed files). Index EVERY
+    // book's dir (not just the active one — bug-review #24); fall back to the
+    // legacy workspace/projects/<slug>/ tree only when no book dirs exist.
+    let bookDataDirs: string[] = [];
+    try { bookDataDirs = this.dataDirs?.() ?? []; } catch { bookDataDirs = []; }
+
+    const nowIso = new Date().toISOString();
 
     // Index every .md file directly under `dir`, using `refPrefix` for sourceRef.
+    // The incremental watermark is PER-DIRECTORY (keyed by dir), so a book indexed
+    // for the first time — e.g. after it becomes active post-restart — is not
+    // gated by another directory's newer watermark and skipped forever (#24).
     const indexMdDir = async (dir: string, refPrefix: string): Promise<void> => {
+      const dirWatermark = opts.force ? null : this.getMdWatermark(dir);
       let files: string[];
       try { files = await readdir(dir); } catch { return; }
       for (const file of files) {
@@ -366,8 +392,8 @@ export class MemorySearchService {
           const fileStats = await stat(fullPath);
           if (!fileStats.isFile()) continue;
           const mtime = fileStats.mtime.toISOString();
-          // Skip if last-modified is older than our last index pass.
-          if (lastIndexed && mtime < lastIndexed && !opts.force) {
+          // Skip if last-modified is older than THIS dir's last index pass.
+          if (dirWatermark && mtime < dirWatermark && !opts.force) {
             skipped++;
             continue;
           }
@@ -388,12 +414,20 @@ export class MemorySearchService {
           indexed++;
         } catch { /* file gone or unreadable */ }
       }
+      // Record THIS dir's watermark so the next incremental pass skips its
+      // unchanged files, independent of every other dir's watermark.
+      this.setMdWatermark(dir, nowIso);
     };
 
-    if (activeData && existsSync(activeData)) {
-      // Active book: outputs are flat in data/ (project-id-prefixed filenames).
-      await indexMdDir(activeData, 'data');
-    } else {
+    const scannedBookDirs = new Set<string>();
+    for (const dir of bookDataDirs) {
+      if (!dir || scannedBookDirs.has(dir)) continue;
+      scannedBookDirs.add(dir);
+      // Each book's outputs are flat in its data/ (project-id-prefixed filenames).
+      if (existsSync(dir)) await indexMdDir(dir, 'data');
+    }
+    if (scannedBookDirs.size === 0) {
+      // No book containers — legacy pre-book-container outputs under projects/.
       const projectsDir = join(this.workspaceDir, 'projects');
       if (existsSync(projectsDir)) {
         const projects = await readdir(projectsDir);

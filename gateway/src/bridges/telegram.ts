@@ -11,6 +11,16 @@ interface TelegramConfig {
   pairingEnabled: boolean;
 }
 
+/**
+ * Whether a Telegram user is authorized to command the bot. FAIL CLOSED: an
+ * empty allowlist authorizes NO ONE. The bot is reachable from the entire
+ * internet via long-polling (unlike the LAN-gated HTTP perimeter), so the shipped
+ * empty default must reject everyone rather than allow everyone (bug-review #3).
+ */
+export function isTelegramUserAuthorized(allowedUsers: string[], userId: string): boolean {
+  return allowedUsers.length > 0 && allowedUsers.includes(userId);
+}
+
 /** Handler for direct commands that interact with gateway services */
 interface CommandHandlers {
   createProject: (title: string, description: string, config?: Record<string, any>, channel?: string) => Promise<{ id: string; steps: number }>;
@@ -73,6 +83,14 @@ export class TelegramBridge {
       throw new Error('Invalid Telegram bot token');
     }
 
+    // Posture log (mirrors the auth/CORS/backups pattern): an empty allowlist
+    // now fails closed, so the bot rejects everyone until the owner adds IDs.
+    if (this.config.allowedUsers.length === 0) {
+      console.log('  ⚠ Telegram: no allowed users configured — the bot will reject ALL messages until you add user IDs in the dashboard.');
+    } else {
+      console.log(`  ✓ Telegram: ${this.config.allowedUsers.length} allowed user(s)`);
+    }
+
     // Start sequential polling (not setInterval — prevents duplicate message processing)
     this.polling = true;
     this.pollLoop();
@@ -108,8 +126,10 @@ export class TelegramBridge {
         const chatId = message.chat.id;
         const userName = message.from.first_name || 'there';
 
-        // Check if user is allowed
-        if (this.config.allowedUsers.length > 0 && !this.config.allowedUsers.includes(userId)) {
+        // Authorization — FAIL CLOSED (see isTelegramUserAuthorized). An empty
+        // allowlist rejects everyone; reply with the user's ID so the owner can
+        // add it in the dashboard (bug-review #3).
+        if (!isTelegramUserAuthorized(this.config.allowedUsers, userId)) {
           await this.sendMessage(chatId,
             '🔒 Not authorized. Ask the owner to add your ID (' + userId + ') in the dashboard.');
           continue;

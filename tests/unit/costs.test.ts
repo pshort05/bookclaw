@@ -52,3 +52,24 @@ test('sub-cent spend is preserved at 4-decimal resolution (not floored to $0.00)
   assert.equal(s.total, 0.0003);
   assert.equal(s.byBook['book-a'], 0.0003);
 });
+
+test('setLimits updates the live limits so a config change takes effect without restart', () => {
+  const c = new CostTracker({ dailyLimit: 5, monthlyLimit: 50 });
+  c.record('claude', 0, 10);            // $10 spent — over the $5 default daily
+  assert.equal(c.isOverBudget(), true, 'over the $5 default');
+  c.setLimits(100, 500);                // user raises limits in Settings
+  assert.equal(c.dailyLimit, 100);
+  assert.equal(c.monthlyLimit, 500);
+  assert.equal(c.isOverBudget(), false, '$10 is under the new $100 daily — takes effect immediately');
+  assert.equal(c.getStatus().dailyLimit, 100, 'getStatus reflects the new limit');
+});
+
+test('setLimits ignores non-finite / negative values (keeps the prior limit)', () => {
+  const c = new CostTracker({ dailyLimit: 5, monthlyLimit: 50 });
+  c.setLimits(NaN, -3);
+  assert.equal(c.dailyLimit, 5, 'NaN ignored');
+  assert.equal(c.monthlyLimit, 50, 'negative ignored');
+  c.setLimits(20, undefined as any);
+  assert.equal(c.dailyLimit, 20, 'daily updated');
+  assert.equal(c.monthlyLimit, 50, 'undefined monthly leaves prior value');
+});

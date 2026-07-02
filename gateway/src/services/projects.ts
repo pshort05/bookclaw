@@ -252,6 +252,31 @@ export class ProjectEngine {
   // re-hydrated from its full per-step .md output (BUG M6). Optional + fail-soft.
   private dataDirResolver: ((project: Project) => string | null) | null = null;
 
+  // Per-project "currently being driven" lock, shared across EVERY runner (the
+  // HTTP /auto-execute + /execute routes, the bridge autoRunProject /
+  // startAndRunProject loops, and the review-resolver sweep). Two runners
+  // processing the same active step → duplicated/overwritten chapter files +
+  // double AI cost (bug-review #2/#5/#8). Claim before generating, release in a
+  // finally. Module state on the engine so it's process-global and shared.
+  private drivingProjects: Set<string> = new Set();
+
+  /** Claim the drive lock for a project. Returns false if already being driven. */
+  tryStartDriving(projectId: string): boolean {
+    if (this.drivingProjects.has(projectId)) return false;
+    this.drivingProjects.add(projectId);
+    return true;
+  }
+
+  /** Release the drive lock. Always call in a finally paired with tryStartDriving. */
+  stopDriving(projectId: string): void {
+    this.drivingProjects.delete(projectId);
+  }
+
+  /** Whether a project is currently being driven by some runner. */
+  isDriving(projectId: string): boolean {
+    return this.drivingProjects.has(projectId);
+  }
+
   /** Inject the available template catalog (sourced from the library at boot). */
   setTemplateCatalog(catalog: Array<{ type: ProjectType; label: string; description: string; stepCount: number; stepCountLabel?: string }>): void {
     this.templateCatalog = catalog;
@@ -1388,8 +1413,12 @@ Description: ${description}`;
    * unset, the dir is missing, or the file is unreadable, the truncated value is
    * kept. Replaced results are cached back onto the step so this runs at most
    * once per step per restart.
+   *
+   * Public so read routes that consume step results directly (plot-promise
+   * extraction, structure-check) can restore full text first — after a restart
+   * they would otherwise operate on 500-char stubs (bug-review #18).
    */
-  private async rehydrateTruncatedResults(project: Project): Promise<void> {
+  async rehydrateTruncatedResults(project: Project): Promise<void> {
     const needsHydration = project.steps.some(
       s => typeof s.result === 'string' && s.result.endsWith(TRUNCATION_MARKER)
     );

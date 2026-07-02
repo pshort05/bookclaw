@@ -73,6 +73,22 @@ test('parseAIJson: single-quoted string values are repaired to double quotes', (
   assert.deepEqual(e.parse("{'name': 'Bob'}"), { name: 'Bob' });
 });
 
+test('parseAIJson: a colon inside a string VALUE survives repair (finding 10)', () => {
+  const e = freshEngine();
+  // A near-valid response with a trailing comma AND a "word:" inside a value
+  // (pervasive in chapter summaries: "Day 3: dawn", timestamps, "note:"). The
+  // old hand-rolled key-quoting regex rewrote the value to `"Day "3": dawn"` and
+  // the whole chapter summary/entity batch was silently dropped.
+  const raw = '{"summary":"Day 3: dawn","characters":["Amy"],}';
+  assert.deepEqual(e.parse(raw), { summary: 'Day 3: dawn', characters: ['Amy'] });
+});
+
+test('parseAIJson: an unquoted key with a colon-in-value both repair (finding 10)', () => {
+  const e = freshEngine();
+  const raw = '{summary:"Day 3: dawn"}';
+  assert.deepEqual(e.parse(raw), { summary: 'Day 3: dawn' });
+});
+
 test('parseAIJson: empty / whitespace-only input throws', () => {
   const e = freshEngine();
   assert.throws(() => e.parse(''), /empty content/);

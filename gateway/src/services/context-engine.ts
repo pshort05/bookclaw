@@ -7,6 +7,7 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { jsonrepair } from 'jsonrepair';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -272,16 +273,16 @@ export class ContextEngine {
     throw new Error(`Could not parse AI JSON after recovery attempts. Snippet: "${preview}"`);
   }
 
-  /** Try to JSON.parse with a couple of common-fix passes. Returns undefined on failure. */
+  /** Try to JSON.parse with a deterministic tolerant-repair fallback. Returns undefined on failure. */
   private tryParse(candidate: string): any | undefined {
     try { return JSON.parse(candidate); } catch { /* fall through */ }
-    try {
-      const fixed = candidate
-        .replace(/,\s*([}\]])/g, '$1')         // remove trailing commas
-        .replace(/(['"])?(\w+)(['"])?\s*:/g, '"$2":') // ensure quoted keys
-        .replace(/:\s*'([^']*)'/g, ': "$1"');   // single quotes to double
-      return JSON.parse(fixed);
-    } catch { return undefined; }
+    // Use jsonrepair (the repo's standard tolerant parser — also used by the
+    // consistency extractor and try-fail extract) instead of hand-rolled global
+    // regexes. It closes trailing commas, quotes bare keys, and converts single
+    // quotes WITHOUT rewriting text inside string values — the old key-quoting
+    // regex mangled any "word:" inside a value (e.g. "Day 3: dawn"), silently
+    // discarding otherwise-recoverable chapter summaries / entity batches.
+    try { return JSON.parse(jsonrepair(candidate)); } catch { return undefined; }
   }
 
   /**

@@ -11,8 +11,15 @@ export function registerExportTools(server: McpServer, client: BookClawClient): 
   );
 
   server.registerTool('export_docx',
-    { title: 'Export DOCX', description: 'Export a project as a KDP-ready DOCX file.', inputSchema: { id: z.string() } },
-    async ({ id }) =>
-      toToolResult('export_docx', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/export-docx`)),
+    {
+      title: 'Export DOCX',
+      description: 'Convert a project\'s .md source file to a KDP-ready DOCX (written alongside it). Use get_project_files to find the source filename.',
+      inputSchema: {
+        id: z.string(),
+        filename: z.string().describe('The project .md file to convert (e.g. "<project-id>-manuscript.md"); the gateway requires it and rejects non-.md names'),
+      },
+    },
+    async ({ id, filename }) =>
+      toToolResult('export_docx', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/export-docx`, { filename })),
   );
 }

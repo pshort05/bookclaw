@@ -259,6 +259,11 @@ export class LibraryTransferService {
       const category = sanitizeCategory(manifest.category);
       const content = readFileSync(join(filesDir, 'SKILL.md'), 'utf-8');
       const destDir = join(this.workspaceSkillsDir, category, name);
+      // Clear the target dir first so an import fully REPLACES a prior entry.
+      // Otherwise overriding an executable skill (SKILL.md + steps.json) with a
+      // passive import (SKILL.md only) left the old steps.json in place, so the
+      // skill kept running its stale multi-step logic under new prose (bug-review #21).
+      rmSync(destDir, { recursive: true, force: true });
       mkdirSync(destDir, { recursive: true });
       writeFileSync(join(destDir, 'SKILL.md'), content, 'utf-8');
       // Executable skills: re-validate the staged steps.json and write it through

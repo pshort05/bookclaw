@@ -478,3 +478,32 @@ test('skill import honors a valid category and sanitizes a bad one', async () =>
     assert.equal(reloads, 2);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('importing a passive skill over an executable one removes the stale steps.json (finding 21)', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookclaw-libxfer-'));
+  try {
+    const { xfer, wsSkillsDir } = await setup(root, async () => {});
+    // 1) Import an EXECUTABLE skill (SKILL.md + steps.json).
+    const exec = xfer.validateAndStage(makeZip({
+      'library-entry.json': manifestJson({ kind: 'skill', name: 'ovr' }),
+      'files/SKILL.md': '---\ndescription: exec\ntriggers: x\n---\nexec body',
+      'files/steps.json': '{"retries":3,"steps":[{"model":"m","prompt":"p"}]}',
+    }));
+    assert.equal(exec.structuralError, undefined);
+    await xfer.finalizeImport(exec.stagingId);
+    const dir = join(wsSkillsDir, 'author', 'ovr');
+    assert.ok(existsSync(join(dir, 'steps.json')), 'executable import wrote steps.json');
+
+    // 2) Import a PASSIVE version (SKILL.md only) over the same name.
+    const passive = xfer.validateAndStage(makeZip({
+      'library-entry.json': manifestJson({ kind: 'skill', name: 'ovr' }),
+      'files/SKILL.md': '---\ndescription: passive\ntriggers: x\n---\npassive body',
+    }));
+    assert.equal(passive.structuralError, undefined);
+    await xfer.finalizeImport(passive.stagingId);
+
+    assert.ok(existsSync(join(dir, 'SKILL.md')), 'SKILL.md still present');
+    assert.ok(!existsSync(join(dir, 'steps.json')), 'stale steps.json must be removed on override');
+    assert.match(readFileSync(join(dir, 'SKILL.md'), 'utf-8'), /passive body/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

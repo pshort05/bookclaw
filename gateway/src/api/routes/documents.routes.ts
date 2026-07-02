@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import multer from 'multer';
-import { safePath, upload, serveFile } from './_shared.js';
+import { safePath, upload, serveFile, asyncHandler } from './_shared.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { generateEpubBuffer } from '../../services/epub-export.js';
 import { resolveBookAppendix, type AppendixEntry } from '../../services/world-appendix.js';
@@ -82,7 +82,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       }
     },
     storage: multer.memoryStorage(),
-  }).single('file'), async (req: Request, res: Response) => {
+  }).single('file'), asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -158,7 +158,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       library: true,
       preview: textContent.substring(0, 200),
     });
-  });
+  }));
 
   // Serve a document's bytes — the file explorer reads text files for preview and
   // links here for download (?download=1 forces an attachment). Same auth/IP
@@ -177,7 +177,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
   });
 
   // Delete a document from the library
-  app.delete('/api/documents/:filename', async (req: Request, res: Response) => {
+  app.delete('/api/documents/:filename', asyncHandler(async (req: Request, res: Response) => {
     const { join: j } = await import('path');
     const { unlink, readFile: rf, writeFile: wf } = await import('fs/promises');
     const { existsSync: ex } = await import('fs');
@@ -214,14 +214,14 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     }
 
     res.json({ success: true });
-  });
+  }));
 
   // ═══════════════════════════════════════════════════════════
   // Document Upload (project-level + auto-library for large files)
   // ═══════════════════════════════════════════════════════════
 
 
-  app.post('/api/projects/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
+  app.post('/api/projects/:id/upload', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();
     if (!engine) {
       return res.status(503).json({ error: 'Project engine not initialized' });
@@ -364,7 +364,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       isLarge,
       savedToLibrary: isLarge,
     });
-  });
+  }));
 
   // ── Workspace File Management ──
 
@@ -545,6 +545,13 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
 
     const { filename } = req.body;
     if (!filename) return res.status(400).json({ error: 'filename is required' });
+    // The output name is derived by swapping the .md suffix for .docx. For a
+    // non-.md source that swap is a no-op, so the generated DOCX would be written
+    // back OVER the source file (e.g. a compiled `.docx`/`.epub` manuscript),
+    // destroying it. Only .md sources are valid inputs here.
+    if (!/\.md$/i.test(String(filename))) {
+      return res.status(400).json({ error: 'Source file must be a .md file' });
+    }
 
     const { join: j, resolve: rv } = await import('path');
     const { readFile: rf, writeFile: wf } = await import('fs/promises');

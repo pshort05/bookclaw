@@ -265,3 +265,66 @@ test('complete retries once on HTTP 429 and then succeeds', async () => {
     assert.equal(calls, 2, 'expected exactly one retry after the 429');
   });
 });
+
+// ── completeClaude: thinking budget + empty-completion guard ─────────────────
+
+/**
+ * Run `fn` with fetch stubbed to a Claude-shaped response carrying `respContent`
+ * as the `content` block array. Captures the outgoing request body for asserts.
+ */
+async function withClaudeCapture(
+  respContent: unknown[],
+  fn: (getBody: () => any) => Promise<void>,
+  stopReason = 'end_turn',
+): Promise<void> {
+  let sentBody: any = null;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init: any) => ({
+    ok: true,
+    status: 200,
+    headers: { get: () => null },
+    text: async () => '',
+    json: async () => { sentBody = JSON.parse(init.body); return { content: respContent, usage: { input_tokens: 1, output_tokens: 1 }, stop_reason: stopReason }; },
+  })) as never;
+  try { await fn(() => sentBody); } finally { globalThis.fetch = orig; }
+}
+
+test('Claude thinking budget is added on top of the output budget, not subtracted from it (finding 13)', async () => {
+  // high → 16384 thinking budget; the visible output budget (8192) must survive
+  // in full, so max_tokens = 8192 + 16384. The old Math.max(maxTokens,
+  // thinkingBudget+2048) left only ~2048 visible tokens.
+  const router = await makeRouter({ keys: ['anthropic_api_key'] });
+  await withClaudeCapture([{ type: 'text', text: 'ok' }], async (getBody) => {
+    await router.complete({
+      provider: 'claude', system: 's', messages: [{ role: 'user', content: 'hi' }],
+      maxTokens: 8192, thinking: 'high',
+    });
+    assert.equal(getBody().thinking.budget_tokens, 16384);
+    assert.equal(getBody().max_tokens, 8192 + 16384);
+  });
+});
+
+test('Claude throws on an empty completion so the caller fallback fires (finding 14)', async () => {
+  // A thinking-only response (max_tokens exhausted mid-CoT) has no text block.
+  // Every other provider throws on empty; Claude must too, not return ''.
+  const router = await makeRouter({ keys: ['anthropic_api_key'] });
+  await withClaudeCapture([{ type: 'thinking', thinking: 'reasoning...' }], async () => {
+    await assert.rejects(
+      router.complete({ provider: 'claude', system: 's', messages: [{ role: 'user', content: 'hi' }], thinking: 'high' }),
+      /empty completion/i,
+    );
+  }, 'max_tokens');
+});
+
+test('DeepSeek max_tokens is clamped to the provider cap, not the task budget (finding 15)', async () => {
+  // DeepSeek caps output at 8192; passing the 16384 task budget unclamped makes
+  // the API reject the call. The router must clamp to provider.maxTokens.
+  const router = await makeRouter({ keys: ['deepseek_api_key'] });
+  await withFetchCapture(async (getBody) => {
+    await router.complete({
+      provider: 'deepseek', system: 's', messages: [{ role: 'user', content: 'hi' }],
+      maxTokens: 16384,
+    });
+    assert.equal(getBody().max_tokens, 8192);
+  });
+});

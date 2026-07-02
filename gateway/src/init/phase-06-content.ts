@@ -87,10 +87,22 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
     // (the audit throws on a too-small model → caught + logged, never blocks).
     if (gw.books && project?.bookSlug && (project.type === 'book-production' || project.type === 'deep-revision')) {
       const svc = gw.getServices?.();
+      const slug = project.bookSlug;
       if (svc?.consistencyAudit) {
-        void svc.consistencyAudit(project.bookSlug, () => {})
-          .then(() => console.log(`  ✓ Auto consistency audit complete for "${project.bookSlug}"`))
-          .catch((err: any) => console.log(`  ℹ Auto consistency audit skipped for "${project.bookSlug}": ${err?.message || err}`));
+        // Guard with the SAME job registry the manual /consistency-audit route
+        // uses. runConsistencyAudit opens with clearBookFacts()+clearBookKnowledge()
+        // then re-inserts across awaited AI calls; a second concurrent audit for
+        // the same book (a user click, or another phase completing) would wipe the
+        // in-flight run's inserts and corrupt the fact ledger. Claim the slot;
+        // skip if already running; release when done (bug-review #22).
+        if (!gw.consistencyJobs.start(slug)) {
+          console.log(`  ℹ Auto consistency audit skipped for "${slug}": already running`);
+        } else {
+          void svc.consistencyAudit(slug, (msg: string) => gw.consistencyJobs.progress(slug, msg))
+            .then(() => console.log(`  ✓ Auto consistency audit complete for "${slug}"`))
+            .catch((err: any) => console.log(`  ℹ Auto consistency audit skipped for "${slug}": ${err?.message || err}`))
+            .finally(() => gw.consistencyJobs.finish(slug));
+        }
       }
     }
   });

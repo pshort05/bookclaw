@@ -486,6 +486,9 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     const engine = gateway.getProjectEngine?.();
     const project = engine?.getProject(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
+    // After a restart, step results are 500-char stubs until re-hydrated from the
+    // per-step .md files — otherwise the outline is a truncated fragment (#18).
+    await engine.rehydrateTruncatedResults(project);
 
     // Pull outline summaries from the project's completed outline-phase steps.
     const outlineSteps = project.steps.filter((s: any) =>
@@ -533,6 +536,9 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     const engine = gateway.getProjectEngine?.();
     const project = engine?.getProject(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
+    // After a restart, step results are 500-char stubs until re-hydrated from the
+    // per-step .md files — otherwise promises are extracted from fragments (#18).
+    await engine.rehydrateTruncatedResults(project);
 
     // Default: extract from chapters 1-3 if completed; allow override via body.openingText
     let openingText = req.body?.openingText as string | undefined;

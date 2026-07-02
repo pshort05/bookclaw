@@ -100,9 +100,14 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   const activeBook = await gw.books.seedDefaultBook();
   console.log(`  ✓ Books: active book = ${activeBook ?? '(none)'}`);
 
-  // Phase 3 read-path: let memory-search index the active book's data/ dir
-  // (generation outputs now land there, not the legacy flat projects/ tree).
-  gw.memorySearch?.setActiveDataDirResolver?.(() => gw.books?.activeDataDir?.() ?? null);
+  // Phase 3 read-path: let memory-search index EVERY book's data/ dir (generation
+  // outputs land there per-book, not the legacy flat projects/ tree). Indexing
+  // only the active book left concurrently-run books unsearchable (bug-review #24).
+  gw.memorySearch?.setDataDirsResolver?.(() =>
+    (gw.books?.list() ?? [])
+      .map((b) => gw.books?.dataDirOf?.(b.slug) ?? null)
+      .filter((d): d is string => !!d),
+  );
 
   // ── Phase 3b: re-point the Author identity to the active book's snapshot ──
   // SoulService was constructed against workspace/soul/ in phase-03; once a book

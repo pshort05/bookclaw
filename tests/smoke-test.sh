@@ -123,6 +123,15 @@ pass "server started and serves ${BASE}/"
 [ "$(code -H "Authorization: Bearer wrong-token" "$BASE/api/status")" = "401" ] \
   && pass "wrong token -> 401" || fail "wrong token should be 401"
 
+# Express routes case-INSENSITIVELY, so /API/status still reaches the handler.
+# The auth gate must match the same way — an upper-cased /api segment must NOT
+# skip the bearer check (bug-review finding #1: case-sensitive gate bypass).
+[ "$(code "$BASE/API/status")" = "401" ] \
+  && pass "no token, upper-case /API/ -> 401 (no case bypass)" || fail "/API/status should be 401 (auth-gate case bypass)"
+
+[ "$(code "$BASE/Api/status")" = "401" ] \
+  && pass "no token, mixed-case /Api/ -> 401 (no case bypass)" || fail "/Api/status should be 401 (auth-gate case bypass)"
+
 # Try-Fail auditor route sits behind the auth gate too (gate is in front of routing).
 [ "$(code -X POST "$BASE/api/books/smoke/try-fail-audit")" = "401" ] \
   && pass "try-fail-audit: no token -> 401" || fail "try-fail-audit should be 401 without token"

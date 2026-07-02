@@ -139,7 +139,7 @@ export class WorldService {
     signals: { title: string; description?: string; genre?: string | null; knownEntities?: string },
     worldName: string,
     ai: {
-      complete: (req: { provider: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number }) => Promise<{ content: string }>,
+      complete: (req: { provider: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number }) => Promise<{ text: string }>,
       select: (taskType: string) => { id: string },
     },
   ): Promise<Array<{ docId: string; title: string; rank: number; reason: string }>> {
@@ -168,14 +168,17 @@ export class WorldService {
       ].filter(Boolean).join('\n');
 
       const provider = ai.select('consistency'); // mid tier — closest match for ranking against a manuscript
-      const { content } = await ai.complete({
+      const { text } = await ai.complete({
         provider: provider.id,
         system,
         messages: [{ role: 'user', content: userParts }],
         maxTokens: 2000,
       });
 
-      const cleaned = String(content || '').replace(/```(?:json)?/gi, '').trim();
+      // The AI router returns `.text`, not `.content` — reading `.content` always
+      // yielded undefined, so JSON.parse('') threw and this ALWAYS fell back to
+      // the unranked catalog, silently disabling relevance ranking (bug-review #23).
+      const cleaned = String(text || '').replace(/```(?:json)?/gi, '').trim();
       const parsed = JSON.parse(cleaned);
       if (!Array.isArray(parsed) || parsed.length === 0) return fallback();
 

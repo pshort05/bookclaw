@@ -676,8 +676,11 @@ export class AIRouter {
       ? { low: 1024, medium: 4096, high: 16384 }[request.thinking]
       : null;
     const maxTokens = request.maxTokens ?? provider.maxTokens;
+    // Anthropic's budget_tokens counts toward max_tokens, so the thinking budget
+    // must be added ON TOP of the visible output budget — otherwise a high
+    // thinking budget swallows the output room and the report is truncated.
     const effectiveMaxTokens = thinkingBudget
-      ? Math.max(maxTokens, thinkingBudget + 2048)
+      ? maxTokens + thinkingBudget
       : maxTokens;
 
     const body: any = {
@@ -724,6 +727,18 @@ export class AIRouter {
       .filter((b: any) => b?.type === 'text' && typeof b.text === 'string')
       .map((b: any) => b.text)
       .join('') || '';
+    // An empty completion is a failure, not a valid result (mirrors the Ollama
+    // and OpenAI-compatible paths). This happens when thinking is enabled and
+    // max_tokens is exhausted inside the thinking block (stop_reason
+    // 'max_tokens', content = [thinking] only). Throw so the caller's fallback
+    // provider fires instead of silently returning a blank, paid reply.
+    if (!text.trim()) {
+      throw new Error(
+        `Claude returned an empty completion` +
+        (data.stop_reason ? ` (stop_reason: ${data.stop_reason})` : '') +
+        `. Likely thinking-budget exhaustion, a refusal, or a truncated call.`
+      );
+    }
     const inputTokens = data.usage?.input_tokens || 0;
     const outputTokens = data.usage?.output_tokens || 0;
     return {
@@ -772,20 +787,25 @@ export class AIRouter {
       }
     }
 
+    // Clamp the requested budget to the provider's own cap. Task budgets (up to
+    // 16384) exceed some providers' limits — DeepSeek-chat caps output at 8192
+    // and rejects a larger max_tokens outright with HTTP 400, breaking every
+    // length-heavy task routed to it.
+    const clampedMaxTokens = Math.min(request.maxTokens ?? provider.maxTokens, provider.maxTokens);
     const body: any = {
       model: effectiveModel,
       messages: [
         { role: 'system', content: request.system },
         ...request.messages,
       ],
-      max_tokens: request.maxTokens ?? provider.maxTokens,
+      max_tokens: clampedMaxTokens,
       temperature: request.temperature ?? 0.7,
     };
     if (reasoningEffort) {
       // OpenAI reasoning models reject max_tokens (use max_completion_tokens) and ignore temperature.
       delete body.max_tokens;
       delete body.temperature;
-      body.max_completion_tokens = request.maxTokens ?? provider.maxTokens;
+      body.max_completion_tokens = clampedMaxTokens;
       body.reasoning_effort = reasoningEffort;
     }
     // OpenRouter: opt into usage accounting so the response carries the ACTUAL

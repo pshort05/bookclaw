@@ -257,11 +257,14 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
     // dir (fail-soft — null when no book is active).
     // global auto-input uses the active book (no project context here)
     const activeDataDir: string | null = services.books?.activeDataDir?.() ?? null;
+    // All candidate bases stay INSIDE the workspace. A repo-root base
+    // (r(baseDir, inputFile)) was removed: it let `../.env` climb out of the
+    // workspace yet stay under baseDir, leaking the vault key / auth token
+    // (bug-review #6). The guard below confines to workspaceDir accordingly.
     const searchPaths = [
       r(workspaceDir, inputFile),
       ...(activeDataDir ? [r(activeDataDir, inputFile)] : []),
       r(workspaceDir, 'projects', inputFile),
-      r(baseDir, inputFile),
     ];
     // Also search recursively in workspace/projects/*/
     try {
@@ -285,8 +288,10 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
       return res.status(404).json({ error: 'Input file not found: ' + inputFile + '. Use /files to see available files.' });
     }
 
-    // Security: must be within project
-    const resolvedBase = r(baseDir);
+    // Security: the resolved input must stay within the workspace. Confining to
+    // the repo root (baseDir) instead let `../.env` escape to repo-root secrets
+    // while still passing the check (bug-review #6).
+    const resolvedBase = r(workspaceDir);
     if (!resolvedInput.startsWith(resolvedBase + path.sep) && resolvedInput !== resolvedBase) {
       return res.status(403).json({ error: 'Path traversal blocked' });
     }

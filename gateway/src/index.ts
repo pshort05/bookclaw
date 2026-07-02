@@ -31,6 +31,7 @@ import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate } from './services/human-review.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
+import { chapterSummaryTarget } from './util/chapter-summary.js';
 import { AIRouter } from './ai/router.js';
 import { Vault } from './security/vault.js';
 import { PermissionManager } from './security/permissions.js';
@@ -106,7 +107,7 @@ import { TelegramBridge } from './bridges/telegram.js';
 import { DiscordBridge } from './bridges/discord.js';
 import { ROOT_DIR } from './paths.js';
 import { countWords } from './util/wordcount.js';
-import { classifyStepResponse, runWordTargetContinuation } from './util/generation-step.js';
+import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } from './util/generation-step.js';
 import { initConfig } from './init/phase-01-config.js';
 import { initSecurity } from './init/phase-02-security.js';
 import { initSoulMemory } from './init/phase-03-soul-memory.js';
@@ -120,6 +121,13 @@ import { initExportAndWaves } from './init/phase-09-export-wave.js';
 import { initHeartbeatAndBridges } from './init/phase-10-heartbeat-bridges.js';
 import { initHttp } from './init/phase-11-http.js';
 import { initChatHttp } from './init/phase-12-chat-http.js';
+
+// Matches an /api/* path CASE-INSENSITIVELY. Express routes case-insensitively
+// by default, so `/API/status` still reaches the lowercase route handler — the
+// security gates (rate-limit, auth) must match the same way, or an upper-cased
+// /api segment would slip past auth while still executing the route (bug-review
+// finding #1). The HTTP 404/SPA-fallback gate in phase-11-http.ts mirrors this.
+const API_PATH_RE = /^\/api\//i;
 
 // Constant-time comparison of a request's bearer token against the expected token.
 // Length check first because timingSafeEqual throws on unequal-length buffers.
@@ -415,7 +423,7 @@ class BookClawGateway {
     // never throttles a busy authenticated client (and vice-versa). When auth is
     // disabled the gate is open, so requests count as authenticated (generous bucket).
     this.app.use((req, res, next) => {
-      if (!req.path.startsWith('/api/')) return next();
+      if (!API_PATH_RE.test(req.path)) return next();
       const ip = req.ip || req.socket.remoteAddress || '';
       if (this.isIpAllowed(ip)) return next(); // loopback + allowlisted IPs exempt
       let authed = true;
@@ -455,7 +463,7 @@ class BookClawGateway {
     // the server starts listening, so it is always set by the time a request lands.
     this.app.use((req, res, next) => {
       if (this.authToken === null) return next();          // auth disabled
-      if (!req.path.startsWith('/api/')) return next();     // public, non-API path
+      if (!API_PATH_RE.test(req.path)) return next();       // public, non-API path
       const provided = extractToken(req);
       if (provided && bearerEquals(provided, this.authToken)) return next();
       return res.status(401).json({ error: 'Unauthorized: missing or invalid bearer token' });
@@ -917,6 +925,20 @@ class BookClawGateway {
               timestamp: new Date(),
             });
           }
+          // Mirror the primary success path: persist the turn to durable memory
+          // (the conversation log + the recall/search index) and observe it in
+          // the user model. Without this a turn that failed over to a working
+          // provider was delivered to the user yet never logged — /recall missed
+          // it and a restart dropped it entirely (bug-review #12).
+          await this.memory.process(content, response.text);
+          try {
+            this.userModel?.observe({
+              type: 'message_sent',
+              metadata: { length: content.length },
+              personaId: this.memory.getActivePersonaId(),
+            });
+            this.userModel?.maybeConsolidate().catch(() => {});
+          } catch { /* observation failures should never block messaging */ }
           // Record fallback spend too — otherwise a run that fails over to a paid
           // provider records zero cost and the budget gate is silently defeated.
           this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost, costSlug);
@@ -1490,18 +1512,31 @@ class BookClawGateway {
       const projects = this.projectEngine.listProjects();
       const resumable = projects.find(p => p.status === 'active' || p.status === 'paused');
       if (!resumable) return 'No projects to continue. Create one with `/project [task]`.';
-      if (resumable.status === 'paused') {
-        resumable.status = 'active';
-        const firstPending = resumable.steps.find((s: any) => s.status === 'pending');
-        if (firstPending) firstPending.status = 'active';
+      // A project parked for a pipeline-error / human-review gate must NOT be
+      // silently un-paused by "continue" — it needs a Confirmations decision
+      // (bug-review #8, secondary claim). Surface the pending review instead.
+      if (resumable.review) {
+        return `⏸ **"${resumable.title}"** is awaiting human review — approve or reject it in the dashboard (Confirmations) before continuing.`;
+      }
+      // Shared drive lock: "continue" must not start a SECOND concurrent runner
+      // for a project already being driven (bug-review #8).
+      if (!this.projectEngine.tryStartDriving(resumable.id)) {
+        return `⏳ **"${resumable.title}"** is already running — say "stop" to halt it, or wait for it to finish.`;
       }
       // Run one step and return the result
       try {
+        if (resumable.status === 'paused') {
+          resumable.status = 'active';
+          const firstPending = resumable.steps.find((s: any) => s.status === 'pending');
+          if (firstPending) firstPending.status = 'active';
+        }
         const result = await handlers.startAndRunProject(resumable.id);
         if ('error' in result) return `Error: ${result.error}`;
         return `▶️ Resumed **"${resumable.title}"**\n\n**Completed:** ${result.completed}\n${result.response.substring(0, 500)}${result.response.length > 500 ? '...' : ''}\n\n${result.nextStep ? `**Next:** ${result.nextStep}` : '✅ Project complete!'}`;
       } catch (err) {
         return `Error resuming project: ${String(err)}`;
+      } finally {
+        this.projectEngine.stopDriving(resumable.id);
       }
     }
 
@@ -2348,12 +2383,13 @@ class BookClawGateway {
           const cont = await runWordTargetContinuation({
             initialText: aiResponse,
             wordCountTarget: wcTarget,
-            continue: async ({ wordsSoFar, remaining, pass }) => {
+            continue: async ({ wordsSoFar, remaining, pass, textSoFar }) => {
               console.log(`  [novel-pipeline] Chapter word count: ${wordsSoFar}/${wcTarget} — requesting continuation #${pass} (~${remaining} more words)`);
               let contResponse = '';
               await new Promise<void>((resolve, reject) => {
                 gateway.handleMessage(
-                  `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize. Continue the actual prose.`,
+                  `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize. Continue the actual prose.` +
+                  continuationAnchor(textSoFar),
                   'goal-engine',
                   (response) => { contResponse = response; resolve(); },
                   projectContext,
@@ -2421,9 +2457,10 @@ class BookClawGateway {
             stepLabel.toLowerCase().includes('world');
 
           if ((isWritingStep || isBibleStep) && aiResponse.length > 200) {
-            const chapterNum = project.steps.filter((s: any) =>
-              s.status === 'completed' && s.id !== activeStep.id
-            ).length + 1;
+            // Number by the step's own chapterNumber and key canonical chapters
+            // on the chapter so polish replaces write (bug-review #17). Shared
+            // with the studio hook via chapterSummaryTarget.
+            const { chapterNum, summaryId } = chapterSummaryTarget(project, activeStep, isWritingStep);
 
             const aiCompleteFn = (req: any) => gateway.aiRouter.complete(req);
             // Run-review B6: never let context/summary extraction silently fall
@@ -2441,7 +2478,7 @@ class BookClawGateway {
 
             // Fire and forget — don't block step completion
             gateway.contextEngine.generateSummary(
-              projectId, activeStep.id, stepLabel, chapterNum, aiResponse,
+              projectId, summaryId, stepLabel, chapterNum, aiResponse,
               aiCompleteFn, aiSelectFn
             ).catch(err => console.error('[context-engine] Summary error:', err.message));
 
@@ -2543,6 +2580,15 @@ class BookClawGateway {
           return;
         }
 
+        // Shared drive lock: refuse a second concurrent runner for the same
+        // project (e.g. "continue" fired while it is already running), which would
+        // double every remaining step's AI spend (bug-review #5/#8).
+        if (!gateway.projectEngine.tryStartDriving(projectId)) {
+          await statusCallback('⏳ This project is already running — say "stop" to halt it, or wait for it to finish.');
+          return;
+        }
+        try {
+
         if (project.status === 'paused') {
           project.status = 'active';
           const firstPending = project.steps.find(s => s.status === 'pending');
@@ -2622,6 +2668,9 @@ class BookClawGateway {
             );
             return;
           }
+        }
+        } finally {
+          gateway.projectEngine.stopDriving(projectId);
         }
       },
 

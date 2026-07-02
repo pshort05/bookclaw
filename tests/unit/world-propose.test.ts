@@ -49,7 +49,9 @@ test('proposeWorldDocs maps a ranked AI response against the catalog (titles fro
   try {
     const { world, d1, d2, d3 } = await setup(root);
     const ai = {
-      complete: async () => ({ content: JSON.stringify([
+      // The router returns `.text` (not `.content`) — finding #23. Using the real
+      // contract makes this a regression test: the old `.content` read fell back.
+      complete: async () => ({ text: JSON.stringify([
         { docId: d2, rank: 1, reason: 'central conflict' },
         { docId: d1, rank: 2, reason: 'setting' },
       ]) }),
@@ -88,7 +90,7 @@ test('proposeWorldDocs falls back to the full catalog (reason manual) on unparse
   try {
     const { world, d1, d2, d3 } = await setup(root);
     const ai = {
-      complete: async () => ({ content: 'not json' }),
+      complete: async () => ({ text: 'not json' }),
       select: () => ({ id: 'ollama' }),
     };
     const out = await world.proposeWorldDocs('my-book', signals, 'test-world', ai);
@@ -113,7 +115,7 @@ test('proposeWorldDocs returns [] for an empty catalog WITHOUT calling the AI (e
     const world = new WorldService(lib, workspace);
     let aiCalled = false;
     const ai = {
-      complete: async () => { aiCalled = true; return { content: '[]' }; },
+      complete: async () => { aiCalled = true; return { text: '[]' }; },
       select: () => ({ id: 'ollama' }),
     };
     const out = await world.proposeWorldDocs('my-book', signals, 'test-world', ai);
@@ -129,7 +131,7 @@ test('proposeWorldDocs falls back to the full catalog when the AI ranks only ids
   try {
     const { world, d1, d2, d3 } = await setup(root);
     const ai = {
-      complete: async () => ({ content: JSON.stringify([
+      complete: async () => ({ text: JSON.stringify([
         { docId: 'ghost-doc-a', rank: 1, reason: 'x' },
         { docId: 'ghost-doc-b', rank: 2, reason: 'y' },
       ]) }),
@@ -152,7 +154,7 @@ test('proposeWorldDocs handles an oversized knownEntities signal without throwin
     const ai = {
       complete: async (req: { messages: Array<{ content: string }> }) => {
         seenUserContent = req.messages[0].content;
-        return { content: JSON.stringify([{ docId: d1, rank: 1, reason: 'r' }]) };
+        return { text: JSON.stringify([{ docId: d1, rank: 1, reason: 'r' }]) };
       },
       select: () => ({ id: 'ollama' }),
     };

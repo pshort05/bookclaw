@@ -210,6 +210,17 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       if (path === 'ai.preferredProvider') {
         services.aiRouter.setGlobalPreferredProvider(value || null);
       }
+      // Push a changed spend limit into the live CostTracker — its limits are
+      // otherwise constructor-only, so the over-budget guard (and /api/status)
+      // would keep using the boot-time cap until the next restart even though the
+      // value is persisted. Read both back from config so a single-field update
+      // leaves the other limit intact.
+      if (path === 'costs.dailyLimit' || path === 'costs.monthlyLimit') {
+        services.costs?.setLimits(
+          services.config.get('costs.dailyLimit'),
+          services.config.get('costs.monthlyLimit'),
+        );
+      }
       // Rebuild providers so a changed per-provider default model takes effect
       // without a restart (the router reads config.<provider>.model at build time).
       if (/^ai\.(claude|gemini|openrouter|ollama)\.model$/.test(path)) {

@@ -11,8 +11,17 @@ test('rejects a protocol-relative or absolute URL', () => {
 });
 
 test('rejects a path with .. segments that would escape /api/', () => {
-  assert.match(validatePath('/api/../admin') ?? '', /\.\./);
-  assert.match(validatePath('/api/books/../../secret') ?? '', /\.\./);
+  // These normalize out of the /api/ namespace (/admin, /secret) and are rejected.
+  assert.notEqual(validatePath('/api/../admin'), null);
+  assert.notEqual(validatePath('/api/books/../../secret'), null);
+});
+
+test('rejects percent-encoded / backslash dot-segment bypasses of the confirmation gate (finding 11)', () => {
+  // fetch/WHATWG-URL normalizes these to /api/confirmations/123/approve on the
+  // wire; the guard runs on the RAW string before, so it must normalize first.
+  assert.notEqual(validatePath('/api/confirmations/123/foo/%2e%2e/approve'), null);
+  assert.notEqual(validatePath('/api/confirmations/123/foo/%2E%2E/reject'), null);
+  assert.notEqual(validatePath('/api/confirmations/123/x/..\\approve'), null);
 });
 
 test('accepts a normal api path', () => {

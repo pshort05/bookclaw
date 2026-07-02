@@ -253,11 +253,20 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
   // makes an approved gate continue even on a dashboard-only (non-autonomous)
   // deployment. Runs regardless of mode; fail-soft.
   const driveProject = async (projectId: string) => {
-    for (let i = 0; i < 500; i++) {
-      const p = gw.projectEngine.getProject(projectId);
-      if (!p || p.status !== 'active' || !p.steps.some((s: any) => s.status === 'active')) break;
-      const r = await commandHandlers.startAndRunProject(projectId);
-      if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
+    // Claim the shared drive lock so this resolver/headless driver never runs the
+    // same project concurrently with a browser /auto-execute (or /execute) run —
+    // two runners on the same active step duplicate/overwrite chapters + double
+    // AI cost (bug-review #2). Skip entirely if the project is already driven.
+    if (!gw.projectEngine.tryStartDriving(projectId)) return;
+    try {
+      for (let i = 0; i < 500; i++) {
+        const p = gw.projectEngine.getProject(projectId);
+        if (!p || p.status !== 'active' || !p.steps.some((s: any) => s.status === 'active')) break;
+        const r = await commandHandlers.startAndRunProject(projectId);
+        if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
+      }
+    } finally {
+      gw.projectEngine.stopDriving(projectId);
     }
   };
   setInterval(async () => {

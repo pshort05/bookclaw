@@ -7,14 +7,10 @@ import { stripMetaCommentary } from '../../services/strip-meta.js';
 import { buildBookCanonBlock } from '../../services/book-canon.js';
 import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
-import { classifyStepResponse, runWordTargetContinuation } from '../../util/generation-step.js';
+import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } from '../../util/generation-step.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 import { isValidModelId } from '../../ai/model-id.js';
-
-// Per-project in-flight lock for auto-execute. Prevents two runners (dashboard +
-// Telegram, or a double-click) from processing the same step → duplicated
-// chapters + double cost. Module-level so it's shared across all requests.
-const autoExecuteInFlight = new Set<string>();
+import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 
 /**
  * Project Engine endpoints: templates, project + pipeline creation, start/
@@ -443,6 +439,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.json({ humanReview: true, confirmationId: conf?.id ?? project.review?.confirmationId, project: engine.getProject(req.params.id) });
     }
 
+    // Claim the shared drive lock so this single-step run can't execute the same
+    // active step concurrently with an auto-execute loop or a bridge runner
+    // (bug-review #8). Released in the finally below.
+    if (!engine.tryStartDriving(project.id)) {
+      return res.status(409).json({ error: 'Project is already running' });
+    }
+
     try {
       // F2: inject passive step-skill content (snapshot → global), same as the
       // bridge path — buildProjectContext alone never added it on the studio path.
@@ -513,6 +516,26 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         });
       }
 
+      // Strip leaked chatbot framing before saving/completing (parity with the
+      // auto-execute runner), then WRITE the step's output file. /execute used to
+      // complete the step without ever writing the `${id}-<label>.md` file that
+      // the disk-based manuscript assemblers read, so a chapter run individually
+      // via the "Execute" button silently vanished from the compiled novel
+      // (bug-review #7).
+      response = stripMetaCommentary(response);
+      try {
+        const { join: j } = await import('path');
+        const { mkdir: mkd, writeFile: wf } = await import('fs/promises');
+        const activeDataDir: string | null = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? null;
+        const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
+        await mkd(projectDir, { recursive: true });
+        const stepFileName = `${activeStep.id}-${activeStep.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+        await wf(j(projectDir, stepFileName), `# ${activeStep.label}\n\n${response}`, 'utf-8');
+      } catch (writeErr) {
+        console.error('[execute] Failed to write step output file:', writeErr);
+      }
+
       const nextStep = engine.completeStep(project.id, activeStep.id, response);
 
       res.json({
@@ -528,6 +551,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         error: 'Step execution failed: ' + String(error),
         project: engine.getProject(project.id),
       });
+    } finally {
+      engine.stopDriving(project.id);
     }
   });
 
@@ -610,18 +635,19 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Concurrency guard: only one runner per project. Without it, the dashboard
-    // + Telegram (or a double-click) both process the same active step →
-    // duplicated/overwritten chapter files + double cost.
-    if (autoExecuteInFlight.has(project.id)) {
+    // Concurrency guard: only one runner per project, shared across ALL runners
+    // (this route, /execute, and the bridge autoRunProject/startAndRunProject
+    // loops) via the engine's drive lock. Without it, the dashboard + Telegram
+    // (or a double-click) both process the same active step → duplicated/
+    // overwritten chapter files + double cost (bug-review #8).
+    if (!engine.tryStartDriving(project.id)) {
       return res.status(409).json({ error: 'Project is already auto-executing' });
     }
-    autoExecuteInFlight.add(project.id);
 
     // A project paused awaiting Human Review must NOT be un-paused by "continue" —
     // it requires a Confirmations decision. Surface the pending review instead.
     if (project.review) {
-      autoExecuteInFlight.delete(project.id);
+      engine.stopDriving(project.id);
       return res.status(409).json({ error: 'Awaiting human review', humanReview: true, confirmationId: project.review.confirmationId });
     }
 
@@ -748,11 +774,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             const cont = await runWordTargetContinuation({
               initialText: response,
               wordCountTarget: wcTarget,
-              continue: async ({ wordsSoFar, remaining, pass }) => {
+              continue: async ({ wordsSoFar, remaining, pass, textSoFar }) => {
                 console.log(`  [${label}] Response word count: ${wordsSoFar}/${wcTarget} — requesting continuation #${pass} (~${remaining} more words)`);
-                const contPrompt = isRevisionApply
+                const contPrompt = (isRevisionApply
                   ? `Continue the revised manuscript from EXACTLY where you left off. You've produced ${wordsSoFar} words so far; the target is ${wcTarget}. Output at least ${Math.min(remaining, 15000)} more words of the revised manuscript, continuing from the last chapter boundary. Do NOT repeat content. Do NOT summarize. Do NOT add commentary. Output ONLY the continued manuscript prose.`
-                  : `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize.`;
+                  : `Continue writing from where you left off. You wrote ${wordsSoFar} words so far but the target is ${wcTarget}. Write at least ${remaining} more words of prose narrative, continuing the story seamlessly. Do NOT repeat what was already written. Do NOT summarize.`) +
+                  continuationAnchor(textSoFar);
                 let contResponse = '';
                 await gateway.handleMessage(
                   contPrompt,
@@ -912,9 +939,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             (stepLabel.toLowerCase().includes('character') && stepSkill !== 'revise');
 
           if (contextEngine && response.length > 200 && (isCanonicalChapter || isBibleStep)) {
-            const chapterNum = currentProject.steps.filter((s: any) =>
-              s.status === 'completed' && s.id !== activeStep.id
-            ).length + 1;
+            // Number by the step's own chapterNumber and key canonical chapters
+            // on the chapter so polish replaces write (bug-review #17). Shared
+            // with the bridge hook in index.ts via chapterSummaryTarget.
+            const { chapterNum, summaryId } = chapterSummaryTarget(currentProject, activeStep, isCanonicalChapter);
 
             const aiCompleteFn = (req: any) => services.aiRouter.complete(req);
             const aiSelectFn = (taskType: string) => services.aiRouter.selectProvider(taskType);
@@ -922,7 +950,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             // Await context engine calls so they complete before moving to next step
             await Promise.allSettled([
               contextEngine.generateSummary(
-                currentProject.id, activeStep.id, stepLabel, chapterNum, response,
+                currentProject.id, summaryId, stepLabel, chapterNum, response,
                 aiCompleteFn, aiSelectFn
               ).catch((err: any) => console.error('[context-engine] Summary error:', err.message)),
               contextEngine.extractEntities(
@@ -1044,7 +1072,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       project: engine.getProject(req.params.id),
     });
     } finally {
-      autoExecuteInFlight.delete(project.id);
+      engine.stopDriving(project.id);
     }
   });
 

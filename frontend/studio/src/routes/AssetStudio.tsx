@@ -147,9 +147,12 @@ export function AssetStudio() {
         </div>
       )}
 
-      {/* Re-pull panel (book scope only) */}
+      {/* Re-pull panel (book scope only). Keyed on the active slug so switching
+          books remounts it — its asset list loads once via a []-deps effect and
+          acts on the server-side active book, so a stale instance would show book
+          A's divergence while re-pulling against book B (bug-review #25). */}
       {scope === 'book' && activeBook && (
-        <RepullPanel onRefreshEditor={() => setEditorKey((n) => n + 1)} />
+        <RepullPanel key={`repull:${activeSlug ?? ''}`} onRefreshEditor={() => setEditorKey((n) => n + 1)} />
       )}
 
       {/* Three-pane work area */}
