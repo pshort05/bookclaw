@@ -176,6 +176,15 @@ export class CostTracker {
     if (changed) this.schedulePersist();
   }
 
+  /** Flush any debounced write to disk. Call on shutdown so late spend isn't lost. */
+  async flush(): Promise<void> {
+    if (this.writeTimer) {
+      clearTimeout(this.writeTimer);
+      this.writeTimer = null;
+    }
+    await this.persist();
+  }
+
   /** Debounced disk write — coalesces rapid `record()` calls into one write. */
   private schedulePersist(): void {
     if (!this.persistPath) return;

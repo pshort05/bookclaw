@@ -186,6 +186,10 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
       const p = await startPipeline(autoStartPremise);
       if (p) {
         await api(`/api/projects/${encodeURIComponent(p.id)}/auto-execute`, { method: 'POST', body: '{}' }).catch(() => {});
+      } else {
+        // Creation failed: release the session guard so a later mount can retry.
+        // (The guard is set pre-await only to close the duplicate-fire window.)
+        try { sessionStorage.removeItem(guardKey); } catch { /* sessionStorage unavailable */ }
       }
     })();
     // startPipeline is stable enough; the ref + session guard ensure a single fire.

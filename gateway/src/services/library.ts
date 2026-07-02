@@ -239,6 +239,12 @@ export class LibraryService {
     const p = this.overlayPath(kind, name);
     if (!p || !existsSync(p)) return false;
     await rm(p, { recursive: true, force: true });
+    if (kind === 'section') {
+      // Section stores its description in a sibling sidecar (not inside a dir),
+      // so it isn't removed by rm(p); drop it too or a recreate resurrects the
+      // stale description. force:true is a no-op when it doesn't exist.
+      await rm(join(this.workspaceDir, DIR_LAYOUT[kind], `${name}.meta.json`), { force: true });
+    }
     return true;
   }
 

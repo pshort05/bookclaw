@@ -4,6 +4,7 @@ import { safePath, upload, serveFile, asyncHandler } from './_shared.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { generateEpubBuffer } from '../../services/epub-export.js';
 import { resolveBookAppendix, type AppendixEntry } from '../../services/world-appendix.js';
+import { extractDocxText } from '../../services/docx-extract.js';
 
 /** Document library (large-manuscript storage), project/library uploads, and the Context Engine / continuity checker. */
 export function mountDocuments(app: Application, gateway: any, baseDir: string): void {
@@ -110,22 +111,7 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       textContent = req.file.buffer.toString('utf-8');
     } else if (ext === 'docx') {
       try {
-        const AdmZip = (await import('adm-zip')).default;
-        const zip = new AdmZip(req.file.buffer);
-        const docEntry = zip.getEntry('word/document.xml');
-        if (docEntry) {
-          const xml = docEntry.getData().toString('utf-8');
-          const paragraphs: string[] = [];
-          const paraMatches = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
-          for (const para of paraMatches) {
-            const textParts = para.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
-            if (textParts) {
-              const line = textParts.map(t => t.replace(/<[^>]+>/g, '')).join('');
-              if (line.trim()) paragraphs.push(line);
-            }
-          }
-          textContent = paragraphs.join('\n\n');
-        }
+        textContent = extractDocxText(req.file.buffer);
       } catch { /* ok */ }
 
       // Save extracted text alongside for fast access
@@ -251,27 +237,9 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
     } else if (ext === 'docx') {
       // Extract text from docx — unzip the archive and parse word/document.xml
       try {
-        const AdmZip = (await import('adm-zip')).default;
-        const zip = new AdmZip(req.file.buffer);
-        const docEntry = zip.getEntry('word/document.xml');
-        if (docEntry) {
-          const xml = docEntry.getData().toString('utf-8');
-          // Extract text from <w:t> tags, preserving paragraph breaks
-          const paragraphs: string[] = [];
-          const paraMatches = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
-          for (const para of paraMatches) {
-            const textParts = para.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
-            if (textParts) {
-              const line = textParts.map(t => t.replace(/<[^>]+>/g, '')).join('');
-              if (line.trim()) paragraphs.push(line);
-            }
-          }
-          textContent = paragraphs.join('\n\n');
-          if (!textContent.trim()) {
-            textContent = '[Empty document — no text found in .docx]';
-          }
-        } else {
-          textContent = '[Could not find document content in .docx — file may be corrupted]';
+        textContent = extractDocxText(req.file.buffer);
+        if (!textContent.trim()) {
+          textContent = '[Empty document — no text found in .docx]';
         }
       } catch (e) {
         textContent = '[Failed to parse .docx file: ' + String(e) + ']';
@@ -355,6 +323,11 @@ export function mountDocuments(app: Application, gateway: any, baseDir: string):
       if (!project.context.uploadedContent) project.context.uploadedContent = '';
       project.context.uploadedContent += `\n\n--- Uploaded: ${filename} ---\n${textContent}`;
     }
+
+    // Persist the mutated project context (uploads + document references) so the
+    // uploaded-manuscript wiring survives a gateway restart — getProject returns
+    // the live Map reference and nothing else in this path flushes state.
+    engine.saveState();
 
     res.json({
       success: true,

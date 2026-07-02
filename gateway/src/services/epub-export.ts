@@ -336,8 +336,9 @@ function markdownToXhtml(markdown: string): string {
 /**
  * Escape special XML characters.
  */
-function escapeXml(text: string): string {
+export function escapeXml(text: string): string {
   return text
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

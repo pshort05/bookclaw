@@ -163,21 +163,24 @@ test('extractComplaints: counts complaint markers, sorted desc, formatted string
 
 // ── extractReaderRequests ─────────────────────────────────────────────────────
 
-test('extractReaderRequests: captures a snippet at the marker, dedupes, redacts quotes', () => {
+test('extractReaderRequests: aggregate marker counts only — no verbatim review prose', () => {
   const reviews = [
     sanReview({ text: 'I really wish there was more of the side characters in the next book', id: '1' }),
-    sanReview({ text: 'Honestly I wish there was more of the side characters in the next book', id: '2' }),
-    sanReview({ text: 'I needed more "spicy banter" between the leads to feel satisfied', id: '3' }),
+    sanReview({ text: 'Honestly I wish there was more zebra lore in the sequel please', id: '2' }),
+    sanReview({ text: 'I needed more spicy banter between the leads to feel satisfied', id: '3' }),
   ];
   const rep = svc.analyze(reviews);
-  // First two collapse to one (same lowercased snippet from the marker onward).
-  const wishOnes = rep.readerRequestedNextStories.filter(s => s.startsWith('wish there was'));
-  assert.equal(wishOnes.length, 1);
-  // Quoted text is redacted to "[…]".
-  const needed = rep.readerRequestedNextStories.find(s => s.startsWith('needed more'));
-  assert.ok(needed);
-  assert.ok(needed!.includes('"[…]"'));
-  assert.ok(!needed!.includes('spicy banter'));
+  // "wish there was" appears in 2 reviews → one aggregate entry, no verbatim prose.
+  const wishEntry = rep.readerRequestedNextStories.find(s => s.startsWith('"wish there was"'));
+  assert.ok(wishEntry, 'expected a "wish there was" aggregate entry');
+  assert.match(wishEntry!, /appeared in 2 reviews/);
+  // "needed more" appears in 1 review.
+  assert.ok(rep.readerRequestedNextStories.some(s => /"needed more" appeared in 1 reviews?/.test(s)));
+  // Critically: no verbatim review prose leaks — the distinctive token 'zebra' must not appear.
+  assert.ok(rep.readerRequestedNextStories.every(s => !s.includes('zebra')));
+  assert.ok(rep.readerRequestedNextStories.every(s => !s.includes('side characters')));
+  // Payload stays internally consistent with its own disclaimer.
+  assert.match(rep.disclaimer, /No verbatim review text is exported/);
 });
 
 // ── buildClusters ─────────────────────────────────────────────────────────────

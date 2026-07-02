@@ -307,6 +307,15 @@ export class ProjectEngine {
    * Persist all project state to disk (debounced — max once per second).
    * Non-fatal: if save fails, projects continue to work in-memory.
    */
+  /**
+   * Public flush hook — persist current project state (debounced). Callers that
+   * mutate a project returned by getProject() (e.g. the upload route stashing
+   * manuscript context) must call this so the change survives a restart.
+   */
+  saveState(): void {
+    this.persistState();
+  }
+
   private persistState(): void {
     if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
     this.saveDebounceTimer = setTimeout(async () => {

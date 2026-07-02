@@ -39,17 +39,33 @@ export class Vault {
     await mkdir(this.vaultPath, { recursive: true });
     const filePath = join(this.vaultPath, 'vault.enc');
 
+    let loaded: VaultData | null = null;
     if (existsSync(filePath)) {
-      const raw = await readFile(filePath, 'utf-8');
-      this.data = JSON.parse(raw);
-    } else {
-      // Create new vault
-      this.data = {
-        version: 1,
-        salt: randomBytes(SALT_LENGTH).toString('hex'),
-        entries: {},
-      };
+      try {
+        const raw = await readFile(filePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.salt === 'string' && parsed.entries && typeof parsed.entries === 'object') {
+          loaded = parsed;
+        } else {
+          throw new Error('missing salt/entries');
+        }
+      } catch (err) {
+        // Corrupt/truncated or schema-invalid vault. Do NOT overwrite the
+        // credential file — quarantine it (preserving data) and start fresh,
+        // matching the fail-soft init convention instead of crashing boot.
+        const bak = filePath + '.corrupt-' + Date.now();
+        try {
+          await rename(filePath, bak);
+        } catch { /* best effort */ }
+        console.warn(`  ⚠️  Vault file unreadable/invalid (${(err as Error).message}) — quarantined to ${bak}; starting a fresh vault.`);
+      }
     }
+    // Create new vault (or fall through here after quarantining a bad one)
+    this.data = loaded ?? {
+      version: 1,
+      salt: randomBytes(SALT_LENGTH).toString('hex'),
+      entries: {},
+    };
 
     // Derive master key from environment variable
     let passphrase = process.env.BOOKCLAW_VAULT_KEY || '';

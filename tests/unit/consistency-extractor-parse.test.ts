@@ -92,6 +92,26 @@ test('clamps an out-of-range scene index before deriving story-time / metadata (
   assert.equal(r.facts[0].canonical, false, 'reads the clamped scene\'s canonical flag');
 });
 
+test('clamps an out-of-range knowledge scene index before deriving story-time / metadata (L15)', () => {
+  const oob = JSON.stringify({
+    scenes: [{ timeLabel: 'morning', canonical: true }, { timeLabel: 'dream', canonical: false }],
+    knowledgeEvents: [
+      { knower: 'Elena', factEntity: 'Marsh', factAttribute: 'killer', factValueNorm: 'guilty', kind: 'use', source: 'reference', scene: 7, evidence: 'over-range' },
+      { knower: 'Sam', factEntity: 'Marsh', factAttribute: 'killer', factValueNorm: 'guilty', kind: 'acquire', source: 'witnessed', scene: -3, evidence: 'negative' },
+    ],
+  });
+  const r = parseExtractorResponse(oob, 100);
+  assert.equal(r.knowledge.length, 2);
+  // Over-range (7) clamps to last scene index (1).
+  assert.equal(r.knowledge[0].scene, 1, 'clamped to last scene index');
+  assert.equal(r.knowledge[0].storyTime, 101, 'base + clamped scene (not base + 7)');
+  assert.equal(r.knowledge[0].canonical, false, 'reads the clamped scene\'s canonical flag (not default-true)');
+  // Negative (-3) clamps to 0.
+  assert.equal(r.knowledge[1].scene, 0, 'clamped to first scene index');
+  assert.equal(r.knowledge[1].storyTime, 100, 'base + 0');
+  assert.equal(r.knowledge[1].canonical, true, 'reads scene 0 canonical flag');
+});
+
 test('v1 response (no canonical / no knowledge) defaults cleanly', () => {
   const r = parseExtractorResponse(SAMPLE, 0); // SAMPLE = the existing v1 fixture
   assert.equal(r.facts[0].canonical, true);

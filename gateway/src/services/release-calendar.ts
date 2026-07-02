@@ -156,7 +156,7 @@ export class ReleaseCalendarService {
         `DTSTART;VALUE=DATE:${dateOnly}`,
         `DTEND;VALUE=DATE:${dateOnly}`,
         `SUMMARY:${this.escapeICS(e.title)}`,
-        `DESCRIPTION:${this.escapeICS(e.description + (e.bookTitle ? `\\nBook: ${e.bookTitle}` : '') + `\\nPriority: ${e.priority}\\nCategory: ${e.category}`)}`,
+        `DESCRIPTION:${this.escapeICS(e.description + (e.bookTitle ? `\nBook: ${e.bookTitle}` : '') + `\nPriority: ${e.priority}\nCategory: ${e.category}`)}`,
         `CATEGORIES:${e.category.toUpperCase()}`,
         `STATUS:${e.status === 'done' ? 'CONFIRMED' : 'TENTATIVE'}`,
         // VALARM block for email+popup alerts 7 days, 1 day, and 4 hours before.

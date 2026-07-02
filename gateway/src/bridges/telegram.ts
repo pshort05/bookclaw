@@ -420,7 +420,12 @@ export class TelegramBridge {
             // Store file list for /read # selection
             this.lastFileList.set(chatId, files
               .filter(f => !f.includes('📁'))  // Only actual files, not directories
-              .map(f => f.replace(/^[\s📄]+/, '').trim()));
+              .map(f => {
+                const name = f.replace(/^[\s📄]+/, '').trim();
+                // listFiles returns names relative to `subdir`; prefix it so
+                // /read # and /export # resolve workspace/<subdir>/<name>.
+                return subdir ? `${subdir}/${name}` : name;
+              }));
 
             let msg = `📁 *Files${subdir ? ` in ${subdir}` : ''}:*\n`;
             let fileNum = 1;

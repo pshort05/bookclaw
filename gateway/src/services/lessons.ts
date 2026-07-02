@@ -10,7 +10,7 @@
  * Ported from Sneakers, adapted for author workflows.
  */
 
-import { readFile, writeFile, appendFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
@@ -55,6 +55,7 @@ const VALID_SOURCES = [
 export class LessonStore {
   private lessons: Lesson[] = [];
   private filePath: string;
+  private writeChain: Promise<void> = Promise.resolve();
 
   constructor(memoryDir: string) {
     this.filePath = join(memoryDir, 'improvement-log.jsonl');
@@ -99,12 +100,7 @@ export class LessonStore {
     };
 
     this.lessons.push(lesson);
-
-    try {
-      await appendFile(this.filePath, JSON.stringify(lesson) + '\n', 'utf-8');
-    } catch (err) {
-      console.error('  ✗ Failed to persist lesson:', err);
-    }
+    await this.persistAll();
 
     return lesson;
   }
@@ -182,11 +178,17 @@ export class LessonStore {
   // ── Internal ──
 
   private async persistAll(): Promise<void> {
-    try {
-      const data = this.lessons.map(l => JSON.stringify(l)).join('\n') + '\n';
-      await writeFile(this.filePath, data, 'utf-8');
-    } catch (err) {
-      console.error('  ✗ Failed to persist lessons:', err);
-    }
+    // Serialize all disk writes on a single chain and snapshot in-memory state
+    // at execution time, so appends and full rewrites never overlap on the
+    // event loop (which could otherwise drop, duplicate, or tear JSONL lines).
+    this.writeChain = this.writeChain
+      .then(async () => {
+        const data = this.lessons.map(l => JSON.stringify(l)).join('\n') + '\n';
+        await writeFile(this.filePath, data, 'utf-8');
+      })
+      .catch(err => {
+        console.error('  ✗ Failed to persist lessons:', err);
+      });
+    return this.writeChain;
   }
 }

@@ -18,6 +18,7 @@ import { join, resolve, sep } from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { timingSafeEqual } from 'crypto';
+import { fileURLToPath } from 'url';
 import ipaddr from 'ipaddr.js';
 
 import { ConfigService } from './services/config.js';
@@ -135,6 +136,19 @@ function bearerEquals(provided: string, expected: string): boolean {
   const a = Buffer.from(provided);
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Internal, one-shot channels that must NOT accumulate or replay conversation
+// history: project engines, the conductor/goal orchestrators, silent API calls,
+// and the Telegram `/research` synthesis channel. Each builds a clean single-message
+// array, so carrying prior turns would leak unrelated context into the next request.
+export function isEphemeralChannel(channel: string): boolean {
+  return channel === 'projects' ||
+    channel === 'project-engine' ||
+    channel === 'goal-engine' ||
+    channel === 'conductor' ||
+    channel === 'api-silent' ||
+    channel === 'research';
 }
 
 // The bearer token a request presents: Authorization header first, then the ?token=
@@ -797,7 +811,7 @@ class BookClawGateway {
     // ── Add to conversation history (skip for project engines + silent channels) ──
     // Project steps use their own context chain, not the chat history
     const isProjectChannel = channel === 'projects' || channel === 'project-engine' || channel === 'goal-engine';
-    const skipHistory = isProjectChannel || channel === 'conductor' || channel === 'api-silent';
+    const skipHistory = isEphemeralChannel(channel);
     // Per-channel conversation history prevents cross-contamination between
     // Telegram users, web chat, and API callers.
     const history = this.getHistory(channel);
@@ -2929,27 +2943,32 @@ class BookClawGateway {
       message: 'BookClaw shutting down',
     });
     await this.audit?.log('system', 'shutdown', {});
+    await this.costs?.flush();
     this.server.close();
     console.log('  ✍️  BookClaw stopped. Happy writing!\n');
   }
 }
 
-// ── Start ──
-const gateway = new BookClawGateway();
-
-process.on('SIGINT', async () => {
-  await gateway.shutdown();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await gateway.shutdown();
-  process.exit(0);
-});
-
-gateway.start().catch((error) => {
-  console.error('Failed to start BookClaw:', error);
-  process.exit(1);
-});
-
 export { BookClawGateway };
+
+// ── Start ──
+// Only boot the gateway when this file is the process entry point. Importing it
+// (e.g. from a unit test to reuse an exported helper) must not spin up the server.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const gateway = new BookClawGateway();
+
+  process.on('SIGINT', async () => {
+    await gateway.shutdown();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    await gateway.shutdown();
+    process.exit(0);
+  });
+
+  gateway.start().catch((error) => {
+    console.error('Failed to start BookClaw:', error);
+    process.exit(1);
+  });
+}

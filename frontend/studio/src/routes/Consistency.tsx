@@ -230,29 +230,6 @@ export function Consistency() {
       .catch(() => setReportDownload(null));
   }, [slug, report]);
 
-  // Subscribe to socket events for the duration of the component's life.
-  useEffect(() => {
-    return subscribeConsistency({
-      onProgress: (e) => {
-        if (e.slug === slug) setProgress(e.message);
-      },
-      onComplete: (e) => {
-        if (e.slug === slug) {
-          setReport(e.report);
-          setRunning(false);
-          setProgress(null);
-        }
-      },
-      onError: (e) => {
-        if (e.slug === slug) {
-          setErr(`Audit failed — ${e.error}`);
-          setRunning(false);
-          setProgress(null);
-        }
-      },
-    });
-  }, [slug]);
-
   // Load any existing report when the book changes.
   const loadReport = useCallback(() => {
     if (!slug) return;
@@ -282,6 +259,33 @@ export function Consistency() {
   }, [slug]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
+
+  // Subscribe to socket events for the duration of the component's life.
+  // onReconnect refetches state (via loadReport) so an audit that completed
+  // while the socket was dropped — whose one-shot 'consistency-complete' event
+  // was missed — no longer strands the UI on 'Running…'.
+  useEffect(() => {
+    return subscribeConsistency({
+      onProgress: (e) => {
+        if (e.slug === slug) setProgress(e.message);
+      },
+      onComplete: (e) => {
+        if (e.slug === slug) {
+          setReport(e.report);
+          setRunning(false);
+          setProgress(null);
+        }
+      },
+      onError: (e) => {
+        if (e.slug === slug) {
+          setErr(`Audit failed — ${e.error}`);
+          setRunning(false);
+          setProgress(null);
+        }
+      },
+      onReconnect: loadReport,
+    });
+  }, [slug, loadReport]);
 
   async function runAudit() {
     if (!slug || running) return;

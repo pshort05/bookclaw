@@ -135,7 +135,14 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
     const factEntity = String(k.factEntity ?? '').trim();
     const factAttribute = String(k.factAttribute ?? '').trim();
     const factValueNorm = String(k.factValueNorm ?? '').trim().toLowerCase();
-    const scene = typeof k.scene === 'number' ? k.scene : 0;
+    const rawScene = typeof k.scene === 'number' ? k.scene : 0;
+    // Clamp the LLM-supplied scene index into range (mirrors the facts path
+    // above). An out-of-range index would otherwise inflate/deflate storyTime
+    // and read undefined scene metadata (canonical silently defaulting true),
+    // skewing the used-before-learned knowledge-timeline check.
+    const scene = rawScenes.length > 0
+      ? Math.min(Math.max(rawScene, 0), rawScenes.length - 1)
+      : rawScene;
     const kind: KnowledgeKind = k.kind === 'acquire' ? 'acquire' : 'use';
     const source: KnowledgeSource = allowedSources.includes(k.source as KnowledgeSource)
       ? (k.source as KnowledgeSource)

@@ -99,6 +99,30 @@ test('exportICS emits a VCALENDAR with an all-day VEVENT and three VALARMs', asy
   assert.ok(ics.trimEnd().endsWith('END:VCALENDAR'));
 });
 
+test('exportICS emits single-backslash \\n line breaks in DESCRIPTION, not double-escaped', async () => {
+  const svc = freshSvc();
+  await svc.initialize();
+  await svc.createEvent({
+    projectId: 'p',
+    bookTitle: 'MyBook',
+    date: '2026-08-15T00:00:00.000Z',
+    title: 'T',
+    description: 'Desc',
+    category: 'launch',
+    priority: 'high',
+  });
+  const ics = svc.exportICS();
+  const descLine = ics.split('\r\n').find(l => l.startsWith('DESCRIPTION:'));
+  assert.ok(descLine, 'DESCRIPTION line present');
+  // RFC 5545 line breaks are a single backslash + n. The old code emitted a
+  // literal double-backslash + n (a visible "\n" in calendar apps).
+  assert.equal(
+    descLine,
+    'DESCRIPTION:Desc\\nBook: MyBook\\nPriority: high\\nCategory: launch',
+  );
+  assert.ok(!/\\\\n/.test(descLine), 'no double-escaped backslash-n');
+});
+
 test('exportICS marks a done event CONFIRMED', async () => {
   const svc = freshSvc();
   await svc.initialize();

@@ -33,13 +33,21 @@ export const MAX_ZIP_ENTRIES = 500;
 export const MAX_ENTRY_BYTES = 25 * 1024 * 1024;          // 25MB/entry
 export const MAX_TOTAL_UNCOMPRESSED = 100 * 1024 * 1024;  // 100MB total
 
+// A zip entry whose declared uncompressed size is 0 defeats adm-zip's per-entry
+// inflation cap (it only sets zlib maxOutputLength when the declared size > 0),
+// so a small compressed payload can inflate to a bomb before any guard fires. A
+// genuinely empty entry has an empty compressed payload too; anything above this
+// tiny slack is a lie we reject up front.
+export const MAX_EMPTY_COMPRESSED = 64;
+
 /** Returns an error string if the zip's declared sizes/count exceed budget, else null. Checks the cheap central-directory header.size BEFORE any entry is inflated, so a decompression bomb is rejected without allocating its payload. */
-export function checkZipBudget(entries: Array<{ isDirectory: boolean; header: { size: number } }>): string | null {
+export function checkZipBudget(entries: Array<{ isDirectory: boolean; header: { size: number; compressedSize: number } }>): string | null {
   if (entries.length > MAX_ZIP_ENTRIES) return `too many entries (${entries.length} > ${MAX_ZIP_ENTRIES})`;
   let total = 0;
   for (const e of entries) {
     if (e.isDirectory) continue;
     const size = e.header.size;
+    if (size <= 0 && e.header.compressedSize > MAX_EMPTY_COMPRESSED) return `entry declares empty but carries compressed payload (${e.header.compressedSize} bytes)`;
     if (size > MAX_ENTRY_BYTES) return `entry too large (${size} > ${MAX_ENTRY_BYTES} bytes)`;
     total += size;
     if (total > MAX_TOTAL_UNCOMPRESSED) return `total uncompressed too large (> ${MAX_TOTAL_UNCOMPRESSED} bytes)`;

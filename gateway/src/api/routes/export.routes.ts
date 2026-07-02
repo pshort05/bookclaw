@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import path from 'path';
-import { upload, makeGatherChapters } from './_shared.js';
+import { upload, makeGatherChapters, asyncHandler } from './_shared.js';
 import { renderBetaReaderReport } from '../../services/reports/render-beta-reader.js';
 
 /** Export-side features: KDP blurb, Track Changes (DOCX roundtrip), external tool wrappers, cover typography, manuscript hub, beta reader + dialogue auditor. */
@@ -178,9 +178,9 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
 
     // Harden against path traversal — imagePath must be inside workspace.
     const { resolve } = await import('path');
-    const workspaceDir = path.join(baseDir, 'workspace');
+    const resolvedWorkspace = resolve(path.join(baseDir, 'workspace'));
     const resolved = resolve(String(imagePath));
-    if (!resolved.startsWith(resolve(workspaceDir))) {
+    if (resolved !== resolvedWorkspace && !resolved.startsWith(resolvedWorkspace + path.sep)) {
       return res.status(400).json({ error: 'imagePath must be inside workspace/' });
     }
 
@@ -231,7 +231,7 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
   });
 
   // Run beta reader panel on a project (async — uses SSE/socket for progress)
-  app.post('/api/projects/:id/beta-reader', async (req: Request, res: Response) => {
+  app.post('/api/projects/:id/beta-reader', asyncHandler(async (req: Request, res: Response) => {
     const beta = services.betaReader;
     if (!beta) return res.status(503).json({ error: 'Beta reader not initialized' });
 
@@ -282,7 +282,7 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
         try { (gateway as any).io?.emit?.('beta-reader-error', { projectId: project.id, error: err?.message || String(err) }); } catch {}
       }
     })();
-  });
+  }));
 
   // Get the stored beta-reader report
   app.get('/api/projects/:id/beta-reader/report', async (req: Request, res: Response) => {
@@ -306,7 +306,7 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
   });
 
   // Run dialogue audit on a project
-  app.post('/api/projects/:id/dialogue-audit', async (req: Request, res: Response) => {
+  app.post('/api/projects/:id/dialogue-audit', asyncHandler(async (req: Request, res: Response) => {
     const auditor = services.dialogueAuditor;
     if (!auditor) return res.status(503).json({ error: 'Dialogue auditor not initialized' });
 
@@ -327,7 +327,7 @@ export function mountExport(app: Application, gateway: any, baseDir: string): vo
     } catch (err: any) {
       res.status(500).json({ error: err?.message || 'Audit failed' });
     }
-  });
+  }));
 
   // Export the active blurb from a project's compiled output, if present
   app.post('/api/projects/:id/export-blurb', async (req: Request, res: Response) => {

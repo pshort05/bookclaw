@@ -1250,6 +1250,15 @@ export class BookService {
         for (const [libName, content] of Object.entries(files)) {
           await writeFile(join(target, this.assetFileName(kind, libName, ref.name)), content, 'utf-8');
         }
+        // libraryFiles returns only .md content; the rm above wiped the description
+        // meta.json sidecar createBook/writeTemplate persist. Restore it so the
+        // author/voice/genre description isn't silently dropped by a series pull.
+        if (kind === 'author' || kind === 'voice' || kind === 'genre') {
+          const desc = this.library.get(kind, ref.name)?.description;
+          if (typeof desc === 'string') {
+            await writeFile(join(target, 'meta.json'), JSON.stringify({ description: desc }), 'utf-8');
+          }
+        }
       }
       const version = kind === 'pipeline' ? this.library.get('pipeline', ref.name)?.pipeline?.schemaVersion : undefined;
       const newRef: PulledRef = { name: ref.name, source: ref.source, ...(version != null ? { version } : {}) };

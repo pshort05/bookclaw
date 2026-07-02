@@ -185,7 +185,7 @@ export class SkillLoader {
 
   private parseSkill(content: string, name: string, category: 'core' | 'author' | 'marketing' | 'premium' | 'ops' | 'toolkit', source: 'builtin' | 'workspace'): Skill | null {
     // Parse YAML frontmatter
-    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!frontmatterMatch) return null;
 
     const frontmatter = frontmatterMatch[1];

@@ -97,18 +97,22 @@ export interface ConsistencyHandlers {
   onProgress: (e: ConsistencyProgressEvent) => void;
   onComplete: (e: ConsistencyCompleteEvent) => void;
   onError: (e: ConsistencyErrorEvent) => void;
+  /** Fires on socket (re)connect so the caller can refetch state lost during a drop. */
+  onReconnect?: () => void;
 }
 
 /** Subscribe to consistency audit socket events; returns an unsubscribe fn. */
-export function subscribeConsistency({ onProgress, onComplete, onError }: ConsistencyHandlers): () => void {
+export function subscribeConsistency({ onProgress, onComplete, onError, onReconnect }: ConsistencyHandlers): () => void {
   const s = socket();
   s.on('consistency-progress', onProgress);
   s.on('consistency-complete', onComplete);
   s.on('consistency-error', onError);
+  if (onReconnect) s.on('connect', onReconnect);
   return () => {
     s.off('consistency-progress', onProgress);
     s.off('consistency-complete', onComplete);
     s.off('consistency-error', onError);
+    if (onReconnect) s.off('connect', onReconnect);
   };
 }
 

@@ -1,6 +1,28 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { CostTracker } from '../../gateway/src/services/costs.ts';
+
+test('flush() forces the debounced write so late spend is not lost on shutdown', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'costs-flush-'));
+  const persistPath = join(dir, 'costs.json');
+  try {
+    const c = new CostTracker({ persistPath });
+    c.record('openrouter', 1000, 0.10, 'book-a'); // schedules a 2s debounce, no write yet
+    assert.equal(existsSync(persistPath), false, 'debounced write has not fired within the window');
+
+    await c.flush(); // shutdown path: cancel debounce + force write
+
+    assert.equal(existsSync(persistPath), true, 'flush wrote the state file');
+    const state = JSON.parse(readFileSync(persistPath, 'utf-8'));
+    assert.equal(state.totalSpend, 0.10);
+    assert.equal(state.byBook['book-a'], 0.10);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 test('record accumulates total and attributes per book', () => {
   const c = new CostTracker({});

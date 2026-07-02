@@ -146,7 +146,7 @@ export class WebsiteSiteService {
     const site = this.state.sites[siteId];
     if (!site) return null;
     let changedContent = false;
-    if (patch.config !== undefined) { site.config = patch.config; changedContent = true; }
+    if (patch.config !== undefined) { site.config = { ...patch.config, slug: site.id }; changedContent = true; }
     if (patch.linkedProjectIds !== undefined) { site.linkedProjectIds = patch.linkedProjectIds; changedContent = true; }
     if (patch.aboutHTML !== undefined) { site.aboutHTML = patch.aboutHTML; changedContent = true; }
     if (patch.contactHTML !== undefined) { site.contactHTML = patch.contactHTML; changedContent = true; }

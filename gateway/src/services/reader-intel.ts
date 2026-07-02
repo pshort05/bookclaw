@@ -264,26 +264,22 @@ export class ReaderIntelService {
   }
 
   private extractReaderRequests(reviews: SanitizedReview[]): string[] {
-    const requests: string[] = [];
+    // Aggregate signal only — count request-marker occurrences without ever
+    // exporting verbatim review prose (mirrors extractComplaints). This honors
+    // the module's "aggregate patterns, not quoted strings" guarantee.
+    const requestCounts = new Map<string, number>();
     for (const r of reviews) {
       const lower = r.text.toLowerCase();
       for (const marker of REQUEST_MARKERS) {
-        const idx = lower.indexOf(marker);
-        if (idx === -1) continue;
-        // Grab up to 80 chars after the marker — gives a sense of what was requested
-        // without exposing the full review. Strip at sentence boundary.
-        const snippet = r.text.slice(idx, idx + 160).split(/[.!?]/)[0].trim();
-        if (snippet.length > 15 && snippet.length < 160) {
-          // Anonymize: remove any quoted text.
-          const anon = snippet.replace(/"[^"]*"/g, '"[…]"');
-          requests.push(anon);
+        if (lower.includes(marker)) {
+          requestCounts.set(marker, (requestCounts.get(marker) ?? 0) + 1);
         }
-        break;  // One request per review
       }
     }
-    // Dedupe near-identical requests.
-    const unique = Array.from(new Set(requests.map(r => r.toLowerCase()))).slice(0, 20);
-    return unique;
+    return Array.from(requestCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([m, count]) => `"${m}" appeared in ${count} reviews`);
   }
 
   private extractComplaints(reviews: SanitizedReview[]): string[] {

@@ -8,7 +8,7 @@
  */
 import { test, describe, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { Vault } from '../../gateway/src/security/vault.js';
@@ -111,5 +111,29 @@ describe('Vault', () => {
     const got = await v2.get('cred');
     assert.equal(got, null, 'tampered ciphertext must fail the GCM auth tag, not return garbage');
     assert.notEqual(got, 'integrity-protected');
+  });
+
+  test('non-JSON vault.enc is quarantined and a fresh vault starts (no boot crash)', async () => {
+    const filePath = join(dir, 'vault.enc');
+    writeFileSync(filePath, 'this is not json{{');
+    const v = new Vault(dir);
+    await assert.doesNotReject(v.initialize());
+    // The corrupt file is preserved under a quarantine sibling, not overwritten.
+    const quarantined = readdirSync(dir).filter((f) => f.startsWith('vault.enc.corrupt-'));
+    assert.equal(quarantined.length, 1, 'expected exactly one quarantined vault file');
+    // A fresh vault is usable and round-trips.
+    await v.set('openai', 'sk-fresh');
+    assert.equal(await v.get('openai'), 'sk-fresh');
+  });
+
+  test('valid JSON missing salt is quarantined and a fresh vault starts', async () => {
+    const filePath = join(dir, 'vault.enc');
+    writeFileSync(filePath, JSON.stringify({ entries: {} }));
+    const v = new Vault(dir);
+    await assert.doesNotReject(v.initialize());
+    const quarantined = readdirSync(dir).filter((f) => f.startsWith('vault.enc.corrupt-'));
+    assert.equal(quarantined.length, 1, 'expected exactly one quarantined vault file');
+    await v.set('gemini', 'g-fresh');
+    assert.equal(await v.get('gemini'), 'g-fresh');
   });
 });
