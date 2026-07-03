@@ -488,8 +488,24 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       return res.status(400).json({ error: 'invalid model id' });
     }
 
+    // Content axes (Flagship Plan 2): an explicit per-book ceiling overrides the
+    // bound author's contentBrand at create time. Absent → fade-to-black default.
+    let contentCeiling: { spice: number; violence: number } | undefined;
+    if (body.contentCeiling && typeof body.contentCeiling === 'object') {
+      const spice = Number((body.contentCeiling as any).spice);
+      const violence = Number((body.contentCeiling as any).violence);
+      if (!Number.isFinite(spice) || !Number.isFinite(violence) || spice < 0 || spice > 10 || violence < 0 || violence > 10) {
+        return res.status(400).json({ error: 'contentCeiling.spice and .violence must be numbers 0-10' });
+      }
+      contentCeiling = { spice, violence };
+    }
+    const uncensoredProvider = (typeof body.uncensoredProvider === 'string' && body.uncensoredProvider) ? body.uncensoredProvider : '';
+    if (uncensoredProvider && !['grok', 'venice', 'auto'].includes(uncensoredProvider)) {
+      return res.status(400).json({ error: `unknown uncensoredProvider: ${uncensoredProvider}` });
+    }
+
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
       if (worldName && services.world?.getConfig?.(worldName)) {

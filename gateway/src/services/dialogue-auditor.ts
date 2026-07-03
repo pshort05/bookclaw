@@ -8,6 +8,8 @@
  * Heuristic-first (no AI): fast, deterministic, works offline. The optional
  * AI layer can be called by the caller for higher-accuracy attribution.
  */
+import type { CharacterProfanity } from './casting/profanity.js';
+import { containsProfanity } from './casting/profanity.js';
 
 export interface DialogueLine {
   chapterId?: string;
@@ -302,6 +304,44 @@ export class DialogueAuditor {
       }
     }
 
+    return flags;
+  }
+
+  /**
+   * Flag a high-profanity character (per the casting-layer `profanity` trait,
+   * Flagship Plan 2 Task 3) whose attributed lines came back with ZERO
+   * profanity — a sanitization signal worth a targeted re-gen rather than a
+   * whole-chapter redo. Only characters at profanity level >= 6 with at least
+   * one attributed line are checked; anything below that is normal variance.
+   */
+  flagSanitizedProfanity(
+    lines: DialogueLine[],
+    characters: Record<string, { profanity?: CharacterProfanity }>,
+  ): DialogueFlag[] {
+    const bySpeaker = new Map<string, DialogueLine[]>();
+    for (const line of lines) {
+      if (!line.speaker) continue;
+      const existing = bySpeaker.get(line.speaker);
+      if (existing) existing.push(line);
+      else bySpeaker.set(line.speaker, [line]);
+    }
+
+    const flags: DialogueFlag[] = [];
+    for (const [speaker, character] of Object.entries(characters)) {
+      const level = character.profanity?.level ?? 0;
+      if (level < 6) continue;
+      const speakerLines = bySpeaker.get(speaker);
+      if (!speakerLines || speakerLines.length === 0) continue;
+      const anyProfanity = speakerLines.some(l => containsProfanity(l.text));
+      if (anyProfanity) continue;
+      flags.push({
+        speaker,
+        paragraphIndex: speakerLines[0].paragraphIndex,
+        line: speakerLines[0].text,
+        reason: `${speaker} is marked high-profanity (level ${level}/10) but none of their ${speakerLines.length} line(s) contain profanity — possible sanitization; consider a targeted re-gen.`,
+        severity: 'warning',
+      });
+    }
     return flags;
   }
 

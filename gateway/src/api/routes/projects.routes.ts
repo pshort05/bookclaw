@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
-import { stepRouting } from './_shared.js';
+import { stepRouting, resolveIntimacyRouting } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate } from '../../services/human-review.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
@@ -11,6 +11,20 @@ import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } f
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
+import { bannedContentCheck, operationalDetailGuard } from '../../services/casting/safety-floor.js';
+import { isStepRole } from '../../services/casting/roles.js';
+import { looksLikeRefusal } from '../../services/casting/heat.js';
+
+/**
+ * Safety floor (Flagship Plan 2, Task 4/7 — H1 fix): true for the generative
+ * prose steps the safety floor must cover on EVERY draft, independent of the
+ * book's contentCeiling. Intimacy ROUTING (spiceRoute/template/escalation)
+ * stays gated behind `intimacy.active`; the floor itself is not.
+ */
+function isSafetyFloorStep(step: any): boolean {
+  const role = isStepRole(step?.role) ? step.role : undefined;
+  return role === 'draft' || role === 'intimacy';
+}
 
 /**
  * Project Engine endpoints: templates, project + pipeline creation, start/
@@ -452,7 +466,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const projectContext = (await engine.buildProjectContext(project, activeStep))
         + passiveSkillBlock(services, (activeStep as any).skill, project.bookSlug);
       const userMessage = await buildStepUserMessage(project, activeStep);
-      const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(project, activeStep);
+
+      // Flagship Plan 2: heat_check + intimacy-branch routing for a draft/intimacy
+      // step. A no-op (empty promptAddition, null spiceRoute) unless the bound
+      // book has a contentCeiling — a fade-to-black book is untouched.
+      const intimacy = await resolveIntimacyRouting({ services, project, step: activeStep, sceneBriefText: userMessage });
+      const intimacyContext = projectContext + intimacy.promptAddition;
+      const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(project, activeStep, intimacy.spiceRoute);
       let response = '';
 
       // Multi-step skills: an executable skill's OpenRouter phase chain IS the
@@ -465,7 +485,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           userMessage,
           'projects',
           (text: string) => { response = text; },
-          projectContext,
+          intimacyContext,
           activeStep.taskType || undefined,  // Use step's own taskType for routing
           stepProvider,                       // per-step override → project default → tier
           stepModel,                          // exact model id when the step pins one
@@ -481,12 +501,36 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             userMessage,
             'projects',
             (text: string) => { response = text; },
-            projectContext,
+            intimacyContext,
             'general',
             stepProvider,  // preserve the step's pinned provider on retry (parity with /auto-execute)
             stepModel,     // preserve the step's pinned model on retry
             project.bookSlug                  // Phase 8: keep the bound book on the retry path
           );
+        }
+
+        // Refusal escalation (Flagship Plan 2, Task 7): an on-page Claude scene
+        // that still came back empty/refused (or read as a wordy refusal — L1)
+        // after the general-routing retry escalates once to the casting
+        // sheet's uncensored ladder.
+        if (intimacy.active && intimacy.decision?.mode === 'onpage_claude' && (!response || response.length < 50 || looksLikeRefusal(response))) {
+          const escalated = intimacy.recomputeOnRefusal();
+          if (escalated?.spiceRoute) {
+            console.log(`  ↻ Step "${activeStep.label}" refused on-page — escalating to uncensored route (${escalated.spiceRoute.provider})...`);
+            const escalatedRouting = stepRouting(project, activeStep, escalated.spiceRoute);
+            response = '';
+            await gateway.handleMessage(
+              userMessage,
+              'projects',
+              (text: string) => { response = text; },
+              intimacyContext,
+              activeStep.taskType || undefined,
+              escalatedRouting.provider,
+              escalatedRouting.model,
+              project.bookSlug,
+              escalatedRouting.temperature
+            );
+          }
         }
       }
 
@@ -523,6 +567,42 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // via the "Execute" button silently vanished from the compiled novel
       // (bug-review #7).
       response = stripMetaCommentary(response);
+
+      // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on every
+      // draft/intimacy step regardless of the book's contentCeiling (H1 fix).
+      let reviewFlags: string[] = [];
+      if (isSafetyFloorStep(activeStep)) {
+        const banned = bannedContentCheck(response);
+        if (banned.hardBlock) {
+          engine.failStep(project.id, activeStep.id, `Safety floor blocked this draft: ${banned.reason}`);
+          return res.json({
+            success: false,
+            error: `Safety floor blocked this draft: ${banned.reason}`,
+            project: engine.getProject(project.id),
+          });
+        }
+        reviewFlags = banned.flags;
+        if (reviewFlags.length) {
+          console.log(`  ⚠ Step "${activeStep.label}" flagged for review: ${reviewFlags.join('; ')}`);
+        }
+        const guard = operationalDetailGuard(response);
+        if (guard.flagged) {
+          console.log(`  ⚠ Step "${activeStep.label}" flagged for operational detail — running one abstraction rewrite pass...`);
+          let rewritten = '';
+          await gateway.handleMessage(
+            `Rewrite the passage below so any actionable, step-by-step, or code-level technical detail is replaced with consequence-realistic narrative summary (what happens and its fallout), not a reproducible procedure. Preserve the story, characters, and prose voice — only abstract the operational detail.\n\n${response}`,
+            'projects',
+            (text: string) => { rewritten = text; },
+            intimacyContext,
+            activeStep.taskType || undefined,
+            stepProvider,
+            stepModel,
+            project.bookSlug,
+            stepTemp
+          );
+          if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten);
+        }
+      }
       try {
         const { join: j } = await import('path');
         const { mkdir: mkd, writeFile: wf } = await import('fs/promises');
@@ -544,6 +624,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         response,
         nextStep,
         project: engine.getProject(project.id),
+        ...(reviewFlags.length ? { reviewFlags } : {}),
       });
     } catch (error) {
       engine.failStep(project.id, activeStep.id, String(error));
@@ -659,7 +740,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       if (firstPending) firstPending.status = 'active';
     }
 
-    const results: Array<{ step: string; success: boolean; wordCount?: number; error?: string }> = [];
+    const results: Array<{ step: string; success: boolean; wordCount?: number; error?: string; reviewFlags?: string[] }> = [];
     let humanReviewConfId: string | undefined;
     const { join } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
@@ -700,11 +781,19 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const ob = await services.books.open(currentProject.bookSlug).catch(() => null);
           canonBlock = buildBookCanonBlock(services.books.dataDirOf?.(currentProject.bookSlug), ob?.manifest);
         }
+        const userMessage = await buildStepUserMessage(currentProject, activeStep);
+
+        // Flagship Plan 2: heat_check + intimacy-branch routing for a draft/
+        // intimacy step. A no-op (empty promptAddition, null spiceRoute) unless
+        // the bound book has a contentCeiling — a fade-to-black book is untouched.
+        // Folded into projectContext so every downstream handleMessage call in
+        // this step (primary, retry, continuation, quality-loop) carries it.
+        const intimacy = await resolveIntimacyRouting({ services, project: currentProject, step: activeStep, sceneBriefText: userMessage });
         const projectContext = (await engine.buildProjectContext(currentProject, activeStep))
           + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug)
-          + (canonBlock ? `\n\n${canonBlock}` : '');
-        const userMessage = await buildStepUserMessage(currentProject, activeStep);
-        const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep);
+          + (canonBlock ? `\n\n${canonBlock}` : '')
+          + intimacy.promptAddition;
+        const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
 
         // Multi-step skills: an executable skill's OpenRouter phase chain IS the
@@ -740,6 +829,30 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
               stepModel,     // preserve the step's pinned model on retry (if set)
               currentProject.bookSlug           // Phase 8: keep the bound book on the retry path
             );
+          }
+
+          // Refusal escalation (Flagship Plan 2, Task 7): an on-page Claude scene
+          // that still came back empty/refused (or read as a wordy refusal —
+          // L1) after the general-routing retry escalates once to the casting
+          // sheet's uncensored ladder.
+          if (intimacy.active && intimacy.decision?.mode === 'onpage_claude' && (!response || response.length < 50 || looksLikeRefusal(response))) {
+            const escalated = intimacy.recomputeOnRefusal();
+            if (escalated?.spiceRoute) {
+              console.log(`  ↻ Step "${activeStep.label}" refused on-page — escalating to uncensored route (${escalated.spiceRoute.provider})...`);
+              const escalatedRouting = stepRouting(currentProject, activeStep, escalated.spiceRoute);
+              response = '';
+              await gateway.handleMessage(
+                userMessage,
+                'project-engine',
+                (text: string) => { response = text; },
+                projectContext,
+                activeStep.taskType || undefined,
+                escalatedRouting.provider,
+                escalatedRouting.model,
+                currentProject.bookSlug,
+                escalatedRouting.temperature
+              );
+            }
           }
         }
 
@@ -886,6 +999,42 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         // Strip leaked chatbot framing ("Okay, let's…", "Would you like to
         // proceed…") before saving/completing the step.
         response = stripMetaCommentary(response);
+
+        // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on
+        // every draft/intimacy step regardless of the book's contentCeiling
+        // (H1 fix).
+        let reviewFlags: string[] = [];
+        if (isSafetyFloorStep(activeStep)) {
+          const banned = bannedContentCheck(response);
+          if (banned.hardBlock) {
+            const detail = `Safety floor blocked this draft: ${banned.reason}`;
+            engine.failStep(currentProject.id, activeStep.id, detail);
+            if (services.confirmationGate) await openReviewGate({ gate: services.confirmationGate, engine }, currentProject, activeStep, 'pipeline-error', detail);
+            results.push({ step: activeStep.label, success: false, error: detail });
+            break;
+          }
+          reviewFlags = banned.flags;
+          if (reviewFlags.length) {
+            console.log(`  ⚠ Step "${activeStep.label}" flagged for review: ${reviewFlags.join('; ')}`);
+          }
+          const guard = operationalDetailGuard(response);
+          if (guard.flagged) {
+            console.log(`  ⚠ Step "${activeStep.label}" flagged for operational detail — running one abstraction rewrite pass...`);
+            let rewritten = '';
+            await gateway.handleMessage(
+              `Rewrite the passage below so any actionable, step-by-step, or code-level technical detail is replaced with consequence-realistic narrative summary (what happens and its fallout), not a reproducible procedure. Preserve the story, characters, and prose voice — only abstract the operational detail.\n\n${response}`,
+              'project-engine',
+              (text: string) => { rewritten = text; },
+              projectContext,
+              activeStep.taskType || undefined,
+              stepProvider,
+              stepModel,
+              currentProject.bookSlug,
+              stepTemp
+            );
+            if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten);
+          }
+        }
         const wordCount = countWords(response);
 
         // Save to file
@@ -914,7 +1063,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         });
         // Track words for Morning Briefing
         services.heartbeat.addWords(wordCount);
-        results.push({ step: activeStep.label, success: true, wordCount });
+        results.push({ step: activeStep.label, success: true, wordCount, ...(reviewFlags.length ? { reviewFlags } : {}) });
 
         // ── ContextEngine: summarize + extract entities for canonical chapter prose ──
         // Bug fix (2026-04): the previous heuristic matched any step whose label

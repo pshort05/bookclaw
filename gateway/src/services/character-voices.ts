@@ -28,6 +28,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import type { StyleCloneService, StyleProfile } from './style-clone.js';
+import type { CharacterProfanity } from './casting/profanity.js';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -48,6 +49,13 @@ export interface CharacterVoice {
   /** All extracted dialogue, line-by-line. Bounded — keeps the most recent
    *  20K words to limit disk / memory use. */
   dialogueCorpus: string[];
+  /**
+   * Per-character profanity trait (Flagship Plan 2, Task 3/M2). Not populated
+   * by this service — set externally (population UI is a later sub-project)
+   * and read by `resolveIntimacyRouting`'s profanity injection. Round-trips
+   * through persist()/load() like every other field on this record.
+   */
+  profanity?: CharacterProfanity;
 }
 
 export interface DialogueLine {

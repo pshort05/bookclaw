@@ -346,6 +346,14 @@ echo "$RSPICY" | grep -q '"role"' \
   && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
   || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
 
+# Plan 2 (content axes): POST /api/books rejects an out-of-range content ceiling
+# (spice/violence must be 0-10). A 400 is returned before any book is created, so
+# this is non-destructive and exercises the new content-ceiling validation.
+[ "$(code -X POST -H "Authorization: Bearer $TEST_TOKEN" -H "Content-Type: application/json" \
+     -d '{"title":"__smoke_ceiling__","contentCeiling":{"spice":99,"violence":1}}' "$BASE/api/books")" = "400" ] \
+  && pass "POST /api/books rejects an out-of-range contentCeiling (Plan 2 validation)" \
+  || fail "POST /api/books should 400 on contentCeiling.spice=99"
+
 stop_server
 
 # ── Result ──

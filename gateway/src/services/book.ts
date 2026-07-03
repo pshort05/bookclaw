@@ -46,6 +46,8 @@ export interface BookSelection {
   format?: BookFormat;   // Book Format & Structure — declared at creation, persisted on the manifest
   preferredProvider?: string;  // default AI provider for this book, persisted on the manifest
   preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
+  contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
+  uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
 }
 
 export type RepullStatus =
@@ -317,6 +319,13 @@ export class BookService {
     const ref = (name: string, source: PulledRef['source'], version?: number): PulledRef =>
       ({ name, source, ...(version != null ? { version } : {}) });
 
+    // Content ceiling: an explicit per-book value wins; otherwise inherit the
+    // bound author's contentBrand (spiceCeiling/violenceCeiling) when set.
+    // Absent either way → no contentCeiling → fade-to-black, untouched by the
+    // heat_check/intimacy routing (Flagship Plan 2).
+    const contentCeiling = sel.contentCeiling
+      ?? (author.contentBrand ? { spice: author.contentBrand.spiceCeiling, violence: author.contentBrand.violenceCeiling } : undefined);
+
     const manifest: BookManifest = {
       id: slug,
       slug,
@@ -339,6 +348,8 @@ export class BookService {
       ...(sel.format ? { format: sel.format } : {}),
       ...(sel.preferredProvider ? { preferredProvider: sel.preferredProvider } : {}),
       ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
+      ...(contentCeiling ? { contentCeiling } : {}),
+      ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
       history: [{ at: now, event: 'created' }],
     };
     await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');

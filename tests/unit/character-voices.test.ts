@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { readFile, writeFile } from 'fs/promises';
 import { CharacterVoicesService } from '../../gateway/src/services/character-voices.js';
 import { StyleCloneService } from '../../gateway/src/services/style-clone.js';
 
@@ -288,6 +289,37 @@ test('ingest persists to disk and survives a fresh service instance', async () =
     const store = await svc2.getProjectVoices('pers');
     assert.equal(store.lastChapterAnalyzed, 1);
     assert.deepEqual(store.characters['Alice'].dialogueCorpus, ['Saved to disk,']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// M2: the CharacterVoice record now has a `profanity` field (schema-present;
+// population UI is a later sub-project). It must round-trip through the same
+// JSON persist/load path as every other field on the record.
+test('profanity round-trips through persist/load like any other CharacterVoice field', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'cv-profanity-'));
+  try {
+    const svc1 = new CharacterVoicesService(dir);
+    svc1.setStyleClone(new StyleCloneService());
+    await svc1.initialize();
+    await svc1.ingestChapter({
+      projectId: 'prof', chapterNumber: 1,
+      chapterText: '"Set the trait," said Rook.', characterNames: ['Rook'],
+    });
+
+    // Simulate the (not-yet-built) population UI setting the trait directly
+    // on the persisted store file.
+    const storePath = join(dir, 'character-voices', 'prof.json');
+    const raw = JSON.parse(await readFile(storePath, 'utf-8'));
+    raw.characters['Rook'].profanity = { level: 8, contexts: ['angry'], register: 'crude street slang' };
+    await writeFile(storePath, JSON.stringify(raw, null, 2));
+
+    const svc2 = new CharacterVoicesService(dir);
+    svc2.setStyleClone(new StyleCloneService());
+    await svc2.initialize();
+    const store = await svc2.getProjectVoices('prof');
+    assert.deepEqual(store.characters['Rook'].profanity, { level: 8, contexts: ['angry'], register: 'crude street slang' });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

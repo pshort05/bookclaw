@@ -167,3 +167,46 @@ test('signature phrases require a 3-gram used 3+ times by exactly one speaker', 
   assert.ok(fps[0].signaturePhrases.includes('as you know'),
     `expected "as you know" in ${JSON.stringify(fps[0].signaturePhrases)}`);
 });
+
+test('flagSanitizedProfanity flags a high-profanity character whose lines came back clean', () => {
+  const lines = auditor.extractLines(
+    para(
+      '"I am terribly upset about this," said Rook.',
+      '"This is quite the predicament," said Rook.',
+      '"We should proceed carefully," said Rook.',
+    ),
+  );
+  const flags = auditor.flagSanitizedProfanity(lines, {
+    Rook: { profanity: { level: 8, contexts: [], register: 'crude street slang' } },
+  });
+  assert.equal(flags.length, 1);
+  assert.equal(flags[0].speaker, 'Rook');
+  assert.match(flags[0].reason, /sanitiz/i);
+  assert.equal(flags[0].severity, 'warning');
+});
+
+test('flagSanitizedProfanity does not flag a character with no profanity trait', () => {
+  const lines = auditor.extractLines(
+    para(
+      '"I am terribly upset about this," said Alice.',
+      '"This is quite the predicament," said Alice.',
+      '"We should proceed carefully," said Alice.',
+    ),
+  );
+  const flags = auditor.flagSanitizedProfanity(lines, { Alice: {} });
+  assert.equal(flags.length, 0);
+});
+
+test('flagSanitizedProfanity does not flag a high-profanity character whose lines DO swear', () => {
+  const lines = auditor.extractLines(
+    para(
+      '"This is such fucking bullshit," said Rook.',
+      '"Damn it all," said Rook.',
+      '"I am so pissed off," said Rook.',
+    ),
+  );
+  const flags = auditor.flagSanitizedProfanity(lines, {
+    Rook: { profanity: { level: 8, contexts: [], register: 'crude street slang' } },
+  });
+  assert.equal(flags.length, 0);
+});

@@ -61,6 +61,8 @@ export interface BookManifest {
   consistency?: { provider?: string; model?: string }; // Consistency audit model selection (additive-optional, no schema bump)
   preferredProvider?: string; // Default AI provider for this book's generation; inherited by projects created against it (additive-optional, no schema bump)
   preferredModel?: string; // Default model id for the chosen provider (e.g. an OpenRouter slug); inherited by projects (additive-optional, no schema bump)
+  contentCeiling?: { spice: number; violence: number }; // Author-branded content axes (0-10) driving the heat_check intimacy branch; absent = fade-to-black, untouched by Plan 2 routing (additive-optional, no schema bump)
+  uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

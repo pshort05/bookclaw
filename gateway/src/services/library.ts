@@ -35,6 +35,7 @@ export interface LibraryEntry {
 /** Full read for get(): a multi-file kind bundles its files; others carry content. */
 export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>; // author/genre: filename -> content
+  contentBrand?: { spiceCeiling: number; violenceCeiling: number }; // author: sidecar meta.json — inherited by a new book's contentCeiling (Flagship Plan 2)
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
   sequence?: LibrarySequence;     // sequence: parsed JSON
@@ -248,7 +249,7 @@ export class LibraryService {
     return true;
   }
 
-  private readMetaSidecar(file: string): { description?: string; groups?: string[] } {
+  private readMetaSidecar(file: string): { description?: string; groups?: string[]; contentBrand?: { spiceCeiling: number; violenceCeiling: number } } {
     try {
       if (!existsSync(file)) return {};
       const meta = JSON.parse(readFileSync(file, 'utf-8'));
@@ -256,7 +257,10 @@ export class LibraryService {
       const groups = Array.isArray(meta?.groups)
         ? meta.groups.filter((g: unknown): g is string => typeof g === 'string')
         : undefined;
-      return { description, groups };
+      const contentBrand = (meta?.contentBrand && typeof meta.contentBrand.spiceCeiling === 'number' && typeof meta.contentBrand.violenceCeiling === 'number')
+        ? { spiceCeiling: meta.contentBrand.spiceCeiling, violenceCeiling: meta.contentBrand.violenceCeiling }
+        : undefined;
+      return { description, groups, contentBrand };
     } catch { return {}; }
   }
 
@@ -334,9 +338,11 @@ export class LibraryService {
           const prev = out.get(item.name);
           const description = meta.description ?? prev?.description;
           const groups = meta.groups ?? prev?.groups;
+          const contentBrand = meta.contentBrand ?? prev?.contentBrand;
           out.set(item.name, { kind, name: item.name, source, files,
             ...(description !== undefined ? { description } : {}),
-            ...(groups !== undefined ? { groups } : {}) });
+            ...(groups !== undefined ? { groups } : {}),
+            ...(contentBrand !== undefined ? { contentBrand } : {}) });
         }
       } catch (err) {
         console.error(`  ⚠ Library: failed to load ${kind}/${item.name}`, err);

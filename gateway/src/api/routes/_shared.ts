@@ -11,6 +11,9 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { castStep } from '../../services/casting/cast-step.js';
 import { loadCastingSheet } from '../../services/casting/casting-sheet.js';
 import { isStepRole } from '../../services/casting/roles.js';
+import { intimacyDecision, type IntimacyDecision } from '../../services/casting/heat.js';
+import { classifyScene } from '../../services/casting/heat-classify.js';
+import { profanityInjection } from '../../services/casting/profanity.js';
 
 /**
  * Wrap an async Express handler so a rejected promise is routed to next(err)
@@ -118,20 +121,23 @@ export const uploadZip = multer({
  * Resolve the effective AI provider + model + temperature for executing a
  * project step, for passing to handleMessage(..., preferredProvider,
  * overrideModel, bookSlug, overrideTemperature).
- * Precedence: the step's own modelOverride wins; otherwise the project-level
- * preferredProvider applies; model and temperature are pinned only when the
- * step sets them.
+ * Precedence: a spiceRoute (a flagged intimate/violent scene re-routed to an
+ * uncensored provider — Flagship Plan 2) beats everything; otherwise the
+ * step's own modelOverride wins; otherwise the project-level preferredProvider
+ * applies; model and temperature are pinned only when the step sets them.
  * Returns undefined fields when nothing is pinned (→ tier routing, today's
  * default behavior).
  */
 export function stepRouting(
   project: any,
-  step: any
+  step: any,
+  spiceRoute?: { provider: string; model?: string } | null,
 ): { provider: string | undefined; model: string | undefined; temperature: number | undefined } {
   const role = isStepRole(step?.role) ? step.role : undefined;
 
   // Backward compatibility: an untagged step keeps today's behavior exactly —
   // manual pin, then the project-level preference applied to the whole step.
+  // spiceRoute only applies to tagged (role-aware) steps.
   if (!role) {
     return {
       provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
@@ -147,8 +153,98 @@ export function stepRouting(
   const proseModel = project?.preferredProvider
     ? { provider: project.preferredProvider, model: project.preferredModel }
     : undefined;
-  const r = castStep({ step: { role, modelOverride: step?.modelOverride }, sheet, proseModel, spiceRoute: null });
+  const r = castStep({ step: { role, modelOverride: step?.modelOverride }, sheet, proseModel, spiceRoute: spiceRoute ?? null });
   return { provider: r.provider, model: r.model, temperature: r.temperature };
+}
+
+export interface IntimacyRoutingResult {
+  /** True when this step is under intimacy routing (draft/intimacy role + book.contentCeiling set). */
+  active: boolean;
+  spiceRoute: { provider: string; model?: string } | null;
+  /** Intimacy-template + profanity-injection text to append to the step's prompt/context. Empty when inactive or on-page below the template threshold isn't reached. */
+  promptAddition: string;
+  decision: IntimacyDecision | null;
+  /** Recompute the decision with refusalEscalated:true (reusing the same score/ceiling/ladder/genre) — call when the on-page attempt comes back empty/refused. */
+  recomputeOnRefusal: () => IntimacyDecision | null;
+}
+
+const INACTIVE_INTIMACY_ROUTING: IntimacyRoutingResult = {
+  active: false, spiceRoute: null, promptAddition: '', decision: null, recomputeOnRefusal: () => null,
+};
+
+/**
+ * Heat-check + intimacy-branch routing for a draft/intimacy-role chapter step
+ * (Flagship Plan 2, Task 7). Runs `classifyScene` against the step's already-
+ * assembled scene-brief text, combines the score with the book's contentCeiling
+ * + the genre casting sheet's heatLadder via intimacyDecision(), and resolves
+ * the intimacy template + any per-character profanity injections.
+ *
+ * Entirely a no-op (± the fixed INACTIVE result, no AI call) for any step that
+ * isn't role draft/intimacy, isn't bound to a book, or whose book has no
+ * contentCeiling — a fade-to-black book is byte-for-byte unaffected.
+ */
+export async function resolveIntimacyRouting(opts: {
+  services: any;
+  project: any;
+  step: any;
+  sceneBriefText: string;
+}): Promise<IntimacyRoutingResult> {
+  const { services, project, step, sceneBriefText } = opts;
+  const role = isStepRole(step?.role) ? step.role : undefined;
+  if (role !== 'draft' && role !== 'intimacy') return INACTIVE_INTIMACY_ROUTING;
+  if (!project?.bookSlug || !services?.books?.open) return INACTIVE_INTIMACY_ROUTING;
+
+  let manifest: any;
+  try { manifest = (await services.books.open(project.bookSlug))?.manifest; } catch { return INACTIVE_INTIMACY_ROUTING; }
+  const ceiling = manifest?.contentCeiling ?? null;
+  if (!ceiling) return INACTIVE_INTIMACY_ROUTING; // no ceiling declared → fade-to-black, untouched
+
+  const genre = String(project?.context?.genre ?? manifest?.pulledFrom?.genre?.name ?? 'romance');
+  const sheet = loadCastingSheet(genre);
+  const ladder = sheet?.heatLadder ?? null;
+  const complete = (req: any) => services.aiRouter.complete(req);
+  // classifyScene requires a concrete provider (C1 fix): resolve one via the
+  // cheap 'general' tier rather than leaving request.provider undefined,
+  // which made AIRouter.complete throw and the whole feature go inert.
+  const classifierProvider = services.aiRouter.selectProvider('general');
+  const score = await classifyScene(sceneBriefText, complete, { provider: classifierProvider.id });
+  const decision = intimacyDecision({ score, ceiling, ladder, genre });
+
+  let promptAddition = '';
+  if (decision.template) {
+    try {
+      const { readFileSync, existsSync } = await import('fs');
+      const { join } = await import('path');
+      const templatePath = join(process.cwd(), decision.template);
+      if (existsSync(templatePath)) promptAddition += `\n\n${readFileSync(templatePath, 'utf-8')}`;
+    } catch { /* fail-soft: template unreadable — the draft still routes correctly */ }
+    // M1: the ceiling clamp (effectiveSpice/violence) was computed but never
+    // told to the model — spell out the hard cap so a scene that would score
+    // higher than the ceiling is actually written to the ceiling, not just
+    // routed as if it were.
+    promptAddition += `\n\n[Content ceiling: write intimacy at heat level ${decision.effectiveSpice}/10 and violence at ${ceiling.violence}/10 MAX — do not exceed this; if the scene would go further, keep it at the ceiling.]`;
+  }
+  // M2: per-character profanity injections are independent of heat — apply to
+  // every draft/intimacy step for a book with a declared ceiling, whether or
+  // not THIS scene is itself heat-flagged (i.e. even in fade mode, where
+  // decision.template is null).
+  try {
+    const store = await services.characterVoices?.getProjectVoices?.(project.id);
+    if (store?.characters) {
+      for (const c of Object.values(store.characters) as any[]) {
+        const block = profanityInjection({ name: c.characterName, profanity: c.profanity });
+        if (block) promptAddition += `\n\n${block}`;
+      }
+    }
+  } catch { /* fail-soft */ }
+
+  return {
+    active: true,
+    spiceRoute: decision.spiceRoute,
+    promptAddition,
+    decision,
+    recomputeOnRefusal: () => intimacyDecision({ score, ceiling, ladder, refusalEscalated: true, genre }),
+  };
 }
 
 /** Sets the Wave-3 advisory header on a response. */
