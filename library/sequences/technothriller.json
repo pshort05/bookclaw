@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "technothriller",
+  "label": "Techno-Thriller — Idea → Finalized Book",
+  "description": "The techno-thriller base: idea-to-outline planning (research-grounded, Lester Dent / seven-point tension structure) followed by per-chapter production (brief -> draft -> improve -> rewrite -> humanize -> continuity check).",
+  "pipelines": ["technothriller-planning", "technothriller-production"]
+}

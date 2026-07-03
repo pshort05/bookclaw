@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "name": "technothriller-planning",
+  "label": "Techno-Thriller Planning (Idea → Outline + Bibles)",
+  "description": "Idea-to-outline development for a near-future techno-thriller, adapted from the MSF (Mundane Science Fiction) phase suite. Grounds the premise in real, publicly-documented technology and geopolitics via a research-first pass, builds a chapter outline against a Lester Dent / seven-point tension structure, then produces a Technology & Institutional Dossier, a Character Bible, and Production Notes — the artifacts the technothriller-production pipeline consumes. A consequence-not-procedure guardrail (Flagship Plan 2's safety floor) is threaded through every generative step: technology and tradecraft are grounded in what is credible and publicly documented, and the narrative payoff is the human/institutional consequence, never an operational how-to. Models via OpenRouter, provisional.",
+  "steps": [
+    {
+      "label": "Grounding Research — Technology & Geopolitics",
+      "taskType": "research",
+      "phase": "research",
+      "promptTemplate": "You are a research analyst grounding a near-future techno-thriller in real, publicly-documented capability. The author's concept:\n\n{{description}}\n\nIdentify the specific technology, institution, or systemic vulnerability at the center of \"{{title}}\" and summarize what is PUBLICLY documented about it for fiction-accuracy purposes: current state of the art, the credible near-future extrapolation (2-7 years out, not decades), who builds/regulates/exploits it today, and the real institutions (agencies, corporations, standards bodies) that would plausibly be involved. Cover the geopolitical stakes: which state and non-state actors have real incentive to want this technology, suppress it, or weaponize it, and why.\n\nCONSEQUENCE-NOT-PROCEDURE GUARDRAIL: you are grounding PLAUSIBILITY, not writing a manual. Never produce operational, step-by-step instructions for building a weapon, executing an exploit, or causing real-world harm. Summarize capability and consequence at the level a technically literate reader would find credible in a published thriller — the specificity that sells authenticity is in institutional detail, jargon, and constraint, not in a replicable procedure.\n\nOutput: a TECHNOLOGY BRIEF (what it is, current state, plausible near-future extrapolation, real-world analogues) and a STAKES BRIEF (who wants it, who fears it, the institutional and geopolitical consequence if it goes wrong). Cite the kind of public source each claim would come from (industry reporting, academic literature, government advisories) without fabricating specific citations.",
+      "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.4 },
+      "role": "research"
+    },
+    {
+      "label": "Concept & Threat Premise",
+      "taskType": "creative_writing",
+      "phase": "ideation",
+      "promptTemplate": "You are a techno-thriller developmental editor. Using the grounding research above and the author's concept ({{description}}), develop the concept for \"{{title}}\" into a commercially viable techno-thriller premise.\n\nGenre non-negotiables (techno-thriller must-haves): an expert protagonist whose specific professional/technical knowledge drives the plot; cutting-edge, credibly-extrapolated technology (never magic-as-tech, never physics-violating); a corporate or institutional conspiracy/antagonist force, not a cartoonish villain; technology that is simultaneously the threat and the means of countering it; and a genuine moral question the technology raises. Avoid the genre killers: plot-convenience tech, unconvincing hacking, a forced non-expert protagonist, or a threat with no real-world grounding.\n\nProduce: a one-sentence logline (WHO + WHAT TECHNOLOGY/THREAT + WHAT IS AT STAKE); the protagonist's specific expertise and how it becomes the plot's operative mechanism; the antagonist force (institutional, corporate, or state — its legitimate-sounding goal and its methods); the central technology/threat and its moral question; the inciting event; and 2-3 comparable titles. Output the premise only.",
+      "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-opus-4-7", "temperature": 0.9 },
+      "role": "plan"
+    },
+    {
+      "label": "Chapter Outline — Tension Structure",
+      "taskType": "outline",
+      "phase": "outline",
+      "promptTemplate": "You are a structural editor for techno-thrillers. Build a chapter-by-chapter outline for \"{{title}}\" from the green-lit premise and grounding research above, scaled to {{chapterCount}} chapters averaging about {{wordsPerChapter}} words each.\n\nStructure the tension using BOTH frameworks, mapped onto the chapters:\n\n1. THE LESTER DENT FORMULA (scaled): quarter 1 — introduce the expert protagonist in their professional world, the threat/villainy surfaces, the protagonist's early attempt to handle it through normal channels fails; quarter 2 — the protagonist is embroiled deeper, the threat proves worse than first understood, a false sense of progress; quarter 3 — new perils and reversals, the institutional antagonist tightens its grip, a false victory that collapses; quarter 4 — full explanation of the conspiracy/threat, the climactic confrontation that only the protagonist's specific expertise can resolve, and the wind-up showing what the resolution cost.\n\n2. THE SEVEN-POINT STRUCTURE, mapped to approximate positions: Hook (~5%, the protagonist's ordinary technical competence, disrupted); Plot Turn 1 (~20%, the inciting discovery that commits the protagonist); Pinch 1 (~35%, the antagonist force applies real pressure, an ally or resource is lost); Midpoint (~50%, a reactive protagonist becomes proactive — a genuine but partial victory that reveals the true scale of the threat); Pinch 2 (~65%, the protagonist is stripped of options, the institutional antagonist appears to have won); Plot Turn 2 (~80%, the protagonist's specific expertise reveals the final piece needed to act); Resolution (~95-100%, the climactic confrontation and its institutional/human aftermath — show the cost, not just the triumph).\n\nFor EVERY chapter give: number; a specific, professionally-registered working title (no outcome spoilers); POV; word target; a 200-300 word summary naming the concrete scenes and decisions, with the protagonist's expertise operating as the mechanism of at least one beat and the antagonist force's institutional presence felt (directly or as a constraint routed around); an opening hook (mid-action/mid-decision, never waking up or weather); a chapter-end tension (a specific open question or pending consequence, not a mood); and which Lester-Dent quarter and seven-point beat (if any) the chapter carries.\n\nCONSEQUENCE-NOT-PROCEDURE: outline the THREAT and its fallout, never a replicable operational procedure. Output the complete outline, all {{chapterCount}} chapters, as a production artifact only.",
+      "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.6 },
+      "role": "outline"
+    },
+    {
+      "label": "Technology & Institutional Dossier",
+      "taskType": "book_bible",
+      "phase": "worldbuilding",
+      "promptTemplate": "Write the TECHNOLOGY & INSTITUTIONAL DOSSIER for \"{{title}}\" — the production reference the prose writer uses to keep the technology and institutions credible chapter to chapter. Build from the grounding research, premise, and outline above.\n\nCover: the central technology (what it does, its real-world capability boundary, what would have to be true for the plot's extrapolation to be credible, its failure modes); the institutions involved (agencies, corporations, regulators — their real-world analogues, chains of command, what a scene inside them would actually look and sound like); the antagonist force's structure and legitimate-sounding institutional goal; a glossary of 10-15 insider technical/institutional terms the protagonist and antagonist would actually use; and the moral question the technology raises, stated plainly.\n\nCONSEQUENCE-NOT-PROCEDURE: document capability and institutional texture, never a step-by-step operational procedure for causing real-world harm. Output only the dossier (a production artifact).",
+      "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.4 },
+      "role": "bible"
+    },
+    {
+      "label": "Character Bible",
+      "taskType": "book_bible",
+      "phase": "characters",
+      "promptTemplate": "Build the CHARACTER BIBLE for \"{{title}}\" from the outline, dossier, and premise above. Write deep profiles for the protagonist, the primary antagonist-force contact, and each significant secondary character.\n\nFor each cover: Basic Info (name, age, role, professional background); Core Identity (want vs. need, primary flaw, what makes their expertise load-bearing to the plot); Psychological Depth (fears, blind spots their expertise creates, coping behaviors); Backstory (the formative history explaining the flaw and the expertise); Character Arc (start state, moral-compromise trajectory if any, end state — the cost of the climactic decision, not just its triumph); for the antagonist-force contact, their institutional position, legitimate-sounding case, and what they cannot do (the institutional constraint that limits them); Relationships; and Story Function. Keep every detail consistent with the outline and dossier. Output only the Character Bible (a production artifact).",
+      "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.7 },
+      "role": "bible"
+    },
+    {
+      "label": "Production Notes",
+      "taskType": "book_bible",
+      "phase": "notes",
+      "promptTemplate": "Write supplemental PRODUCTION NOTES for \"{{title}}\" so the prose writer never gets stuck. Using the outline, dossier, and character bible above, fill in only the practical gaps those documents leave open: procedural texture for key institutional scenes (what a briefing, an audit, a hearing, an incident-response room actually looks/sounds/feels like); a timeline of how the plot's events sit on a calendar; continuity anchors (recurring devices, systems, or documents and their rules); and any technical or institutional detail a writer will need mid-scene that isn't already documented. Do not repeat what the dossier or character bible already cover. Output only the Production Notes (a production artifact).",
+      "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.5 },
+      "role": "bible"
+    },
+    {
+      "label": "Compile Planning Package",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Produce a short readiness report for \"{{title}}\" confirming the techno-thriller planning package is complete. List the four production artifacts created by this pipeline — Chapter Outline ({{chapterCount}} chapters), Technology & Institutional Dossier, Character Bible, and Production Notes — and confirm each is present in the steps above. Flag any gaps or plausibility concerns a human should resolve before drafting, and state that the book is ready for the technothriller-production pipeline. Keep it concise."
+    }
+  ]
+}

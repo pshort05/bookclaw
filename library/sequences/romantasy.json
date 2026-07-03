@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "romantasy",
+  "label": "Romantasy — Idea → Finalized Book",
+  "description": "The romantasy base: idea-to-outline planning (ideation, world/character bibles) followed by per-chapter production (brief -> draft -> improve -> rewrite -> humanize).",
+  "pipelines": ["romantasy-planning", "romantasy-production"]
+}

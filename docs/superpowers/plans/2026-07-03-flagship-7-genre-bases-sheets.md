@@ -26,20 +26,20 @@
 ### Task 1: Genre casting sheets (romantasy, scifi, technothriller)
 **Files:** create the three `library/casting/*.json`; test `casting-sheets-all-genres.test.ts`.
 **Content:** seed `roleModels` from the audited n8n recipe (draft→Opus, improve/rewrite→Gemini, editorial→Sonnet, continuity→high-reasoning), `proseRoles: ['scene_brief','draft']`, `ensemblePanel: ['gpt','grok','gemini','claude']`, and a `heatLadder` per genre (romantasy: erotica threshold like romance; sci-fi/techno-thriller: low spice ceiling, violence-focused ladder).
-- [ ] TDD: for each of the four genres, `loadCastingSheet(genre)` returns a sheet that passes `validateCastingSheet`, has a `continuity` role model, and `proseRoles` = scene_brief+draft. Commit.
+- [x] TDD: for each of the four genres, `loadCastingSheet(genre)` returns a sheet that passes `validateCastingSheet`, has a `continuity` role model, and `proseRoles` = scene_brief+draft. Commit.
 
 ### Task 2: Techno-thriller base pipeline
 **Files:** create `technothriller-planning.json` + `technothriller-production.json` (+ sequence); test `technothriller-pipeline.test.ts`.
 **Content:** adapt the MSF phase shape — grounding-research-heavy planning (real tech/geopolitics via Plan 4's front), tension structure (Lester Dent / seven-point), a per-chapter production loop (`expand: chapters`) with role-tagged steps: `scene_brief` → `draft` → `improve` → `rewrite` → `humanize`, plus a `continuity` check and the consequence-not-procedure guardrail (Plan 2 safety floor) emphasized. No on-page intimacy branch by default (low spice ceiling); violence axis active.
-- [ ] TDD: the pipeline JSON parses, every nested step has a valid `role`, and the production loop uses `expand: chapters`. Load it through `LibraryService` (route or service test) and assert it lists/gets like the other pipelines. Commit.
+- [x] TDD: the pipeline JSON parses, every nested step has a valid `role`, and the production loop uses `expand: chapters`. Load it through `LibraryService` (route or service test) and assert it lists/gets like the other pipelines. Commit.
 
 ### Task 3: Intimacy + craft templates per genre
 **Files:** create `library/craft/intimacy/romantasy.md` (and confirm romance from Plan 2); minimal/violence-oriented guidance for sci-fi/techno-thriller.
-- [ ] TDD: `intimacyDecision` (Plan 2) for each genre resolves a template path that exists; sci-fi/techno-thriller with a low ceiling resolve to `fade` for typical scenes. Commit.
+- [x] TDD: `intimacyDecision` (Plan 2) for each genre resolves a template path that exists; sci-fi/techno-thriller with a low ceiling resolve to `fade` for typical scenes. Commit.
 
 ### Task 4: Genre → base + sheet selection
 **Files:** modify the genre→pipeline resolution if the four genres don't already map to their bases.
-- [ ] TDD (integration): creating a book with `genre: 'technothriller'` selects the techno-thriller base and `loadCastingSheet('technothriller')`; `genre: 'romantasy'` selects the romantasy base + sheet. Commit.
+- [x] TDD (integration): creating a book with `genre: 'technothriller'` selects the techno-thriller base and `loadCastingSheet('technothriller')`; `genre: 'romantasy'` selects the romantasy base + sheet. Commit.
 
 ## Self-Review
 - Spec coverage (§4.3 genre bases): the four launch genres each have a base + casting sheet + intimacy/craft template; techno-thriller adapted from MSF as data (no new engine). All sheets validate and carry a high-reasoning `continuity` role.

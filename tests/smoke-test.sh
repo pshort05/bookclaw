@@ -346,6 +346,12 @@ echo "$RSPICY" | grep -q '"role"' \
   && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
   || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
 
+# Plan 7 (genre bases): the new techno-thriller base pipeline loads + serves in-app.
+TT="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/library/pipeline/technothriller-production")"
+echo "$TT" | grep -q '"role"' \
+  && pass "technothriller-production serves role-tagged steps (Plan 7 base pipeline live)" \
+  || fail "technothriller-production missing/no roles (new base pipeline failed to load?)"
+
 # Plan 6 (scheduler + cost): the cross-book fleet view sits behind the auth gate.
 [ "$(code "$BASE/api/books/fleet")" = "401" ] \
   && pass "books/fleet: no token -> 401 (Plan 6 fleet route registered)" \

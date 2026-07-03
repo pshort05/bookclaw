@@ -13,6 +13,7 @@ import { buildBookFormat } from '../../services/format-input.js';
 import { AI_PROVIDER_IDS } from '../../ai/router.js';
 import { assembleManuscript, validateAssembly } from '../../services/manuscript-assembly.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
+import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -502,6 +503,13 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       resolvedNames = seq;
     } else if (pipeline) {
       resolvedNames = [pipeline];
+    } else if (genre) {
+      // Flagship Plan 7, Task 4: a caller who supplies a genre but no explicit
+      // pipeline/sequence gets that genre's base pipeline sequence by default
+      // (only genres with one unambiguous base are mapped — see genre-base.ts).
+      const defaultSeq = baseSequenceNameForGenre(genre);
+      const seq = defaultSeq ? services.library.get('sequence', defaultSeq)?.sequence?.pipelines : undefined;
+      if (Array.isArray(seq) && seq.length > 0) resolvedNames = seq;
     }
 
     if (!author) return res.status(400).json({ error: 'author (string) is required' });

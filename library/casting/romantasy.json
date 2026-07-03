@@ -1,0 +1,21 @@
+{
+  "genre": "romantasy",
+  "roleModels": {
+    "scene_brief": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4.6", "temperature": 1 },
+    "draft": { "provider": "openrouter", "model": "anthropic/claude-opus-4.8", "temperature": 1 },
+    "improve": { "provider": "openrouter", "model": "google/gemini-3-pro", "temperature": 0.7 },
+    "rewrite": { "provider": "openrouter", "model": "google/gemini-3-pro", "temperature": 0.7 },
+    "humanize": { "provider": "openrouter", "model": "google/gemini-3-pro", "temperature": 0.7 },
+    "intimacy": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4.6", "temperature": 0.6 },
+    "editorial": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4.6", "temperature": 0.3 },
+    "continuity": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.2 }
+  },
+  "proseRoles": ["scene_brief", "draft"],
+  "heatLadder": {
+    "eroticaThreshold": 7,
+    "uncensoredByLevel": [{ "minSpice": 7, "provider": "grok" }, { "minSpice": 9, "provider": "openrouter", "model": "venice/uncensored" }],
+    "rerouteRoles": ["draft", "intimacy"],
+    "fallbackOrder": ["grok", "venice", "ollama"]
+  },
+  "ensemblePanel": ["gpt", "grok", "gemini", "claude"]
+}

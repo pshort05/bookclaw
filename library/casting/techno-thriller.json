@@ -1,0 +1,20 @@
+{
+  "genre": "techno-thriller",
+  "roleModels": {
+    "scene_brief": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.5 },
+    "draft": { "provider": "openrouter", "model": "anthropic/claude-opus-4-7", "temperature": 1 },
+    "improve": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.7 },
+    "rewrite": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.5 },
+    "humanize": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.5 },
+    "editorial": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.3 },
+    "continuity": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.2 }
+  },
+  "proseRoles": ["scene_brief", "draft"],
+  "heatLadder": {
+    "eroticaThreshold": 9,
+    "uncensoredByLevel": [{ "minSpice": 9, "provider": "grok" }],
+    "rerouteRoles": ["draft"],
+    "fallbackOrder": ["grok", "ollama"]
+  },
+  "ensemblePanel": ["gpt", "grok", "gemini", "claude"]
+}

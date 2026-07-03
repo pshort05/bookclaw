@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "name": "technothriller-production",
+  "label": "Techno-Thriller Production (Multi-Stage)",
+  "description": "Near-future techno-thriller manuscript production, adapted from the MSF (Mundane Science Fiction) phase suite. Per chapter: Scene Brief -> First Draft -> Improvement Plan -> Rewrite -> Humanize -> Continuity Check, then a completion report. Assumes the book already has a chapter outline, technology/institutional dossier, and character bible (from the technothriller-planning pipeline). No on-page intimacy branch by default (low spice ceiling); the violence axis and the consequence-not-procedure guardrail (Flagship Plan 2's safety floor) are active throughout. Models via OpenRouter, provisional.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Scene Brief — Chapter {{n}}",
+          "skill": "outline",
+          "taskType": "outline",
+          "phase": "brief",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a structural editor for near-future techno-thrillers. Build a comprehensive SCENE BRIEF for Chapter {{n}} of \"{{title}}\" that another writer will use as the blueprint for the full chapter prose — a blueprint, not the prose itself. Build it from the chapter outline, technology/institutional dossier, and character bible in your context, staying strictly consistent with all of them and with the chapters already written (also in your context).\n\nProduce: a CHAPTER HEADER (title, time/location, POV character); NARRATIVE ARCHITECTURE (this chapter's Lester-Dent quarter and seven-point beat if any, its function, the continuity bridge from the previous chapter); 8-12 SCENE BEATS (action, subtext, which character's expertise or institutional constraint the beat depends on, sensory anchor); CHARACTERS ON STAGE (what each wants in the scene, what they fear, their voice register); SETTING & TECHNOLOGY IN USE (concrete institutional/technical detail from the dossier — named systems, protocols, agencies); CONFLICT ARCHITECTURE (the external threat and the institutional pressure the protagonist is working against or around); an OPENING HOOK (mid-action/mid-decision — never waking up or weather) and a CHAPTER-END TENSION (a specific open question or pending consequence, not a mood).\n\nCONSEQUENCE-NOT-PROCEDURE: if this chapter involves technology, hacking, weapons, or tradecraft, brief the SCENE and its consequence, never a replicable step-by-step real-world procedure. No on-page intimacy by default — mark this chapter only if the outline explicitly calls for an emotional/romantic beat, and keep it to a fade-to-black closed door. Output the scene brief only.",
+          "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.5 },
+          "role": "scene_brief"
+        },
+        {
+          "label": "First Draft — Chapter {{n}}",
+          "skill": "write",
+          "taskType": "creative_writing",
+          "phase": "draft",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a techno-thriller author known for technically credible, high-tension prose. Write the COMPLETE Chapter {{n}} of \"{{title}}\" based exclusively on the scene brief in your context above. Cover every beat in order; target about {{wordsPerChapter}} words.\n\nCORE REQUIREMENTS: third-person limited, single POV per the brief; filter all observation through the POV character's expertise; open on the brief's opening hook (mid-action, never waking up or weather); end exactly on the brief's chapter-end tension, no summary, no tease beyond it; specialist vocabulary used precisely, readers learn through context, no exposition pauses; institutional friction (approvals, chains of command, budget, liability) is real texture, not flavor; expertise is the plot mechanism — when a character solves or fails, show the specific knowledge in operation, not a summary of it; no cliche tells (\"took a deep breath\", \"heart hammered\", \"the silence was deafening\"); vary sentence rhythm, avoid the flat cadence of equal-length declaratives; no em dashes, use commas, periods, semicolons, or restructure.\n\nCONSEQUENCE-NOT-PROCEDURE: render technology, tradecraft, and violence through their human and institutional consequence and the protagonist's expert perception of them, never as a replicable real-world how-to. Violence, when it occurs, has weight and aftermath; it is not gratuitous or celebratory. No on-page intimacy unless the brief explicitly marks the chapter for it, and even then keep it fade-to-black. Output the chapter prose only, in Markdown.",
+          "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-opus-4-7", "temperature": 1 },
+          "role": "draft"
+        },
+        {
+          "label": "Improvement Plan — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "critique",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are an expert developmental editor specializing in techno-thrillers. Perform a line-by-line craft critique of the Chapter {{n}} draft in your context, against its scene brief.\n\nEvaluate, citing specific lines with concrete fixes: brief adherence (every beat covered, in order); opening hook and chapter-end tension quality; whether the protagonist's expertise is load-bearing (drives an outcome) rather than decorative (named but inert); whether the institutional antagonist's presence is felt, even indirectly; technical plausibility (any physics-violating or magic-as-tech shortcuts, any unconvincing hacking/tradecraft); pacing and rhythm (info-dumps, monotonous sentence rhythm, paragraphs over 6-8 lines); clichés and AI-tell vocabulary; dialogue mechanics (\"as you know, Bob\" exposition, overwrought tags); and — if a violent or intimate beat is present — whether it lands on consequence rather than procedure or gratuity, and stays within the book's declared ceiling.\n\nGive an AI-writing score (1-10) flagging repetitive structures, hedging language, and generic description. Output an executive summary, the per-dimension findings, and a prioritized improvement roadmap (critical/important/polish) with 3-5 before/after examples. Output the critique only — do not rewrite the chapter.",
+          "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.7 },
+          "role": "improve"
+        },
+        {
+          "label": "Rewrite — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "revision",
+          "phase": "rewrite",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "You are a precision editor. Apply the improvement plan in your context to the Chapter {{n}} draft (also in your context) with surgical accuracy — change only what the plan flags, preserve voice, POV, and every plot beat, keep the chapter at least {{wordsPerChapter}} words, and remove every em dash and forbidden word. Where the plan flags a technical-plausibility or consequence-not-procedure issue, fix it to ground the detail in credible, publicly-documented capability without adding a replicable operational procedure. Output the complete revised chapter only, in Markdown.",
+          "modelOverride": { "provider": "openrouter", "model": "anthropic/claude-sonnet-4-6", "temperature": 0.5 },
+          "role": "rewrite"
+        },
+        {
+          "label": "Humanize — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "final_edit",
+          "phase": "humanize",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Perform the final de-AI polish on the revised Chapter {{n}} of \"{{title}}\" in your context, in a single pass. Cut AI clichés and abstractions (\"tapestry of\", \"testament to\", \"in today's fast-paced world\"), artificial-cohesion hedges (\"furthermore\", \"it's worth noting\"), and filler intensifiers; vary sentence structure; strengthen verbs and nouns; remove every forbidden word and em dash. Preserve plot, characters, POV, and meaning exactly.\n\nCONSEQUENCE-NOT-PROCEDURE / VIOLENCE AXIS: hold any violent beat at the book's declared violence ceiling — consequence and aftermath on the page, never a gratuitous inventory of harm and never a replicable real-world procedure. This genre has no on-page intimacy branch by default; if the chapter has no intimate content, leave it untouched, and if the outline explicitly called for one, keep it fade-to-black. Output the complete final chapter prose only, in Markdown. This is the publishable chapter.",
+          "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.5 },
+          "role": "humanize"
+        },
+        {
+          "label": "Continuity Check — Chapter {{n}}",
+          "skill": "revise",
+          "taskType": "consistency",
+          "phase": "continuity",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Cross-check the final Chapter {{n}} of \"{{title}}\" in your context against the technology/institutional dossier, character bible, and every chapter already written (also in your context). Flag: contradictions in technical capability or institutional detail versus the dossier; timeline inconsistencies; character-knowledge violations (a character reacting to information they haven't learned yet, or failing to react to something they have); and any drift from the established moral-compromise arc or institutional stakes. List each issue with a specific chapter/line reference and a concrete fix, or state \"No continuity issues found.\" Output the continuity report only — do not rewrite the chapter.",
+          "modelOverride": { "provider": "openrouter", "model": "google/gemini-3.1-pro-preview", "temperature": 0.2 },
+          "role": "continuity"
+        }
+      ]
+    },
+    {
+      "label": "Compile manuscript report",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Generate a completion report for the techno-thriller manuscript \"{{title}}\". Total chapters: {{chapterCount}}, target ~{{wordsPerChapter}} words each. Assess the tension structure's progression (Lester Dent / seven-point beats), the protagonist's expertise as a plot mechanism, technical plausibility and the consequence-not-procedure guardrail, continuity, and any chapters that warrant a human editing pass. End with concrete next steps (beta readers, professional edit, formatting)."
+    }
+  ]
+}
