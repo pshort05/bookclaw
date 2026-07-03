@@ -29,7 +29,7 @@ import { CostTracker } from './services/costs.js';
 import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
-import { isHumanReviewStep, openReviewGate } from './services/human-review.js';
+import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './services/human-review.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
@@ -2262,8 +2262,12 @@ class BookClawGateway {
 
         // Pin the story canon (title/author + bible name registry + outline) so an
         // autonomous step doesn't re-invent the title/characters across projects.
+        // Flagship Plan 5: the manifest is reused below (no extra I/O) to resolve
+        // the book's review.cadence at the gate check after this step generates.
+        let bookManifest: any = null;
         if (project.bookSlug && gateway.books) {
           const ob = await gateway.books.open(project.bookSlug).catch(() => null);
+          bookManifest = ob?.manifest ?? null;
           const canonBlock = buildBookCanonBlock(gateway.books.dataDirOf?.(project.bookSlug), ob?.manifest);
           if (canonBlock) projectContext += `\n\n${canonBlock}`;
         }
@@ -2271,6 +2275,12 @@ class BookClawGateway {
         // Build user message with uploaded content injected directly
         // For large documents (15K+ words): read from disk with smart truncation
         let stepUserMessage = activeStep!.prompt;
+        // Flagship Plan 5: a 'regenerate' gate action attaches a human steering
+        // note to the step; inject it once, then clear it.
+        if ((activeStep as any).regenerateNote) {
+          stepUserMessage = `${stepUserMessage}\n\n## Human review note — address this in your regenerated draft\n\n${(activeStep as any).regenerateNote}`;
+          delete (activeStep as any).regenerateNote;
+        }
         const uploads = project.context?.uploads || [];
         const fileList = uploads.map((u: any) => `${u.filename} (${u.wordCount?.toLocaleString() || '?'} words)`).join(', ');
 
@@ -2454,6 +2464,26 @@ class BookClawGateway {
           });
         } catch (fileErr) {
           console.error('Failed to save project step output:', fileErr);
+        }
+
+        // Human-Gate Cadence (Flagship Plan 5): same check as the dashboard
+        // /auto-execute loop, applied here so the autonomous heartbeat and the
+        // Telegram/Discord auto-run loop (both drive through startAndRunProject)
+        // also honor the book's review.cadence — not just the browser route.
+        // H2 fix: when nothing but the headless driver / autonomous heartbeat is
+        // running this project, skip the gate entirely — a gate here has no human
+        // to resolve it, so it would stall until the 24h Confirmations expiry
+        // abandons the book (same signal the review-resolver sweep uses).
+        if (gateway.confirmationGate) {
+          const autoStatus = gateway.heartbeat?.getAutonomousStatus?.();
+          const headless = process.env.BOOKCLAW_HEADLESS_PIPELINE === '1' ||
+            !!(autoStatus?.enabled && !autoStatus?.paused);
+          const cadenceGate = await maybeOpenCadenceGate(
+            { gate: gateway.confirmationGate, engine: gateway.projectEngine },
+            project, activeStep, aiResponse,
+            { manifest: bookManifest, craftCritic: gateway.craftCritic, dialogueAuditor: gateway.dialogueAuditor, headless },
+          );
+          if (cadenceGate.gated) return { error: 'awaiting human review' };
         }
 
         // Complete the step and advance

@@ -163,6 +163,54 @@ test('resolveReviewGates: pending → no-op (waits)', async () => {
   assert.ok(project.review, 'review preserved while pending');
 });
 
+test('resolveReviewGates: approved cadence-gate resume runs ContextEngine summary + entity extraction (H1)', async () => {
+  const step = { id: 's1', label: 'Write Chapter 1', skill: 'write', chapterNumber: 1, status: 'active' };
+  const pendingResult = 'Real chapter prose. '.repeat(30);
+  const project: any = {
+    id: 'p1', status: 'paused',
+    review: { confirmationId: 'conf-1', stepId: 's1', kind: 'cadence-gate', pendingResult },
+    steps: [step],
+  };
+  const gate = mockGate('approved');
+  const engine = mockEngine([project]);
+  const summaryCalls: any[] = [];
+  const entityCalls: any[] = [];
+  const contextExtraction = {
+    contextEngine: {
+      async generateSummary(projectId: string, stepId: string, stepLabel: string, chapterNumber: number, fullText: string) {
+        summaryCalls.push({ projectId, stepId, stepLabel, chapterNumber, fullText });
+        return {};
+      },
+      async extractEntities(projectId: string, stepId: string, fullText: string) {
+        entityCalls.push({ projectId, stepId, fullText });
+        return [];
+      },
+    },
+    aiComplete: async () => ({ text: '{}' }),
+    aiSelectProvider: () => ({ id: 'fake' }),
+  };
+
+  await resolveReviewGates({ gate, engine, contextExtraction });
+
+  assert.equal(summaryCalls.length, 1, 'summary generated for the gated-then-approved chapter');
+  assert.equal(summaryCalls[0].fullText, pendingResult);
+  assert.equal(summaryCalls[0].chapterNumber, 1);
+  assert.equal(entityCalls.length, 1);
+  assert.equal(entityCalls[0].fullText, pendingResult);
+});
+
+test('resolveReviewGates: no contextExtraction deps passed is fail-soft (no crash, no extraction)', async () => {
+  const step = { id: 's1', label: 'Write Chapter 1', skill: 'write', chapterNumber: 1, status: 'active' };
+  const project: any = {
+    id: 'p1', status: 'paused',
+    review: { confirmationId: 'conf-1', stepId: 's1', kind: 'cadence-gate', pendingResult: 'x'.repeat(300) },
+    steps: [step],
+  };
+  const gate = mockGate('approved');
+  const engine = mockEngine([project]);
+  await assert.doesNotReject(() => resolveReviewGates({ gate, engine }));
+});
+
 test('resolveReviewGates ignores projects without a review and is guarded per-project', async () => {
   const ok: any = { id: 'p1', status: 'paused', review: { confirmationId: 'conf-1', stepId: 's1', kind: 'pipeline-gate' }, steps: [{ id: 's1', status: 'active' }] };
   const noReview: any = { id: 'p2', status: 'active', steps: [] };

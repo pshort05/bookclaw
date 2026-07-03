@@ -272,7 +272,18 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
   setInterval(async () => {
     if (!gw.confirmationGate || !gw.projectEngine) return;
     try {
-      const resumed = await resolveReviewGates({ gate: gw.confirmationGate, engine: gw.projectEngine });
+      const resumed = await resolveReviewGates({
+        gate: gw.confirmationGate, engine: gw.projectEngine,
+        // H1 fix: a cadence-gate chapter approved through the generic
+        // Confirmations UI resumes here, not through /review/action — without
+        // this, its summary/entity extraction (which the drive loops normally
+        // run inline right after completeStep) would never run.
+        contextExtraction: {
+          contextEngine: gw.contextEngine,
+          aiComplete: (r: any) => gw.aiRouter.complete(r),
+          aiSelectProvider: (t: string) => gw.aiRouter.selectProvider(t),
+        },
+      });
       const auto = gw.heartbeat?.getAutonomousStatus?.();
       const heartbeatDriving = !!(auto?.enabled && !auto?.paused);
       if (resumed.length && !heartbeatDriving) {

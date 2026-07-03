@@ -22,6 +22,9 @@ import { MD_FILE_RE, parsePipelineJson } from './book-types.js';
 import { parseSequence } from './sequence-parse.js';
 import { parseEditor } from './editor-parse.js';
 import { parsePrompt } from './prompt-parse.js';
+import type { Cadence } from './pipeline/gate-cadence.js';
+
+const VALID_CADENCES: readonly Cadence[] = ['per_act', 'per_chapter', 'outline_only', 'autonomous'];
 
 /** Lightweight catalog row for list(). */
 export interface LibraryEntry {
@@ -36,6 +39,7 @@ export interface LibraryEntry {
 export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>; // author/genre: filename -> content
   contentBrand?: { spiceCeiling: number; violenceCeiling: number }; // author: sidecar meta.json — inherited by a new book's contentCeiling (Flagship Plan 2)
+  reviewCadence?: Cadence; // author: sidecar meta.json — inherited by a new book's review.cadence when unset (Flagship Plan 5)
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
   sequence?: LibrarySequence;     // sequence: parsed JSON
@@ -249,7 +253,7 @@ export class LibraryService {
     return true;
   }
 
-  private readMetaSidecar(file: string): { description?: string; groups?: string[]; contentBrand?: { spiceCeiling: number; violenceCeiling: number } } {
+  private readMetaSidecar(file: string): { description?: string; groups?: string[]; contentBrand?: { spiceCeiling: number; violenceCeiling: number }; reviewCadence?: Cadence } {
     try {
       if (!existsSync(file)) return {};
       const meta = JSON.parse(readFileSync(file, 'utf-8'));
@@ -260,7 +264,8 @@ export class LibraryService {
       const contentBrand = (meta?.contentBrand && typeof meta.contentBrand.spiceCeiling === 'number' && typeof meta.contentBrand.violenceCeiling === 'number')
         ? { spiceCeiling: meta.contentBrand.spiceCeiling, violenceCeiling: meta.contentBrand.violenceCeiling }
         : undefined;
-      return { description, groups, contentBrand };
+      const reviewCadence = VALID_CADENCES.includes(meta?.reviewCadence) ? (meta.reviewCadence as Cadence) : undefined;
+      return { description, groups, contentBrand, reviewCadence };
     } catch { return {}; }
   }
 
@@ -339,10 +344,12 @@ export class LibraryService {
           const description = meta.description ?? prev?.description;
           const groups = meta.groups ?? prev?.groups;
           const contentBrand = meta.contentBrand ?? prev?.contentBrand;
+          const reviewCadence = meta.reviewCadence ?? prev?.reviewCadence;
           out.set(item.name, { kind, name: item.name, source, files,
             ...(description !== undefined ? { description } : {}),
             ...(groups !== undefined ? { groups } : {}),
-            ...(contentBrand !== undefined ? { contentBrand } : {}) });
+            ...(contentBrand !== undefined ? { contentBrand } : {}),
+            ...(reviewCadence !== undefined ? { reviewCadence } : {}) });
         }
       } catch (err) {
         console.error(`  ⚠ Library: failed to load ${kind}/${item.name}`, err);

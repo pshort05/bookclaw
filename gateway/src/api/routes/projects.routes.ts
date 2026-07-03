@@ -2,7 +2,7 @@ import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
-import { isHumanReviewStep, openReviewGate } from '../../services/human-review.js';
+import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
 import { buildBookCanonBlock } from '../../services/book-canon.js';
 import { applyStructureRail } from '../../services/format-guide.js';
@@ -11,6 +11,7 @@ import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } f
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
+import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
 import { bannedContentCheck, operationalDetailGuard } from '../../services/casting/safety-floor.js';
 import { isStepRole } from '../../services/casting/roles.js';
 import { looksLikeRefusal } from '../../services/casting/heat.js';
@@ -410,6 +411,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
   // For large documents (15K+ words): reads from disk and applies smart truncation
   async function buildStepUserMessage(project: any, step: any): Promise<string> {
     let message = step.prompt;
+    // Flagship Plan 5: a 'regenerate' gate action attaches a human steering
+    // note to the step; inject it once, then clear it so a later unrelated
+    // regenerate doesn't repeat a stale note.
+    if (step.regenerateNote) {
+      message = `${message}\n\n## Human review note — address this in your regenerated draft\n\n${step.regenerateNote}`;
+      delete step.regenerateNote;
+    }
     const uploads = project.context?.uploads || [];
     const fileList = uploads.map((u: any) => `${u.filename} (${u.wordCount?.toLocaleString() || '?'} words)`).join(', ');
 
@@ -793,6 +801,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         let groundingBlock = '';
         let analyzeApplyBlock = '';
         let continuityWorldName: string | null = null;
+        // Flagship Plan 5: the bound book's manifest, reused below (no extra
+        // I/O) to resolve its review.cadence at the gate check after this
+        // step generates.
+        let bookManifest: any = null;
         // Flagship Plan 3 (Task 4): a draft-role chapter step gets the ledger
         // block pre-draft and the continuity check post-draft. chapterNumber
         // is cheap/pure to compute (no I/O), so it's always resolved here and
@@ -801,6 +813,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const continuityChapterNum = chapterSummaryTarget(currentProject, activeStep, true).chapterNum;
         if (currentProject.bookSlug && services.books) {
           const ob = await services.books.open(currentProject.bookSlug).catch(() => null);
+          bookManifest = ob?.manifest ?? null;
           canonBlock = buildBookCanonBlock(services.books.dataDirOf?.(currentProject.bookSlug), ob?.manifest);
           continuityWorldName = ob?.manifest?.pulledFrom?.world?.name ?? null;
 
@@ -1137,6 +1150,24 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           await writeFile(join(projectDir, stepFileName), `# ${activeStep.label}\n\n${response}`, 'utf-8');
         } catch { /* non-fatal */ }
 
+        // Human-Gate Cadence (Flagship Plan 5): check AFTER content generates
+        // (so approve/edit resume with the real drafted text) and BEFORE
+        // completeStep (so the frontier doesn't advance past an ungated
+        // outline/chapter/act/pre-export boundary). The step's file is already
+        // saved to disk above either way.
+        if (services.confirmationGate) {
+          const cadenceGate = await maybeOpenCadenceGate(
+            { gate: services.confirmationGate, engine },
+            currentProject, activeStep, response,
+            { manifest: bookManifest, craftCritic: services.craftCritic, dialogueAuditor: services.dialogueAuditor },
+          );
+          if (cadenceGate.gated) {
+            results.push({ step: activeStep.label, success: false, wordCount, error: 'awaiting human review' });
+            humanReviewConfId = cadenceGate.confirmationId;
+            break;
+          }
+        }
+
         engine.completeStep(currentProject.id, activeStep.id, response);
         // Per-step activity record: which skill, book, provider, and model ran
         // this step. The dashboard auto-execute path previously logged no
@@ -1333,6 +1364,106 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
     engine.pauseProject(req.params.id);
     res.json({ project: engine.getProject(req.params.id) });
+  });
+
+  // M1 fix: an API/headless caller of /review/action has no browser polling
+  // /auto-execute and no Telegram loop driving it — without this, a resumed
+  // project stays 'active' with an 'active' step but nothing ever runs it
+  // (worst for regenerate: reset to active, nothing re-runs at all). Mirrors
+  // the phase-10 heartbeat resolver sweep's own driveProject: claims the
+  // shared drive lock (never races a concurrent /auto-execute or the sweep),
+  // drives to the next gate/error/end via the same startAndRunProject the
+  // headless driver and Telegram bridge use, fire-and-forget so the HTTP
+  // response isn't blocked by a long chapter chain. Fail-soft.
+  async function driveResumedProject(projectId: string): Promise<void> {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine?.tryStartDriving?.(projectId)) return;
+    try {
+      const handlers = gateway.buildTelegramCommandHandlers?.();
+      if (!handlers) return;
+      for (let i = 0; i < 500; i++) {
+        const p = engine.getProject(projectId);
+        if (!p || p.status !== 'active' || !p.steps.some((s: any) => s.status === 'active')) break;
+        const r = await handlers.startAndRunProject(projectId);
+        if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
+      }
+    } finally {
+      engine.stopDriving(projectId);
+    }
+  }
+
+  // ── Resolve a paused Human Review gate with one of four actions (Flagship
+  // Plan 5, Task 3): approve (continue with the generated/pending text),
+  // edit (continue with human-supplied text instead), regenerate (re-run the
+  // step with a steering note), or stop (stay paused). Extends the existing
+  // Human-Review pause/resume — see services/human-review.ts +
+  // ProjectEngine.applyReviewResume — rather than the plain binary
+  // /api/confirmations/:id/approve|reject, which has no room for
+  // editedText/note. Also resolves the underlying Confirmations request so
+  // it doesn't linger 'pending' and the periodic resolver skips it.
+  app.post('/api/projects/:id/review/action', async (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    const project = engine.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (!project.review) return res.status(409).json({ error: 'No review pending for this project' });
+
+    const action = req.body?.action;
+    if (!['approve', 'edit', 'regenerate', 'stop'].includes(action)) {
+      return res.status(400).json({ error: 'action must be one of approve|edit|regenerate|stop' });
+    }
+    if (action === 'edit' && typeof req.body?.editedText !== 'string') {
+      return res.status(400).json({ error: 'editedText (string) required for action=edit' });
+    }
+
+    const { confirmationId, stepId, kind, pendingResult } = project.review;
+    const gate = services.confirmationGate;
+    try {
+      if (action === 'stop') {
+        if (gate && confirmationId) await gate.reject(confirmationId, 'user', req.body?.note).catch(() => {});
+        engine.clearReview(project.id);
+      } else {
+        if (gate && confirmationId) {
+          await gate.approve(confirmationId);
+          await gate.recordOutcome(confirmationId, {
+            success: true,
+            message: `Human review: ${action}`,
+            executedAt: new Date().toISOString(),
+          }).catch(() => {});
+        }
+        // Capture the step + its canonical resumed text BEFORE applyReviewResume
+        // clears project.review — H1 fix: applyReviewResume completes the step
+        // OUTSIDE this file's drive loop, so the loop's own inline
+        // ContextEngine hook (summary + entity extraction) never runs for a
+        // gated-then-approved/edited chapter. Re-run the identical hook here.
+        const stepForExtraction = project.steps.find((s: any) => s.id === stepId);
+        const resumedText = action === 'edit' ? req.body?.editedText : (pendingResult ?? '[approved by human review]');
+
+        engine.applyReviewResume(project.id, stepId, kind, action, {
+          editedText: req.body?.editedText,
+          note: req.body?.note,
+        });
+
+        if ((action === 'approve' || action === 'edit') && kind === 'cadence-gate' && stepForExtraction) {
+          await runChapterContextExtraction(
+            {
+              contextEngine: services.contextEngine,
+              aiComplete: (r: any) => services.aiRouter.complete(r),
+              aiSelectProvider: (t: string) => services.aiRouter.selectProvider(t),
+            },
+            project, stepForExtraction, resumedText ?? '',
+          );
+        }
+
+        // M1 fix: re-drive in the background (see driveResumedProject) —
+        // never awaited here, so a long chapter chain never blocks this response.
+        void driveResumedProject(project.id).catch((err: any) =>
+          console.error('[review-action] re-drive failed:', err?.message || err));
+      }
+      res.json({ project: engine.getProject(req.params.id) });
+    } catch (err: any) {
+      res.status(400).json({ error: err?.message || 'Review action failed' });
+    }
   });
 
   // ── Resume a stuck/completed project that still has pending or active steps ──

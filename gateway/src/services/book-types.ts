@@ -10,6 +10,8 @@ export const BOOK_SCHEMA_VERSION = 2;
 /** Oldest book schema this app can open without migration. */
 export const BOOK_MIN_SUPPORTED = 1;
 
+import type { Cadence } from './pipeline/gate-cadence.js';
+
 /** Gate outcome for a book on open. */
 export type BookStatus = 'ok' | 'readonly' | 'quarantined';
 
@@ -64,6 +66,7 @@ export interface BookManifest {
   contentCeiling?: { spice: number; violence: number }; // Author-branded content axes (0-10) driving the heat_check intimacy branch; absent = fade-to-black, untouched by Plan 2 routing (additive-optional, no schema bump)
   uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
   grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
+  review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

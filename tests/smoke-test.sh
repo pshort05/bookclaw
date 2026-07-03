@@ -346,6 +346,12 @@ echo "$RSPICY" | grep -q '"role"' \
   && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
   || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
 
+# Plan 5 (gate cadence): the new review-action route (approve/edit/regenerate/stop)
+# sits behind the auth gate (no token -> 401), confirming it is registered.
+[ "$(code -X POST "$BASE/api/projects/smoke/review/action")" = "401" ] \
+  && pass "projects/:id/review/action: no token -> 401 (Plan 5 route registered)" \
+  || fail "projects/:id/review/action should be 401 without token"
+
 # Plan 3 (consistency spine): the standalone import-audit route sits behind the
 # auth gate (no token -> 401), non-destructively confirming it is registered.
 [ "$(code -X POST "$BASE/api/books/smoke/consistency/import-audit")" = "401" ] \

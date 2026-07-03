@@ -79,7 +79,10 @@ export interface Project {
   bookSlug?: string;      // the book this project writes into; captured at creation, immutable
   // Human Review gate (additive-optional, no schema bump): set when the pipeline
   // is paused awaiting a human Confirmations decision; cleared once resolved.
-  review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' };
+  // `pendingResult` (Flagship Plan 5): the just-generated content awaiting review
+  // for a 'cadence-gate' — set so approve/edit resume with the real text instead
+  // of a placeholder (absent for a literal no-op 'pipeline-gate' step).
+  review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate'; pendingResult?: string };
 }
 
 export interface ProjectStep {
@@ -115,6 +118,9 @@ export interface ProjectStep {
   // analyze-then-apply polish pass to consume. Absent when the continuity
   // store was unavailable or the check found nothing.
   continuityFlags?: Array<{ kind: 'contradiction' | 'timeline' | 'knowledge' | 'red_herring'; detail: string; span?: string }>;
+  // Human note attached by a 'regenerate' gate action (Flagship Plan 5, Task 3):
+  // injected into this step's prompt on its next run, then cleared.
+  regenerateNote?: string;
 }
 
 export interface NovelPipelineConfig {
@@ -946,24 +952,51 @@ Description: ${description}`;
   }
 
   /**
-   * Human Review resume: apply an approved decision. For a gate step, complete it
-   * (advances the pipeline to the next step); for a step error, reset the failed
-   * step to active (retry). Clears the review marker and re-activates the project
-   * so a driver continues it. Atomic + persisted. See services/human-review.ts.
+   * Human Review resume: apply a decision. For a step error, reset the failed
+   * step to active (retry). For a gate ('pipeline-gate' or 'cadence-gate'),
+   * `action` (default 'approve', Flagship Plan 5 Task 3) selects the outcome:
+   *   - 'approve': complete the step. A 'cadence-gate' completes with its
+   *     already-generated `project.review.pendingResult` (the real drafted
+   *     text); a literal no-op 'pipeline-gate' step has none, so it falls back
+   *     to the original placeholder — byte-for-byte the pre-Plan-5 behavior.
+   *   - 'edit' (cadence-gate only): complete the step with `extra.editedText`
+   *     as its canonical result instead of the generated draft.
+   *   - 'regenerate' (cadence-gate only): reset the step to 'active' with
+   *     `extra.note` attached (`ProjectStep.regenerateNote`) so the next run
+   *     injects it into the prompt, WITHOUT completing — the pipeline stays on
+   *     this step.
+   * Clears the review marker and re-activates the project so a driver
+   * continues it (except 'regenerate', which leaves it on the same step).
+   * Atomic + persisted. See services/human-review.ts.
    */
-  applyReviewResume(projectId: string, stepId: string, kind: 'pipeline-gate' | 'pipeline-error'): void {
+  applyReviewResume(
+    projectId: string, stepId: string, kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate',
+    action: 'approve' | 'edit' | 'regenerate' | 'stop' = 'approve',
+    extra?: { editedText?: string; note?: string },
+  ): void {
     const project = this.projects.get(projectId);
     if (!project) return;
     if (kind === 'pipeline-error') {
       const step = project.steps.find(s => s.id === stepId);
       if (step) { step.status = 'active'; step.error = undefined; step.result = undefined; }
       project.status = 'active';
+    } else if (kind === 'cadence-gate' && action === 'edit') {
+      this.completeStep(projectId, stepId, extra?.editedText ?? '');
+      if (project.status !== 'completed') project.status = 'active';
+    } else if (kind === 'cadence-gate' && action === 'regenerate') {
+      const step = project.steps.find(s => s.id === stepId);
+      if (step) { step.status = 'active'; step.error = undefined; step.result = undefined; step.regenerateNote = extra?.note; }
+      project.status = 'active';
+    } else if (kind === 'cadence-gate' && action === 'stop') {
+      // Stays paused (mirrors clearReview) — the human declined to continue.
     } else {
+      // 'approve' (default, both gate kinds — the pre-Plan-5 behavior).
       // Completes the gate step and activates the runnable frontier (next step).
       // completeStep sets status='completed' when the gate was the LAST step; in
       // that case leave it completed (so onProjectCompleted fires) rather than
       // forcing it back to 'active'.
-      this.completeStep(projectId, stepId, '[approved by human review]');
+      const pendingResult = kind === 'cadence-gate' ? project.review?.pendingResult : undefined;
+      this.completeStep(projectId, stepId, pendingResult ?? '[approved by human review]');
       if (project.status !== 'completed') project.status = 'active';
     }
     delete project.review;

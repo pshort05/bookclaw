@@ -503,9 +503,15 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (uncensoredProvider && !['grok', 'venice', 'auto'].includes(uncensoredProvider)) {
       return res.status(400).json({ error: `unknown uncensoredProvider: ${uncensoredProvider}` });
     }
+    // Human-review gate cadence (Flagship Plan 5): an explicit per-book value
+    // overrides the bound author's reviewCadence default at create time.
+    const reviewCadence = (typeof body.reviewCadence === 'string' && body.reviewCadence) ? body.reviewCadence : '';
+    if (reviewCadence && !['per_act', 'per_chapter', 'outline_only', 'autonomous'].includes(reviewCadence)) {
+      return res.status(400).json({ error: `unknown reviewCadence: ${reviewCadence}` });
+    }
 
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}) });
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
       if (worldName && services.world?.getConfig?.(worldName)) {

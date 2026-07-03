@@ -21,6 +21,7 @@ import {
   type BookManifest, type BookSummary, type PulledRef, type NextStep, type BookFormat,
 } from './book-types.js';
 import { resolveStructure, StoryStructureService, type StoryStructure } from './story-structures.js';
+import type { Cadence } from './pipeline/gate-cadence.js';
 import { pipelinePhases, type LibraryPipeline } from './library-types.js';
 import { listRunnerFiles as listRunnerFilesAt } from './runner-files.js';
 import type { WorldService } from './world.js';
@@ -48,6 +49,7 @@ export interface BookSelection {
   preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
   contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
+  reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
 }
 
 export type RepullStatus =
@@ -326,6 +328,12 @@ export class BookService {
     const contentCeiling = sel.contentCeiling
       ?? (author.contentBrand ? { spice: author.contentBrand.spiceCeiling, violence: author.contentBrand.violenceCeiling } : undefined);
 
+    // Review cadence (Flagship Plan 5): same precedence as contentCeiling — an
+    // explicit per-book value wins; otherwise inherit the bound author's
+    // reviewCadence when set. Absent either way → no review.cadence on the
+    // manifest → resolveCadence falls back to 'per_act' (today's behavior).
+    const reviewCadence = sel.reviewCadence ?? author.reviewCadence;
+
     const manifest: BookManifest = {
       id: slug,
       slug,
@@ -350,6 +358,7 @@ export class BookService {
       ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
       ...(contentCeiling ? { contentCeiling } : {}),
       ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
+      ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
       history: [{ at: now, event: 'created' }],
     };
     await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
