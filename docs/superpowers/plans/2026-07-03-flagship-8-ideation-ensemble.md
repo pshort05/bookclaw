@@ -26,20 +26,20 @@
 ### Task 1: `runIdeationEnsemble` fan-out
 **Files:** create `ideation-ensemble.ts`; test `ideation-ensemble.test.ts`.
 **Interfaces:** `runIdeationEnsemble(args: { premise: string; genre: string; panel: string[]; angles: Record<string,string>; complete: (req:any)=>Promise<{text:string}>; resolveModel: (member:string)=>{provider:string;model?:string} }): Promise<Array<{ member: string; angle: string; pitch: string }>>` — one `complete` per panel member with a distinct angle prompt, run in parallel (`Promise.allSettled`); a failed/absent member is dropped with a log, not fatal.
-- [ ] TDD (stubbed `complete` keyed by model): a 4-member panel yields 4 pitches with distinct angles; a member whose `complete` rejects is omitted and the rest still return; an empty panel returns `[]`. Commit.
+- [x] TDD (stubbed `complete` keyed by model): a 4-member panel yields 4 pitches with distinct angles; a member whose `complete` rejects is omitted and the rest still return; an empty panel returns `[]`. Commit.
 
 ### Task 2: `selectPitch` divergence-preserving judge
 **Files:** same module; test `select-pitch.test.ts`.
 **Interfaces:** `selectPitch(args: { pitches: Array<{member:string;angle:string;pitch:string}>; premise: string; complete: (req:any)=>Promise<{text:string}>; judgeModel: {provider:string;model?:string} }): Promise<{ chosen: string; rationale: string; graftedFrom: string[] }>` — a judge prompt that scores originality/genre-fit/hook and returns the strongest single pitch (optionally grafting distinct strengths), NOT a consensus merge. Tolerant JSON parse; on judge failure, fall back to the longest/first pitch with a log.
-- [ ] TDD: with three clearly-different pitches and a stubbed judge returning a structured choice, `chosen` is the judged pick and `graftedFrom` lists contributors; a judge failure falls back deterministically without throwing. Commit.
+- [x] TDD: with three clearly-different pitches and a stubbed judge returning a structured choice, `chosen` is the judged pick and `graftedFrom` lists contributors; a judge failure falls back deterministically without throwing. Commit.
 
 ### Task 3: `ensemble` manifest field + panel resolution
 **Files:** modify `book-types.ts` (if not present) and the book-create path; the panel default `[gpt,grok,gemini,claude]` comes from the genre sheet's `ensemblePanel` (Plan 1/7) unless the book overrides.
-- [ ] TDD: a book with `ensemble.enabled` and no panel inherits the genre sheet's `ensemblePanel`; an explicit book panel overrides; `enabled` defaults false. Commit.
+- [x] TDD: a book with `ensemble.enabled` and no panel inherits the genre sheet's `ensemblePanel`; an explicit book panel overrides; `enabled` defaults false. Commit.
 
 ### Task 4: Wire the ensemble into the planning phase (opt-in)
 **Files:** modify the premise/planning phase wiring.
-- [ ] TDD (integration, stubbed router): a book with `ensemble.enabled:false` runs the normal single-model premise step; with `enabled:true`, the premise phase runs `runIdeationEnsemble` + `selectPitch` and the selected pitch becomes the premise the bible/outline phases consume. Panel members resolve via each provider's model; the CostTracker records all calls. Commit.
+- [x] TDD (integration, stubbed router): a book with `ensemble.enabled:false` runs the normal single-model premise step; with `enabled:true`, the premise phase runs `runIdeationEnsemble` + `selectPitch` and the selected pitch becomes the premise the bible/outline phases consume. Panel members resolve via each provider's model; the CostTracker records all calls. Commit.
 
 ## Self-Review
 - Spec coverage (§4.4): opt-in per-book ensemble (T3, T4), default panel `[gpt,grok,gemini,claude]` overridable (T3), in-house fan-out + divergence-preserving judge — explicitly NOT Fusion (T1, T2), reuses the router (no new plumbing). Off by default (most expensive front-end).

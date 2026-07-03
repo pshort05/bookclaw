@@ -15,6 +15,10 @@ import { intimacyDecision, type IntimacyDecision } from '../../services/casting/
 import { classifyScene } from '../../services/casting/heat-classify.js';
 import { profanityInjection } from '../../services/casting/profanity.js';
 import { runGroundingResearch } from '../../services/pipeline/grounding-research.js';
+import {
+  runIdeationEnsemble, selectPitch, resolvePanelMemberProvider, resolveEnsemblePanel, loadIdeationAngles,
+  type EnsemblePitch, type SelectPitchResult,
+} from '../../services/pipeline/ideation-ensemble.js';
 import { analyzeChapter, describeFindings } from '../../services/pipeline/analyze-apply.js';
 import { renderBetaReaderReport } from '../../services/reports/render-beta-reader.js';
 
@@ -337,6 +341,85 @@ export async function resolveGroundingBlock(opts: {
 function formatGroundingBlock(result: { citedFacts: string; sources: string[] }): string {
   if (!result.citedFacts) return '';
   return `## Grounding Research (sourced facts for accuracy)\n\n${result.citedFacts}`;
+}
+
+/**
+ * Opt-in Ideation Ensemble seam (Flagship Plan 8, Task 4).
+ *
+ * A no-op unless `step.phase === 'premise'`, no earlier premise-phase step on
+ * this project has already completed (i.e. this is the FIRST premise
+ * generation — a novel-pipeline's "Refine premise" step that follows is left
+ * untouched, it refines the ensemble's already-chosen result via the normal
+ * single-model path), the project is bound to a book, and that book's
+ * `ensemble.enabled === true` (default OFF — this is the most expensive
+ * front-end phase). Fail-soft throughout: any lookup/fan-out error degrades
+ * to `{ active: false }` so the caller falls through to the normal
+ * single-model premise generation instead of blocking the pipeline.
+ */
+export async function resolveEnsemblePremise(opts: {
+  services: any;
+  project: any;
+  step: any;
+  userMessage: string;
+}): Promise<{ active: boolean; premiseText?: string; pitches?: EnsemblePitch[]; selection?: SelectPitchResult }> {
+  const { services, project, step, userMessage } = opts;
+  const NOOP = { active: false };
+  if (step?.phase !== 'premise') return NOOP;
+  const priorPremiseCompleted = Array.isArray(project?.steps) &&
+    project.steps.some((s: any) => s.phase === 'premise' && s.status === 'completed');
+  if (priorPremiseCompleted) return NOOP;
+  if (!project?.bookSlug || !services?.books?.open) return NOOP;
+
+  let manifest: any;
+  try { manifest = (await services.books.open(project.bookSlug))?.manifest; } catch { return NOOP; }
+  if (manifest?.ensemble?.enabled !== true) return NOOP;
+
+  const genre = String(manifest?.pulledFrom?.genre?.name ?? project?.context?.genre ?? '');
+  const sheet = genre ? loadCastingSheet(genre) : null;
+  const panel = resolveEnsemblePanel({ manifestPanel: manifest?.ensemble?.panel, sheetPanel: sheet?.ensemblePanel });
+  const angles = loadIdeationAngles();
+
+  // Cost-record wrapper: mirrors the consistencyAudit cost-record wrapper
+  // (index.ts) — every panel call + the judge call routes through
+  // services.costs so an ensemble run's spend is attributed to this book.
+  const complete = async (req: any) => {
+    const resp = await services.aiRouter.complete(req);
+    try { services.costs?.record(resp.provider ?? req.provider, resp.tokensUsed, resp.estimatedCost, project.bookSlug); } catch { /* best-effort */ }
+    return resp;
+  };
+
+  let pitches: EnsemblePitch[] = [];
+  try {
+    pitches = await runIdeationEnsemble({
+      premise: userMessage,
+      genre: genre || 'fiction',
+      panel,
+      angles,
+      complete,
+      resolveModel: resolvePanelMemberProvider,
+    });
+  } catch (err) {
+    console.warn('  [ideation-ensemble] fan-out failed (non-fatal, falling back to single-model premise):', (err as Error)?.message || err);
+    return NOOP;
+  }
+  // Every panel member failed (e.g. no providers configured) — fall back to
+  // the normal single-model premise step rather than completing with nothing.
+  if (pitches.length === 0) return NOOP;
+
+  // Judge model: resolve via the router's own tier selection (task type
+  // 'final_edit', the same premium-reasoning tier the rest of the codebase
+  // uses for judge-like decisions) rather than hardcoding a provider id — a
+  // hardcoded provider that isn't configured on this deployment would throw
+  // and take the whole ensemble inert (the exact failure class Plans 1-6 hit).
+  let judgeProviderId: string;
+  try { judgeProviderId = services.aiRouter.selectProvider('final_edit').id; } catch (err) {
+    console.warn('  [ideation-ensemble] no provider available for the judge (non-fatal, falling back to single-model premise):', (err as Error)?.message || err);
+    return NOOP;
+  }
+  const selection = await selectPitch({ pitches, premise: userMessage, complete, judgeModel: { provider: judgeProviderId } });
+  if (!selection.chosen) return NOOP;
+
+  return { active: true, premiseText: selection.chosen, pitches, selection };
 }
 
 /**

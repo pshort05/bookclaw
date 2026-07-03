@@ -51,6 +51,7 @@ export interface BookSelection {
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
   costBudget?: number;      // per-book spend cap in dollars (Flagship Plan 6, Task 3); persisted on the manifest
+  ensemble?: { enabled?: boolean; panel?: string[] };  // opt-in ideation-ensemble override (Flagship Plan 8, Task 3); persisted on the manifest
 }
 
 export type RepullStatus =
@@ -361,6 +362,7 @@ export class BookService {
       ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
       ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
       ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),
+      ...(sel.ensemble ? { ensemble: sel.ensemble } : {}),
       history: [{ at: now, event: 'created' }],
     };
     await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');

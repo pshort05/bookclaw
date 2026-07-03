@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
-import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, runBetaReaderGate, makeGatherChapters } from './_shared.js';
+import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, resolveEnsemblePremise, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
 import { checkBudgetPause, applyBudgetPause } from '../../services/pipeline/budget-gate.js';
@@ -515,10 +515,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(project, activeStep, intimacy.spiceRoute);
       let response = '';
 
+      // Flagship Plan 8: opt-in ideation ensemble on the first premise-phase
+      // step. A no-op unless the bound book has ensemble.enabled === true.
+      const ensemble = await resolveEnsemblePremise({ services, project, step: activeStep, userMessage });
+
       // Multi-step skills: an executable skill's OpenRouter phase chain IS the
       // generation (skip the normal single call + short-retry). null → passive skill.
-      const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, project.bookSlug);
-      if (execOut !== null) {
+      const execOut = ensemble.active ? null : await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, project.bookSlug);
+      if (ensemble.active) {
+        response = ensemble.premiseText!;
+      } else if (execOut !== null) {
         response = execOut;
       } else {
         await gateway.handleMessage(
@@ -926,10 +932,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
 
+        // Flagship Plan 8: opt-in ideation ensemble on the first premise-phase
+        // step. A no-op unless the bound book has ensemble.enabled === true.
+        const ensemble = await resolveEnsemblePremise({ services, project: currentProject, step: activeStep, userMessage });
+
         // Multi-step skills: an executable skill's OpenRouter phase chain IS the
         // generation (skip the normal single call + short-retry). null → passive skill.
-        const execOut = await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, currentProject.bookSlug);
-        if (execOut !== null) {
+        const execOut = ensemble.active ? null : await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, currentProject.bookSlug);
+        if (ensemble.active) {
+          response = ensemble.premiseText!;
+        } else if (execOut !== null) {
           response = execOut;
         } else {
           await gateway.handleMessage(

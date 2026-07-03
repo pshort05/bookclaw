@@ -68,6 +68,7 @@ export interface BookManifest {
   uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
   grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
   review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)
+  ensemble?: { enabled?: boolean; panel?: string[] }; // Flagship Plan 8 — opt-in multi-model ideation ensemble on the premise phase; absent/enabled!==true = off (most expensive front-end, additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 
