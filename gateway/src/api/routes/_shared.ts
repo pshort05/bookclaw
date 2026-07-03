@@ -14,6 +14,9 @@ import { isStepRole } from '../../services/casting/roles.js';
 import { intimacyDecision, type IntimacyDecision } from '../../services/casting/heat.js';
 import { classifyScene } from '../../services/casting/heat-classify.js';
 import { profanityInjection } from '../../services/casting/profanity.js';
+import { runGroundingResearch } from '../../services/pipeline/grounding-research.js';
+import { analyzeChapter, describeFindings } from '../../services/pipeline/analyze-apply.js';
+import { renderBetaReaderReport } from '../../services/reports/render-beta-reader.js';
 
 /**
  * Wrap an async Express handler so a rejected promise is routed to next(err)
@@ -245,6 +248,193 @@ export async function resolveIntimacyRouting(opts: {
     decision,
     recomputeOnRefusal: () => intimacyDecision({ score, ceiling, ladder, refusalEscalated: true, genre }),
   };
+}
+
+/**
+ * Grounding-research phase seam (Flagship Plan 4, Task 1).
+ *
+ * Injects sourced facts (`runGroundingResearch`) into a book-bible phase's
+ * step context. A no-op unless the step is role `bible`, the project is bound
+ * to a book, and both research services are wired. Result is cached on
+ * `project.context.groundingResearch` so the book-bible pipeline's several
+ * bible-role steps share ONE lookup instead of re-hitting the research API
+ * per step. Guarded by the book's `grounding.enabled` (default true — absent
+ * or any value other than `false` runs it).
+ */
+export async function resolveGroundingBlock(opts: {
+  services: any;
+  project: any;
+  step: any;
+  researchDir: string;
+  /** Injectable for tests; defaults to a real recursive fs write. */
+  writeFile?: (path: string, content: string) => Promise<void>;
+}): Promise<{ groundingBlock: string }> {
+  const { services, project, step, researchDir } = opts;
+  const NOOP = { groundingBlock: '' };
+  if (!isStepRole(step?.role) || step.role !== 'bible') return NOOP;
+  if (!project?.bookSlug || !services?.books?.open) return NOOP;
+  if (!services.research || !services.researchLookup) return NOOP;
+
+  const cached = project.context?.groundingResearch;
+  if (cached && typeof cached.citedFacts === 'string') {
+    return { groundingBlock: formatGroundingBlock(cached) };
+  }
+
+  let manifest: any;
+  try { manifest = (await services.books.open(project.bookSlug))?.manifest; } catch { return NOOP; }
+  if (manifest?.grounding?.enabled === false) return NOOP;
+
+  const genre = String(manifest?.pulledFrom?.genre?.name ?? project?.context?.genre ?? 'fiction');
+  const domain = project?.description ? String(project.description).slice(0, 200) : undefined;
+  // L3 (code-review): `setting` is a real NovelPipelineConfig field threaded
+  // into project.context by createPipeline/createProjectFromPipeline for
+  // book-bible phase projects — populate it so grounding queries are
+  // setting-shaped, per buildQuery's design, not just genre+domain. There is
+  // no `period` field anywhere in the project/book data model today, so it's
+  // left unset (buildQuery already tolerates that).
+  const setting = project?.context?.setting ? String(project.context.setting) : undefined;
+
+  const writeFile = opts.writeFile ?? (async (p: string, c: string) => {
+    const { writeFile: wf, mkdir } = await import('fs/promises');
+    const { dirname } = await import('path');
+    await mkdir(dirname(p), { recursive: true });
+    await wf(p, c, 'utf-8');
+  });
+
+  // M2 (code-review): ResearchLookupService.lookup's estimatedCost was being
+  // discarded, leaving grounding-lookup spend uncosted. Wrap it so the cost is
+  // recorded, mirroring the consistencyAudit cost-recording wrapper
+  // (index.ts). ResearchResult exposes no token count, so tokens records as 0.
+  const lookup = {
+    lookup: async (query: string, lookupOpts?: { maxWords?: number }) => {
+      const res = await services.researchLookup.lookup(query, lookupOpts);
+      try { services.costs?.record(res.provider ?? 'research-lookup', 0, res.estimatedCost, project.bookSlug); } catch { /* best-effort */ }
+      return res;
+    },
+  };
+
+  let result: { citedFacts: string; sources: string[] };
+  try {
+    result = await runGroundingResearch({
+      slug: project.bookSlug,
+      signals: { genre, domain, setting },
+      research: services.research,
+      lookup,
+      writeFile,
+      researchDir,
+    });
+  } catch (err) {
+    console.warn('  [grounding-research] hook failed (non-fatal):', (err as Error)?.message || err);
+    return NOOP;
+  }
+
+  if (!project.context) project.context = {};
+  project.context.groundingResearch = result;
+
+  return { groundingBlock: formatGroundingBlock(result) };
+}
+
+function formatGroundingBlock(result: { citedFacts: string; sources: string[] }): string {
+  if (!result.citedFacts) return '';
+  return `## Grounding Research (sourced facts for accuracy)\n\n${result.citedFacts}`;
+}
+
+/**
+ * Analyze-then-apply polish seam (Flagship Plan 4, Task 3).
+ *
+ * A no-op unless `step` is a book-production "Polish Chapter N" step
+ * (`phase: 'polish', skill: 'revise'`) — OR (L2, code-review) a per-chapter
+ * rewrite/editorial step from the OTHER book-production generator, which
+ * tags its chapter-level revise steps with `role: 'rewrite'|'editorial'` and
+ * a `chapterNumber` under a different phase name — with a matching completed
+ * "Write Chapter N" step and both deterministic critic services wired.
+ * Returns a findings block naming the specific craft/dialogue/continuity
+ * issues found on the WRITE step's prose, for the polish prompt to target —
+ * or '' when there's nothing to fix (or anything above is missing), in which
+ * case the polish step's existing fixed-checklist prompt runs unchanged.
+ * Fail-soft: a critic error degrades to '' rather than blocking the polish step.
+ */
+export function resolveAnalyzeApplyBlock(opts: { services: any; project: any; step: any }): string {
+  const { services, project, step } = opts;
+  const isPolishPhaseStep = step?.phase === 'polish' && step?.skill === 'revise';
+  const isChapterRewriteStep = step?.skill === 'revise' && typeof step?.chapterNumber === 'number'
+    && (step?.role === 'rewrite' || step?.role === 'editorial');
+  if (!isPolishPhaseStep && !isChapterRewriteStep) return '';
+  if (!services?.craftCritic || !services?.dialogueAuditor) return '';
+
+  const chNum = step.chapterNumber;
+  const writeStep = (project?.steps ?? []).find((s: any) =>
+    s.skill === 'write' && s.chapterNumber === chNum && s.status === 'completed' && s.result);
+  if (!writeStep?.result) return '';
+
+  try {
+    const findings = analyzeChapter({
+      text: writeStep.result,
+      chapterNumber: chNum || 0,
+      craftCritic: services.craftCritic,
+      dialogueAuditor: services.dialogueAuditor,
+      continuityFlags: writeStep.continuityFlags,
+    });
+    return findings.hasFindings ? describeFindings(findings) : '';
+  } catch (err) {
+    console.warn('  [analyze-apply] analysis failed (non-fatal):', (err as Error)?.message || err);
+    return '';
+  }
+}
+
+/**
+ * Beta-reader pre-format gate (Flagship Plan 4, Task 3).
+ *
+ * Runs a REAL `BetaReaderService.scanManuscript` pass over the pipeline's
+ * completed book-production chapters when a pipeline advances INTO its
+ * format-export phase, and stores the resulting report (same path the manual
+ * `/api/projects/:id/beta-reader` endpoint uses) so it's available as a gate
+ * INPUT for the human before formatting — advisory only, never blocks the
+ * advance. A no-op unless the started phase is `format-export`, a completed
+ * `book-production` sibling exists in the pipeline, and `betaReader`/
+ * `aiRouter` are wired. Fail-soft throughout.
+ */
+export async function runBetaReaderGate(opts: {
+  services: any;
+  pipelineProjects: any[];
+  startedProject: any;
+  gatherChapters: (project: any) => Promise<Array<{ id: string; number: number; title: string; text: string }>>;
+}): Promise<{ triggered: boolean; report?: any }> {
+  const { services, pipelineProjects, startedProject, gatherChapters } = opts;
+  const NOOP = { triggered: false };
+  if (startedProject?.type !== 'format-export') return NOOP;
+  if (!services?.betaReader || !services?.aiRouter) return NOOP;
+
+  const prodProject = (pipelineProjects ?? []).find((p: any) => p.type === 'book-production' && p.status === 'completed');
+  if (!prodProject) return NOOP;
+
+  try {
+    const chapters = await gatherChapters(prodProject);
+    if (chapters.length === 0) return NOOP;
+
+    // M1 (code-review): the panel's chapter x archetype calls were bypassing
+    // the cost tracker (AIRouter.complete does not record spend itself —
+    // recording only happens at the index.ts choke points). Mirrors the
+    // consistencyAudit cost-recording wrapper (index.ts).
+    const aiCompleteFn = async (r: any) => {
+      const resp = await services.aiRouter.complete(r);
+      try { services.costs?.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, prodProject.bookSlug); } catch { /* best-effort */ }
+      return resp;
+    };
+    const aiSelectFn = (t: string) => services.aiRouter.selectProvider(t);
+    const report = await services.betaReader.scanManuscript(prodProject.id, chapters, aiCompleteFn, aiSelectFn);
+
+    if (prodProject.bookSlug && services.reports) {
+      try {
+        const r = renderBetaReaderReport(report);
+        services.reports.write(prodProject.bookSlug, 'beta-reader', { title: r.title, markdown: r.markdown, json: report, summary: r.summary });
+      } catch { /* report emission is best-effort */ }
+    }
+    return { triggered: true, report };
+  } catch (err) {
+    console.warn('  [beta-reader-gate] scan failed (non-fatal):', (err as Error)?.message || err);
+    return NOOP;
+  }
 }
 
 /** Sets the Wave-3 advisory header on a response. */

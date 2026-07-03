@@ -21,6 +21,7 @@ import { buildPipelineVars } from './pipeline-vars.js';
 import { expandSteps } from './pipeline-expand.js';
 import { applyStructureRail } from './format-guide.js';
 import { isStepRole, inferRole, type StepRole } from './casting/roles.js';
+import { buildRollingSummary } from './pipeline/rolling-summary.js';
 import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -1639,6 +1640,21 @@ Description: ${description}`;
     }
 
     if (isWrite && stepCh > 1) {
+      // Flagship Plan 4 (Task 2): prefer the ContextEngine's stored chapter
+      // summaries + entity registry, assembled into a four-tier rolling-memory
+      // block (recent/arc/macro/entities) — replaces the raw-text sliding
+      // window below with compact, bounded-length memory that scales past
+      // chapter 25 without the context window exploding. Falls back to the
+      // raw-text window (unchanged) when no summaries are stored yet (e.g.
+      // ContextEngine unavailable, or the very first chapters before the
+      // post-draft summarize hook has run).
+      const rollingSummaries = this.contextEngine?.getSummaries(project.id) ?? [];
+      if (rollingSummaries.length > 0) {
+        const entities = this.contextEngine?.getEntities(project.id) ?? [];
+        const rollingBlock = buildRollingSummary({ summaries: rollingSummaries, entities, chapterNumber: stepCh });
+        if (rollingBlock) return context + rollingBlock + '\n\n';
+      }
+
       // For chapter N's write step, give last 1-2 polished/written chapters
       // in compact form. Pick polish output if available, write otherwise.
       const priorChapters = new Map<number, ProjectStep>();

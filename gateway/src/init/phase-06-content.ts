@@ -12,6 +12,7 @@ import { appVersion, WORKSPACE_SCHEMA_VERSION } from './phase-01-config.js';
 import { extractChapterFacts } from '../services/consistency/extractor.js';
 import { CONSISTENCY_PROVIDERS } from '../services/consistency/model-selection.js';
 import type { LedgerFact } from '../services/consistency/types.js';
+import { runBetaReaderGate, makeGatherChapters } from '../api/routes/_shared.js';
 import type { BookClawGateway } from '../index.js';
 
 /** Phases 6c–6f: TTS, image generation, personas, project engine, context engine. */
@@ -71,8 +72,29 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
   // enforced for autonomous mode too: the heartbeat's project list is filtered
   // through ProjectEngine.sequencePredecessorsComplete — see phase-10-heartbeat-
   // bridges.ts — so a later pending phase is never run ahead of an earlier one.)
+  // C1 (code-review): the beta-reader pre-format gate (runBetaReaderGate,
+  // _shared.ts) was only ever invoked from the MANUAL POST /api/pipeline/:id/
+  // advance route — pipelines that auto-advance through this completion hook
+  // never triggered it, so the beta-reader report before formatting was never
+  // generated on the normal (autonomous) path. gatherChapters mirrors the
+  // route layer's helper (projects.routes.ts) so both call sites resolve
+  // chapter text the same way.
+  const gatherChapters = makeGatherChapters(
+    ROOT_DIR,
+    (p) => gw.books?.dataDirOf?.(p?.bookSlug ?? null) ?? gw.books?.activeDataDir?.() ?? null,
+  );
+
   gw.projectEngine.onProjectCompleted(async (project: any) => {
-    if (project.pipelineId) gw.projectEngine.advancePipeline(project.pipelineId);
+    let startedProject: any = null;
+    if (project.pipelineId) startedProject = gw.projectEngine.advancePipeline(project.pipelineId);
+    // Fire the beta-reader gate ONLY when the phase the pipeline just advanced
+    // INTO is format-export — advisory only, never blocks advancement. Fail-soft.
+    if (startedProject?.type === 'format-export' && project.pipelineId) {
+      const svc = gw.getServices?.();
+      const pipelineProjects = gw.projectEngine.getPipelineProjects(project.pipelineId);
+      runBetaReaderGate({ services: svc, pipelineProjects, startedProject, gatherChapters })
+        .catch((err: any) => console.log(`  ℹ Beta-reader gate skipped: ${err?.message || err}`));
+    }
     // Advance the bound book's manifest phase across the project boundary: when a
     // phase-project (Planning/Bible/…) completes, the book moves to the next
     // lifecycle phase. advancePipeline only marks the next PROJECT active — it

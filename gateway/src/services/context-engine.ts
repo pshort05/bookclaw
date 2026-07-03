@@ -957,6 +957,15 @@ export class ContextEngine {
   }
 
   /**
+   * Returns the full, chapter-ordered chapter-summary list for a project
+   * (Flagship Plan 4, Task 2 — feeds `buildRollingSummary`).
+   */
+  getSummaries(projectId: string): ChapterSummary[] {
+    const ctx = this.contexts.get(projectId);
+    return ctx?.summaries ?? [];
+  }
+
+  /**
    * Returns the stored continuity report, if any.
    */
   getReport(projectId: string): ContinuityReport | null {

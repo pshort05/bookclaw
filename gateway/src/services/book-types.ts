@@ -63,6 +63,7 @@ export interface BookManifest {
   preferredModel?: string; // Default model id for the chosen provider (e.g. an OpenRouter slug); inherited by projects (additive-optional, no schema bump)
   contentCeiling?: { spice: number; violence: number }; // Author-branded content axes (0-10) driving the heat_check intimacy branch; absent = fade-to-black, untouched by Plan 2 routing (additive-optional, no schema bump)
   uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
+  grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 

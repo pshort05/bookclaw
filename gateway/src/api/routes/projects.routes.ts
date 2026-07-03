@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
-import { stepRouting, resolveIntimacyRouting } from './_shared.js';
+import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate } from '../../services/human-review.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
@@ -35,6 +35,9 @@ function isSafetyFloorStep(step: any): boolean {
  */
 export function mountProjects(app: Application, gateway: any, baseDir: string): void {
   const services = gateway.getServices();
+  // Flagship Plan 4 (Task 3): shared chapter-gathering helper for the
+  // beta-reader pre-format gate (mirrors export.routes.ts's manual endpoint).
+  const gatherChapters = makeGatherChapters(baseDir, (p) => services.books?.dataDirOf?.(p?.bookSlug) ?? services.books?.activeDataDir?.() ?? null);
 
   // ═══════════════════════════════════════════════════════════
   // Project Engine (autonomous project-based task planning)
@@ -305,10 +308,17 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     if (!engine) {
       return res.status(503).json({ error: 'Project engine not initialized' });
     }
-    if (engine.getPipelineProjects(req.params.pipelineId).length === 0) {
+    const pipelineProjects = engine.getPipelineProjects(req.params.pipelineId);
+    if (pipelineProjects.length === 0) {
       return res.status(404).json({ error: 'Pipeline not found' });
     }
     const started = engine.advancePipeline(req.params.pipelineId);
+    // Flagship Plan 4 (Task 3): fire-and-forget beta-reader pre-format gate —
+    // advisory only, never blocks the advance response (fail-soft).
+    if (started) {
+      runBetaReaderGate({ services, pipelineProjects, startedProject: started, gatherChapters })
+        .catch((err) => console.warn('  [beta-reader-gate] hook failed (non-fatal):', (err as Error)?.message || err));
+    }
     res.json({ advanced: !!started, project: started ?? null });
   });
 
@@ -780,6 +790,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         // step in this separate project doesn't re-invent the title/characters.
         let canonBlock = '';
         let continuityBlock = '';
+        let groundingBlock = '';
+        let analyzeApplyBlock = '';
         let continuityWorldName: string | null = null;
         // Flagship Plan 3 (Task 4): a draft-role chapter step gets the ledger
         // block pre-draft and the continuity check post-draft. chapterNumber
@@ -807,6 +819,32 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             } catch { /* fail-soft: never block drafting on ledger errors */ }
           }
         }
+
+        // Flagship Plan 4 (Task 1): grounding research on the front of a
+        // book-bible role='bible' step — sourced facts written under
+        // workspace/research/<slug>.md and injected into this step's context.
+        // Fail-soft: never blocks bible generation.
+        if (isStepRole(activeStep?.role) && activeStep.role === 'bible') {
+          try {
+            const g = await resolveGroundingBlock({
+              services,
+              project: currentProject,
+              step: activeStep,
+              researchDir: join(workspaceDir, 'research'),
+            });
+            groundingBlock = g.groundingBlock;
+          } catch (err) {
+            console.warn('  [grounding-research] hook failed (non-fatal):', (err as Error)?.message || err);
+          }
+        }
+
+        // Flagship Plan 4 (Task 3): analyze-then-apply polish — the deterministic
+        // craft-critic + dialogue-auditor flags (zero-AI) plus Plan 3's post-draft
+        // continuity flags on the matching "Write Chapter N" step, surfaced as
+        // targeted findings for the "Polish Chapter N" step to fix. Fail-soft:
+        // a bad/missing write step or a critic error just means an un-targeted
+        // (but otherwise unchanged) polish pass, same as before this feature.
+        analyzeApplyBlock = resolveAnalyzeApplyBlock({ services, project: currentProject, step: activeStep });
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
 
         // Flagship Plan 2: heat_check + intimacy-branch routing for a draft/
@@ -819,6 +857,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug)
           + (canonBlock ? `\n\n${canonBlock}` : '')
           + (continuityBlock ? `\n\n${continuityBlock}` : '')
+          + (groundingBlock ? `\n\n${groundingBlock}` : '')
+          + (analyzeApplyBlock ? `\n\n${analyzeApplyBlock}` : '')
           + intimacy.promptAddition;
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
