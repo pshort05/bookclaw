@@ -170,6 +170,33 @@ export class ConsistencyStore {
     return out.sort((a, b) => a.entity.localeCompare(b.entity) || a.attribute.localeCompare(b.attribute));
   }
 
+  /**
+   * All canonical facts visible to a book (its own manuscript facts + the
+   * canon scoped to it — world-keyed when bound, else book-keyed), oldest
+   * first. Used by canon-inject.ts to assemble the pre-draft ledger block
+   * (same scoping rule as priorFacts, without the entity/attribute filter).
+   */
+  factsForBook(scope: { world: string | null; bookSlug: string }): LedgerFact[] {
+    if (!this.db) return [];
+    const rows = this.db.prepare(`SELECT * FROM facts
+      WHERE canonical = 1
+        AND ( book_slug = ? OR (source = 'canon' AND ( (? IS NOT NULL AND world IS ?) OR book_slug = ? )) )
+      ORDER BY story_time ASC, id ASC`).all(scope.bookSlug, scope.world, scope.world, scope.bookSlug);
+    return rows.map((r: any) => ({
+      world: r.world, bookSlug: r.book_slug, entity: r.entity, aliases: JSON.parse(r.aliases),
+      attribute: r.attribute, type: r.type, valueRaw: r.value_raw, valueNorm: r.value_norm,
+      storyTime: r.story_time, storyElapsed: r.story_elapsed ?? 0, timeLabel: r.time_label, transition: r.transition,
+      chapter: r.chapter, scene: r.scene, source: r.source, evidence: r.evidence,
+      canonical: r.canonical !== 0,
+    }));
+  }
+
+  /** Delete one chapter's manuscript facts for a book (idempotent re-insert on a
+   *  chapter re-draft/retry). Never touches canon rows (chapter='CANON'). */
+  clearChapterFacts(bookSlug: string, chapter: string): void {
+    if (this.db) this.db.prepare('DELETE FROM facts WHERE book_slug = ? AND chapter = ?').run(bookSlug, chapter);
+  }
+
   clearBookFacts(bookSlug: string): void { if (this.db) this.db.prepare('DELETE FROM facts WHERE book_slug = ?').run(bookSlug); }
   clearWorldCanon(world: string): void {
     if (!this.db) return;
@@ -198,6 +225,12 @@ export class ConsistencyStore {
   }
 
   clearBookKnowledge(bookSlug: string): void { if (this.db) this.db.prepare('DELETE FROM knowledge WHERE book_slug = ?').run(bookSlug); }
+
+  /** Delete one chapter's knowledge events for a book (idempotent re-insert on a
+   *  chapter re-draft/retry). */
+  clearChapterKnowledge(bookSlug: string, chapter: string): void {
+    if (this.db) this.db.prepare('DELETE FROM knowledge WHERE book_slug = ? AND chapter = ?').run(bookSlug, chapter);
+  }
 
   canonSeedHash(world: string): string | null {
     if (!this.db) return null;

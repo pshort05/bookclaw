@@ -7,6 +7,7 @@ import { resolveChapterFile } from '../../services/consistency/fix-resolve.js';
 import { buildFixPrompt, parseFixProposals } from '../../services/consistency/fix-proposer.js';
 import { applyEditsToText } from '../../services/consistency/fix-apply.js';
 import { writeWithVersion } from '../../services/file-versions.js';
+import { splitManuscriptIntoChapters, selectChapterFiles } from '../../services/consistency/audit.js';
 import { safePath } from './_shared.js';
 import type { ConsistencyFinding } from '../../services/consistency/types.js';
 
@@ -143,6 +144,97 @@ export function mountConsistency(app: Application, gateway: any, _baseDir: strin
         model: typeof req.body?.model === 'string' ? req.body.model : undefined,
       });
       res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Standalone import-and-audit: run the consistency auditor against an
+  // imported past novel (Flagship Plan 3, Task 6). Body: { filename } — a file
+  // already in the book's data dir, or an uploaded document under
+  // workspace/documents/. It's copied into the book's data dir as
+  // manuscript.md (the name runConsistencyAudit's own combined-manuscript
+  // detection already looks for), then services.consistencyAudit — the SAME
+  // runConsistencyAudit implementation the manual /consistency-audit route
+  // uses — does the actual scan. No second audit implementation. ──
+  app.post('/api/books/:slug/consistency/import-audit', async (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug);
+      if (!SLUG_RE.test(slug) || !services.books?.exists?.(slug)) {
+        return res.status(404).json({ error: 'Book not found' });
+      }
+      if (!services.consistencyStore?.isAvailable?.()) {
+        return res.status(503).json({ error: 'Consistency DB unavailable' });
+      }
+      const filename = typeof req.body?.filename === 'string' ? req.body.filename.trim() : '';
+      if (!filename) return res.status(400).json({ error: 'filename is required' });
+
+      const dataDir = services.books?.dataDirOf?.(slug);
+      if (!dataDir) return res.status(404).json({ error: 'Book data directory not found' });
+
+      const { existsSync, readFileSync, mkdirSync, writeFileSync, readdirSync } = await import('fs');
+      const { join } = await import('path');
+
+      let sourcePath = safePath(dataDir, filename);
+      if (!sourcePath || !existsSync(sourcePath)) {
+        const docsDir = join(_baseDir, 'workspace', 'documents');
+        const docPath = safePath(docsDir, filename);
+        sourcePath = docPath && existsSync(docPath) ? docPath : null;
+      }
+      if (!sourcePath) {
+        return res.status(404).json({ error: `File "${filename}" not found in the book's data directory or the document library` });
+      }
+
+      let text: string;
+      try {
+        text = readFileSync(sourcePath, 'utf-8');
+      } catch (err) {
+        return res.status(500).json({ error: `Could not read "${filename}": ${(err as Error)?.message ?? err}` });
+      }
+
+      const chapters = splitManuscriptIntoChapters(text);
+      if (chapters.length === 0) {
+        return res.status(422).json({ error: 'No chapter headings were detected in this manuscript — nothing to audit.' });
+      }
+
+      // M2 guard: runConsistencyAudit prefers per-chapter chapter-N.md files
+      // over a combined manuscript.md, so importing into a book that already
+      // has generated chapters would silently audit the EXISTING chapters
+      // instead of the imported text. This route is for an empty/imported
+      // container only.
+      let existingNames: string[] = [];
+      try { existingNames = readdirSync(dataDir); } catch { /* dataDir may not exist yet */ }
+      if (selectChapterFiles(existingNames).length > 0) {
+        return res.status(409).json({
+          error: 'This book already has generated chapter files — import-audit is only for an empty or newly-imported book. Use the regular consistency audit instead.',
+        });
+      }
+      // Never clobber an existing manuscript.md (data loss).
+      const manuscriptPath = join(dataDir, 'manuscript.md');
+      if (existsSync(manuscriptPath)) {
+        return res.status(409).json({
+          error: 'manuscript.md already exists in this book\'s data directory — refusing to overwrite it.',
+        });
+      }
+
+      mkdirSync(dataDir, { recursive: true });
+      writeFileSync(manuscriptPath, text, 'utf-8');
+
+      // Same concurrency guard as the manual audit route (bug-review #22): a
+      // second audit for this book while one is in flight would interleave
+      // with the leading clearBookFacts() and corrupt the ledger.
+      if (!gateway.consistencyJobs.start(slug)) {
+        return res.status(409).json({
+          error: 'A consistency audit is already running for this book',
+          running: gateway.consistencyJobs.get(slug),
+        });
+      }
+      try {
+        const report = await services.consistencyAudit(slug);
+        res.json({ report });
+      } finally {
+        gateway.consistencyJobs.finish(slug);
+      }
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }

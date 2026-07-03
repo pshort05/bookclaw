@@ -9,6 +9,9 @@ import { ContextEngine } from '../services/context-engine.js';
 import { ROOT_DIR } from '../paths.js';
 import { nextBookPhaseAfter } from '../services/book-types.js';
 import { appVersion, WORKSPACE_SCHEMA_VERSION } from './phase-01-config.js';
+import { extractChapterFacts } from '../services/consistency/extractor.js';
+import { CONSISTENCY_PROVIDERS } from '../services/consistency/model-selection.js';
+import type { LedgerFact } from '../services/consistency/types.js';
 import type { BookClawGateway } from '../index.js';
 
 /** Phases 6c–6f: TTS, image generation, personas, project engine, context engine. */
@@ -124,6 +127,78 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
     const phases = gw.books.phasesForBook(project.bookSlug);
     if (phases.length && !phases.includes(phase)) return;
     await gw.books.setPhase(project.bookSlug, phase);
+  });
+
+  // ── Consistency ledger seeding from the bible phase (Flagship Plan 3, Task 3) ──
+  // A completed bible-role step's content is fact-extracted into the consistency
+  // ledger as canon, so the pre-draft canon injection (canon-inject.ts) and the
+  // post-draft continuity check (continuity-check.ts) have something to check
+  // against before any full audit has ever run. Fail-soft: an extraction error
+  // or an unconfigured large-context provider just skips.
+  //
+  // M1: the pipeline runs SEVERAL consecutive bible-role steps, each firing this
+  // hook. Gating on the full-audit consistencyJobs SLOT (only one holder per
+  // book) meant a second bible step completing while the first's extraction was
+  // still in flight would lose the slot race and have its canon silently
+  // dropped. Bible seeds are additive inserts — they only need to avoid
+  // interleaving with a full audit's clearBookFacts()/clearBookKnowledge(), not
+  // with each other — so they serialize among themselves via a lightweight
+  // per-book promise chain instead, and just SKIP (without ever touching the
+  // registry) when a full audit is already running.
+  const bibleSeedChains = new Map<string, Promise<void>>();
+  gw.projectEngine.onStepCompleted(async (project: any, completedStep: any) => {
+    if (!gw.consistencyStore?.isAvailable?.() || !project?.bookSlug || completedStep?.role !== 'bible') return;
+    const result = String(completedStep?.result ?? '').trim();
+    if (!result) return;
+    const slug = project.bookSlug;
+    // Captured outside the closure: TS narrows `gw.consistencyStore` from the
+    // guard above only in this scope, not inside the nested seedOne closure.
+    const store = gw.consistencyStore;
+
+    const seedOne = async () => {
+      if (gw.consistencyJobs.isRunning(slug)) {
+        console.log(`  ℹ Bible-seed skipped for "${slug}": a consistency audit is already running`);
+        return;
+      }
+      try {
+        const manifest = (await gw.books?.open?.(slug).catch(() => null))?.manifest;
+        const world = manifest?.pulledFrom?.world?.name ?? null;
+        const extracted = await extractChapterFacts(
+          {
+            ai: {
+              complete: async (r: any) => {
+                const resp = await gw.aiRouter.complete(r);
+                try { gw.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug); } catch { /* best-effort */ }
+                return resp;
+              },
+              select: (t: string, pref?: string) => {
+                const p = gw.aiRouter.selectProvider(t, pref);
+                if (!(CONSISTENCY_PROVIDERS as readonly string[]).includes(p.id)) {
+                  throw new Error(`Consistency requires a large-context model; "${p.id}" is not supported.`);
+                }
+                return p;
+              },
+            },
+          },
+          result, [], 0,
+        );
+        const facts: LedgerFact[] = extracted.facts.map(f => ({
+          ...f, world, bookSlug: slug, chapter: 'CANON', source: 'canon',
+          sourceLabel: `Bible: ${completedStep.label}`, canonical: f.canonical !== false, storyElapsed: 0,
+        }));
+        store.insertFacts(facts);
+        console.log(`  ✓ Bible-seed: ${facts.length} fact(s) from "${completedStep.label}" for "${slug}"`);
+      } catch (err: any) {
+        console.log(`  ℹ Bible-seed skipped for "${slug}": ${err?.message ?? err}`);
+      }
+    };
+
+    // Chain onto the same book's prior seed so consecutive bible steps run one
+    // at a time (never dropped, never interleaved with each other's inserts).
+    const prior = bibleSeedChains.get(slug) ?? Promise.resolve();
+    const chained = prior.then(seedOne, seedOne);
+    bibleSeedChains.set(slug, chained);
+    await chained;
   });
 
   // ── Book-container Phase 11: Backup & recovery ──

@@ -109,6 +109,11 @@ export interface ProjectStep {
   // on ordinary steps. The next ordinary step after a group is the implicit join —
   // gated until every member of the group is completed/skipped.
   parallelGroup?: string;
+  // Post-draft continuity flags (Flagship Plan 3, Task 4): checkChapter's
+  // findings for this chapter, attached after generation for Plan 4's
+  // analyze-then-apply polish pass to consume. Absent when the continuity
+  // store was unavailable or the check found nothing.
+  continuityFlags?: Array<{ kind: 'contradiction' | 'timeline' | 'knowledge' | 'red_herring'; detail: string; span?: string }>;
 }
 
 export interface NovelPipelineConfig {

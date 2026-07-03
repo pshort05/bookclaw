@@ -346,6 +346,12 @@ echo "$RSPICY" | grep -q '"role"' \
   && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
   || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
 
+# Plan 3 (consistency spine): the standalone import-audit route sits behind the
+# auth gate (no token -> 401), non-destructively confirming it is registered.
+[ "$(code -X POST "$BASE/api/books/smoke/consistency/import-audit")" = "401" ] \
+  && pass "consistency/import-audit: no token -> 401 (Plan 3 route registered)" \
+  || fail "consistency/import-audit should be 401 without token"
+
 # Plan 2 (content axes): POST /api/books rejects an out-of-range content ceiling
 # (spice/violence must be 0-10). A 400 is returned before any book is created, so
 # this is non-destructive and exercises the new content-ceiling validation.

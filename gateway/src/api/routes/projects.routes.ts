@@ -14,6 +14,8 @@ import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { bannedContentCheck, operationalDetailGuard } from '../../services/casting/safety-floor.js';
 import { isStepRole } from '../../services/casting/roles.js';
 import { looksLikeRefusal } from '../../services/casting/heat.js';
+import { buildCanonBlock } from '../../services/consistency/canon-inject.js';
+import { checkChapter } from '../../services/consistency/continuity-check.js';
 
 /**
  * Safety floor (Flagship Plan 2, Task 4/7 — H1 fix): true for the generative
@@ -777,9 +779,33 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         // Pin the story canon (title/author + bible name registry + outline) so a
         // step in this separate project doesn't re-invent the title/characters.
         let canonBlock = '';
+        let continuityBlock = '';
+        let continuityWorldName: string | null = null;
+        // Flagship Plan 3 (Task 4): a draft-role chapter step gets the ledger
+        // block pre-draft and the continuity check post-draft. chapterNumber
+        // is cheap/pure to compute (no I/O), so it's always resolved here and
+        // reused below regardless of role.
+        const isContinuityDraftStep = isStepRole(activeStep?.role) && activeStep.role === 'draft';
+        const continuityChapterNum = chapterSummaryTarget(currentProject, activeStep, true).chapterNum;
         if (currentProject.bookSlug && services.books) {
           const ob = await services.books.open(currentProject.bookSlug).catch(() => null);
           canonBlock = buildBookCanonBlock(services.books.dataDirOf?.(currentProject.bookSlug), ob?.manifest);
+          continuityWorldName = ob?.manifest?.pulledFrom?.world?.name ?? null;
+
+          // Pre-draft continuity-ledger injection: established facts up to this
+          // chapter + Character Knowledge Matrix + forbidden (not-yet-revealed)
+          // moves. Fail-soft: buildCanonBlock returns '' when the store is
+          // unavailable or has no facts yet for this book (book-has-bible guard).
+          if (isContinuityDraftStep && services.consistencyStore?.isAvailable?.()) {
+            try {
+              continuityBlock = buildCanonBlock({
+                slug: currentProject.bookSlug,
+                chapterNumber: continuityChapterNum,
+                store: services.consistencyStore,
+                world: continuityWorldName,
+              });
+            } catch { /* fail-soft: never block drafting on ledger errors */ }
+          }
         }
         const userMessage = await buildStepUserMessage(currentProject, activeStep);
 
@@ -792,6 +818,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const projectContext = (await engine.buildProjectContext(currentProject, activeStep))
           + passiveSkillBlock(services, (activeStep as any).skill, currentProject.bookSlug)
           + (canonBlock ? `\n\n${canonBlock}` : '')
+          + (continuityBlock ? `\n\n${continuityBlock}` : '')
           + intimacy.promptAddition;
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
@@ -1036,6 +1063,31 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           }
         }
         const wordCount = countWords(response);
+
+        // Post-draft continuity detection (Flagship Plan 3, Task 4): flags
+        // attach to the step for Plan 4's analyze-then-apply polish to consume.
+        // Same book-has-bible guard as the pre-draft injection above; fail-soft
+        // (checkChapter itself never throws, but the guard + try/catch keep this
+        // step's completion independent of the ledger either way).
+        if (isContinuityDraftStep && currentProject.bookSlug && services.consistencyStore?.isAvailable?.()) {
+          try {
+            const { flags } = await checkChapter({
+              slug: currentProject.bookSlug,
+              chapterNumber: continuityChapterNum,
+              text: response,
+              store: services.consistencyStore,
+              aiComplete: (r: any) => services.aiRouter.complete(r),
+              aiSelect: (t: string, pref?: string) => services.aiRouter.selectProvider(t, pref),
+              world: continuityWorldName,
+              // M3 (bug-review #22 hazard): a concurrent full/import audit's
+              // clearBookFacts()/clearBookKnowledge() would race this
+              // chapter's own clear+insert — skip only the persistence while
+              // one is in flight for this book.
+              skipPersist: gateway.consistencyJobs?.isRunning(currentProject.bookSlug) === true,
+            });
+            if (flags.length) (activeStep as any).continuityFlags = flags;
+          } catch { /* fail-soft: continuity detection never blocks step completion */ }
+        }
 
         // Save to file
         try {
