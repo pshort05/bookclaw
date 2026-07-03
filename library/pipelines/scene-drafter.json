@@ -17,7 +17,8 @@
           "modelOverride": {
             "provider": "openrouter",
             "model": "anthropic/claude-3.5-haiku"
-          }
+          },
+          "role": "scene_brief"
         },
         {
           "label": "Draft Scene — Chapter {{n}}",
@@ -31,7 +32,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-3-opus",
             "temperature": 0.7
-          }
+          },
+          "role": "draft"
         }
       ]
     }

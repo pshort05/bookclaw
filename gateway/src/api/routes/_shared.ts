@@ -8,6 +8,9 @@
 import path from 'path';
 import multer from 'multer';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import { castStep } from '../../services/casting/cast-step.js';
+import { loadCastingSheet } from '../../services/casting/casting-sheet.js';
+import { isStepRole } from '../../services/casting/roles.js';
 
 /**
  * Wrap an async Express handler so a rejected promise is routed to next(err)
@@ -125,13 +128,27 @@ export function stepRouting(
   project: any,
   step: any
 ): { provider: string | undefined; model: string | undefined; temperature: number | undefined } {
-  return {
-    provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
-    model: step?.modelOverride?.model || project?.preferredModel || undefined,
-    temperature: typeof step?.modelOverride?.temperature === 'number'
-      ? step.modelOverride.temperature
-      : undefined,
-  };
+  const role = isStepRole(step?.role) ? step.role : undefined;
+
+  // Backward compatibility: an untagged step keeps today's behavior exactly —
+  // manual pin, then the project-level preference applied to the whole step.
+  if (!role) {
+    return {
+      provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
+      model: step?.modelOverride?.model || project?.preferredModel || undefined,
+      temperature: typeof step?.modelOverride?.temperature === 'number' ? step.modelOverride.temperature : undefined,
+    };
+  }
+
+  // Tagged step: resolve via the casting sheet + castStep. The project preference
+  // is treated as the author's prose-model pick (applies to prose roles only).
+  const genre = project?.genre ?? project?.context?.genre;
+  const sheet = genre ? loadCastingSheet(String(genre)) : null;
+  const proseModel = project?.preferredProvider
+    ? { provider: project.preferredProvider, model: project.preferredModel }
+    : undefined;
+  const r = castStep({ step: { role, modelOverride: step?.modelOverride }, sheet, proseModel, spiceRoute: null });
+  return { provider: r.provider, model: r.model, temperature: r.temperature };
 }
 
 /** Sets the Wave-3 advisory header on a response. */

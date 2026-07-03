@@ -17,7 +17,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.3
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 2: AI-Word Cleaning — Chapter {{n}}",
@@ -29,7 +30,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.3
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 3: Overwritten-Language Reduction — Chapter {{n}}",
@@ -41,7 +43,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.4
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 4: Sensory Enhancement — Chapter {{n}}",
@@ -53,7 +56,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.4
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 5: Subtlety Creation — Chapter {{n}}",
@@ -65,7 +69,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.4
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 6: Dialogue Enhancement — Chapter {{n}}",
@@ -77,7 +82,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.7
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 7: Weak-Language Cleanup — Chapter {{n}}",
@@ -89,7 +95,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.4
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 8: Strategic Imperfections — Chapter {{n}}",
@@ -101,7 +108,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.6
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 8.5: Structural-Construction Elimination — Chapter {{n}}",
@@ -113,7 +121,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.5
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 9: Final Pattern Verification — Chapter {{n}}",
@@ -125,7 +134,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.5
-          }
+          },
+          "role": "editorial"
         },
         {
           "label": "Pass 10: Final AI-Word Sweep — Chapter {{n}}",
@@ -137,7 +147,8 @@
             "provider": "openrouter",
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.3
-          }
+          },
+          "role": "editorial"
         }
       ]
     }

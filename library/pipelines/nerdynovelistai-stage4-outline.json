@@ -24,7 +24,8 @@
         "provider": "openrouter",
         "model": "anthropic/claude-opus-4.6",
         "temperature": 0.7
-      }
+      },
+      "role": "outline"
     },
     {
       "label": "Emotional Resonance Audit",
@@ -35,7 +36,8 @@
         "provider": "openrouter",
         "model": "moonshotai/kimi-k2-thinking",
         "temperature": 1
-      }
+      },
+      "role": "editorial"
     },
     {
       "label": "Rewrite — Emotional Pass",
@@ -46,7 +48,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3-flash-preview",
         "temperature": 0.7
-      }
+      },
+      "role": "rewrite"
     },
     {
       "label": "Add Intensity Sliders",
@@ -57,7 +60,8 @@
         "provider": "openrouter",
         "model": "anthropic/claude-sonnet-4.6",
         "temperature": 1
-      }
+      },
+      "role": "editorial"
     },
     {
       "label": "Logic & Consistency Audit",
@@ -68,7 +72,8 @@
         "provider": "openrouter",
         "model": "moonshotai/kimi-k2-thinking",
         "temperature": 1
-      }
+      },
+      "role": "editorial"
     },
     {
       "label": "Rewrite — Logic Pass (Final Outline)",
@@ -79,7 +84,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3-flash-preview",
         "temperature": 0.7
-      }
+      },
+      "role": "rewrite"
     }
   ]
 }

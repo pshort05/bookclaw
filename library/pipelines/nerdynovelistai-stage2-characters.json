@@ -13,7 +13,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3-pro-preview",
         "temperature": 1
-      }
+      },
+      "role": "bible"
     },
     {
       "label": "Character Logic & Consistency Pass",
@@ -24,7 +25,8 @@
         "provider": "openrouter",
         "model": "anthropic/claude-sonnet-4.5",
         "temperature": 1
-      }
+      },
+      "role": "editorial"
     },
     {
       "label": "Relationship Dynamics",
@@ -35,7 +37,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3-pro-preview",
         "temperature": 1
-      }
+      },
+      "role": "bible"
     }
   ]
 }

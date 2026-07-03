@@ -13,7 +13,8 @@
         "provider": "openrouter",
         "model": "anthropic/claude-sonnet-4.6",
         "temperature": 1
-      }
+      },
+      "role": "bible"
     },
     {
       "label": "Worldbuilding Logic Check",
@@ -24,7 +25,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3.1-pro-preview",
         "temperature": 1
-      }
+      },
+      "role": "editorial"
     },
     {
       "label": "World Bible Revision",
@@ -35,7 +37,8 @@
         "provider": "openrouter",
         "model": "google/gemini-3-flash-preview",
         "temperature": 0.7
-      }
+      },
+      "role": "bible"
     }
   ]
 }

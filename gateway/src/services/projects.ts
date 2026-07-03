@@ -20,6 +20,7 @@ import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
 import { expandSteps } from './pipeline-expand.js';
 import { applyStructureRail } from './format-guide.js';
+import { isStepRole, inferRole, type StepRole } from './casting/roles.js';
 import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -99,6 +100,10 @@ export interface ProjectStep {
   // of tier routing. Any field is optional — e.g. temperature-only. Unset =
   // inherit the project/tier default (today's behavior).
   modelOverride?: { provider?: string; model?: string; temperature?: number };
+  // Semantic casting role (scene_brief/draft/improve/...). Drives model
+  // selection via the casting sheet + castStep resolver. Optional: an untagged
+  // step falls back to today's provider/model routing.
+  role?: StepRole;
   // Membership marker for a `{ parallel: [...] }` pipeline group (parallel-step
   // execution). Set to a stable group id ('g'+entryIndex) on each member; absent
   // on ordinary steps. The next ordinary step after a group is the implicit join —
@@ -133,6 +138,11 @@ const TASK_TYPE_MAP: Record<string, string> = {
   consistency: 'Cross-chapter analysis',
   final_edit: 'Final polish, proofreading',
 };
+
+/** Read a valid StepRole off a raw pipeline-JSON step, else undefined. */
+export function readStepRole(raw: { role?: unknown }): StepRole | undefined {
+  return isStepRole(raw.role) ? raw.role : undefined;
+}
 
 // ═══════════════════════════════════════════════════════════
 // Book-production prompt builders (run-review fixes 2026-06-30)
@@ -549,6 +559,10 @@ export class ProjectEngine {
       `Generate a completion report for "${title}".\n\nInclude:\n- Total chapters: ${chapters}\n- Target word count: ~${(chapters * wordsPerChapter).toLocaleString()} words\n- Assessment of the manuscript's strengths\n- Areas for improvement in a future draft\n- 2-3 sentence back cover blurb\n- Recommendations for next steps (beta readers, professional edit, etc.)\n\nAll chapter files have been saved individually. This report summarizes the complete pipeline.`
     );
 
+    // Casting layer: this pipeline is code-generated, not loaded from a
+    // library JSON, so no step carries a `role` yet — infer one for each.
+    for (const s of steps) if (!s.role) { const r = inferRole(s); if (r) s.role = r; }
+
     const project: Project = {
       id,
       type: 'novel-pipeline',
@@ -808,6 +822,7 @@ Description: ${description}`;
       ...(s.wordCountTarget ? { wordCountTarget: s.wordCountTarget } : {}),
       ...(s.chapterNumber ? { chapterNumber: s.chapterNumber } : {}),
       ...(s.modelOverride ? { modelOverride: s.modelOverride } : {}),
+      role: readStepRole(s),
       ...(s.parallelGroup ? { parallelGroup: s.parallelGroup } : {}),
     }));
 
@@ -1975,6 +1990,10 @@ Description: ${description}`;
       prompt: `Generate a completion report for "${title}". Total chapters: ${chapters}. Target: ~${(chapters * wordsPerChapter).toLocaleString()} words. Assess strengths, areas for improvement, and next steps.`,
       status: 'pending',
     });
+
+    // Casting layer: this pipeline is code-generated, not loaded from a
+    // library JSON, so no step carries a `role` yet — infer one for each.
+    for (const s of steps) if (!s.role) { const r = inferRole(s); if (r) s.role = r; }
 
     const project: Project = {
       id,

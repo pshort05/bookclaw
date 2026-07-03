@@ -4,6 +4,9 @@ export interface ResolvedStepInput {
   label: string; skill?: string; toolSuggestion?: string; taskType: string;
   prompt: string; phase?: string; wordCountTarget?: number; chapterNumber?: number;
   modelOverride?: { provider?: string; model?: string; temperature?: number };
+  // Semantic casting role, carried through verbatim from the raw pipeline-JSON
+  // step; validated against StepRole by readStepRole() at the ProjectStep boundary.
+  role?: unknown;
   // Set only on members of a `{ parallel: [...] }` group — a stable, index-based
   // id ('g'+entryIndex) shared by every member of that group. Absent on ordinary
   // steps (including the implicit join step that follows a group).
@@ -35,6 +38,7 @@ function emitStep(s: any, vars: Record<string, string | number>): ResolvedStepIn
     wordCountTarget: toNum(typeof s.wordCountTarget === 'string' ? interpolate(s.wordCountTarget, vars) : s.wordCountTarget),
     chapterNumber: toNum(typeof s.chapterNumber === 'string' ? interpolate(s.chapterNumber, vars) : s.chapterNumber),
     ...(s.modelOverride ? { modelOverride: s.modelOverride } : {}),
+    ...(s.role !== undefined ? { role: s.role } : {}),
   };
 }
 

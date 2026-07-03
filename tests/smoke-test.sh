@@ -322,6 +322,32 @@ done
 
 stop_server
 
+# ── Phase 7: casting-layer migration (role-tagged library pipelines load) ──
+# The flagship casting layer tags every library-pipeline step with a semantic
+# `role`, and a one-time migration rewrote 40+ library/pipelines/*.json. This
+# asserts those role-migrated pipelines still load through LibraryService in the
+# running app and that a role-tagged pipeline is served — the integration surface
+# for the otherwise-internal casting resolver (unit-tested separately).
+log ""
+log "Phase 7: casting-layer library pipelines"
+start_server BOOKCLAW_AUTH_TOKEN="$TEST_TOKEN" || exit 1
+
+# Library kind is singular: `pipeline`.
+[ "$(code "$BASE/api/library/pipeline")" = "401" ] \
+  && pass "library/pipeline: no token -> 401" || fail "library/pipeline should be 401 without token"
+
+PIPES="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/library/pipeline")"
+echo "$PIPES" | grep -q "romance-spicy" \
+  && pass "library/pipeline lists the migrated romance-spicy pipeline" \
+  || fail "library/pipeline missing romance-spicy (migrated pipelines failed to load?)"
+
+RSPICY="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/library/pipeline/romance-spicy")"
+echo "$RSPICY" | grep -q '"role"' \
+  && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
+  || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
+
+stop_server
+
 # ── Result ──
 log ""
 if [ "$FAILED" -eq 0 ]; then

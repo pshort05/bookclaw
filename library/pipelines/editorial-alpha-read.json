@@ -17,7 +17,8 @@
           "modelOverride": {
             "provider": "openrouter",
             "model": "google/gemini-3-flash-preview"
-          }
+          },
+          "role": "rewrite"
         },
         {
           "label": "Apply Alpha-Read Revisions — Chapter {{n}}",
@@ -30,7 +31,8 @@
           "modelOverride": {
             "provider": "openrouter",
             "model": "google/gemini-3-flash-preview"
-          }
+          },
+          "role": "rewrite"
         }
       ]
     }
