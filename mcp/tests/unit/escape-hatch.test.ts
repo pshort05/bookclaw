@@ -38,3 +38,18 @@ test('rejects approving/rejecting the confirmation gate (no self-approval via th
   // Listing pending confirmations is still allowed.
   assert.equal(validatePath('/api/confirmations'), null);
 });
+
+test('rejects resolving a Human Review pipeline gate via review/action (same human-in-the-loop rail)', () => {
+  // POST /api/projects/:id/review/action resolves the Plan 5 human-review gate
+  // (action=approve/edit/regenerate/stop) AND the underlying Confirmations
+  // request — a second path to self-approve a gated action that the /api/
+  // confirmations guard alone doesn't cover. A human resolves review gates in
+  // the dashboard, so the escape hatch must not.
+  assert.match(validatePath('/api/projects/p1/review/action') ?? '', /human review/i);
+  assert.match(validatePath('/api/projects/p1/review/action?x=1') ?? '', /human review/i);
+  // Case-insensitive + dot-segment bypasses normalize to the same route.
+  assert.match(validatePath('/api/Projects/p1/REVIEW/Action') ?? '', /human review/i);
+  assert.match(validatePath('/api/projects/p1/foo/%2e%2e/review/action') ?? '', /human review/i);
+  // Reading project state is still allowed.
+  assert.equal(validatePath('/api/projects/p1'), null);
+});

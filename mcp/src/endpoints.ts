@@ -3,6 +3,7 @@ export const ENDPOINT_CATALOG: { method: string; path: string; purpose: string }
   { method: 'GET', path: '/api/books', purpose: 'List books.' },
   { method: 'POST', path: '/api/books', purpose: 'Create a book.' },
   { method: 'GET', path: '/api/books/:slug', purpose: 'Get one book.' },
+  { method: 'GET', path: '/api/books/fleet', purpose: 'Multi-book fleet + per-book AI spend / budget overview.' },
   { method: 'POST', path: '/api/projects/create', purpose: 'Create + auto-execute a project.' },
   { method: 'POST', path: '/api/pipeline/create', purpose: 'Create a full novel pipeline.' },
   { method: 'POST', path: '/api/chat', purpose: 'Chat with the agent.' },

@@ -29,6 +29,15 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
         form: z.string().optional().describe('Story form id (see list_forms)'),
         chapterCount: z.number().optional().describe('Number of chapters'),
         wordsPerChapter: z.number().optional().describe('Target words per chapter'),
+        // Flagship per-book knobs (Plans 2/5/6/8). Each maps to the same-named
+        // body field POST /api/books reads; the gateway validates ranges/enums.
+        preferredProvider: z.string().optional().describe('Default AI provider for this book (e.g. openrouter, claude, gemini)'),
+        preferredModel: z.string().optional().describe('Default model id (required for OpenRouter, e.g. anthropic/claude-sonnet-4.6)'),
+        contentCeiling: z.object({ spice: z.number(), violence: z.number() }).optional().describe('Author-branded content ceiling; spice/violence each 0-10 (heat/uncensored routing)'),
+        uncensoredProvider: z.enum(['grok', 'venice', 'auto']).optional().describe('Pin the uncensored provider for erotica-threshold scenes (auto = use the genre heat ladder)'),
+        reviewCadence: z.enum(['per_act', 'per_chapter', 'outline_only', 'autonomous']).optional().describe('Human-review gate cadence for the pipeline'),
+        costBudget: z.number().optional().describe('Per-book AI spend cap in USD; generation pauses when exceeded'),
+        ensemble: z.object({ enabled: z.boolean().optional(), panel: z.array(z.string()).optional() }).optional().describe('Opt-in ideation ensemble (multi-model divergent premise). panel defaults to the genre sheet, e.g. ["gpt","grok","gemini","claude"]'),
       },
     },
     async (args) => toToolResult('create_book', await client.request('POST', '/api/books', args)),

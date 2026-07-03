@@ -36,6 +36,14 @@ export function validatePath(path: string): string | null {
   if (/^\/api\/confirmations\/[^/]+\/(approve|reject)\b/.test(lowerPath)) {
     return 'confirmation approve/reject is not allowed via the MCP escape hatch — a human must approve gated actions in the BookClaw dashboard';
   }
+  // POST /api/projects/:id/review/action resolves the Plan 5 Human Review
+  // pipeline gate (approve/edit/regenerate/stop) AND the underlying
+  // Confirmations request — a second route to self-approve a human-in-the-loop
+  // gate that the confirmations guard above doesn't cover. Same rail, same rule:
+  // a human resolves review gates in the dashboard, never the escape hatch.
+  if (/^\/api\/projects\/[^/]+\/review\/action\b/.test(lowerPath)) {
+    return 'resolving a human review gate is not allowed via the MCP escape hatch — a human must approve/reject pipeline review gates in the BookClaw dashboard';
+  }
   return null;
 }
 
