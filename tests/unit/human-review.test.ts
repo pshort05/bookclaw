@@ -17,6 +17,7 @@ import {
   reviewDecisionAction,
   openReviewGate,
   resolveReviewGates,
+  maybeOpenCadenceGate,
 } from '../../gateway/src/services/human-review.js';
 import { ProjectEngine } from '../../gateway/src/services/projects.js';
 
@@ -287,4 +288,41 @@ test('engine.clearReview removes the review marker', () => {
   (e as any).clearReview(p.id);
   assert.equal((p as any).review, undefined);
   clearTimeout((e as any).saveDebounceTimer);
+});
+
+// ── act-gate continuity aggregation (M2) ────────────────────────────────────
+// The shipped flagship pipelines (romance-spicy.json, romantasy-production.json,
+// technothriller-production.json) tag per-chapter steps with phase:'draft' and
+// attach continuityFlags to the role:'draft' step — never phase:'writing'.
+// buildCadenceGateFindings' flaggedChapters selection must key off
+// chapterNumber + continuityFlags, not the literal phase string, or the
+// act-boundary continuity mini-audit is silently absent for every real pipeline.
+
+test('an act-boundary cadence gate aggregates continuityFlags from phase:"draft" chapters (M2)', async () => {
+  const project: any = {
+    id: 'p1', title: 'Flagship Book', status: 'active',
+    steps: [
+      { id: 's1', label: 'Draft Chapter 1', skill: 'write', phase: 'draft', role: 'draft', chapterNumber: 1,
+        continuityFlags: [{ kind: 'contradiction', detail: 'eye color changed' }] },
+      { id: 's2', label: 'Draft Chapter 2', skill: 'write', phase: 'draft', role: 'draft', chapterNumber: 2,
+        continuityFlags: [{ kind: 'timeline', detail: 'day count skipped' }] },
+      { id: 's3', label: 'Draft Chapter 3', skill: 'write', phase: 'draft', role: 'draft', chapterNumber: 3, status: 'active' },
+    ],
+  };
+  const gate = mockGate();
+  const engine = mockEngine([project]);
+  const manifest = { review: { cadence: 'per_act' } };
+
+  const result = await maybeOpenCadenceGate({ gate, engine }, project, project.steps[2], 'Chapter 3 prose.', { manifest });
+
+  assert.equal(result.gated, true, 'chapter 3 of 3 is an act boundary under per_act cadence');
+  assert.equal(gate.calls.created.length, 1);
+  const findings = gate.calls.created[0].payload.findings;
+  assert.ok(findings?.actContinuity, 'act-boundary gate must carry the aggregated continuity summary');
+  assert.equal(findings.actContinuity.totalFlags, 2, 'flags from both drafted chapters are aggregated');
+  assert.deepEqual(
+    findings.actContinuity.chapters.map((c: any) => c.chapterNumber),
+    [1, 2],
+    'only the flagged chapters are included, in order',
+  );
 });

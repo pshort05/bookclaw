@@ -11,7 +11,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { castStep } from '../../services/casting/cast-step.js';
 import { loadCastingSheet } from '../../services/casting/casting-sheet.js';
 import { isStepRole } from '../../services/casting/roles.js';
-import { intimacyDecision, type IntimacyDecision } from '../../services/casting/heat.js';
+import { intimacyDecision, resolveUncensoredProvider, type IntimacyDecision } from '../../services/casting/heat.js';
 import { classifyScene } from '../../services/casting/heat-classify.js';
 import { profanityInjection } from '../../services/casting/profanity.js';
 import { runGroundingResearch } from '../../services/pipeline/grounding-research.js';
@@ -215,7 +215,17 @@ export async function resolveIntimacyRouting(opts: {
   // which made AIRouter.complete throw and the whole feature go inert.
   const classifierProvider = services.aiRouter.selectProvider('general');
   const score = await classifyScene(sceneBriefText, complete, { provider: classifierProvider.id });
-  const decision = intimacyDecision({ score, ceiling, ladder, genre });
+  // M3: a book that pins manifest.uncensoredProvider ('grok'|'venice', not
+  // 'auto') overrides whichever rung the sheet's heat ladder would otherwise
+  // pick, once routing has actually decided to go uncensored. 'auto'/unset
+  // keeps the ladder's own choice.
+  const applyUncensoredPin = (d: IntimacyDecision): IntimacyDecision => {
+    if (d.mode !== 'uncensored') return d;
+    const pin = manifest?.uncensoredProvider;
+    if (!pin || pin === 'auto') return d;
+    return { ...d, spiceRoute: resolveUncensoredProvider({ provider: pin }) };
+  };
+  const decision = applyUncensoredPin(intimacyDecision({ score, ceiling, ladder, genre }));
 
   let promptAddition = '';
   if (decision.template) {
@@ -250,7 +260,7 @@ export async function resolveIntimacyRouting(opts: {
     spiceRoute: decision.spiceRoute,
     promptAddition,
     decision,
-    recomputeOnRefusal: () => intimacyDecision({ score, ceiling, ladder, refusalEscalated: true, genre }),
+    recomputeOnRefusal: () => applyUncensoredPin(intimacyDecision({ score, ceiling, ladder, refusalEscalated: true, genre })),
   };
 }
 

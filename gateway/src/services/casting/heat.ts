@@ -24,9 +24,30 @@ export interface IntimacyDecision {
   template: string | null;
 }
 
+// Casting sheets name uncensored rungs with symbolic provider ids ('grok',
+// 'venice') that AIRouter does NOT register (registered: ollama, gemini,
+// deepseek, claude, openai, openrouter — see ai/router.ts AI_PROVIDER_IDS).
+// Passing 'grok' straight into selectProvider('creative_writing','grok')
+// finds it unavailable and silently falls back to the censoring tier, so the
+// uncensored feature is inert (H3). Mirrors ideation-ensemble.ts's
+// PANEL_MEMBER_PROVIDERS alias map for the same class of problem.
+const ROUTABLE_PROVIDER_IDS = new Set(['ollama', 'gemini', 'deepseek', 'claude', 'openai', 'openrouter']);
+const UNCENSORED_PROVIDER_ALIASES: Record<string, { provider: string; model?: string }> = {
+  grok: { provider: 'openrouter', model: 'x-ai/grok-4' },
+  venice: { provider: 'openrouter', model: 'venice/uncensored' },
+};
+
+/** Map a casting sheet's symbolic uncensored provider name to a real,
+ * router-registered provider (+ pinned model). Already-registered provider
+ * ids pass through unchanged, preserving their model. */
+export function resolveUncensoredProvider(entry: { provider: string; model?: string }): { provider: string; model?: string } {
+  if (ROUTABLE_PROVIDER_IDS.has(entry.provider)) return entry;
+  return UNCENSORED_PROVIDER_ALIASES[entry.provider] ?? entry;
+}
+
 function ladderModel(ladder: HeatLadderLike, spice: number): { provider: string; model?: string } | null {
   const eligible = ladder.uncensoredByLevel.filter(e => spice >= e.minSpice).sort((a, b) => b.minSpice - a.minSpice);
-  return eligible[0] ? { provider: eligible[0].provider, model: eligible[0].model } : null;
+  return eligible[0] ? resolveUncensoredProvider({ provider: eligible[0].provider, model: eligible[0].model }) : null;
 }
 
 /** The ladder's least-explicit uncensored rung — the guaranteed fallback when a
@@ -34,7 +55,7 @@ function ladderModel(ladder: HeatLadderLike, spice: number): { provider: string;
  * (Claude can refuse content well below the erotica line). */
 function lowestRungModel(ladder: HeatLadderLike): { provider: string; model?: string } | null {
   const sorted = [...ladder.uncensoredByLevel].sort((a, b) => a.minSpice - b.minSpice);
-  return sorted[0] ? { provider: sorted[0].provider, model: sorted[0].model } : null;
+  return sorted[0] ? resolveUncensoredProvider({ provider: sorted[0].provider, model: sorted[0].model }) : null;
 }
 
 // Same allowlist casting-sheet.ts's loadCastingSheet() uses for genre-derived

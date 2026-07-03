@@ -501,6 +501,21 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
 
     try {
+      // H1 fix: nothing stamps project.context.genre at project-create, so
+      // stepRouting's `project?.genre ?? project?.context?.genre` lookup was
+      // always undefined and the per-role casting sheet never loaded. Stamp
+      // it from the bound book's manifest before stepRouting runs.
+      if (project.bookSlug && services.books && !project.genre && !project.context?.genre) {
+        try {
+          const ob = await services.books.open(project.bookSlug);
+          const genreName = ob?.manifest?.pulledFrom?.genre?.name;
+          if (genreName) {
+            project.context = project.context || {};
+            project.context.genre = genreName;
+          }
+        } catch { /* fail-soft: casting sheet stays tier-default */ }
+      }
+
       // F2: inject passive step-skill content (snapshot → global), same as the
       // bridge path — buildProjectContext alone never added it on the studio path.
       const projectContext = (await engine.buildProjectContext(project, activeStep))
@@ -872,6 +887,14 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           bookManifest = ob?.manifest ?? null;
           canonBlock = buildBookCanonBlock(services.books.dataDirOf?.(currentProject.bookSlug), ob?.manifest);
           continuityWorldName = ob?.manifest?.pulledFrom?.world?.name ?? null;
+
+          // H1 fix: stamp the genre from the manifest so stepRouting's per-role
+          // casting sheet actually loads (mirrors the /execute stamp above).
+          const genreName = bookManifest?.pulledFrom?.genre?.name;
+          if (genreName && !currentProject.genre && !currentProject.context?.genre) {
+            currentProject.context = currentProject.context || {};
+            currentProject.context.genre = genreName;
+          }
 
           // Pre-draft continuity-ledger injection: established facts up to this
           // chapter + Character Knowledge Matrix + forbidden (not-yet-revealed)

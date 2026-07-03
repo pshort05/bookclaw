@@ -1,5 +1,5 @@
 import { test } from 'node:test'; import assert from 'node:assert/strict';
-import { intimacyDecision, looksLikeRefusal } from '../../gateway/src/services/casting/heat.js';
+import { intimacyDecision, looksLikeRefusal, resolveUncensoredProvider } from '../../gateway/src/services/casting/heat.js';
 const ladder = { eroticaThreshold: 7, uncensoredByLevel: [{ minSpice: 7, provider: 'grok' }, { minSpice: 9, provider: 'openrouter', model: 'venice/uncensored' }], rerouteRoles: ['draft','intimacy'] };
 test('no ceiling → fade to black', () => {
   const d = intimacyDecision({ score: { spice: 8, violence: 0 }, ceiling: null, ladder, genre: 'romance' });
@@ -9,9 +9,33 @@ test('on-page below erotica → claude + template', () => {
   const d = intimacyDecision({ score: { spice: 5, violence: 0 }, ceiling: { spice: 8, violence: 5 }, ladder, genre: 'romance' });
   assert.equal(d.mode, 'onpage_claude'); assert.equal(d.spiceRoute, null); assert.match(d.template ?? '', /intimacy\/romance\.md$/); assert.equal(d.effectiveSpice, 5);
 });
-test('at erotica threshold → uncensored (grok)', () => {
+// H3: a casting sheet's uncensored rung names a symbolic provider ('grok')
+// that AIRouter does not register — intimacyDecision must resolve it to a
+// real, routable provider (openrouter + a pinned model), never pass 'grok'
+// straight through as the spiceRoute.
+test('at erotica threshold → uncensored, resolved to a routable provider (H3)', () => {
   const d = intimacyDecision({ score: { spice: 7, violence: 0 }, ceiling: { spice: 10, violence: 5 }, ladder, genre: 'romance' });
-  assert.equal(d.mode, 'uncensored'); assert.deepEqual(d.spiceRoute, { provider: 'grok', model: undefined });
+  assert.equal(d.mode, 'uncensored'); assert.deepEqual(d.spiceRoute, { provider: 'openrouter', model: 'x-ai/grok-4' });
+});
+
+test('H3: resolveUncensoredProvider aliases grok → openrouter/x-ai/grok-4', () => {
+  const d = intimacyDecision({ score: { spice: 8, violence: 0 }, ceiling: { spice: 8, violence: 5 }, ladder: { ...ladder, eroticaThreshold: 7, uncensoredByLevel: [{ minSpice: 7, provider: 'grok' }] }, genre: 'romance' });
+  assert.equal(d.mode, 'uncensored');
+  assert.deepEqual(d.spiceRoute, { provider: 'openrouter', model: 'x-ai/grok-4' });
+});
+
+test('H3: an already-routable rung (openrouter + venice/uncensored model) passes through unchanged', () => {
+  assert.deepEqual(
+    resolveUncensoredProvider({ provider: 'openrouter', model: 'venice/uncensored' }),
+    { provider: 'openrouter', model: 'venice/uncensored' },
+  );
+});
+
+test('H3: resolveUncensoredProvider aliases venice → openrouter/venice-uncensored', () => {
+  assert.deepEqual(
+    resolveUncensoredProvider({ provider: 'venice' }),
+    { provider: 'openrouter', model: 'venice/uncensored' },
+  );
 });
 test('ceiling clamps below erotica', () => {
   const d = intimacyDecision({ score: { spice: 9, violence: 0 }, ceiling: { spice: 4, violence: 5 }, ladder, genre: 'romance' });

@@ -21,7 +21,13 @@ function makeProject() {
   };
 }
 
-function makeHarness(opts: { heatScoreText: string; refuseFirst?: boolean; wordyRefusalFirst?: boolean }) {
+// M4: providers a spice route may legitimately resolve to — mirrors AIRouter's
+// registered provider ids (ai/router.ts AI_PROVIDER_IDS). A permissive fake
+// that accepts ANY provider string (e.g. bare 'grok') would pass even if H3
+// regressed, since it never exercises whether the route is actually routable.
+const ROUTABLE_PROVIDER_IDS = new Set(['ollama', 'gemini', 'deepseek', 'claude', 'openai', 'openrouter']);
+
+function makeHarness(opts: { heatScoreText: string; refuseFirst?: boolean; wordyRefusalFirst?: boolean; uncensoredProvider?: 'grok' | 'venice' | 'auto' }) {
   const project = makeProject();
   const engine = {
     getProject: () => project,
@@ -40,7 +46,7 @@ function makeHarness(opts: { heatScoreText: string; refuseFirst?: boolean; wordy
     getServices: () => ({
       books: {
         open: async (slug: string) => slug === 'romance-book'
-          ? { manifest: { contentCeiling: { spice: 10, violence: 5 }, pulledFrom: { genre: { name: 'romance' } } } }
+          ? { manifest: { contentCeiling: { spice: 10, violence: 5 }, pulledFrom: { genre: { name: 'romance' } }, ...(opts.uncensoredProvider ? { uncensoredProvider: opts.uncensoredProvider } : {}) } }
           : null,
         dataDirOf: () => null,
         activeDataDir: () => null,
@@ -65,6 +71,12 @@ function makeHarness(opts: { heatScoreText: string; refuseFirst?: boolean; wordy
       heartbeat: { addWords() {} },
     }),
     handleMessage: async (_m: string, _c: string, cb: (t: string) => void, context: string, _tt: any, provider: any, model: any) => {
+      // M4: a non-routable provider (e.g. bare 'grok', not router-registered)
+      // must fail loudly here, the same way the real AIRouter.complete throws
+      // "Provider X not found" — otherwise this fake would mask H3 regressions.
+      if (provider && !ROUTABLE_PROVIDER_IDS.has(provider)) {
+        throw new Error(`Provider ${provider} not found`);
+      }
       handleMessageCallCount++;
       calls.push({ provider, model, context });
       // Simulate an on-page refusal across BOTH the primary attempt and the
@@ -108,7 +120,22 @@ test('a high-spice scene (>= eroticaThreshold) re-routes the draft call to the l
   assert.equal(result.status, 200);
   assert.equal(result.body.success, true);
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].provider, 'grok');
+  // H3: the ladder's symbolic 'grok' rung resolves to a real, routable
+  // provider (openrouter + a pinned model), never bare 'grok'.
+  assert.equal(calls[0].provider, 'openrouter');
+  assert.equal(calls[0].model, 'x-ai/grok-4');
+});
+
+// M3: a book that pins uncensoredProvider overrides the ladder's own pick —
+// here the ladder's eligible rung is grok, but the pin (venice) wins.
+test('a book with a pinned uncensoredProvider routes the escalated draft call to the pinned provider, not the ladder rung (M3)', async () => {
+  const { gateway, calls } = makeHarness({ heatScoreText: '{"spice":8,"violence":0}', uncensoredProvider: 'venice' });
+  const result = await runExecute(gateway);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].provider, 'openrouter');
+  assert.equal(calls[0].model, 'venice/uncensored');
 });
 
 test('a below-threshold scene stays on the sheet draft model and gets the intimacy template', async () => {
@@ -131,7 +158,8 @@ test('an on-page refusal (empty completion) escalates to the uncensored route on
   // retry lands on the ladder's uncensored provider.
   assert.equal(calls[0].provider, 'openrouter');
   const last = calls[calls.length - 1];
-  assert.equal(last.provider, 'grok');
+  assert.equal(last.provider, 'openrouter');
+  assert.equal(last.model, 'x-ai/grok-4');
 });
 
 // L1: a wordy refusal is neither empty nor <50 chars, so the old check
@@ -144,5 +172,6 @@ test('a verbose refusal (non-empty, >=50 chars) also escalates to the uncensored
   assert.equal(result.body.success, true);
   assert.equal(calls[0].provider, 'openrouter');
   const last = calls[calls.length - 1];
-  assert.equal(last.provider, 'grok');
+  assert.equal(last.provider, 'openrouter');
+  assert.equal(last.model, 'x-ai/grok-4');
 });

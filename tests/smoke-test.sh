@@ -377,6 +377,14 @@ echo "$TT" | grep -q '"role"' \
   && pass "POST /api/books rejects an out-of-range contentCeiling (Plan 2 validation)" \
   || fail "POST /api/books should 400 on contentCeiling.spice=99"
 
+# Plan 8 (ideation ensemble): POST /api/books validates the per-book `ensemble`
+# knob (review fix M1 — it was previously dropped from the create route, so the
+# ensemble was unreachable via the API). A malformed ensemble 400s before create.
+[ "$(code -X POST -H "Authorization: Bearer $TEST_TOKEN" -H "Content-Type: application/json" \
+     -d '{"title":"__smoke_ensemble__","ensemble":"yes"}' "$BASE/api/books")" = "400" ] \
+  && pass "POST /api/books rejects a malformed ensemble (review M1: knob now wired to create)" \
+  || fail "POST /api/books should 400 on ensemble=\"yes\""
+
 stop_server
 
 # ── Result ──

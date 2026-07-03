@@ -252,7 +252,7 @@ function buildCadenceGateFindings(
   }
 
   const flaggedChapters = (project?.steps ?? []).filter((s: any) =>
-    s.phase === 'writing' && typeof s.chapterNumber === 'number' && Array.isArray(s.continuityFlags) && s.continuityFlags.length);
+    typeof s.chapterNumber === 'number' && Array.isArray(s.continuityFlags) && s.continuityFlags.length);
   if (flaggedChapters.length) {
     const perChapter: ActChapterFlags[] = flaggedChapters.map((s: any) => ({ chapterNumber: s.chapterNumber, flags: s.continuityFlags }));
     const summary = aggregateActContinuity(perChapter);

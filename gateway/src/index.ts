@@ -35,6 +35,7 @@ import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
+import { buildContinuityInjection, detectPostDraftContinuity } from './services/consistency/spine-inject.js';
 import { AIRouter } from './ai/router.js';
 import { Vault } from './security/vault.js';
 import { PermissionManager } from './security/permissions.js';
@@ -2286,11 +2287,32 @@ class BookClawGateway {
         // Flagship Plan 5: the manifest is reused below (no extra I/O) to resolve
         // the book's review.cadence at the gate check after this step generates.
         let bookManifest: any = null;
+        // H2 fix: Flagship Plan 3's continuity spine (pre-draft ledger injection,
+        // post-draft fact detection/persistence) was wired only into the studio
+        // /auto-execute route — this headless driver had none of it. chapterNumber
+        // and world are computed here (pre-draft) and reused below (post-draft).
+        // projects.routes.ts has an equivalent inline block; it should later
+        // converge on these same shared helpers.
+        let continuityChapterNum = 0;
+        let continuityWorldName: string | null = null;
         if (project.bookSlug && gateway.books) {
           const ob = await gateway.books.open(project.bookSlug).catch(() => null);
           bookManifest = ob?.manifest ?? null;
           const canonBlock = buildBookCanonBlock(gateway.books.dataDirOf?.(project.bookSlug), ob?.manifest);
           if (canonBlock) projectContext += `\n\n${canonBlock}`;
+
+          continuityChapterNum = chapterSummaryTarget(project, activeStep, true).chapterNum;
+          continuityWorldName = ob?.manifest?.pulledFrom?.world?.name ?? null;
+          if (gateway.consistencyStore) {
+            const continuityBlock = buildContinuityInjection({
+              slug: project.bookSlug,
+              role: (activeStep as any)?.role,
+              chapterNumber: continuityChapterNum,
+              store: gateway.consistencyStore,
+              world: continuityWorldName,
+            });
+            if (continuityBlock) projectContext += `\n\n${continuityBlock}`;
+          }
         }
 
         // Build user message with uploaded content injected directly
@@ -2485,6 +2507,30 @@ class BookClawGateway {
           });
         } catch (fileErr) {
           console.error('Failed to save project step output:', fileErr);
+        }
+
+        // H2 fix: post-draft continuity detection — same guarded, fail-soft
+        // logic as the studio /auto-execute route's inline block, factored
+        // into detectPostDraftContinuity so the headless driver persists
+        // chapter facts too. Flags attach to the step for Plan 4's
+        // analyze-then-apply polish to consume.
+        if (project.bookSlug && gateway.consistencyStore) {
+          const { flags } = await detectPostDraftContinuity({
+            slug: project.bookSlug,
+            role: (activeStep as any)?.role,
+            chapterNumber: continuityChapterNum,
+            text: aiResponse,
+            store: gateway.consistencyStore,
+            aiComplete: (r: any) => gateway.aiRouter.complete(r),
+            aiSelect: (t: string, pref?: string) => gateway.aiRouter.selectProvider(t, pref),
+            world: continuityWorldName,
+            // M3 (bug-review #22 hazard): a concurrent full/import audit's
+            // clearBookFacts()/clearBookKnowledge() would race this chapter's
+            // own clear+insert — skip only the persistence while one is in
+            // flight for this book.
+            skipPersist: gateway.consistencyJobs?.isRunning(project.bookSlug) === true,
+          });
+          if (flags.length) (activeStep as any).continuityFlags = flags;
         }
 
         // Human-Gate Cadence (Flagship Plan 5): same check as the dashboard
