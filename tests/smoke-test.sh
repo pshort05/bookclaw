@@ -346,6 +346,11 @@ echo "$RSPICY" | grep -q '"role"' \
   && pass "romance-spicy serves role-tagged steps (casting migration live in-app)" \
   || fail "romance-spicy has no role fields (casting migration not applied in-app?)"
 
+# Plan 6 (scheduler + cost): the cross-book fleet view sits behind the auth gate.
+[ "$(code "$BASE/api/books/fleet")" = "401" ] \
+  && pass "books/fleet: no token -> 401 (Plan 6 fleet route registered)" \
+  || fail "books/fleet should be 401 without token"
+
 # Plan 5 (gate cadence): the new review-action route (approve/edit/regenerate/stop)
 # sits behind the auth gate (no token -> 401), confirming it is registered.
 [ "$(code -X POST "$BASE/api/projects/smoke/review/action")" = "401" ] \

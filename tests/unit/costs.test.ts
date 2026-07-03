@@ -95,3 +95,38 @@ test('setLimits ignores non-finite / negative values (keeps the prior limit)', (
   assert.equal(c.dailyLimit, 20, 'daily updated');
   assert.equal(c.monthlyLimit, 50, 'undefined monthly leaves prior value');
 });
+
+// ── Flagship Plan 6, Task 3: per-book budget ──
+
+test('wouldExceedBook is false when no per-book budget is set (unbounded by default)', () => {
+  const c = new CostTracker({});
+  c.record('claude', 0, 9999, 'book-a');
+  assert.equal(c.wouldExceedBook('book-a', 0), false);
+});
+
+test('wouldExceedBook trips once accumulated spend + projected reaches the book budget', () => {
+  const c = new CostTracker({});
+  c.setBookBudget('book-a', 1);
+  c.record('claude', 0, 0.5, 'book-a');
+  assert.equal(c.wouldExceedBook('book-a', 0), false, 'under budget so far');
+  c.record('claude', 0, 0.5, 'book-a'); // now at exactly $1
+  assert.equal(c.wouldExceedBook('book-a', 0), true, 'accumulated spend reached the cap');
+  assert.equal(c.wouldExceedBook('book-b', 0), false, 'a different, unbudgeted book is unaffected');
+});
+
+test('wouldExceedBook accounts for a projected additional cost', () => {
+  const c = new CostTracker({});
+  c.setBookBudget('book-a', 10);
+  c.record('claude', 0, 8, 'book-a');
+  assert.equal(c.wouldExceedBook('book-a', 1), false, '8 + 1 = 9, still under 10');
+  assert.equal(c.wouldExceedBook('book-a', 3), true, '8 + 3 = 11, would exceed 10');
+});
+
+test('setBookBudget(slug, undefined) clears a previously set budget', () => {
+  const c = new CostTracker({});
+  c.setBookBudget('book-a', 1);
+  c.record('claude', 0, 5, 'book-a');
+  assert.equal(c.wouldExceedBook('book-a', 0), true);
+  c.setBookBudget('book-a', undefined);
+  assert.equal(c.wouldExceedBook('book-a', 0), false, 'cleared budget is treated as unbounded');
+});

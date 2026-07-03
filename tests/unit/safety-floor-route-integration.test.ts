@@ -36,6 +36,7 @@ function makeHarness(role: string, response: string) {
     completeStep: (_pid: string, _sid: string, _resp: string) => { project.steps[0].status = 'completed'; return null; },
     failStep: (_pid: string, _sid: string, reason: string) => { failed.push(reason); },
     tryStartDriving: () => true,
+    isDriving: () => false,
     stopDriving: () => {},
   };
   const gateway = {

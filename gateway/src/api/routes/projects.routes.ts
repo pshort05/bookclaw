@@ -3,6 +3,8 @@ import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
+import { checkBudgetPause, applyBudgetPause } from '../../services/pipeline/budget-gate.js';
+import { acquireDrive, releaseDrive, tryAcquireDriveNow } from '../../services/pipeline/scheduler.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
 import { buildBookCanonBlock } from '../../services/book-canon.js';
 import { applyStructureRail } from '../../services/format-guide.js';
@@ -473,11 +475,29 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.json({ humanReview: true, confirmationId: conf?.id ?? project.review?.confirmationId, project: engine.getProject(req.params.id) });
     }
 
-    // Claim the shared drive lock so this single-step run can't execute the same
-    // active step concurrently with an auto-execute loop or a bridge runner
-    // (bug-review #8). Released in the finally below.
-    if (!engine.tryStartDriving(project.id)) {
+    // Graceful cost-boundary pause (Flagship Plan 6, Task 3): a single-step
+    // /execute is still a chapter boundary from the cost cap's point of view —
+    // without this check a user could bypass the auto-execute loop's pause by
+    // clicking "Execute" step by step.
+    if (services.costs) {
+      const budgetGate = checkBudgetPause(services.costs, project);
+      if (budgetGate) {
+        applyBudgetPause(project, budgetGate);
+        return res.json({ budgetPause: true, reason: budgetGate.reason, project: engine.getProject(req.params.id) });
+      }
+    }
+
+    // Claim a drive slot — the shared per-project lock (bug-review #8) PLUS the
+    // Flagship Plan 6 global concurrency cap, via the scheduler when wired in.
+    // Released in the finally below. Same-project reentrancy still 409s (a
+    // retry against THIS project won't help until its own run finishes); a
+    // separate, non-blocking check against fleet capacity 429s instead of
+    // holding the HTTP connection open behind another book's full drive (M2 fix).
+    if (engine.isDriving(project.id)) {
       return res.status(409).json({ error: 'Project is already running' });
+    }
+    if (!tryAcquireDriveNow(services.driveScheduler, engine, project.id)) {
+      return res.status(429).json({ queued: true, error: 'fleet at capacity — retry' });
     }
 
     try {
@@ -653,7 +673,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         project: engine.getProject(project.id),
       });
     } finally {
-      engine.stopDriving(project.id);
+      releaseDrive(services.driveScheduler, engine, project.id);
     }
   });
 
@@ -738,30 +758,47 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
     // Concurrency guard: only one runner per project, shared across ALL runners
     // (this route, /execute, and the bridge autoRunProject/startAndRunProject
-    // loops) via the engine's drive lock. Without it, the dashboard + Telegram
-    // (or a double-click) both process the same active step → duplicated/
-    // overwritten chapter files + double cost (bug-review #8).
-    if (!engine.tryStartDriving(project.id)) {
+    // loops) via the engine's drive lock — PLUS the Flagship Plan 6 global
+    // concurrency cap (maxConcurrentDrives) via the scheduler when wired in.
+    // Without the per-project lock, the dashboard + Telegram (or a double-click)
+    // both process the same active step → duplicated/overwritten chapter files +
+    // double cost (bug-review #8). Without the scheduler, an unbounded number of
+    // books could drive concurrently regardless of the configured cap.
+    // M2 fix: a non-blocking claim — an HTTP handler must not hold the
+    // connection open while queued behind another book's full drive (a
+    // reverse-proxy/browser timeout can kill it); 429 lets the caller retry.
+    // Background drivers keep the blocking acquireDrive queue. Same-project
+    // reentrancy still 409s (mirrors /execute — a retry against THIS project
+    // won't help until its own run finishes).
+    if (engine.isDriving(project.id)) {
       return res.status(409).json({ error: 'Project is already auto-executing' });
     }
-
-    // A project paused awaiting Human Review must NOT be un-paused by "continue" —
-    // it requires a Confirmations decision. Surface the pending review instead.
-    if (project.review) {
-      engine.stopDriving(project.id);
-      return res.status(409).json({ error: 'Awaiting human review', humanReview: true, confirmationId: project.review.confirmationId });
+    if (!tryAcquireDriveNow(services.driveScheduler, engine, project.id)) {
+      return res.status(429).json({ queued: true, error: 'fleet at capacity — retry' });
     }
 
-    if (project.status === 'pending') {
-      engine.startProject(req.params.id);
-    } else if (project.status === 'paused') {
-      project.status = 'active';
-      const firstPending = project.steps.find((s: any) => s.status === 'pending');
-      if (firstPending) firstPending.status = 'active';
-    }
+    // M1 fix: everything from here on runs inside the try so a throw in any of
+    // these intervening statements still releases the slot via the finally
+    // below, instead of leaking it permanently.
+    try {
+      // A project paused awaiting Human Review must NOT be un-paused by "continue" —
+      // it requires a Confirmations decision. Surface the pending review instead.
+      if (project.review) {
+        return res.status(409).json({ error: 'Awaiting human review', humanReview: true, confirmationId: project.review.confirmationId });
+      }
+
+      if (project.status === 'pending') {
+        engine.startProject(req.params.id);
+      } else if (project.status === 'paused') {
+        project.status = 'active';
+        delete (project as any).budgetPause; // resuming clears a prior budget-boundary pause
+        const firstPending = project.steps.find((s: any) => s.status === 'pending');
+        if (firstPending) firstPending.status = 'active';
+      }
 
     const results: Array<{ step: string; success: boolean; wordCount?: number; error?: string; reviewFlags?: string[] }> = [];
     let humanReviewConfId: string | undefined;
+    let budgetPaused = false;
     const { join } = await import('path');
     const { mkdir, writeFile } = await import('fs/promises');
     const workspaceDir = join(baseDir, 'workspace');
@@ -771,7 +808,6 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const outDirFor = (slug: string) =>
       activeDataDir ? activeDataDir : join(workspaceDir, 'projects', slug);
 
-    try {
     while (true) {
       const currentProject = engine.getProject(req.params.id);
       if (!currentProject) break;
@@ -789,6 +825,20 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         results.push({ step: activeStep.label, success: false, error: 'awaiting human review' });
         humanReviewConfId = conf?.id ?? currentProject.review?.confirmationId;
         break;
+      }
+
+      // Graceful cost-boundary pause (Flagship Plan 6, Task 3): checked at the
+      // chapter boundary — BEFORE this step starts generating, so a cap trip
+      // never interrupts a chapter already in progress, only the next one from
+      // starting. The prior chapter's cost is already recorded by this point.
+      if (services.costs) {
+        const budgetGate = checkBudgetPause(services.costs, currentProject);
+        if (budgetGate) {
+          applyBudgetPause(currentProject, budgetGate);
+          results.push({ step: activeStep.label, success: false, error: `budget_pause: ${budgetGate.reason}` });
+          budgetPaused = true;
+          break;
+        }
       }
 
       try {
@@ -1341,10 +1391,11 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       success: true,
       results,
       ...(humanReviewConfId ? { humanReview: true, confirmationId: humanReviewConfId } : {}),
+      ...(budgetPaused ? { budgetPause: true } : {}),
       project: engine.getProject(req.params.id),
     });
     } finally {
-      engine.stopDriving(project.id);
+      releaseDrive(services.driveScheduler, engine, project.id);
     }
   });
 
@@ -1377,7 +1428,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
   // response isn't blocked by a long chapter chain. Fail-soft.
   async function driveResumedProject(projectId: string): Promise<void> {
     const engine = gateway.getProjectEngine?.();
-    if (!engine?.tryStartDriving?.(projectId)) return;
+    if (!engine) return;
+    if (!(await acquireDrive(services.driveScheduler, engine, projectId))) return;
     try {
       const handlers = gateway.buildTelegramCommandHandlers?.();
       if (!handlers) return;
@@ -1388,7 +1440,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
       }
     } finally {
-      engine.stopDriving(projectId);
+      releaseDrive(services.driveScheduler, engine, projectId);
     }
   }
 

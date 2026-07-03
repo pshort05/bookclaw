@@ -25,6 +25,7 @@ test('execute writes the step output file so it lands in the assembled manuscrip
     completeStep: (_pid: string, _sid: string, _resp: string) => { project.steps[0].status = 'completed'; return null; },
     failStep: () => {},
     tryStartDriving: () => true,
+    isDriving: () => false,
     stopDriving: () => {},
   };
   const prose = 'This is a full chapter of genuine prose. '.repeat(20);

@@ -266,6 +266,95 @@ test('complete retries once on HTTP 429 and then succeeds', async () => {
   });
 });
 
+// ── complete(): per-provider throttle (Flagship Plan 6) actually wraps dispatch ──
+// These prove the throttle is exercised by the REAL complete() call path (the
+// single funnel every AI call in the app goes through), not just correct in
+// isolation as a standalone ProviderThrottle unit.
+
+test('complete() funnels every call through the per-provider throttle — a 2nd concurrent call queues behind a limit of 1', async () => {
+  const present = new Set(['openrouter_api_key']);
+  const vault = { get: async (k: string) => (present.has(k) ? 'test-value' : null) };
+  const costs = { isOverBudget: () => false };
+  const router = new AIRouter({ ollama: { enabled: false } }, vault as never, costs as never, { openrouter: 1 });
+  await router.initialize();
+
+  const order: string[] = [];
+  let releaseFirst!: () => void;
+  const gate = new Promise<void>((r) => { releaseFirst = r; });
+  let callIndex = 0;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    const my = ++callIndex;
+    order.push(`start-${my}`);
+    if (my === 1) await gate;
+    order.push(`end-${my}`);
+    return { ok: true, status: 200, headers: { get: () => null }, text: async () => '', json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }) };
+  }) as never;
+
+  try {
+    const req = { provider: 'openrouter', system: 's', messages: [{ role: 'user' as const, content: 'hi' }] };
+    const p1 = router.complete(req);
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(order, ['start-1'], 'first call claimed the single openrouter slot');
+
+    const p2 = router.complete(req);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(order, ['start-1'], 'second call is genuinely queued by the throttle, not fired concurrently');
+
+    releaseFirst();
+    await Promise.all([p1, p2]);
+    assert.deepEqual(order, ['start-1', 'end-1', 'start-2', 'end-2'], 'second call only started after the first released its slot');
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test('setThrottleLimits live-updates the cap without reconstructing the router (Task 5 live-sync)', async () => {
+  const present = new Set(['openrouter_api_key']);
+  const vault = { get: async (k: string) => (present.has(k) ? 'test-value' : null) };
+  const costs = { isOverBudget: () => false };
+  // Start with no explicit limit (default 2) so two concurrent calls both start.
+  const router = new AIRouter({ ollama: { enabled: false } }, vault as never, costs as never, {});
+  await router.initialize();
+
+  const orig = globalThis.fetch;
+  const starts: number[] = [];
+  let callIndex = 0;
+  const gates: Array<() => void> = [];
+  globalThis.fetch = (async () => {
+    const my = ++callIndex;
+    starts.push(my);
+    await new Promise<void>((r) => { gates[my] = r; });
+    return { ok: true, status: 200, headers: { get: () => null }, text: async () => '', json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }) };
+  }) as never;
+
+  try {
+    const req = { provider: 'openrouter', system: 's', messages: [{ role: 'user' as const, content: 'hi' }] };
+    const before1 = router.complete(req);
+    const before2 = router.complete(req);
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(starts, [1, 2], 'default limit (2) let both calls start immediately');
+    gates[1](); gates[2]();
+    await Promise.all([before1, before2]);
+
+    // Now tighten the cap live.
+    router.setThrottleLimits({ openrouter: 1 });
+    const after1 = router.complete(req);
+    await new Promise((r) => setImmediate(r));
+    const after2 = router.complete(req);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(starts, [1, 2, 3], 'the new call after the live update has not started a 2nd concurrent request yet');
+    gates[3]();
+    await after1;
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(starts, [1, 2, 3, 4], 'queued call started only after the first (post-update) call released its slot');
+    gates[4]();
+    await after2;
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
 // ── completeClaude: thinking budget + empty-completion guard ─────────────────
 
 /**

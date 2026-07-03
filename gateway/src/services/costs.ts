@@ -32,6 +32,7 @@ export class CostTracker {
   private monthlySpend = 0;
   private totalSpend = 0;
   private byBook: Record<string, number> = {};
+  private bookBudgets: Record<string, number> = {};
   private lastResetDay: string;
   private lastResetMonth: string;
   private persistPath?: string;
@@ -61,6 +62,34 @@ export class CostTracker {
     if (typeof monthlyLimit === 'number' && Number.isFinite(monthlyLimit) && monthlyLimit >= 0) {
       this.monthlyLimit = monthlyLimit;
     }
+  }
+
+  /**
+   * Set (or clear, with undefined) a per-book spend cap (Flagship Plan 6,
+   * Task 3). Kept in-memory on the same tracker as byBook — no second cost
+   * store — so wouldExceedBook can compare a book's accumulated spend against
+   * its own cap without any other service needing to track spend itself.
+   */
+  setBookBudget(bookSlug: string, budget: number | undefined): void {
+    if (typeof budget === 'number' && Number.isFinite(budget) && budget >= 0) {
+      this.bookBudgets[bookSlug] = budget;
+    } else {
+      delete this.bookBudgets[bookSlug];
+    }
+  }
+
+  /**
+   * Whether this book's accumulated spend plus a projected additional cost
+   * would meet or exceed its budget. A book with no budget set is always
+   * false (unbounded) — callers use this at a chapter boundary to decide
+   * whether to gracefully pause before starting the next chapter, not to
+   * abort a chapter already in progress.
+   */
+  wouldExceedBook(bookSlug: string, projected: number): boolean {
+    const budget = this.bookBudgets[bookSlug];
+    if (budget === undefined) return false;
+    const spent = this.byBook[bookSlug] ?? 0;
+    return spent + projected >= budget;
   }
 
   /**

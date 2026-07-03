@@ -52,6 +52,7 @@ function makeHarness(opts: { store: ConsistencyStore | undefined; draftText: str
     failStep: () => {},
     tryStartDriving: () => true,
     stopDriving: () => {},
+    isDriving: () => false,
   };
   const gateway = {
     getProjectEngine: () => engine,

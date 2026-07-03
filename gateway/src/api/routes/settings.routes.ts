@@ -189,6 +189,7 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       'ai.ollama.enabled', 'ai.ollama.endpoint', 'ai.ollama.model',
       'ai.openrouter.model', 'ai.claude.model', 'ai.gemini.model',
       'bridges.telegram.enabled', 'bridges.telegram.pairingEnabled',
+      'pipeline.maxConcurrentDrives', 'pipeline.providerThrottle',
     ];
     if (!safePaths.includes(path)) {
       return res.status(403).json({ error: 'Config path not allowed' });
@@ -200,6 +201,20 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
     if (/^ai\.[a-z]+\.model$/.test(path)) {
       if (typeof value !== 'string' || !/^[A-Za-z0-9._\-/:]{1,200}$/.test(value)) {
         return res.status(400).json({ error: 'Invalid model id' });
+      }
+    }
+    // Flagship Plan 6: a bad cap could either DOS local resources (absurdly
+    // high) or wedge every drive (zero/negative) — validate before persisting.
+    if (path === 'pipeline.maxConcurrentDrives') {
+      if (!Number.isInteger(value) || value < 1 || value > 20) {
+        return res.status(400).json({ error: 'maxConcurrentDrives must be an integer between 1 and 20' });
+      }
+    }
+    if (path === 'pipeline.providerThrottle') {
+      const validThrottle = value && typeof value === 'object' && !Array.isArray(value) &&
+        Object.values(value).every((v) => Number.isInteger(v) && (v as number) >= 1);
+      if (!validThrottle) {
+        return res.status(400).json({ error: 'providerThrottle must be an object of positive integer limits' });
       }
     }
     try {
@@ -225,6 +240,16 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
       // without a restart (the router reads config.<provider>.model at build time).
       if (/^ai\.(claude|gemini|openrouter|ollama)\.model$/.test(path)) {
         await services.aiRouter.reinitialize();
+      }
+      // Flagship Plan 6: push a changed concurrency cap into the live
+      // DriveScheduler / a changed throttle into the live AIRouter — same
+      // live-sync pattern as costs.dailyLimit above, otherwise a Settings
+      // change would sit inert until the next restart.
+      if (path === 'pipeline.maxConcurrentDrives') {
+        services.driveScheduler?.setMaxConcurrent(value);
+      }
+      if (path === 'pipeline.providerThrottle') {
+        services.aiRouter?.setThrottleLimits?.(value);
       }
       res.json({ success: true, path, value });
     } catch (err: any) {

@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { HeartbeatService } from '../services/heartbeat.js';
 import { resolveReviewGates } from '../services/human-review.js';
+import { acquireDrive, releaseDrive } from '../services/pipeline/scheduler.js';
 import { TelegramBridge } from '../bridges/telegram.js';
 import { DiscordBridge } from '../bridges/discord.js';
 import { ROOT_DIR } from '../paths.js';
@@ -253,11 +254,14 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
   // makes an approved gate continue even on a dashboard-only (non-autonomous)
   // deployment. Runs regardless of mode; fail-soft.
   const driveProject = async (projectId: string) => {
-    // Claim the shared drive lock so this resolver/headless driver never runs the
-    // same project concurrently with a browser /auto-execute (or /execute) run —
-    // two runners on the same active step duplicate/overwrite chapters + double
-    // AI cost (bug-review #2). Skip entirely if the project is already driven.
-    if (!gw.projectEngine.tryStartDriving(projectId)) return;
+    // Claim a drive slot: the shared per-project lock so this resolver/headless
+    // driver never runs the same project concurrently with a browser
+    // /auto-execute (or /execute) run — two runners on the same active step
+    // duplicate/overwrite chapters + double AI cost (bug-review #2) — PLUS the
+    // Flagship Plan 6 global concurrency cap. Skip entirely if the project is
+    // already driven; queue (this is a background sweep, not an HTTP request,
+    // so blocking here is safe) if the cap is reached.
+    if (!(await acquireDrive(gw.driveScheduler, gw.projectEngine, projectId))) return;
     try {
       for (let i = 0; i < 500; i++) {
         const p = gw.projectEngine.getProject(projectId);
@@ -266,7 +270,7 @@ export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void
         if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
       }
     } finally {
-      gw.projectEngine.stopDriving(projectId);
+      releaseDrive(gw.driveScheduler, gw.projectEngine, projectId);
     }
   };
   setInterval(async () => {

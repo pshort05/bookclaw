@@ -104,6 +104,53 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({ next });
   });
 
+  // Cross-book fleet state (Flagship Plan 6, Task 5). Must come before
+  // /api/books/:slug (a literal "fleet" would otherwise be swallowed by :slug).
+  // L1 fix: a book's state is the HIGHEST-priority state across ALL its
+  // projects (running > queued > paused_budget > paused_review > idle), not
+  // just the first project in array order — a book with an earlier paused
+  // project and a later running one must report running. Wrapped fail-soft
+  // (matching sibling routes) so an unavailable book/project service 500s
+  // with a JSON error instead of crashing the request.
+  const FLEET_STATE_PRIORITY = ['running', 'queued', 'paused_budget', 'paused_review', 'idle'] as const;
+  type FleetState = (typeof FLEET_STATE_PRIORITY)[number];
+
+  app.get('/api/books/fleet', (_req: Request, res: Response) => {
+    try {
+      const engine = gateway.getProjectEngine?.();
+      const projects = engine ? engine.listProjects() : [];
+      const running = new Set(services.driveScheduler?.running?.() ?? []);
+      const queued = new Set(services.driveScheduler?.queued?.() ?? []);
+
+      const stateOfProject = (p: any): FleetState => {
+        if (running.has(p.id)) return 'running';
+        if (queued.has(p.id)) return 'queued';
+        if (p.status === 'paused' && p.budgetPause) return 'paused_budget';
+        if (p.status === 'paused' && p.review) return 'paused_review';
+        return 'idle';
+      };
+      const stateFor = (slug: string): FleetState => {
+        const bookProjects = projects.filter((p: any) => p.bookSlug === slug);
+        let best: FleetState = 'idle';
+        let bestRank = FLEET_STATE_PRIORITY.indexOf('idle');
+        for (const p of bookProjects) {
+          const rank = FLEET_STATE_PRIORITY.indexOf(stateOfProject(p));
+          if (rank < bestRank) { bestRank = rank; best = FLEET_STATE_PRIORITY[rank]; }
+        }
+        return best;
+      };
+
+      const fleet = services.books.list().map((b: any) => ({
+        slug: b.slug,
+        title: b.title,
+        state: stateFor(b.slug),
+      }));
+      res.json({ fleet });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
   app.get('/api/books/:slug', async (req: Request, res: Response) => {
     const slug = String(req.params.slug);
     if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
@@ -509,9 +556,22 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (reviewCadence && !['per_act', 'per_chapter', 'outline_only', 'autonomous'].includes(reviewCadence)) {
       return res.status(400).json({ error: `unknown reviewCadence: ${reviewCadence}` });
     }
+    // Per-book spend cap (C1 fix, Flagship Plan 6, Task 3): validated like the
+    // other numeric axes, then wired into the RUNNING CostTracker right after
+    // create() so it takes effect immediately (also re-applied on every boot —
+    // see applyBookBudgets in init/phase-05-research-skills.ts).
+    let costBudget: number | undefined;
+    if (body.costBudget !== undefined && body.costBudget !== null && body.costBudget !== '') {
+      const n = Number(body.costBudget);
+      if (!Number.isFinite(n) || n < 0) {
+        return res.status(400).json({ error: 'costBudget must be a finite number >= 0' });
+      }
+      costBudget = n;
+    }
 
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}) });
+      if (costBudget !== undefined) services.costs?.setBookBudget(manifest.slug, costBudget);
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
       if (worldName && services.world?.getConfig?.(worldName)) {

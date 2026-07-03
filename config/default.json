@@ -50,6 +50,10 @@
     "monthlyLimit": 50,
     "alertAt": 0.8
   },
+  "pipeline": {
+    "maxConcurrentDrives": 3,
+    "providerThrottle": { "default": 6 }
+  },
   "backup": {
     "enabled": true,
     "localPath": "~/bookclaw-backups",

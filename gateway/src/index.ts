@@ -30,6 +30,8 @@ import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './services/human-review.js';
+import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
+import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
@@ -238,6 +240,9 @@ class BookClawGateway {
   public imageGen!: ImageGenService;
   public personas!: PersonaService;
   public projectEngine!: ProjectEngine;
+  // Flagship Plan 6: global drive concurrency scheduler, wrapping projectEngine's
+  // per-project drive lock — see init/phase-06-content.ts for construction.
+  public driveScheduler!: DriveScheduler;
   public contextEngine!: ContextEngine;
   public memorySearch!: MemorySearchService;
   public userModel!: UserModelService;
@@ -1367,6 +1372,7 @@ class BookClawGateway {
       soul: this.soul,
       heartbeat: this.heartbeat,
       costs: this.costs,
+      driveScheduler: this.driveScheduler,
       research: this.research,
       aiRouter: this.aiRouter,
       vault: this.vault,
@@ -1532,15 +1538,17 @@ class BookClawGateway {
       if (resumable.review) {
         return `⏸ **"${resumable.title}"** is awaiting human review — approve or reject it in the dashboard (Confirmations) before continuing.`;
       }
-      // Shared drive lock: "continue" must not start a SECOND concurrent runner
-      // for a project already being driven (bug-review #8).
-      if (!this.projectEngine.tryStartDriving(resumable.id)) {
+      // Drive slot: the shared per-project lock (bug-review #8) so "continue"
+      // can't start a SECOND concurrent runner for a project already being
+      // driven, PLUS the Flagship Plan 6 global concurrency cap.
+      if (!(await acquireDrive(this.driveScheduler, this.projectEngine, resumable.id))) {
         return `⏳ **"${resumable.title}"** is already running — say "stop" to halt it, or wait for it to finish.`;
       }
       // Run one step and return the result
       try {
         if (resumable.status === 'paused') {
           resumable.status = 'active';
+          delete (resumable as any).budgetPause; // resuming clears a prior budget-boundary pause
           const firstPending = resumable.steps.find((s: any) => s.status === 'pending');
           if (firstPending) firstPending.status = 'active';
         }
@@ -1550,7 +1558,7 @@ class BookClawGateway {
       } catch (err) {
         return `Error resuming project: ${String(err)}`;
       } finally {
-        this.projectEngine.stopDriving(resumable.id);
+        releaseDrive(this.driveScheduler, this.projectEngine, resumable.id);
       }
     }
 
@@ -2240,6 +2248,19 @@ class BookClawGateway {
           return { error: 'awaiting human review' };
         }
 
+        // Graceful cost-boundary pause (Flagship Plan 6, Task 3): checked at the
+        // chapter boundary — BEFORE this step starts generating — so a cap trip
+        // never interrupts a chapter already in progress. Covers every caller of
+        // startAndRunProject: autoRunProject, the phase-10 headless driver, the
+        // /review/action headless driver, and the "continue" command.
+        if (gateway.costs) {
+          const budgetGate = checkBudgetPause(gateway.costs, project);
+          if (budgetGate) {
+            applyBudgetPause(project, budgetGate);
+            return { error: `budget_pause: ${budgetGate.reason}` };
+          }
+        }
+
         // Log step start
         gateway.activityLog.log({
           type: 'step_started',
@@ -2624,10 +2645,12 @@ class BookClawGateway {
           return;
         }
 
-        // Shared drive lock: refuse a second concurrent runner for the same
-        // project (e.g. "continue" fired while it is already running), which would
-        // double every remaining step's AI spend (bug-review #5/#8).
-        if (!gateway.projectEngine.tryStartDriving(projectId)) {
+        // Drive slot: the shared per-project lock refuses a second concurrent
+        // runner for the same project (e.g. "continue" fired while it is
+        // already running), which would double every remaining step's AI
+        // spend (bug-review #5/#8) — PLUS the Flagship Plan 6 global
+        // concurrency cap (queues here if the cap is already reached).
+        if (!(await acquireDrive(gateway.driveScheduler, gateway.projectEngine, projectId))) {
           await statusCallback('⏳ This project is already running — say "stop" to halt it, or wait for it to finish.');
           return;
         }
@@ -2635,6 +2658,7 @@ class BookClawGateway {
 
         if (project.status === 'paused') {
           project.status = 'active';
+          delete (project as any).budgetPause; // resuming clears a prior budget-boundary pause
           const firstPending = project.steps.find(s => s.status === 'pending');
           if (firstPending) firstPending.status = 'active';
         }
@@ -2714,7 +2738,7 @@ class BookClawGateway {
           }
         }
         } finally {
-          gateway.projectEngine.stopDriving(projectId);
+          releaseDrive(gateway.driveScheduler, gateway.projectEngine, projectId);
         }
       },
 

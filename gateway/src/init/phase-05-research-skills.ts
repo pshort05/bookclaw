@@ -10,6 +10,7 @@ import { ReportsService } from '../services/reports.js';
 import { appVersion } from './phase-01-config.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
+import type { CostTracker } from '../services/costs.js';
 
 /**
  * Phases 5, 6, 6a, 6b: research gate, skills, SKILLS.txt reference, and
@@ -37,6 +38,27 @@ export function migrateSkillOverlay(workspaceDir: string): void {
     console.log('  ✓ Migrated skill overlay workspace/skills → workspace/library/skills');
   } catch (err) {
     console.warn(`  ⚠ Skill-overlay migration skipped: ${(err as Error)?.message || err}`);
+  }
+}
+
+/**
+ * C1 fix (Flagship Plan 6 code review): re-apply every book's per-book cost
+ * budget (manifest.costBudget) into the CostTracker. The tracker holds
+ * budgets only in memory (set via setBookBudget); without this, a book
+ * created on a prior boot has its budget silently forgotten on restart and
+ * wouldExceedBook() never trips for it again. Fail-soft per book: an
+ * unreadable manifest is skipped, not fatal to startup.
+ */
+export async function applyBookBudgets(books: BookService, costs: CostTracker): Promise<void> {
+  for (const b of books.list()) {
+    try {
+      const opened = await books.open(b.slug);
+      if (opened && typeof opened.manifest.costBudget === 'number') {
+        costs.setBookBudget(b.slug, opened.manifest.costBudget);
+      }
+    } catch {
+      // Fail-soft: skip a book whose manifest can't be read.
+    }
   }
 }
 
@@ -90,6 +112,10 @@ export async function initResearchAndSkills(gw: BookClawGateway): Promise<void> 
   // re-pull can read the library document side (setter injection, fail-soft).
   gw.books.setWorldService(gw.world);
   console.log(`  ✓ Books: ${gw.books.list().length} book(s)`);
+
+  // C1 fix (Flagship Plan 6 code review): re-seed each book's cost budget into
+  // the tracker on every boot — see applyBookBudgets doc comment above.
+  await applyBookBudgets(gw.books, gw.costs);
 
   // Generic reports subsystem: analysis engines emit downloadable .md/.json
   // reports under each book's data/reports/ (keep-last-N per kind).

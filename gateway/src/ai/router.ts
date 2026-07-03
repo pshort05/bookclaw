@@ -7,6 +7,7 @@
 import { createHash } from 'crypto';
 import { Vault } from '../security/vault.js';
 import { CostTracker } from '../services/costs.js';
+import { ProviderThrottle } from '../services/pipeline/provider-throttle.js';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -169,10 +170,22 @@ export class AIRouter {
   private cacheMisses = 0;
   private savedTokens = 0;
 
-  constructor(config: any, vault: Vault, costs: CostTracker) {
+  // Per-provider in-flight throttle (Flagship Plan 6, Task 2/4): every AI call
+  // funnels through complete() below, so wrapping the dispatch here — rather
+  // than each individual call site across the codebase — is the single place
+  // that guarantees no call can bypass it.
+  private throttle: ProviderThrottle;
+
+  constructor(config: any, vault: Vault, costs: CostTracker, throttleLimits?: Record<string, number>) {
     this.config = config;
     this.vault = vault;
     this.costs = costs;
+    this.throttle = new ProviderThrottle(throttleLimits ?? {});
+  }
+
+  /** Live-update the per-provider throttle limits (e.g. after a Settings change via /api/config/update). */
+  setThrottleLimits(limits: Record<string, number>): void {
+    this.throttle.setLimits(limits);
   }
 
   async initialize(): Promise<void> {
@@ -443,6 +456,13 @@ export class AIRouter {
       this.promptCache.set(cacheKey, { hash: promptHash, timestamp: Date.now() });
     }
 
+    // Per-provider throttle wraps the actual dispatch (Flagship Plan 6): caps
+    // concurrent in-flight calls per provider, queuing excess rather than
+    // storming a rate-limited API.
+    return this.throttle.run(provider.id, () => this.dispatchToProvider(provider, request));
+  }
+
+  private dispatchToProvider(provider: AIProvider, request: CompletionRequest): Promise<CompletionResponse> {
     switch (provider.id) {
       case 'ollama':
         return this.completeOllama(provider, request);

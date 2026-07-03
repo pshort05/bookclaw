@@ -12,7 +12,8 @@ export async function initAI(gw: BookClawGateway): Promise<void> {
   await gw.costs.initialize();
   console.log(`  ✓ Budget: $${gw.costs.dailyLimit}/day, $${gw.costs.monthlyLimit}/month (persisted)`);
 
-  gw.aiRouter = new AIRouter(gw.config.get('ai'), gw.vault, gw.costs);
+  // Flagship Plan 6: per-provider in-flight throttle limits (config-driven, live-adjustable via /api/config/update).
+  gw.aiRouter = new AIRouter(gw.config.get('ai'), gw.vault, gw.costs, gw.config.get('pipeline.providerThrottle', {}));
   await gw.aiRouter.initialize();
   // Load global preferred provider from config
   const globalPref = gw.config.get('ai.preferredProvider');

@@ -64,6 +64,7 @@ export interface BookManifest {
   preferredProvider?: string; // Default AI provider for this book's generation; inherited by projects created against it (additive-optional, no schema bump)
   preferredModel?: string; // Default model id for the chosen provider (e.g. an OpenRouter slug); inherited by projects (additive-optional, no schema bump)
   contentCeiling?: { spice: number; violence: number }; // Author-branded content axes (0-10) driving the heat_check intimacy branch; absent = fade-to-black, untouched by Plan 2 routing (additive-optional, no schema bump)
+  costBudget?: number; // Flagship Plan 6, Task 3 — per-book spend cap in dollars; wired into CostTracker.setBookBudget at create time and on boot; absent = unbounded (additive-optional, no schema bump)
   uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
   grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
   review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)

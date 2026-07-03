@@ -5,6 +5,7 @@ import { BackupService, readBackupCfg } from '../services/backup.js';
 import { ImageGenService } from '../services/image-gen.js';
 import { PersonaService } from '../services/personas.js';
 import { ProjectEngine } from '../services/projects.js';
+import { DriveScheduler } from '../services/pipeline/scheduler.js';
 import { ContextEngine } from '../services/context-engine.js';
 import { ROOT_DIR } from '../paths.js';
 import { nextBookPhaseAfter } from '../services/book-types.js';
@@ -32,6 +33,9 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
 
   // ── Phase 6e: Project Engine ──
   gw.projectEngine = new ProjectEngine(gw.authorOS, ROOT_DIR);
+  // Flagship Plan 6: global drive concurrency scheduler, wrapping the engine's
+  // own per-project drive lock — caps how many books can drive at once.
+  gw.driveScheduler = new DriveScheduler(gw.projectEngine, gw.config.get('pipeline.maxConcurrentDrives', 3));
   // Wire AI capabilities for dynamic planning
   gw.projectEngine.setAI(
     (request) => gw.aiRouter.complete(request),

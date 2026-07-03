@@ -83,6 +83,11 @@ export interface Project {
   // for a 'cadence-gate' — set so approve/edit resume with the real text instead
   // of a placeholder (absent for a literal no-op 'pipeline-gate' step).
   review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate'; pendingResult?: string };
+  // Graceful cost-boundary pause (Flagship Plan 6, Task 3): set when a drive
+  // loop pauses at a chapter boundary because the book's own budget or the
+  // global daily/monthly cap was reached; cleared by resuming the project
+  // (the normal 'paused' -> 'active' status transition already used elsewhere).
+  budgetPause?: { reason: string; scope: 'book' | 'global'; at: string };
 }
 
 export interface ProjectStep {
