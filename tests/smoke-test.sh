@@ -385,6 +385,30 @@ echo "$TT" | grep -q '"role"' \
   && pass "POST /api/books rejects a malformed ensemble (review M1: knob now wired to create)" \
   || fail "POST /api/books should 400 on ensemble=\"yes\""
 
+# ── Phase 8: narrative anti-fingerprint assets (StoryScope 2-pass) ──────────
+# The anti-fingerprint system (spec 2026-07-06) is content-only: two new author
+# skills + the editorial-fingerprint pipeline. This asserts the running app
+# actually serves them — the integration surface for the unit-tested assets.
+log ""
+log "Phase 8: narrative anti-fingerprint assets"
+
+PIPES8="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/library/pipeline")"
+echo "$PIPES8" | grep -q "editorial-fingerprint" \
+  && pass "library/pipeline lists editorial-fingerprint" \
+  || fail "library/pipeline missing editorial-fingerprint (pipeline failed to load?)"
+
+EFP="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/library/pipeline/editorial-fingerprint")"
+echo "$EFP" | grep -q "Apply Fingerprint Fixes" \
+  && pass "editorial-fingerprint serves the 3-stage audit->fix->humanize chain" \
+  || fail "editorial-fingerprint missing the Apply Fingerprint Fixes stage"
+
+SKILLS8="$(curl -s --max-time 5 -H "Authorization: Bearer $TEST_TOKEN" "$BASE/api/skills")"
+for sk in fingerprint-audit humanize narrative-anti-fingerprint; do
+  echo "$SKILLS8" | grep -q "\"$sk\"" \
+    && pass "skills catalog includes $sk" \
+    || fail "skills catalog missing $sk (skill failed to load?)"
+done
+
 stop_server
 
 # ── Result ──

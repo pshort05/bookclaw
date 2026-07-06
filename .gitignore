@@ -66,3 +66,6 @@ docs/DEPLOYMENT.local.md
 frontend/studio/dist/
 frontend/chat/dist/
 frontend/**/*.tsbuildinfo
+
+# StoryScope research sources (local reference only; paper PDF + LaTeX)
+research/

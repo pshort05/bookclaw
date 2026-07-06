@@ -1,5 +1,5 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 46 skills loaded
+Auto-generated on startup — 49 skills loaded
 ════════════════════════════════════════════════════════════
 
 ── Core Skills (7) ──
@@ -32,7 +32,7 @@ Auto-generated on startup — 46 skills loaded
     Research topics and create new skills for BookClaw to learn
     Keywords: learn how to, add a skill for, find a tool for, go learn, research and create a skill, teach yourself, acquire skill, learn about
 
-── Author Skills (26) ──
+── Author Skills (29) ──
 
   beta-reader
     Simulate beta reader feedback from different reader perspectives
@@ -54,9 +54,17 @@ Auto-generated on startup — 46 skills loaded
     Craft authentic dialogue with distinct character voices and subtext
     Keywords: dialogue, conversation, character voice, how would they say, make them talk
 
+  fingerprint-audit
+    Two-pass structural de-AI for a drafted chapter — Pass 1 diagnoses the narrative fingerprints that make AI fiction detectable (StoryScope core tells plus per-model quirks) as JSON findings; Pass 2 surgically fixes only what Pass 1 flagged
+    Keywords: fingerprint, ai tells, narrative audit, structural tells, de-ai structure, story fingerprint
+
   format
     Export manuscripts to DOCX, EPUB, PDF, KDP-ready formatting
     Keywords: format, export, epub, kindle, KDP, pdf, docx, manuscript format
+
+  humanize
+    Genre-neutral single-pass de-AI / anti-AI-detection style polish for a chapter or passage — strips AI vocabulary and mechanical constructions, varies rhythm, and humanizes prose while preserving dialogue and Markdown exactly
+    Keywords: humanize, humanise, de-ai, remove ai tells
 
   ingest-tool
     Read source code of any tool and generate an BookClaw skill from it
@@ -65,6 +73,10 @@ Auto-generated on startup — 46 skills loaded
   manuscript-hub
     Track word count, chapters, progress, streaks, and project status
     Keywords: word count, progress, manuscript status, how's my book, writing streak, new project, start a new
+
+  narrative-anti-fingerprint
+    Counters the structural narrative fingerprints that make AI fiction detectable at the discourse level (StoryScope, Russell et al. 2026) — durable plot/time/meaning tells that survive prose editing, applied at scene- and chapter-level drafting
+    Keywords: draft, scene, chapter, prose, narrative, fiction, story
 
   nonfiction-research
     Academic source gathering, citation management, fact-checking for nonfiction

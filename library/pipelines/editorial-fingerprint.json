@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "name": "editorial-fingerprint",
+  "label": "Editorial — Narrative Fingerprint Audit",
+  "description": "Per-chapter structural de-AI pass based on StoryScope (Russell et al. 2026, arXiv 2604.03136): for each chapter, a Fingerprint Audit step diagnoses the structural narrative tells that make AI fiction detectable (stated theme, strict chronology, embodied-only emotion, single track, clean moral polarity, vague allusions, sealed fourth wall, plus per-model quirks) as JSON findings; an Apply step surgically fixes ONLY the chapter-scope findings; a Humanize step then removes style-level AI markers. Findings with scope=manuscript (missing subplots, cross-chapter reordering, added ambivalence) are recorded in the audit step output for author review and are never auto-applied — fixing them needs new authorial material. Assumes the draft already exists (split into chapters from the book's context). No per-step model overrides: tier routing decides, so the pipeline runs on any deployment's provider set.",
+  "steps": [
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Fingerprint Audit — Chapter {{n}}",
+          "skill": "fingerprint-audit",
+          "taskType": "revision",
+          "phase": "analyze",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "PASS 1 — DIAGNOSE. You are running the Fingerprint Audit skill's Pass 1 on the Chapter {{n}} draft in your context above. Do NOT rewrite anything in this step. Audit the chapter against the full core-tell catalog AND the per-model appendix from the skill, applying the genre gate first. Quote exact lines for every finding, rate severity, and mark each finding's scope as \"chapter\" (fixable inside this chapter) or \"manuscript\" (needs whole-book context or new authorial material — reported for the author, never auto-fixed). Output ONLY the Pass 1 findings JSON exactly as specified in the skill, with chapterNumber {{n}}.",
+          "role": "analysis"
+        },
+        {
+          "label": "Apply Fingerprint Fixes — Chapter {{n}}",
+          "skill": "fingerprint-audit",
+          "taskType": "final_edit",
+          "phase": "apply",
+          "chapterNumber": "{{n}}",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "promptTemplate": "PASS 2 — REVISE. You are running the Fingerprint Audit skill's Pass 2. Apply ONLY the findings with scope \"chapter\" from the Fingerprint Audit — Chapter {{n}} JSON in your context above to the Chapter {{n}} draft (also in your context). Follow the skill's Pass 2 rules exactly: delete stated-theme lines outright (no subtler restatement), convert only a portion of embodied-emotion cues, never restyle unflagged prose, never fabricate new narrative material for manuscript-scope findings, and if needsRevision is false output the chapter unchanged. Preserve all dialogue, Markdown, the chapter header (e.g. \"## Chapter {{n}}: ...\"), the original voice, and length (about {{wordsPerChapter}} words, within ±10%). Output ONLY the complete revised chapter text.",
+          "role": "rewrite"
+        },
+        {
+          "label": "Humanize — Chapter {{n}}",
+          "skill": "humanize",
+          "taskType": "final_edit",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "promptTemplate": "Perform the genre-neutral de-AI style polish from the Humanizer skill on the revised Chapter {{n}} in your context above (the output of the Apply Fingerprint Fixes step). Apply the full humanization framework — vocabulary, rhythm, punctuation, structural-construction elimination, perplexity — while preserving all dialogue, all Markdown, the chapter header, and length (about {{wordsPerChapter}} words, within ±10%). This step is style-level only: do not restructure scenes or undo the structural fixes; in particular do NOT convert plainly named emotions into physical sensation. Output ONLY the complete polished chapter text in Markdown.",
+          "role": "humanize"
+        }
+      ]
+    }
+  ]
+}
