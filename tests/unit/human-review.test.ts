@@ -290,6 +290,41 @@ test('engine.clearReview removes the review marker', () => {
   clearTimeout((e as any).saveDebounceTimer);
 });
 
+// ── saveReviewDraft: inline "Save (keep paused)" on the content pane (owner ask
+//    2026-07-03) — persist a human edit into a paused cadence-gate review's
+//    drafted text WITHOUT resuming; a later approve then resumes with it. ──────
+
+test('engine.saveReviewDraft persists edited text into a paused cadence-gate review and keeps it parked', () => {
+  const e = realEngine();
+  const p = e.createProjectResolved('book-planning' as any, 'P', 'd', {});
+  e.startProject(p.id); // step 0 active
+  (p as any).review = { confirmationId: 'c', stepId: p.steps[0].id, kind: 'cadence-gate', pendingResult: 'original draft' };
+  p.status = 'paused';
+
+  (e as any).saveReviewDraft(p.id, 'a human-rewritten chapter');
+
+  assert.equal((p as any).review.pendingResult, 'a human-rewritten chapter', 'draft replaced');
+  assert.ok((p as any).review, 'review preserved — not resumed');
+  assert.equal(p.status, 'paused', 'still parked for review');
+  assert.equal(p.steps[0].status, 'active', 'step not completed by a save');
+  clearTimeout((e as any).saveDebounceTimer);
+});
+
+test('engine.saveReviewDraft throws when no review is pending', () => {
+  const e = realEngine();
+  const p = e.createProjectResolved('book-planning' as any, 'P', 'd', {});
+  assert.throws(() => (e as any).saveReviewDraft(p.id, 'x'), /no review/i);
+  clearTimeout((e as any).saveDebounceTimer);
+});
+
+test('engine.saveReviewDraft throws for a non-cadence-gate review (no editable draft)', () => {
+  const e = realEngine();
+  const p = e.createProjectResolved('book-planning' as any, 'P', 'd', {});
+  (p as any).review = { confirmationId: 'c', stepId: 's', kind: 'pipeline-error' };
+  assert.throws(() => (e as any).saveReviewDraft(p.id, 'x'), /editable draft/i);
+  clearTimeout((e as any).saveDebounceTimer);
+});
+
 // ── act-gate continuity aggregation (M2) ────────────────────────────────────
 // The shipped flagship pipelines (romance-spicy.json, romantasy-production.json,
 // technothriller-production.json) tag per-chapter steps with phase:'draft' and

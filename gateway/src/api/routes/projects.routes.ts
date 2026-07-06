@@ -1553,6 +1553,30 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     }
   });
 
+  // ── Save an inline edit to a paused review's draft WITHOUT resuming ──────────
+  // The "Save (keep paused)" action on the Confirmations content pane (owner ask
+  // 2026-07-03): persist the human's edit into review.pendingResult so the
+  // chapter stays parked for further review; a later approve resumes with it.
+  app.post('/api/projects/:id/review/save-draft', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    const project = engine.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (!project.review) return res.status(409).json({ error: 'No review pending for this project' });
+    if (project.review.kind !== 'cadence-gate') {
+      return res.status(409).json({ error: 'This review has no editable draft' });
+    }
+    if (typeof req.body?.editedText !== 'string') {
+      return res.status(400).json({ error: 'editedText (string) required' });
+    }
+    try {
+      engine.saveReviewDraft(req.params.id, req.body.editedText);
+      res.json({ project: engine.getProject(req.params.id) });
+    } catch (err: any) {
+      res.status(400).json({ error: err?.message || 'Save failed' });
+    }
+  });
+
   // ── Resume a stuck/completed project that still has pending or active steps ──
   app.post('/api/projects/:id/resume', (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();

@@ -381,3 +381,67 @@ test('/review/action 400s on an unknown action or a missing editedText for edit'
     await new Promise<void>((r) => server.close(() => r()));
   }
 });
+
+// ── /review/save-draft: "Save (keep paused)" — persist an inline edit to the
+//    paused chapter WITHOUT resuming; a later approve resumes with it. ─────────
+
+test('/review/save-draft persists the edited draft and keeps the project paused (no resume)', async () => {
+  const { url, server, project } = await harness('per_chapter');
+  try {
+    await postJson(`${url}/auto-execute`, {});
+    assert.equal(project.status, 'paused');
+
+    const res = await postJson(`${url}/review/save-draft`, { editedText: 'A human-saved chapter.' });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.project.review.pendingResult, 'A human-saved chapter.');
+    // Still parked — a save must NOT resume the pipeline.
+    assert.equal(project.status, 'paused');
+    assert.ok(project.review, 'review still pending');
+    assert.equal(project.steps[0].status, 'active', 'chapter 1 not completed by a save');
+    assert.equal(project.steps[1].status, 'pending', 'chapter 2 must not have started');
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test('/review/save-draft then approve resumes the chapter with the saved edited text', async () => {
+  const { url, server, project } = await harness('per_chapter');
+  try {
+    await postJson(`${url}/auto-execute`, {});
+
+    await postJson(`${url}/review/save-draft`, { editedText: 'Saved-then-approved prose.' });
+    const res = await postJson(`${url}/review/action`, { action: 'approve' });
+    assert.equal(res.status, 200);
+    assert.equal(project.steps[0].status, 'completed');
+    assert.equal(project.steps[0].result, 'Saved-then-approved prose.', 'approve used the saved edit, not the original draft');
+    assert.equal(project.steps[1].status, 'active');
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test('/review/save-draft 409s when no review is pending', async () => {
+  const { url, server } = await harness('autonomous');
+  try {
+    const res = await postJson(`${url}/review/save-draft`, { editedText: 'x' });
+    assert.equal(res.status, 409);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test('/review/save-draft 400s when editedText is missing or not a string', async () => {
+  const { url, server } = await harness('per_chapter');
+  try {
+    await postJson(`${url}/auto-execute`, {});
+
+    const missing = await postJson(`${url}/review/save-draft`, {});
+    assert.equal(missing.status, 400);
+
+    const notString = await postJson(`${url}/review/save-draft`, { editedText: 42 });
+    assert.equal(notString.status, 400);
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});

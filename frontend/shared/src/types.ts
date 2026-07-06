@@ -159,6 +159,9 @@ export interface Project {
   steps: ProjectStep[];
   pipelineId?: string;       // set on book-sequence projects (links the chained phases)
   pipelinePhase?: number;    // 1-based phase order within the sequence
+  // Human Review marker (mirrors gateway projects.ts). Present only while parked
+  // at a gate; pendingResult is the drafted chapter text a cadence-gate awaits.
+  review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate'; pendingResult?: string };
   [k: string]: unknown;
 }
 
@@ -292,4 +295,8 @@ export interface ConfirmationRequest {
   estimatedCost?: number;
   status: ConfirmationStatus;
   decidedAt?: string;
+  // Full request payload (mirrors confirmation-gate.ts). For a human-review gate
+  // it carries { projectId, stepId, stepLabel, kind, findings? }; for an
+  // external-action gate it is the worker payload the Confirmations pane previews.
+  payload?: Record<string, unknown>;
 }

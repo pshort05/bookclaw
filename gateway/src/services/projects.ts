@@ -1019,6 +1019,25 @@ Description: ${description}`;
   }
 
   /**
+   * Persist an inline human edit to a paused review's drafted content WITHOUT
+   * resuming (owner ask 2026-07-03 — the "Save (keep paused)" action on the
+   * Confirmations content pane). Only a cadence-gate review carries an editable
+   * draft (`review.pendingResult`); the saved text is what a later approve then
+   * resumes with. The project stays parked. Persisted (survives a restart).
+   */
+  saveReviewDraft(projectId: string, editedText: string): void {
+    const project = this.projects.get(projectId);
+    if (!project) throw new Error('Project not found');
+    if (!project.review) throw new Error('No review pending for this project');
+    if (project.review.kind !== 'cadence-gate') {
+      throw new Error('This review has no editable draft');
+    }
+    project.review.pendingResult = editedText;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /**
    * Park a project awaiting a Human Review decision: set it 'paused' WITHOUT
    * demoting any steps (unlike pauseProject). The gate step stays 'active' so the
    * resolver can complete it on approval and so /execute can still find it; an
