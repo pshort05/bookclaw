@@ -1,8 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '@bookclaw/shared';
 import type { LibraryKind, LibraryPipeline, LibraryPipelineStep } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
 import { readEntry, writeEntry } from '../../lib/assetApi.js';
+import { DndContext, DragOverlay, closestCenter, useDroppable, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableRow, DragHandle, useDndSensors } from './dnd/Sortable.js';
+import { StepPalette } from './StepPalette.js';
+import { parsePaletteId, nodeFromPalette, STEP_PRESETS, type PaletteItem } from '../../lib/stepPresets.js';
+import {
+  fromSteps, toSteps, reorder, insertTop, insertMember, removeByKey, patchStep,
+  moveIntoGroup, extractFromGroup, containerOf, indexIn, findByKey,
+  isGroupNode, type Node,
+} from '../../lib/pipelineEdits.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
 import { ModelPicker, type ModelValue } from './ModelPicker.js';
 import styles from '../../routes/AssetStudio.module.css';
@@ -13,16 +23,6 @@ interface Props {
   name: string;
   displayName?: string;
 }
-
-// A per-chapter expansion group: at generation time its sub-steps repeat once
-// per chapter, with {{n}}/{{chapterNumber}} interpolated. Authored as data here.
-interface ExpandGroup {
-  expand: 'chapters';
-  steps: LibraryPipelineStep[];
-}
-type EditorStep = LibraryPipelineStep | ExpandGroup;
-const isExpand = (s: EditorStep): s is ExpandGroup =>
-  !!s && (s as ExpandGroup).expand === 'chapters' && Array.isArray((s as ExpandGroup).steps);
 
 const BLANK_STEP = (): LibraryPipelineStep => ({
   label: 'New step', taskType: 'creative_writing', promptTemplate: '', skill: undefined,
@@ -108,15 +108,29 @@ function StepFields({ step, skills, chapter, onPatch }: {
   );
 }
 
+function GroupDropZone({ groupKey }: { groupKey: string }) {
+  const { isOver, setNodeRef } = useDroppable({ id: `gbody:${groupKey}` });
+  return (
+    <div ref={setNodeRef} className={`${styles.gdrop}${isOver ? ' ' + styles.dropon : ''}`}>
+      Drop a step here
+    </div>
+  );
+}
+
+function FlowColumn({ children }: { children: ReactNode }) {
+  const { setNodeRef } = useDroppable({ id: 'flow' });
+  return <div ref={setNodeRef}>{children}</div>;
+}
+
 export function PipelineEditor({ scope, kind, name, displayName }: Props) {
   const [pipeline, setPipeline] = useState<LibraryPipeline | null>(null);
+  const [nodes, setNodes] = useState<Node[]>([]);
   const [description, setDescription] = useState('');
-  const [openSteps, setOpenSteps] = useState<Set<number>>(new Set());
-  // Stable per-step React keys, parallel to pipeline.steps and remapped on every
-  // structural edit — array index alone mis-associates focus/open-state on reorder.
-  const [stepIds, setStepIds] = useState<string[]>([]);
+  const [openKeys, setOpenKeys] = useState<Set<string>>(new Set());
   const nextId = useRef(0);
   const mkId = () => `step-${nextId.current++}`;
+  const sensors = useDndSensors();
+  const [dragLabel, setDragLabel] = useState<string | null>(null);
   const [skills, setSkills] = useState<string[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,7 +153,8 @@ export function PipelineEditor({ scope, kind, name, displayName }: Props) {
           return;
         }
         setPipeline(pl);
-        setStepIds(pl.steps.map(() => mkId()));
+        setNodes(fromSteps(pl.steps, mkId));
+        setOpenKeys(new Set());
         setDescription(entry.description ?? pl?.description ?? '');
         setSource(entry.source ?? '');
       })
@@ -152,88 +167,156 @@ export function PipelineEditor({ scope, kind, name, displayName }: Props) {
 
   function mark() { setDirty(true); setSaveMsg(null); }
 
-  function setStep(i: number, patch: Partial<LibraryPipelineStep>) {
-    if (!pipeline) return;
-    const steps = (pipeline.steps as EditorStep[]).map((s, idx) => idx === i ? { ...s, ...patch } : s);
-    setPipeline({ ...pipeline, steps: steps as LibraryPipelineStep[] });
-    mark();
-  }
-
-  // Patch / add / remove a sub-step inside a top-level expand group at index `gi`.
-  function setSubStep(gi: number, si: number, patch: Partial<LibraryPipelineStep>) {
-    if (!pipeline) return;
-    const steps = (pipeline.steps as EditorStep[]).map((s, idx) => {
-      if (idx !== gi || !isExpand(s)) return s;
-      return { ...s, steps: s.steps.map((sub, j) => j === si ? { ...sub, ...patch } : sub) };
-    });
-    setPipeline({ ...pipeline, steps: steps as LibraryPipelineStep[] });
-    mark();
-  }
-
-  function addSubStep(gi: number) {
-    if (!pipeline) return;
-    const steps = (pipeline.steps as EditorStep[]).map((s, idx) =>
-      idx === gi && isExpand(s) ? { ...s, steps: [...s.steps, BLANK_STEP()] } : s);
-    setPipeline({ ...pipeline, steps: steps as LibraryPipelineStep[] });
-    mark();
-  }
-
-  function removeSubStep(gi: number, si: number) {
-    if (!pipeline) return;
-    const steps = (pipeline.steps as EditorStep[]).map((s, idx) =>
-      idx === gi && isExpand(s) ? { ...s, steps: s.steps.filter((_, j) => j !== si) } : s);
-    setPipeline({ ...pipeline, steps: steps as LibraryPipelineStep[] });
+  function patchNode(key: string, patch: Partial<LibraryPipelineStep>) {
+    setNodes((ns) => patchStep(ns, key, patch));
     mark();
   }
 
   function addStep() {
-    if (!pipeline) return;
-    setPipeline({ ...pipeline, steps: [...pipeline.steps, BLANK_STEP()] });
-    setStepIds((prev) => [...prev, mkId()]);
+    setNodes((ns) => insertTop(ns, ns.length, { key: mkId(), kind: 'step', step: BLANK_STEP() }));
     mark();
   }
 
-  function removeStep(i: number) {
-    if (!pipeline) return;
-    setPipeline({ ...pipeline, steps: pipeline.steps.filter((_, idx) => idx !== i) });
-    setStepIds((prev) => prev.filter((_, idx) => idx !== i));
-    setOpenSteps((prev) => { const n = new Set<number>(); prev.forEach((v) => { if (v < i) n.add(v); else if (v > i) n.add(v - 1); }); return n; });
-    mark();
-  }
-
-  function moveStep(i: number, dir: -1 | 1) {
-    if (!pipeline) return;
-    const j = i + dir;
-    if (j < 0 || j >= pipeline.steps.length) return;
-    const steps = [...pipeline.steps];
-    [steps[i], steps[j]] = [steps[j], steps[i]];
-    setPipeline({ ...pipeline, steps });
-    setStepIds((prev) => { const n = [...prev]; [n[i], n[j]] = [n[j], n[i]]; return n; });
-    setOpenSteps((prev) => {
-      const n = new Set<number>();
-      prev.forEach((v) => {
-        if (v === i) n.add(j);
-        else if (v === j) n.add(i);
-        else n.add(v);
-      });
-      return n;
+  function addSubStep(groupKey: string) {
+    setNodes((ns) => {
+      const g = ns.find((n) => n.key === groupKey);
+      const at = g && isGroupNode(g) ? g.members.length : 0;
+      return insertMember(ns, groupKey, at, { key: mkId(), kind: 'step', step: BLANK_STEP() });
     });
     mark();
   }
 
-  function toggleStep(i: number) {
-    setOpenSteps((prev) => {
+  function removeNode(key: string) {
+    setNodes((ns) => removeByKey(ns, key));
+    setOpenKeys((prev) => { const n = new Set(prev); n.delete(key); return n; });
+    mark();
+  }
+
+  function moveTop(i: number, dir: -1 | 1) {
+    setNodes((ns) => reorder(ns, undefined, i, i + dir));
+    mark();
+  }
+
+  function toggleOpen(key: string) {
+    setOpenKeys((prev) => {
       const n = new Set(prev);
-      if (n.has(i)) n.delete(i); else n.add(i);
+      if (n.has(key)) n.delete(key); else n.add(key);
       return n;
     });
+  }
+
+  function labelOf(id: string): string {
+    const pal = parsePaletteId(id);
+    if (pal) {
+      if (pal.type === 'skill') return pal.name;
+      if (pal.type === 'block') return pal.kind === 'parallel' ? 'Run in parallel' : 'Repeat per chapter';
+      return STEP_PRESETS.find((p) => p.key === pal.key)?.label ?? pal.key;
+    }
+    const n = findByKey(nodes, id);
+    if (!n) return 'Untitled step';
+    return isGroupNode(n) ? (n.kind === 'parallel' ? 'Run in parallel' : 'Repeat per chapter') : (n.step.label || 'Untitled step');
+  }
+
+  function onDragStart(e: DragStartEvent) {
+    setDragLabel(labelOf(String(e.active.id)));
+  }
+
+  function onDragOver(e: DragOverEvent) {
+    const over = e.over;
+    if (!over) return;
+    const id = String(over.id);
+    // Don't act on the group currently being dragged by its own handle.
+    if (id === String(e.active.id)) return;
+    const n = findByKey(nodes, id);
+    if (n && isGroupNode(n) && !openKeys.has(id)) {
+      setOpenKeys((prev) => { const next = new Set(prev); next.add(id); return next; });
+    }
+  }
+
+  function appendFromPalette(item: PaletteItem) {
+    const node = nodeFromPalette(item, mkId);
+    if (!node) return;
+    setNodes((ns) => insertTop(ns, ns.length, node));
+    mark();
+  }
+
+  function onDragEnd(e: DragEndEvent) {
+    setDragLabel(null);
+    const { active, over } = e;
+    if (!over) return;
+    const a = String(active.id);
+    const o = String(over.id);
+    if (a === o) return;
+
+    // --- palette drops: create a node at the drop position ---
+    const pal = parsePaletteId(a);
+    if (pal) {
+      const node = nodeFromPalette(pal, mkId);
+      if (!node) return;
+      if (o === 'flow') {
+        const next = insertTop(nodes, nodes.length, node);
+        if (next !== nodes) { setNodes(next); mark(); }
+        return;
+      }
+      if (o.startsWith('gbody:')) {
+        if (isGroupNode(node)) return; // no groups inside groups
+        const gk = o.slice(6);
+        const g = nodes.find((n) => n.key === gk);
+        const next = g && isGroupNode(g) ? insertMember(nodes, gk, g.members.length, node) : nodes;
+        if (next !== nodes) { setNodes(next); mark(); }
+        return;
+      }
+      const c = containerOf(nodes, o);
+      if (c === null) return;
+      if (c === undefined) {
+        const next = insertTop(nodes, indexIn(nodes, undefined, o), node);
+        if (next !== nodes) { setNodes(next); mark(); }
+        return;
+      }
+      if (isGroupNode(node)) return;
+      { const next = insertMember(nodes, c, indexIn(nodes, c, o), node); if (next !== nodes) { setNodes(next); mark(); } }
+      return;
+    }
+
+    // --- moving an existing node ---
+    const ca = containerOf(nodes, a);
+    if (ca === null) return;
+    if (o === 'flow') {
+      // dropped on the column background: members extract to the end; top-level = no-op
+      if (typeof ca === 'string') {
+        const next = extractFromGroup(nodes, a, nodes.length);
+        if (next !== nodes) { setNodes(next); mark(); }
+      }
+      return;
+    }
+    if (o.startsWith('gbody:')) {
+      const gk = o.slice(6);
+      if (ca === gk) return;
+      const next = moveIntoGroup(nodes, a, gk); // rejects group nodes internally
+      if (next !== nodes) { setNodes(next); mark(); }
+      return;
+    }
+    const co = containerOf(nodes, o);
+    if (co === null) return;
+    if (ca === co) {
+      const next = reorder(nodes, ca, indexIn(nodes, ca, a), indexIn(nodes, ca, o));
+      if (next !== nodes) { setNodes(next); mark(); }
+      return;
+    }
+    if (co === undefined) {
+      const next = extractFromGroup(nodes, a, indexIn(nodes, undefined, o));
+      if (next !== nodes) { setNodes(next); mark(); }
+      return;
+    }
+    { const next = moveIntoGroup(nodes, a, co, indexIn(nodes, co, o)); // rejects group nodes internally
+      if (next !== nodes) { setNodes(next); mark(); } }
   }
 
   async function handleSave() {
     if (!dirty || saving || !pipeline) return;
     setSaving(true); setSaveMsg(null);
     try {
-      const serialized = JSON.stringify({ ...pipeline, description }, null, 2);
+      const serialized = JSON.stringify({ ...pipeline, steps: toSteps(nodes), description }, null, 2);
       await writeEntry(scope, kind, name, { content: serialized });
       setDirty(false); setSaveMsg('Saved');
       setTimeout(() => setSaveMsg(null), 2000);
@@ -258,7 +341,7 @@ export function PipelineEditor({ scope, kind, name, displayName }: Props) {
           <h2>{displayName ?? name}</h2>
           <div className={styles.meta}>
             <span className={`${styles.src} ${srcBadgeClass}`}>{srcLabel}</span>
-            · Pipeline · {pipeline.steps.length} steps
+            · Pipeline · {nodes.length} steps
             {isDynamic && <span style={{ color: 'var(--faint)', fontStyle: 'italic' }}> · generated at create-time</span>}
           </div>
         </div>
@@ -295,115 +378,155 @@ export function PipelineEditor({ scope, kind, name, displayName }: Props) {
           This pipeline is generated at create-time — its steps are dynamic and cannot be edited here.
         </p>
       ) : (
-        <div>
-          <p style={{ color: 'var(--dim)', fontSize: 13, margin: '0 0 22px', maxWidth: '64ch' }}>
-            An ordered set of steps that turn an idea into a finished book. Edit any step's prompt, swap the task type or skill, add or remove steps — no code.
-          </p>
-          <div className={styles.steplbl}>
-            Steps <span className={styles.hr} />
-            {pipeline.steps.length}
-          </div>
-
-          {(pipeline.steps as EditorStep[]).map((entry, i) => {
-            const isOpen = openSteps.has(i);
-            const moveBtns = (
-              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                <button
-                  onClick={() => moveStep(i, -1)}
-                  disabled={i === 0}
-                  title="Move up"
-                  style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}
-                >↑</button>
-                <button
-                  onClick={() => moveStep(i, 1)}
-                  disabled={i === pipeline.steps.length - 1}
-                  title="Move down"
-                  style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === pipeline.steps.length - 1 ? 'not-allowed' : 'pointer', opacity: i === pipeline.steps.length - 1 ? 0.4 : 1 }}
-                >↓</button>
-                <button
-                  onClick={() => removeStep(i)}
-                  title="Remove step"
-                  style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer', marginLeft: 'auto' }}
-                >Remove</button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
+          <div className={styles.builder}>
+            <StepPalette skills={skills} onAppend={appendFromPalette} />
+            <FlowColumn>
+              <p style={{ color: 'var(--dim)', fontSize: 13, margin: '0 0 22px', maxWidth: '64ch' }}>
+                An ordered set of steps that turn an idea into a finished book. Drag steps from the palette, drag rows to reorder or into a group — or edit any step's prompt, task type, or skill. No code.
+              </p>
+              <div className={styles.steplbl}>
+                Steps <span className={styles.hr} />
+                {nodes.length}
               </div>
-            );
-
-            if (isExpand(entry)) {
-              return (
-                <div key={stepIds[i] ?? i} className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
-                  <div className={styles.srow} onClick={() => toggleStep(i)}>
-                    <span className={styles.snum}>{i + 1}</span>
-                    <span className={styles.sname}>Repeat per chapter</span>
-                    <span className={styles.sctrl}>
-                      <span className={styles.pill}>expand · chapters</span>
-                      <span className={`${styles.pill} ${styles.wc}`}>{entry.steps.length} sub-step{entry.steps.length === 1 ? '' : 's'}</span>
-                    </span>
-                    <svg className={styles.chev} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  {isOpen && (
-                    <div className={styles.sbody} style={{ borderLeft: '2px solid var(--line-2)', paddingLeft: 14 }}>
-                      <p style={{ color: 'var(--faint)', fontSize: 12, margin: '0 0 14px' }}>
-                        These sub-steps run once per chapter at generation time. Use <code>{'{{n}}'}</code> for the chapter number and <code>{'{{wordsPerChapter}}'}</code>, <code>{'{{title}}'}</code> in templates.
-                      </p>
-                      {entry.steps.map((sub, si) => (
-                        <div key={si} className={styles.step} style={{ marginBottom: 12 }}>
-                          <div className={styles.sbody}>
-                            <StepFields step={sub} skills={skills} chapter onPatch={(p) => setSubStep(i, si, p)} />
-                            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                              <button
-                                onClick={() => removeSubStep(i, si)}
-                                title="Remove sub-step"
-                                style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer', marginLeft: 'auto' }}
-                              >Remove sub-step</button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <button className={styles.addstep} onClick={() => addSubStep(i)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                        Add a sub-step
-                      </button>
-                      {moveBtns}
+              <SortableContext items={nodes.map((n) => n.key)} strategy={verticalListSortingStrategy}>
+                {nodes.map((node, i) => {
+                  const isOpen = openKeys.has(node.key);
+                  const moveBtns = (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button
+                        onClick={() => moveTop(i, -1)}
+                        disabled={i === 0}
+                        title="Move up"
+                        style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}
+                      >↑</button>
+                      <button
+                        onClick={() => moveTop(i, 1)}
+                        disabled={i === nodes.length - 1}
+                        title="Move down"
+                        style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === nodes.length - 1 ? 'not-allowed' : 'pointer', opacity: i === nodes.length - 1 ? 0.4 : 1 }}
+                      >↓</button>
+                      <button
+                        onClick={() => removeNode(node.key)}
+                        title="Remove step"
+                        style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer', marginLeft: 'auto' }}
+                      >Remove</button>
                     </div>
-                  )}
-                </div>
-              );
-            }
+                  );
 
-            const step = entry;
-            return (
-              <div key={stepIds[i] ?? i} className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
-                <div className={styles.srow} onClick={() => toggleStep(i)}>
-                  <span className={styles.snum}>{i + 1}</span>
-                  <span className={styles.sname}>{step.label}</span>
-                  <span className={styles.sctrl}>
-                    {step.taskType && <span className={styles.pill}>{step.taskType}</span>}
-                    {step.skill && <span className={`${styles.pill} ${styles.skill}`}>{step.skill}</span>}
-                    {step.wordCountTarget && <span className={`${styles.pill} ${styles.wc}`}>{String(step.wordCountTarget)} w</span>}
-                  </span>
-                  <svg className={styles.chev} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                {isOpen && (
-                  <div className={styles.sbody}>
-                    <StepFields step={step} skills={skills} onPatch={(p) => setStep(i, p)} />
-                    {moveBtns}
-                  </div>
-                )}
+                  if (isGroupNode(node)) {
+                    const chapter = node.kind === 'expand';
+                    return (
+                      <SortableRow key={node.key} id={node.key}>
+                        <div className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
+                          <div className={styles.srow} onClick={() => toggleOpen(node.key)}>
+                            <DragHandle />
+                            <span className={styles.snum}>{i + 1}</span>
+                            <span className={styles.sname}>{chapter ? 'Repeat per chapter' : 'Run in parallel'}</span>
+                            <span className={styles.sctrl}>
+                              <span className={styles.pill}>{chapter ? 'expand · chapters' : 'parallel'}</span>
+                              <span className={`${styles.pill} ${styles.wc}`}>{node.members.length} sub-step{node.members.length === 1 ? '' : 's'}</span>
+                            </span>
+                            <svg className={styles.chev} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                          {isOpen && (
+                            <div className={styles.sbody} style={{ borderLeft: '2px solid var(--line-2)', paddingLeft: 14 }}>
+                              <p style={{ color: 'var(--faint)', fontSize: 12, margin: '0 0 14px' }}>
+                                {chapter ? (
+                                  <>These sub-steps run once per chapter at generation time. Use <code>{'{{n}}'}</code> for the chapter number and <code>{'{{wordsPerChapter}}'}</code>, <code>{'{{title}}'}</code> in templates.</>
+                                ) : (
+                                  <>These sub-steps run concurrently at generation time; the step after this group is the implicit join and sees every member's output in its context.</>
+                                )}
+                              </p>
+                              <SortableContext items={node.members.map((m) => m.key)} strategy={verticalListSortingStrategy}>
+                                {node.members.map((sub) => {
+                                  const subOpen = openKeys.has(sub.key);
+                                  return (
+                                    <SortableRow key={sub.key} id={sub.key}>
+                                      <div className={styles.step} style={{ marginBottom: 12 }}>
+                                        <div className={styles.subhead} onClick={() => toggleOpen(sub.key)} style={{ cursor: 'pointer', paddingBottom: subOpen ? 0 : 10 }}>
+                                          <DragHandle />
+                                          <span style={{ fontFamily: 'Fraunces, serif', fontSize: 14.5 }}>{sub.step.label || 'Untitled step'}</span>
+                                          <span className={styles.sctrl}>
+                                            {sub.step.taskType && <span className={styles.pill}>{sub.step.taskType}</span>}
+                                            {sub.step.skill && <span className={`${styles.pill} ${styles.skill}`}>{sub.step.skill}</span>}
+                                          </span>
+                                        </div>
+                                        {subOpen && (
+                                          <div className={styles.sbody}>
+                                            <StepFields step={sub.step} skills={skills} chapter={chapter} onPatch={(p) => patchNode(sub.key, p)} />
+                                            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                                              <button
+                                                onClick={() => removeNode(sub.key)}
+                                                title="Remove sub-step"
+                                                style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer', marginLeft: 'auto' }}
+                                              >Remove sub-step</button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </SortableRow>
+                                  );
+                                })}
+                              </SortableContext>
+                              <GroupDropZone groupKey={node.key} />
+                              <button className={styles.addstep} onClick={() => addSubStep(node.key)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                                Add a sub-step
+                              </button>
+                              {moveBtns}
+                            </div>
+                          )}
+                        </div>
+                      </SortableRow>
+                    );
+                  }
+
+                  return (
+                    <SortableRow key={node.key} id={node.key}>
+                      <div className={`${styles.step}${isOpen ? ' ' + styles.open : ''}`}>
+                        <div className={styles.srow} onClick={() => toggleOpen(node.key)}>
+                          <DragHandle />
+                          <span className={styles.snum}>{i + 1}</span>
+                          <span className={styles.sname}>{node.step.label}</span>
+                          <span className={styles.sctrl}>
+                            {node.step.taskType && <span className={styles.pill}>{node.step.taskType}</span>}
+                            {node.step.skill && <span className={`${styles.pill} ${styles.skill}`}>{node.step.skill}</span>}
+                            {node.step.wordCountTarget && <span className={`${styles.pill} ${styles.wc}`}>{String(node.step.wordCountTarget)} w</span>}
+                          </span>
+                          <svg className={styles.chev} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        {isOpen && (
+                          <div className={styles.sbody}>
+                            <StepFields step={node.step} skills={skills} onPatch={(p) => patchNode(node.key, p)} />
+                            {moveBtns}
+                          </div>
+                        )}
+                      </div>
+                    </SortableRow>
+                  );
+                })}
+              </SortableContext>
+              <button className={styles.addstep} onClick={addStep}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add a step
+              </button>
+            </FlowColumn>
+          </div>
+          <DragOverlay>
+            {dragLabel !== null && (
+              <div className={styles.palcard} style={{ cursor: 'grabbing', background: 'var(--panel)' }}>
+                <span className={styles.grip}>⠿</span><span>{dragLabel}</span>
               </div>
-            );
-          })}
-
-          <button className={styles.addstep} onClick={addStep}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Add a step
-          </button>
-        </div>
+            )}
+          </DragOverlay>
+        </DndContext>
       )}
     </>
   );

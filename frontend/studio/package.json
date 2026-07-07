@@ -2,19 +2,26 @@
   "name": "@bookclaw/studio",
   "version": "0.0.0",
   "type": "module",
-  "scripts": { "dev": "vite", "build": "tsc -b && vite build", "preview": "vite preview" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
   "comment": "All deps are build-time only: Vite bundles them into dist/, which is what the gateway serves. Declaring them devDependencies keeps them out of the production image after `npm prune --omit=dev`.",
   "devDependencies": {
     "@bookclaw/shared": "*",
-    "dompurify": "^3.1.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@types/dompurify": "^3.0.5",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "dompurify": "^3.1.0",
     "marked": "^12.0.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.26.0",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.0",
     "typescript": "^5.5.0",
     "vite": "^5.4.0"
   }

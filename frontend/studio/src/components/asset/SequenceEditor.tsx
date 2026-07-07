@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@bookclaw/shared';
 import type { LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
 import { readEntry, writeEntry } from '../../lib/assetApi.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
+import { DndList, SortableRow, DragHandle } from './dnd/Sortable.js';
 import styles from '../../routes/AssetStudio.module.css';
 
 interface Props {
@@ -31,6 +32,9 @@ export function SequenceEditor({ scope, kind, name, displayName }: Props) {
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
   const [pipelines, setPipelines] = useState<string[]>([]);
+  const [rowIds, setRowIds] = useState<string[]>([]);
+  const nextId = useRef(0);
+  const mkId = () => `row-${nextId.current++}`;
   const [available, setAvailable] = useState<string[]>([]);
   const [addPick, setAddPick] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -57,6 +61,7 @@ export function SequenceEditor({ scope, kind, name, displayName }: Props) {
         setLabel(seq.label ?? '');
         setDescription(entry.description ?? seq.description ?? '');
         setPipelines(seq.pipelines.filter((p) => typeof p === 'string'));
+        setRowIds(seq.pipelines.filter((p) => typeof p === 'string').map(() => mkId()));
         setSource(entry.source ?? '');
         setLoaded(true);
       })
@@ -69,21 +74,35 @@ export function SequenceEditor({ scope, kind, name, displayName }: Props) {
 
   function mark() { setDirty(true); setSaveMsg(null); }
 
+  function moveTo(from: number, to: number) {
+    if (from < 0 || to < 0 || from === to) return;
+    const shift = <T,>(xs: T[]): T[] => {
+      const next = [...xs];
+      const [x] = next.splice(from, 1);
+      next.splice(to, 0, x);
+      return next;
+    };
+    setPipelines(shift);
+    setRowIds(shift);
+    mark();
+  }
+
   function move(i: number, dir: -1 | 1) {
     const j = i + dir;
     if (j < 0 || j >= pipelines.length) return;
-    const next = [...pipelines];
-    [next[i], next[j]] = [next[j], next[i]];
-    setPipelines(next); mark();
+    moveTo(i, j);
   }
 
   function remove(i: number) {
-    setPipelines((xs) => xs.filter((_, idx) => idx !== i)); mark();
+    setPipelines((xs) => xs.filter((_, idx) => idx !== i));
+    setRowIds((xs) => xs.filter((_, idx) => idx !== i));
+    mark();
   }
 
   function add() {
     if (!addPick) return;
     setPipelines((xs) => [...xs, addPick]);
+    setRowIds((xs) => [...xs, mkId()]);
     setAddPick('');
     mark();
   }
@@ -161,33 +180,38 @@ export function SequenceEditor({ scope, kind, name, displayName }: Props) {
         {pipelines.length}
       </div>
 
-      {pipelines.map((p, i) => (
-        <div key={`${p}-${i}`} className={styles.step}>
-          <div className={styles.srow} style={{ cursor: 'default' }}>
-            <span className={styles.snum}>{i + 1}</span>
-            <span className={styles.sname}>{p}</span>
-            <span className={styles.sctrl} style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => move(i, -1)}
-                disabled={i === 0}
-                title="Move up"
-                style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}
-              >↑</button>
-              <button
-                onClick={() => move(i, 1)}
-                disabled={i === pipelines.length - 1}
-                title="Move down"
-                style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === pipelines.length - 1 ? 'not-allowed' : 'pointer', opacity: i === pipelines.length - 1 ? 0.4 : 1 }}
-              >↓</button>
-              <button
-                onClick={() => remove(i)}
-                title="Remove pipeline"
-                style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer' }}
-              >Remove</button>
-            </span>
-          </div>
-        </div>
-      ))}
+      <DndList ids={rowIds} onMove={moveTo}>
+        {pipelines.map((p, i) => (
+          <SortableRow key={rowIds[i]} id={rowIds[i]}>
+            <div className={styles.step}>
+              <div className={styles.srow} style={{ cursor: 'default' }}>
+                <DragHandle />
+                <span className={styles.snum}>{i + 1}</span>
+                <span className={styles.sname}>{p}</span>
+                <span className={styles.sctrl} style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    title="Move up"
+                    style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}
+                  >↑</button>
+                  <button
+                    onClick={() => move(i, 1)}
+                    disabled={i === pipelines.length - 1}
+                    title="Move down"
+                    style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--dim)', cursor: i === pipelines.length - 1 ? 'not-allowed' : 'pointer', opacity: i === pipelines.length - 1 ? 0.4 : 1 }}
+                  >↓</button>
+                  <button
+                    onClick={() => remove(i)}
+                    title="Remove pipeline"
+                    style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid var(--line-2)', background: 'transparent', color: 'var(--alert)', cursor: 'pointer' }}
+                  >Remove</button>
+                </span>
+              </div>
+            </div>
+          </SortableRow>
+        ))}
+      </DndList>
 
       {pipelines.length === 0 && (
         <p style={{ color: 'var(--faint)', fontSize: 13 }}>No pipelines yet — add one below.</p>
