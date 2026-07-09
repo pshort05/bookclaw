@@ -6,7 +6,7 @@
 # romance-sweet-full pipeline, makes it active, runs its sequence, and asserts
 # the seed text lands in the resulting project's step prompts (i.e. the
 # manifest's `seeds` made it into pipeline `context` and interpolated into
-# {{storyArc}}/{{characters}}/{{world}}). No AI call needed — the assertion is
+# {{storyArc}}/{{characters}}/{{setting}}). No AI call needed — the assertion is
 # on the SYNCHRONOUS create-project response's step prompts.
 #
 # Hermetic-ish: boots its own gateway (loopback only, token via env, non-default

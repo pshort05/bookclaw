@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "romance-spicy-full",
   "label": "Spicy Romance — Full Workflow (Seeded)",
-  "description": "End-to-end spicy romance (Heat Level 4, explicit on-page intimacy): seed-woven premise, character bible, world guide and chapter outline, then the full per-chapter production loop (Scene Brief -> First Draft -> Improvement Plan -> Rewrite -> Humanize -> Intimacy, open-door), a manuscript continuity review, and a completion report. Author seeds (storyArc/characters/world) are developed and preserved, never discarded.",
+  "description": "End-to-end spicy romance (Heat Level 4, explicit on-page intimacy): seed-woven premise, character bible, setting guide and chapter outline, then the full per-chapter production loop (Scene Brief -> First Draft -> Improvement Plan -> Rewrite -> Humanize -> Intimacy, open-door), a manuscript continuity review, and a completion report. Author seeds (storyArc/characters/setting) are developed and preserved, never discarded.",
   "steps": [
     {
       "label": "Premise",
@@ -19,7 +19,7 @@
       "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
     },
     {
-      "label": "World & Setting",
+      "label": "Setting",
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
@@ -30,7 +30,7 @@
       "skill": "outline",
       "taskType": "outline",
       "phase": "outline",
-      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and world guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary."
+      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and setting guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary."
     },
     {
       "expand": "chapters",
