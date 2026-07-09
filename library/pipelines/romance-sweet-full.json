@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "name": "romance-sweet-full",
+  "label": "Sweet Romance — Full Workflow (Seeded)",
+  "description": "End-to-end sweet romance (spice level 2 / fade-to-black): seed-woven premise, character bible, world guide and chapter outline, then the full per-chapter production loop (Scene Brief -> First Draft -> Improvement Plan -> Rewrite -> Humanize -> Intimacy, closed-door), a manuscript continuity review, and a completion report. Author seeds (storyArc/characters/world) are developed and preserved, never discarded.",
+  "steps": [
+    {
+      "label": "Premise",
+      "skill": "premise",
+      "taskType": "book_bible",
+      "phase": "premise",
+      "promptTemplate": "Write the PREMISE for the sweet romance novel \"{{title}}\". Define the central couple, the core romantic conflict that keeps them apart, the primary tropes, and the HEA/HFN promise. This is a fade-to-black sweet romance (spice level 2) — emotional intimacy over explicit heat. Follow your premise methodology and the genre guide in your context. Output the premise document only — no preamble, commentary, or questions.\n\nAuthor-provided story arc — develop and expand this, preserving everything given and filling gaps; never discard or contradict it. If the section below is blank, originate the arc from scratch.\nStory arc:\n{{storyArc}}"
+    },
+    {
+      "label": "Character Bible",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
+    },
+    {
+      "label": "World & Setting",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "Write the WORLD & SETTING guide for \"{{title}}\": time, place, social rules, and the settings where the romance plays out. Use the premise and character bible in your context. Follow your book-bible methodology. Output the world guide only — no preamble or commentary.\n\nAuthor-provided world notes — develop and preserve, filling gaps; if blank, originate from the premise.\nWorld notes:\n{{world}}"
+    },
+    {
+      "label": "Chapter Outline",
+      "skill": "outline",
+      "taskType": "outline",
+      "phase": "outline",
+      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and world guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary."
+    },
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Scene Brief — Chapter {{n}}",
+          "skill": "romance-sweet-scene-brief",
+          "taskType": "outline",
+          "phase": "brief",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Create the SCENE BRIEF for Chapter {{n}} of \"{{title}}\". Follow your sweet-romance scene-brief methodology (in your context). Use the chapter outline, character bible, world guide, and the previous chapter's text in your context. This is a Fade-to-Black sweet romance (spice level 2): heat cues stay at longing, tension and emotional intimacy. Output the scene brief only — a blueprint, not the prose.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-sonnet-4.6",
+            "temperature": 1
+          },
+          "role": "scene_brief"
+        },
+        {
+          "label": "First Draft — Chapter {{n}}",
+          "skill": "romance-sweet-first-draft",
+          "taskType": "creative_writing",
+          "phase": "draft",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Write the COMPLETE Chapter {{n}} of \"{{title}}\" based exclusively on the scene brief in your context. Follow your sweet-romance first-draft methodology, the style guide, and the genre guide in your context. Target about {{wordsPerChapter}} words of prose. This is a Fade-to-Black sweet romance: build emotional and physical tension but keep all intimacy closed-door. Output the chapter prose only, in Markdown.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-opus-4.8",
+            "temperature": 1
+          },
+          "role": "draft"
+        },
+        {
+          "label": "Improvement Plan — Chapter {{n}}",
+          "skill": "romance-sweet-improvement-plan",
+          "taskType": "revision",
+          "phase": "critique",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Critique the Chapter {{n}} draft of \"{{title}}\" in your context against its scene brief. Follow your sweet-romance improvement-plan methodology. Produce a prioritized, line-by-line improvement plan with specific before/after examples and an AI-writing score. Output the critique only — do not rewrite the chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-pro",
+            "temperature": 0.7
+          },
+          "role": "improve"
+        },
+        {
+          "label": "Rewrite — Chapter {{n}}",
+          "skill": "romance-sweet-rewrite",
+          "taskType": "revision",
+          "phase": "rewrite",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Apply the improvement plan in your context to the Chapter {{n}} draft of \"{{title}}\" with surgical accuracy. Follow your sweet-romance rewrite methodology: change only what the plan flags, preserve voice, POV and every plot beat, keep the chapter at least {{wordsPerChapter}} words, and remove every forbidden word and em dash. Output the complete revised chapter only, in Markdown.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "google/gemini-3-pro",
+            "temperature": 0.7
+          },
+          "role": "rewrite"
+        },
+        {
+          "label": "Humanize — Chapter {{n}}",
+          "skill": "romance-humanize",
+          "taskType": "final_edit",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Perform the de-AI / anti-AI-detection final polish on the revised Chapter {{n}} of \"{{title}}\" in your context. Follow your humanizer methodology in a single pass: strip AI tells, vary rhythm, remove Oxford commas and em dashes, and remove every word from the forbidden-words list. Preserve all dialogue, Markdown, plot and meaning exactly. Output the polished chapter prose only, in Markdown.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-sonnet-4.6",
+            "temperature": 0.2
+          },
+          "role": "humanize"
+        },
+        {
+          "label": "Intimacy — Chapter {{n}}",
+          "skill": "romance-sweet-intimacy",
+          "taskType": "creative_writing",
+          "phase": "intimacy",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Process the Chapter {{n}} prose of \"{{title}}\" in your context for sweet-romance intimacy. Follow your fade-to-black (closed-door, spice level 2) intimacy methodology: if the chapter has no romantic or intimate content, return it unchanged; otherwise build the tension to the threshold (the kiss, the charged decision), CLOSE THE DOOR at the point of escalation, and resume in the emotional afterglow. No explicit anatomy or mechanics. Preserve POV, voice and all non-intimate content. Output the complete chapter prose only, in Markdown — no commentary.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-sonnet-4.6",
+            "temperature": 0.2
+          },
+          "role": "intimacy"
+        }
+      ]
+    },
+    {
+      "label": "Continuity & Arc Review",
+      "taskType": "revision",
+      "phase": "revision",
+      "promptTemplate": "Review the completed {{chapterCount}}-chapter sweet romance manuscript \"{{title}}\" in your context for cross-chapter continuity and romance-arc integrity: does the relationship escalate coherently (attraction -> tension -> midpoint -> black moment -> HEA), are there timeline/character/detail contradictions, and are the fade-to-black boundaries consistent? Output a prioritized issue list with chapter references and concrete fixes. Do not rewrite the manuscript."
+    },
+    {
+      "label": "Compile manuscript report",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Generate a completion report for the sweet romance manuscript \"{{title}}\". Total chapters: {{chapterCount}}, target ~{{wordsPerChapter}} words each. Assess the romance arc's progression, voice consistency, the fade-to-black (spice level 2) handling across the book, continuity, and any chapters that warrant a human editing pass. End with concrete next steps (beta readers, professional edit, formatting)."
+    }
+  ]
+}
