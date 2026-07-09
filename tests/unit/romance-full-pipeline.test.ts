@@ -50,3 +50,17 @@ for (const [name, prodSkill, heatWord] of [
     assert.ok(steps.length > 4, 'production + report steps still present');
   });
 }
+
+// The per-chapter production group is copied verbatim from the shipped romance
+// pipeline; guard that copy against drift (a future edit that keeps skill names
+// but alters prompt text or a modelOverride would otherwise pass undetected).
+for (const [full, base] of [
+  ['romance-sweet-full', 'romance-sweet'],
+  ['romance-spicy-full', 'romance-spicy'],
+] as const) {
+  test(`${full}: production block is byte-identical to ${base}`, () => {
+    const prod = load(full).steps.find((s: any) => s.expand === 'chapters');
+    const src = load(base).steps.find((s: any) => s.expand === 'chapters');
+    assert.deepEqual(prod, src);
+  });
+}
