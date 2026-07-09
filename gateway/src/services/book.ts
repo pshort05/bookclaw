@@ -52,7 +52,7 @@ export interface BookSelection {
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
   costBudget?: number;      // per-book spend cap in dollars (Flagship Plan 6, Task 3); persisted on the manifest
   ensemble?: { enabled?: boolean; panel?: string[] };  // opt-in ideation-ensemble override (Flagship Plan 8, Task 3); persisted on the manifest
-  seeds?: { storyArc?: string; characters?: string; world?: string; councilSelection?: 'auto' | 'propose' };  // Romance Workflow Foundation — persisted on the manifest, developed by the pipeline front half
+  seeds?: { storyArc?: string; characters?: string; setting?: string; councilSelection?: 'auto' | 'propose' };  // Romance Workflow Foundation — persisted on the manifest, developed by the pipeline front half
 }
 
 export type RepullStatus =

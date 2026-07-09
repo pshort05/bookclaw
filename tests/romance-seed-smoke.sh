@@ -59,7 +59,7 @@ if [[ -z "$AUTHOR" || -z "$VOICE" ]]; then echo "FAIL: no author/voice library e
 BOOK=$(curl -sf "${H[@]}" -X POST "$BASE/api/books" -d "$(cat <<JSON
 { "title": "Seed Smoke Romance", "pipelineSequence": ["romance-sweet-full"],
   "author": "$AUTHOR", "voice": "$VOICE",
-  "storyArc": "$ARC", "characters": "CHAR_MARKER", "world": "WORLD_MARKER", "councilSelection": "auto" }
+  "storyArc": "$ARC", "characters": "CHAR_MARKER", "setting": "SETTING_MARKER", "councilSelection": "auto" }
 JSON
 )")
 SLUG=$(echo "$BOOK" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).book.slug)}catch(e){}})')
@@ -69,8 +69,8 @@ if [[ -z "$SLUG" ]]; then echo "FAIL: no slug — response: $BOOK"; FAILED=1; ex
 curl -sf "${H[@]}" -X POST "$BASE/api/books/active" -d "{\"slug\":\"$SLUG\"}" >/dev/null
 RUN=$(curl -sf "${H[@]}" -X POST "$BASE/api/projects/create" -d '{"title":"Seed Smoke Romance","description":"seed round-trip"}')
 
-# 3) assert the seed text is present in the first project's step prompts
-if echo "$RUN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);const p=(r.projects||[r.project])[0];if(!p||!p.steps){console.error("FAIL: no project/steps in response");process.exit(1)}const blob=JSON.stringify(p.steps.map(x=>x.prompt));if(!blob.includes("ARC_MARKER")){console.error("FAIL: storyArc not woven into project steps");process.exit(1)}console.log("PASS: seeds threaded into project step prompts")})'; then
+# 3) assert all three seed markers are present in the first project's step prompts
+if echo "$RUN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);const p=(r.projects||[r.project])[0];if(!p||!p.steps){console.error("FAIL: no project/steps in response");process.exit(1)}const blob=JSON.stringify(p.steps.map(x=>x.prompt));for(const m of ["ARC_MARKER","CHAR_MARKER","SETTING_MARKER"]){if(!blob.includes(m)){console.error("FAIL: seed marker "+m+" not woven into project steps");process.exit(1)}}console.log("PASS: all three seed markers threaded into project step prompts")})'; then
   exit 0
 else
   FAILED=1

@@ -23,7 +23,7 @@
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the WORLD & SETTING guide for \"{{title}}\": time, place, social rules, and the settings where the romance plays out. Use the premise and character bible in your context. Follow your book-bible methodology. Output the world guide only — no preamble or commentary.\n\nAuthor-provided world notes — develop and preserve, filling gaps; if blank, originate from the premise.\nWorld notes:\n{{world}}"
+      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise and character bible in your context. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
     },
     {
       "label": "Chapter Outline",

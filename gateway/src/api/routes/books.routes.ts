@@ -601,8 +601,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (councilSelection && councilSelection !== 'auto' && councilSelection !== 'propose') {
       return res.status(400).json({ error: "councilSelection must be 'auto' or 'propose'" });
     }
-    const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), world: seedStr(body.world), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
-    const hasSeeds = seeds.storyArc || seeds.characters || seeds.world || councilSelection;
+    const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), setting: seedStr(body.setting), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
+    const hasSeeds = seeds.storyArc || seeds.characters || seeds.setting || councilSelection;
 
     try {
       const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });

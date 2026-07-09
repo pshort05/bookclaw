@@ -42,7 +42,7 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
         // pipeline's front half and preserved (never discarded).
         storyArc: z.string().optional().describe('Author-provided story arc, developed (not discarded) by the pipeline'),
         characters: z.string().optional().describe('Author-provided character notes, developed (not discarded) by the pipeline'),
-        world: z.string().optional().describe('Author-provided world/setting notes, developed (not discarded) by the pipeline'),
+        setting: z.string().optional().describe('Author-provided real-world setting notes (place/sensory texture), developed (not discarded) by the pipeline'),
         councilSelection: z.enum(['auto', 'propose']).optional().describe('Reserved for the LLM Council sub-project; inert in Foundation'),
       },
     },

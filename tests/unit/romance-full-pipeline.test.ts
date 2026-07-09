@@ -16,7 +16,7 @@ const SEEDS = {
   targetWordsPerChapter: 2000,
   storyArc: 'ARC_MARKER rivals-to-lovers over one summer',
   characters: 'CHAR_MARKER Mara, a stubborn baker; Jonah, the new rival',
-  world: 'WORLD_MARKER a small coastal town',
+  setting: 'SETTING_MARKER a small coastal town',
 };
 
 for (const [name, prodSkill, heatWord] of [
@@ -29,7 +29,7 @@ for (const [name, prodSkill, heatWord] of [
     const allPrompts = steps.map((s) => s.prompt).join('\n');
     assert.ok(allPrompts.includes('ARC_MARKER'), 'storyArc woven');
     assert.ok(allPrompts.includes('CHAR_MARKER'), 'characters woven');
-    assert.ok(allPrompts.includes('WORLD_MARKER'), 'world woven');
+    assert.ok(allPrompts.includes('SETTING_MARKER'), 'setting woven');
   });
 
   test(`${name}: production block carries romance skills + modelOverrides`, () => {
@@ -43,7 +43,7 @@ for (const [name, prodSkill, heatWord] of [
 
   test(`${name}: empty seeds collapse cleanly (no dangling markers, front half still generates)`, () => {
     const p = load(name);
-    const steps = expandSteps(p.steps, buildPipelineVars({ ...SEEDS, storyArc: '', characters: '', world: '' }));
+    const steps = expandSteps(p.steps, buildPipelineVars({ ...SEEDS, storyArc: '', characters: '', setting: '' }));
     const front = steps.slice(0, 4).map((s) => s.prompt).join('\n');
     assert.ok(!front.includes('undefined') && !front.includes('{{'), 'no unresolved vars');
     assert.ok(front.includes(heatWord), 'heat language baked into front half');

@@ -69,7 +69,7 @@ export interface BookManifest {
   grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
   review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)
   ensemble?: { enabled?: boolean; panel?: string[] }; // Flagship Plan 8 — opt-in multi-model ideation ensemble on the premise phase; absent/enabled!==true = off (most expensive front-end, additive-optional, no schema bump)
-  seeds?: { storyArc?: string; characters?: string; world?: string; councilSelection?: 'auto' | 'propose' }; // Romance Workflow Foundation — author-provided seeds developed by the pipeline's front half; councilSelection reserved for sub-project 2 (inert here) (additive-optional, no schema bump)
+  seeds?: { storyArc?: string; characters?: string; setting?: string; councilSelection?: 'auto' | 'propose' }; // Romance Workflow Foundation — author-provided seeds developed by the pipeline's front half; councilSelection reserved for sub-project 2 (inert here) (additive-optional, no schema bump)
   history: Array<{ at: string; event: string; detail?: string }>;
 }
 
