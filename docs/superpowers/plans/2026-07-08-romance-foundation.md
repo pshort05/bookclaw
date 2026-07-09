@@ -4,9 +4,11 @@
 
 **Goal:** Ship two end-to-end, seed-woven romance pipelines (`romance-sweet-full`, `romance-spicy-full`) plus the plumbing that carries author "seeds" (`storyArc` / `characters` / `world`) from `POST /api/books` through the book manifest into project `context`, so the pipelines' `{{storyArc}}`, `{{characters}}`, `{{world}}` template vars resolve.
 
-**Architecture:** Declarative static JSON pipelines reusing the existing `expandSteps` / `buildPipelineVars` path (no new engine). Seeds are persisted on `book.json` (`manifest.seeds`, additive-optional, no schema bump) at book-create time and spread into the project `context` when the book's sequence is run, where `buildPipelineVars({ ...context })` passes every key through as a `{{var}}`. The two pipeline files are identical except the per-chapter production block (copied verbatim from the existing `romance-sweet.json` / `romance-spicy.json`) and its intimacy skill.
+**Architecture:** Declarative static JSON pipelines reusing the existing `expandSteps` / `buildPipelineVars` path (no new engine). Seeds are persisted on `book.json` (`manifest.seeds`, additive-optional, no schema bump) at book-create time and spread into the project `context` when the book's sequence is run, where `buildPipelineVars({ ...context })` passes every key through as a `{{var}}`. The two pipeline files share an identical front half (premise/bible/world/outline) apart from heat-specific wording, and differ substantively only in the per-chapter production block (copied verbatim from the existing `romance-sweet.json` / `romance-spicy.json`) and its intimacy skill.
 
 **Tech Stack:** Node 22 + TypeScript via `tsx`, Express routes, JSON pipeline files under `library/pipelines/`, `node:test` unit tests (`node --import tsx --test`), bash server smokes.
+
+> **Post-plan rename (2026-07-08, during build):** the setting seed was renamed `world` → `setting` at every layer (HTTP body key, `manifest.seeds` field, context key, `{{setting}}` template var, MCP param), because romance is grounded in the real world (immersive place/setting texture, not a built-world) and `world` collided with the pre-existing World Repository bind (`body.world`, left untouched). References to `world`/`{{world}}` below predate that decision — read them as `setting`/`{{setting}}`. The shipped code and tests use `setting`.
 
 ## Global Constraints
 
@@ -16,6 +18,7 @@
 - **`heat` is represented by pipeline selection**, not a threaded var: `romance-sweet-full` = fade-to-black (spice 2), `romance-spicy-full` = open-door/explicit. Each file bakes its own heat language into the front-half prompts. No `{{heat}}` var, no `heat` field on the route.
 - **Surgical changes only** — every changed line traces to this plan. Match existing file style (e.g. the `...(sel.field ? { field } : {})` spread pattern in `book.ts`).
 - **Fail-soft posture** — missing seeds are normal (empty string → clean generation), never an error.
+- **Output-contract guard (rebased in from `9561bca`)** — `tests/unit/pipeline-output-contract.test.ts` fails the build if ANY `library/pipelines/*.json` step with a narrative `taskType` (`creative_writing`, `final_edit`, `book_bible`, `outline`, `consistency`, `revision`) lacks an output-contract phrase. Every front-half narrative step in the two new files MUST include a clause the guard recognizes — e.g. `Output the <thing> only — no preamble or commentary.` (matches `output … only`) or `Do not rewrite …`. The copied production block already satisfies this (it's from the shipped `romance-sweet.json`/`romance-spicy.json`, which pass the guard). The completion-report step is `general` (exempt).
 - **MCP lockstep** — if `/api/books` seed fields are surfaced through the MCP `create_book` tool, update `mcp/` in the same commit as the gateway route (Task 3, Step 6).
 
 ## File Structure
@@ -131,28 +134,28 @@ Front half + revision + report as below. For the production group, **open `libra
       "skill": "premise",
       "taskType": "book_bible",
       "phase": "premise",
-      "promptTemplate": "Write the PREMISE for the sweet romance novel \"{{title}}\". Define the central couple, the core romantic conflict that keeps them apart, the primary tropes, and the HEA/HFN promise. This is a fade-to-black sweet romance (spice level 2) — emotional intimacy over explicit heat. Follow your premise methodology and the genre guide in your context.\n\nAuthor-provided story arc — develop and expand this, preserving everything given and filling gaps; never discard or contradict it. If the section below is blank, originate the arc from scratch.\nStory arc:\n{{storyArc}}"
+      "promptTemplate": "Write the PREMISE for the sweet romance novel \"{{title}}\". Define the central couple, the core romantic conflict that keeps them apart, the primary tropes, and the HEA/HFN promise. This is a fade-to-black sweet romance (spice level 2) — emotional intimacy over explicit heat. Follow your premise methodology and the genre guide in your context. Output the premise document only — no preamble, commentary, or questions.\n\nAuthor-provided story arc — develop and expand this, preserving everything given and filling gaps; never discard or contradict it. If the section below is blank, originate the arc from scratch.\nStory arc:\n{{storyArc}}"
     },
     {
       "label": "Character Bible",
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
+      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
     },
     {
       "label": "World & Setting",
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the WORLD & SETTING guide for \"{{title}}\": time, place, social rules, and the settings where the romance plays out. Use the premise and character bible in your context. Follow your book-bible methodology.\n\nAuthor-provided world notes — develop and preserve, filling gaps; if blank, originate from the premise.\nWorld notes:\n{{world}}"
+      "promptTemplate": "Write the WORLD & SETTING guide for \"{{title}}\": time, place, social rules, and the settings where the romance plays out. Use the premise and character bible in your context. Follow your book-bible methodology. Output the world guide only — no preamble or commentary.\n\nAuthor-provided world notes — develop and preserve, filling gaps; if blank, originate from the premise.\nWorld notes:\n{{world}}"
     },
     {
       "label": "Chapter Outline",
       "skill": "outline",
       "taskType": "outline",
       "phase": "outline",
-      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and world guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output one entry per chapter."
+      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and world guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary."
     },
 
     "<<< PASTE the { \"expand\": \"chapters\", \"steps\": [...] } object from library/pipelines/romance-sweet.json (its first steps[] entry) HERE, verbatim >>>",
@@ -179,10 +182,10 @@ Replace the `"<<< PASTE ... >>>"` string element with the actual copied object (
 
 Identical to Step 3's file EXCEPT: `name` = `romance-spicy-full`; `label` = `"Spicy Romance — Full Workflow (Seeded)"`; every front-half / review / report mention of "sweet"/"fade-to-black"/"closed-door"/"spice level 2" becomes the open-door equivalent (e.g. premise prompt: "This is an open-door spicy romance — on-page intimacy is expected."); and the pasted production group is copied **from `library/pipelines/romance-spicy.json`** (its first `steps[]` entry, lines 7–98) so it carries the `romance-spicy-*` skills. Keep the outline/premise/bible/world prompts otherwise word-identical to the sweet file.
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `node --import tsx --test tests/unit/romance-full-pipeline.test.ts`
-Expected: PASS — all 6 tests (3 per pipeline). If "heat language baked" fails, confirm the front-half prompt of each file literally contains `fade-to-black` (sweet) / `open-door` (spicy).
+Run: `node --import tsx --test tests/unit/romance-full-pipeline.test.ts tests/unit/pipeline-output-contract.test.ts`
+Expected: PASS — the 6 romance tests (3 per pipeline) AND the output-contract guard (which now also scans the two new files). If "heat language baked" fails, confirm each file's front-half literally contains `fade-to-black` (sweet) / `open-door` (spicy). If the contract guard lists a `romance-*-full` step, that narrative step is missing an `Output … only` / `Do not rewrite …` clause — add one.
 
 - [ ] **Step 6: Type-check**
 

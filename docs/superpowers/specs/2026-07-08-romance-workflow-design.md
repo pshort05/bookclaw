@@ -39,7 +39,10 @@ UI modes. It builds on the existing romance infrastructure (40+ romance sub-genr
    { heat: 'sweet' | 'spicy',
      storyArc: string,
      characters: string,
-     world: string,
+     setting: string,   // renamed from `world` during Foundation build (2026-07-08): romance is
+                        // grounded in the real world, so this is immersive place/setting texture
+                        // (locations, buildings, sensory detail), NOT a built-world. Distinct from
+                        // the World Repository `world` bind, which keeps HTTP body.world.
      chapterCount: number,
      wordsPerChapter: number,
      councilSelection: 'auto' | 'propose' }
