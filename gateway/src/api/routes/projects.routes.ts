@@ -15,7 +15,7 @@ import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
 import { bannedContentCheck, operationalDetailGuard } from '../../services/casting/safety-floor.js';
-import { isStepRole } from '../../services/casting/roles.js';
+import { isStepRole, isProseStep } from '../../services/casting/roles.js';
 import { looksLikeRefusal } from '../../services/casting/heat.js';
 import { buildCanonBlock } from '../../services/consistency/canon-inject.js';
 import { checkChapter } from '../../services/consistency/continuity-check.js';
@@ -626,8 +626,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // complete the step without ever writing the `${id}-<label>.md` file that
       // the disk-based manuscript assemblers read, so a chapter run individually
       // via the "Execute" button silently vanished from the compiled novel
-      // (bug-review #7).
-      response = stripMetaCommentary(response);
+      // (bug-review #7). Chapter/prose steps get the aggressive prose-mode strip
+      // (drops a leaked "Next Steps:" epilogue); other steps keep the safe strip.
+      const prose = isProseStep(activeStep);
+      response = stripMetaCommentary(response, { prose });
 
       // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on every
       // draft/intimacy step regardless of the book's contentCeiling (H1 fix).
@@ -661,7 +663,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             project.bookSlug,
             stepTemp
           );
-          if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten);
+          if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten, { prose });
         }
       }
       try {
@@ -1162,8 +1164,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         }
 
         // Strip leaked chatbot framing ("Okay, let's…", "Would you like to
-        // proceed…") before saving/completing the step.
-        response = stripMetaCommentary(response);
+        // proceed…") before saving/completing the step. Prose steps get the
+        // aggressive prose-mode strip (drops a leaked "Next Steps:" epilogue).
+        const prose = isProseStep(activeStep);
+        response = stripMetaCommentary(response, { prose });
 
         // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on
         // every draft/intimacy step regardless of the book's contentCeiling
@@ -1197,7 +1201,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
               currentProject.bookSlug,
               stepTemp
             );
-            if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten);
+            if (rewritten && rewritten.length > 50) response = stripMetaCommentary(rewritten, { prose });
           }
         }
         const wordCount = countWords(response);

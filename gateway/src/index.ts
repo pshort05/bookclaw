@@ -33,6 +33,7 @@ import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './servi
 import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
 import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
+import { isProseStep } from './services/casting/roles.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
 import { buildContinuityInjection, detectPostDraftContinuity } from './services/consistency/spine-inject.js';
@@ -2476,8 +2477,9 @@ class BookClawGateway {
           }
         }
 
-        // Strip leaked chatbot framing before saving/completing the step.
-        aiResponse = stripMetaCommentary(aiResponse);
+        // Strip leaked chatbot framing before saving/completing the step. Prose
+        // steps get the aggressive prose-mode strip (drops a "Next Steps:" epilogue).
+        aiResponse = stripMetaCommentary(aiResponse, { prose: isProseStep(activeStep) });
         // Calculate word count from FULL response (not truncated)
         const wordCount = countWords(aiResponse);
 

@@ -14,7 +14,7 @@
           "phase": "writing",
           "wordCountTarget": "{{wordsPerChapter}}",
           "chapterNumber": "{{n}}",
-          "promptTemplate": "Write Chapter {{n}} of \"{{title}}\".\n\nInstructions:\n- Follow the outline beats and book bible for this chapter\n- You MUST write at least {{wordsPerChapter}} words of actual prose narrative\n- Open with a hook — no throat-clearing\n- End with a reason to turn the page\n- Include sensory details and internal tension\n- Write the COMPLETE chapter as actual prose, not a summary\n\n{{description}}",
+          "promptTemplate": "Write Chapter {{n}} of \"{{title}}\".\n\nInstructions:\n- Follow the outline beats and book bible for this chapter\n- You MUST write at least {{wordsPerChapter}} words of actual prose narrative\n- Open with a hook — no throat-clearing\n- End with a reason to turn the page\n- Include sensory details and internal tension\n- Write the COMPLETE chapter as actual prose, not a summary\n\n{{description}} Output the chapter prose only, in Markdown — no commentary, no preamble, no \"next steps\", and no questions to the reader.",
           "role": "draft"
         },
         {

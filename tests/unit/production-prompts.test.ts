@@ -34,6 +34,13 @@ test('writeChapterPrompt enforces chronology (#5), beat-variety (#4), no repeate
   assert.match(p, /(epithet|phrase|nickname)/i);
 });
 
+test('writeChapterPrompt forbids chat framing (output contract, 2026-07-08)', () => {
+  const p = writeChapterPrompt(1, 'T', 2500);
+  assert.match(p, /prose only/i);
+  assert.match(p, /no commentary/i);
+  assert.match(p, /no questions to the reader/i);
+});
+
 test('polishChapterPrompt is a line edit, not a rewrite, and normalizes POV + names', () => {
   const p = polishChapterPrompt(7, 'T', 2500);
   assert.match(p, /Chapter 7/);

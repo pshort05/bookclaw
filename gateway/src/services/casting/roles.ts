@@ -12,8 +12,24 @@ export const STEP_ROLES: readonly StepRole[] = [
 /** The two generative steps the author's intake prose-model choice controls. */
 export const PROSE_ROLES: ReadonlySet<StepRole> = new Set<StepRole>(['scene_brief', 'draft']);
 
+/** Roles whose output IS full manuscript prose (a chapter's saved text) — the
+ *  steps that get the aggressive prose-mode meta strip. Excludes scene_brief
+ *  (a blueprint) and improve/editorial/analysis (critique), whose deliverable
+ *  may legitimately contain a "Next Steps:" section. */
+const PROSE_OUTPUT_ROLES: ReadonlySet<StepRole> = new Set<StepRole>(['draft', 'rewrite', 'humanize', 'intimacy']);
+
 export function isStepRole(x: unknown): x is StepRole {
   return typeof x === 'string' && (STEP_ROLES as readonly string[]).includes(x);
+}
+
+/** Whether a step emits full chapter prose (the compiled-manuscript text).
+ *  Role-based (reliable — every pipeline step is role-tagged); falls back to
+ *  taskType only for an untagged step. Note the Polish/Rewrite step is
+ *  `taskType: revision` but `role: rewrite`, so the role check is what keeps it
+ *  classified as prose. */
+export function isProseStep(step: { role?: unknown; taskType?: unknown }): boolean {
+  if (isStepRole(step.role)) return PROSE_OUTPUT_ROLES.has(step.role);
+  return step.taskType === 'creative_writing' || step.taskType === 'final_edit';
 }
 
 /**

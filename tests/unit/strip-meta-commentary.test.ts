@@ -75,3 +75,76 @@ test('run-review B4: an unbolded prose line mentioning word count is never dropp
   const prose = 'Total word count was the last thing on her mind as she ran.';
   assert.equal(stripMetaCommentary(prose), prose);
 });
+
+test('prose-mode strips a BARE (no-#) "Polish/Write Chapter N" leading label (2026-07-08)', () => {
+  assert.equal(
+    stripMetaCommentary('Polish Chapter 1\n\nChapter 1: The Weight of Steel\n\nProse.', { prose: true }),
+    'Chapter 1: The Weight of Steel\n\nProse.');
+  assert.equal(
+    stripMetaCommentary('Write Chapter 12\n\nThe rain fell.', { prose: true }),
+    'The rain fell.');
+  // Non-prose deliverable that legitimately opens with that exact line is left alone.
+  assert.equal(
+    stripMetaCommentary('Write Chapter 12\n\nThe rain fell.'),
+    'Write Chapter 12\n\nThe rain fell.');
+});
+
+test('prose-mode strips trailing conversational solicitations; non-prose keeps them (2026-07-08)', () => {
+  assert.equal(stripMetaCommentary('Prose.\n\nWhich direction would you like to prioritize moving forward?', { prose: true }), 'Prose.');
+  assert.equal(stripMetaCommentary("Prose.\n\nI'm eager to continue building this scene!", { prose: true }), 'Prose.');
+  // A report/blog deliverable is not touched by these prose-only solicitations.
+  const report = 'Report body.\n\nHappy to continue refining these projections on request.';
+  assert.equal(stripMetaCommentary(report), report);
+});
+
+test('prose-mode strips a trailing "Next Steps:" epilogue block; non-prose keeps it (2026-07-08)', () => {
+  const leaked = [
+    '## Chapter 1',
+    '',
+    'Elias made the incision. The monitor beeped steadily.',
+    '',
+    'Next Steps:',
+    '',
+    '- Expand on the Hemorrhage: what is causing it?',
+    "- Develop Elias's Internal Conflict.",
+    '',
+    "Which direction would you like to prioritize moving forward? I'm eager to continue building this scene!",
+  ].join('\n');
+  const cleaned = stripMetaCommentary(leaked, { prose: true });
+  assert.doesNotMatch(cleaned, /Next Steps:/);
+  assert.doesNotMatch(cleaned, /which direction would you like/i);
+  assert.match(cleaned, /Elias made the incision/);
+  // Default (non-prose) keeps the "Next Steps:" heading (legit in reports/outlines).
+  assert.match(stripMetaCommentary(leaked), /Next Steps:/);
+});
+
+test('prose-mode "Chapter Ending Hook:" epilogue (chatbot tail) stripped; preserves real prose before it (2026-07-08)', () => {
+  const leaked = '## Chapter 3\n\nShe closed the door.\n\nChapter Ending Hook:\n\nA shadow moved behind her.\n\nWhich direction would you like to explore next?';
+  assert.equal(stripMetaCommentary(leaked, { prose: true }), '## Chapter 3\n\nShe closed the door.');
+});
+
+test('prose-mode never empties a doc: an epilogue heading as the FIRST paragraph is left alone (2026-07-08)', () => {
+  const only = 'Next Steps:\n\n- do things';
+  assert.equal(stripMetaCommentary(only, { prose: true }), only);
+});
+
+test('SAFETY: prose-mode does NOT slice a same-named heading MID-document — trailing prose survives (2026-07-08)', () => {
+  // A standalone "Next Steps" line early in a long chapter (in-world note) must
+  // not delete all the real prose after it (code-review data-loss finding #1).
+  const ch = [
+    '## Chapter 5',
+    '',
+    'She read the whiteboard aloud.',
+    '',
+    'Next Steps',           // an in-world heading, NOT the trailing epilogue
+    '',
+    'The list went on, but she had already stopped listening.',
+    '',
+    'Hours later, the storm broke and everything changed. She ran for the door.',
+    '',
+    'By dawn it was over, and the city lay quiet beneath a grey and steady rain.',
+  ].join('\n');
+  const out = stripMetaCommentary(ch, { prose: true });
+  assert.match(out, /storm broke/, 'prose after a mid-document heading is preserved');
+  assert.match(out, /the city lay quiet/, 'the final real paragraph survives');
+});

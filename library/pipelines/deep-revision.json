@@ -8,147 +8,147 @@
       "label": "Plot structure analysis",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Analyze the plot structure of this manuscript:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nEvaluate:\n1. **Three-act structure compliance**: Is there a clear setup, confrontation, and resolution?\n2. **Inciting incident**: When does it occur? Is it strong enough? Too early/late?\n3. **Midpoint shift**: Is there a genuine reversal or revelation at the midpoint?\n4. **All-is-lost moment**: Does the 75% mark deliver real despair?\n5. **Climax**: Is it earned? Does it resolve the central conflict?\n6. **Resolution**: Is it satisfying without being too neat?\n7. **Hero's journey beats**: Which archetypes are present? Which are missing?\n\nRate structural integrity: 1-10. Provide specific chapter references for every issue.",
+      "promptTemplate": "Analyze the plot structure of this manuscript:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nEvaluate:\n1. **Three-act structure compliance**: Is there a clear setup, confrontation, and resolution?\n2. **Inciting incident**: When does it occur? Is it strong enough? Too early/late?\n3. **Midpoint shift**: Is there a genuine reversal or revelation at the midpoint?\n4. **All-is-lost moment**: Does the 75% mark deliver real despair?\n5. **Climax**: Is it earned? Does it resolve the central conflict?\n6. **Resolution**: Is it satisfying without being too neat?\n7. **Hero's journey beats**: Which archetypes are present? Which are missing?\n\nRate structural integrity: 1-10. Provide specific chapter references for every issue. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Pacing audit",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Create a chapter-by-chapter pacing heatmap for:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor EACH chapter: Tension (1-10) | Pacing (Too Fast/Fast/Good/Slow/Draggy) | Scene types | Energy\n\nThen analyze:\n- Where are the energy valleys? Should chapters be cut or combined?\n- Do climactic moments land with proper setup?\n- Is the action-to-reflection ratio balanced?\n- Are chapter lengths consistent? Do variations serve the story?\n- Do the first 3 chapters build enough momentum?\n\nEnd with top 3 pacing fixes, prioritized by impact.",
+      "promptTemplate": "Create a chapter-by-chapter pacing heatmap for:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor EACH chapter: Tension (1-10) | Pacing (Too Fast/Fast/Good/Slow/Draggy) | Scene types | Energy\n\nThen analyze:\n- Where are the energy valleys? Should chapters be cut or combined?\n- Do climactic moments land with proper setup?\n- Is the action-to-reflection ratio balanced?\n- Are chapter lengths consistent? Do variations serve the story?\n- Do the first 3 chapters build enough momentum?\n\nEnd with top 3 pacing fixes, prioritized by impact. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Character arc consistency",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Check character arc consistency across:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each major character:\n1. **Arc mapping**: Where they start → key turning points → where they end\n2. **Growth evidence**: What specific scenes show change?\n3. **Regression moments**: Are setbacks believable?\n4. **Arc completion**: Does the ending deliver on the character's promise?\n5. **Motivation consistency**: Do they ever act out of character for plot convenience?\n\nFlag any character who doesn't change, changes too abruptly, or acts inconsistently.",
+      "promptTemplate": "Check character arc consistency across:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each major character:\n1. **Arc mapping**: Where they start → key turning points → where they end\n2. **Growth evidence**: What specific scenes show change?\n3. **Regression moments**: Are setbacks believable?\n4. **Arc completion**: Does the ending deliver on the character's promise?\n5. **Motivation consistency**: Do they ever act out of character for plot convenience?\n\nFlag any character who doesn't change, changes too abruptly, or acts inconsistently. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Theme coherence review",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Analyze thematic coherence in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Central theme identification**: What is this book really about beneath the plot?\n2. **Theme in subplots**: Does each subplot reinforce or contrast the central theme?\n3. **Thematic drift**: Are there sections where the theme gets lost?\n4. **Theme in character arcs**: How does each character's journey explore the theme?\n5. **Thematic resolution**: Does the ending make a clear statement about the theme?\n6. **Heavy-handedness**: Are there moments where theme becomes preachy?",
+      "promptTemplate": "Analyze thematic coherence in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Central theme identification**: What is this book really about beneath the plot?\n2. **Theme in subplots**: Does each subplot reinforce or contrast the central theme?\n3. **Thematic drift**: Are there sections where the theme gets lost?\n4. **Theme in character arcs**: How does each character's journey explore the theme?\n5. **Thematic resolution**: Does the ending make a clear statement about the theme?\n6. **Heavy-handedness**: Are there moments where theme becomes preachy? Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "World-building continuity scan",
       "skill": "revise",
       "taskType": "consistency",
-      "promptTemplate": "Run a world-building continuity scan on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n1. **Setting contradictions**: Room layouts, geography, distances between locations\n2. **Rule violations**: Magic/tech/social rules that get broken without explanation\n3. **Timeline errors**: Days, dates, seasons, time-of-day inconsistencies\n4. **Character knowledge**: Does anyone know something they shouldn't?\n5. **Dead/missing characters**: Anyone disappears without explanation?\n6. **Object tracking**: Important items that appear/disappear without logic\n\nFor each issue: where it appears, what the contradiction is, and how to fix it. Organized by severity.",
+      "promptTemplate": "Run a world-building continuity scan on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n1. **Setting contradictions**: Room layouts, geography, distances between locations\n2. **Rule violations**: Magic/tech/social rules that get broken without explanation\n3. **Timeline errors**: Days, dates, seasons, time-of-day inconsistencies\n4. **Character knowledge**: Does anyone know something they shouldn't?\n5. **Dead/missing characters**: Anyone disappears without explanation?\n6. **Object tracking**: Important items that appear/disappear without logic\n\nFor each issue: where it appears, what the contradiction is, and how to fix it. Organized by severity. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Stakes escalation verification",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Verify that stakes escalate properly in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nAnalyze:\n1. **Personal stakes**: What does the protagonist personally lose if they fail? Does this deepen?\n2. **External stakes**: How do consequences widen over the story?\n3. **Urgency**: Is there a ticking clock? Does time pressure increase?\n4. **Cost of action**: Does pursuing the goal cost more as the story progresses?\n5. **Point of no return**: When can the protagonist no longer walk away?\n6. **Stakes at climax**: Are the final stakes the highest they've been?\n\nFlag any moment where stakes plateau, decrease, or feel artificial.",
+      "promptTemplate": "Verify that stakes escalate properly in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nAnalyze:\n1. **Personal stakes**: What does the protagonist personally lose if they fail? Does this deepen?\n2. **External stakes**: How do consequences widen over the story?\n3. **Urgency**: Is there a ticking clock? Does time pressure increase?\n4. **Cost of action**: Does pursuing the goal cost more as the story progresses?\n5. **Point of no return**: When can the protagonist no longer walk away?\n6. **Stakes at climax**: Are the final stakes the highest they've been?\n\nFlag any moment where stakes plateau, decrease, or feel artificial. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Subplot tracking & resolution",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Track all subplots in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each subplot found:\n1. **Introduction**: When and how is it introduced?\n2. **Purpose**: How does it serve the main plot or theme?\n3. **Key beats**: Major developments (with chapter references)\n4. **Resolution**: How and when is it resolved?\n5. **Dropped threads**: Was anything set up but never paid off?\n\nAlso check:\n- Are any subplots redundant? Do two accomplish the same thing?\n- Are any subplots underdeveloped?\n- Do subplots interfere with pacing?",
+      "promptTemplate": "Track all subplots in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each subplot found:\n1. **Introduction**: When and how is it introduced?\n2. **Purpose**: How does it serve the main plot or theme?\n3. **Key beats**: Major developments (with chapter references)\n4. **Resolution**: How and when is it resolved?\n5. **Dropped threads**: Was anything set up but never paid off?\n\nAlso check:\n- Are any subplots redundant? Do two accomplish the same thing?\n- Are any subplots underdeveloped?\n- Do subplots interfere with pacing? Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Dialogue authenticity pass",
       "skill": "dialogue",
       "taskType": "revision",
-      "promptTemplate": "Perform a dialogue authenticity audit on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Voice distinctiveness**: Rate each major character's voice uniqueness (1-10). Can you tell them apart?\n2. **Info-dumping**: Flag \"As you know, Bob...\" moments\n3. **Subtext quality**: Best and worst examples of saying vs meaning\n4. **Speech patterns**: Note unique patterns per character\n5. **Tag vs action beat ratio**: Are they balanced?\n6. **Emotional authenticity**: Do emotional conversations ring true?\n\nSuggest rewrites for the 5 worst dialogue passages.",
+      "promptTemplate": "Perform a dialogue authenticity audit on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Voice distinctiveness**: Rate each major character's voice uniqueness (1-10). Can you tell them apart?\n2. **Info-dumping**: Flag \"As you know, Bob...\" moments\n3. **Subtext quality**: Best and worst examples of saying vs meaning\n4. **Speech patterns**: Note unique patterns per character\n5. **Tag vs action beat ratio**: Are they balanced?\n6. **Emotional authenticity**: Do emotional conversations ring true?\n\nSuggest rewrites for the 5 worst dialogue passages. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "editorial"
     },
     {
       "label": "Show-don't-tell audit",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Scan for show vs tell issues in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFlag: emotional telling, character description telling, backstory dumps, motivation telling, atmosphere telling.\n\nFor the 10 worst offenders: quote the original → write a \"showing\" rewrite → explain why it's stronger.\n\nNote: some telling is FINE. Only flag cases where showing would genuinely improve the experience.",
+      "promptTemplate": "Scan for show vs tell issues in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFlag: emotional telling, character description telling, backstory dumps, motivation telling, atmosphere telling.\n\nFor the 10 worst offenders: quote the original → write a \"showing\" rewrite → explain why it's stronger.\n\nNote: some telling is FINE. Only flag cases where showing would genuinely improve the experience. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Scene tension & conflict check",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Check every scene for tension and conflict:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each scene:\n- **Goal**: What does the POV character want in this scene?\n- **Obstacle**: What's preventing them from getting it?\n- **Stakes**: What happens if they fail?\n- **Outcome**: Do they succeed, fail, or get a complicated result?\n\nFlag any scene where:\n- The character has no goal\n- There's no opposition\n- Nothing changes by the end\n- The tension is purely internal with no external manifestation\n\nThese are scenes that may need to be cut or strengthened.",
+      "promptTemplate": "Check every scene for tension and conflict:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFor each scene:\n- **Goal**: What does the POV character want in this scene?\n- **Obstacle**: What's preventing them from getting it?\n- **Stakes**: What happens if they fail?\n- **Outcome**: Do they succeed, fail, or get a complicated result?\n\nFlag any scene where:\n- The character has no goal\n- There's no opposition\n- Nothing changes by the end\n- The tension is purely internal with no external manifestation\n\nThese are scenes that may need to be cut or strengthened. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Transition smoothness review",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Review all transitions in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck:\n1. **Chapter transitions**: Does each chapter end with a hook and begin with orientation?\n2. **Scene breaks**: Are time/location jumps clear?\n3. **POV shifts**: If multi-POV, are switches smooth and clearly signaled?\n4. **Timeline jumps**: Are flashbacks/flash-forwards handled well?\n5. **Tone shifts**: Do tonal changes feel intentional or jarring?\n\nFlag the 5 roughest transitions and suggest smoother alternatives.",
+      "promptTemplate": "Review all transitions in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck:\n1. **Chapter transitions**: Does each chapter end with a hook and begin with orientation?\n2. **Scene breaks**: Are time/location jumps clear?\n3. **POV shifts**: If multi-POV, are switches smooth and clearly signaled?\n4. **Timeline jumps**: Are flashbacks/flash-forwards handled well?\n5. **Tone shifts**: Do tonal changes feel intentional or jarring?\n\nFlag the 5 roughest transitions and suggest smoother alternatives. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Emotional beat mapping",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Map the emotional journey in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nChapter by chapter, identify:\n- **Dominant emotion**: What should the reader feel?\n- **Emotional high point**: The strongest moment\n- **Emotional low point**: The most vulnerable/sad moment\n- **Emotional variety**: Does each chapter offer a different emotional flavor?\n\nThen assess:\n- Is there enough emotional variety or does it feel monotone?\n- Do big emotional moments land? Are they properly set up?\n- Is the emotional climax the strongest moment in the book?\n- Are there enough quiet, intimate moments between action?",
+      "promptTemplate": "Map the emotional journey in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nChapter by chapter, identify:\n- **Dominant emotion**: What should the reader feel?\n- **Emotional high point**: The strongest moment\n- **Emotional low point**: The most vulnerable/sad moment\n- **Emotional variety**: Does each chapter offer a different emotional flavor?\n\nThen assess:\n- Is there enough emotional variety or does it feel monotone?\n- Do big emotional moments land? Are they properly set up?\n- Is the emotional climax the strongest moment in the book?\n- Are there enough quiet, intimate moments between action? Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Sensory detail enhancement",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Audit sensory details in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Sense inventory**: Which of the 5 senses are used? Which are underused?\n2. **Visual-heavy check**: Is the writing too visual with not enough sound, smell, touch, taste?\n3. **Key scenes**: Are pivotal scenes richly grounded in sensory experience?\n4. **Setting atmosphere**: Do locations have distinctive sensory signatures?\n5. **Character-filtered**: Are sensory details filtered through the POV character's personality?\n\nIdentify 5-10 scenes that would benefit most from sensory enrichment and suggest specific details.",
+      "promptTemplate": "Audit sensory details in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n1. **Sense inventory**: Which of the 5 senses are used? Which are underused?\n2. **Visual-heavy check**: Is the writing too visual with not enough sound, smell, touch, taste?\n3. **Key scenes**: Are pivotal scenes richly grounded in sensory experience?\n4. **Setting atmosphere**: Do locations have distinctive sensory signatures?\n5. **Character-filtered**: Are sensory details filtered through the POV character's personality?\n\nIdentify 5-10 scenes that would benefit most from sensory enrichment and suggest specific details. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Info-dump & exposition detection",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Scan for info-dumps and exposition problems in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFlag every instance of:\n1. **Backstory dumps**: Paragraphs of history interrupting the action\n2. **World-building lectures**: Characters explaining things the reader doesn't need yet\n3. **As-you-know-Bob dialogue**: Characters telling each other things they already know\n4. **Mirror descriptions**: Character describing their own appearance while looking in a mirror\n5. **Prologue info-dump**: Does the opening front-load too much context?\n\nFor each: quote the passage, explain why it's a problem, and suggest how to weave the information in naturally (through action, dialogue subtext, or gradual revelation).",
+      "promptTemplate": "Scan for info-dumps and exposition problems in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFlag every instance of:\n1. **Backstory dumps**: Paragraphs of history interrupting the action\n2. **World-building lectures**: Characters explaining things the reader doesn't need yet\n3. **As-you-know-Bob dialogue**: Characters telling each other things they already know\n4. **Mirror descriptions**: Character describing their own appearance while looking in a mirror\n5. **Prologue info-dump**: Does the opening front-load too much context?\n\nFor each: quote the passage, explain why it's a problem, and suggest how to weave the information in naturally (through action, dialogue subtext, or gradual revelation). Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Copy edit pass",
       "skill": "revise",
       "taskType": "final_edit",
-      "promptTemplate": "Perform a copy edit pass on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n- Grammar errors\n- Punctuation issues (especially dialogue punctuation)\n- Spelling mistakes\n- Homophone errors (their/there/they're, its/it's)\n- Subject-verb agreement\n- Tense consistency\n- Comma splices and run-on sentences\n\nList all errors found with chapter/location and correction.",
+      "promptTemplate": "Perform a copy edit pass on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n- Grammar errors\n- Punctuation issues (especially dialogue punctuation)\n- Spelling mistakes\n- Homophone errors (their/there/they're, its/it's)\n- Subject-verb agreement\n- Tense consistency\n- Comma splices and run-on sentences\n\nList all errors found with chapter/location and correction. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Line edit pass",
       "skill": "revise",
       "taskType": "final_edit",
-      "promptTemplate": "Perform a line edit pass on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFocus on:\n- **Prose rhythm**: Sentence length variety, flow, musicality\n- **Word choice**: Precision, specificity, avoiding generic words\n- **Verb strength**: Replace weak verbs (was, had, got) with vivid ones\n- **Clarity**: Any confusing sentences or ambiguous references?\n- **Redundancy**: Phrases that say the same thing twice\n\nShow 10 before/after examples of line-level improvements.",
+      "promptTemplate": "Perform a line edit pass on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nFocus on:\n- **Prose rhythm**: Sentence length variety, flow, musicality\n- **Word choice**: Precision, specificity, avoiding generic words\n- **Verb strength**: Replace weak verbs (was, had, got) with vivid ones\n- **Clarity**: Any confusing sentences or ambiguous references?\n- **Redundancy**: Phrases that say the same thing twice\n\nShow 10 before/after examples of line-level improvements. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Repetition finder",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Find overused words and phrases in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nReport on:\n1. **Overused words**: Adverbs, weak verbs, filler words with frequency\n2. **Crutch phrases**: Repeated constructions the author leans on\n3. **AI-sounding words**: delve, tapestry, testament, visceral, nuanced, multifaceted, resonate, paradigm, myriad, beacon, realm\n4. **Repetitive openers**: Sentence-starting patterns\n5. **Passive voice frequency** (target: <10%)\n6. **Adverb density** (target: <5 per 1000 words)\n\nFor each: word/phrase, frequency, example, and suggested alternatives.",
+      "promptTemplate": "Find overused words and phrases in:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nReport on:\n1. **Overused words**: Adverbs, weak verbs, filler words with frequency\n2. **Crutch phrases**: Repeated constructions the author leans on\n3. **AI-sounding words**: delve, tapestry, testament, visceral, nuanced, multifaceted, resonate, paradigm, myriad, beacon, realm\n4. **Repetitive openers**: Sentence-starting patterns\n5. **Passive voice frequency** (target: <10%)\n6. **Adverb density** (target: <5 per 1000 words)\n\nFor each: word/phrase, frequency, example, and suggested alternatives. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Crutch word elimination",
       "skill": "revise",
       "taskType": "final_edit",
-      "promptTemplate": "Eliminate crutch words from:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nSpecific targets:\n- **Just, really, very, quite, actually, basically, literally** — flag every instance, suggest which to cut\n- **Suddenly** — almost always cuttable, show the action instead\n- **Felt/feeling** — usually telling, show the sensation\n- **Started to / began to** — just do the action\n- **Seemed / appeared** — be more direct\n- **That** — flag unnecessary instances\n- **Nodded/shrugged/sighed** — overused physical beats\n\nProvide a prioritized cut list with estimated word savings.",
+      "promptTemplate": "Eliminate crutch words from:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nSpecific targets:\n- **Just, really, very, quite, actually, basically, literally** — flag every instance, suggest which to cut\n- **Suddenly** — almost always cuttable, show the action instead\n- **Felt/feeling** — usually telling, show the sensation\n- **Started to / began to** — just do the action\n- **Seemed / appeared** — be more direct\n- **That** — flag unnecessary instances\n- **Nodded/shrugged/sighed** — overused physical beats\n\nProvide a prioritized cut list with estimated word savings. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Sensitivity read",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Perform a sensitivity read on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n1. **Cultural representation**: Are characters from diverse backgrounds portrayed authentically?\n2. **Stereotypes**: Any characters reduced to stereotypes?\n3. **Language sensitivity**: Outdated or potentially offensive terms?\n4. **Power dynamics**: Are marginalized characters given agency?\n5. **Historical accuracy**: If set in a real period/place, are cultural details accurate?\n6. **Unconscious bias**: Any patterns in which characters are villains, heroes, or victims?\n\nNote: This is a preliminary read. For publication, a human sensitivity reader is recommended. Flag potential issues for professional review.",
+      "promptTemplate": "Perform a sensitivity read on:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCheck for:\n1. **Cultural representation**: Are characters from diverse backgrounds portrayed authentically?\n2. **Stereotypes**: Any characters reduced to stereotypes?\n3. **Language sensitivity**: Outdated or potentially offensive terms?\n4. **Power dynamics**: Are marginalized characters given agency?\n5. **Historical accuracy**: If set in a real period/place, are cultural details accurate?\n6. **Unconscious bias**: Any patterns in which characters are villains, heroes, or victims?\n\nNote: This is a preliminary read. For publication, a human sensitivity reader is recommended. Flag potential issues for professional review. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {
       "label": "Beta reader panel",
       "skill": "beta-reader",
       "taskType": "revision",
-      "promptTemplate": "You are a panel of 5 beta readers with different perspectives. Read and respond:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n**Reader 1 — The Casual Reader**: Gut reactions, where you got bored, enjoyment rating 1-10\n**Reader 2 — The Genre Expert**: Genre compliance, trope execution, market positioning, rating 1-10\n**Reader 3 — The Harsh Critic**: Plot holes, weak motivations, clichés, the single biggest problem\n**Reader 4 — The Target Reader**: Emotional journey, favorite scenes, would you recommend? Rating 1-10\n**Reader 5 — The Romance/Thriller Super-Fan**: What made you keep reading? What almost made you stop? Pre-order the sequel?\n\nKeep each reader's response to 200-300 words. Be specific with chapter references.",
+      "promptTemplate": "You are a panel of 5 beta readers with different perspectives. Read and respond:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\n**Reader 1 — The Casual Reader**: Gut reactions, where you got bored, enjoyment rating 1-10\n**Reader 2 — The Genre Expert**: Genre compliance, trope execution, market positioning, rating 1-10\n**Reader 3 — The Harsh Critic**: Plot holes, weak motivations, clichés, the single biggest problem\n**Reader 4 — The Target Reader**: Emotional journey, favorite scenes, would you recommend? Rating 1-10\n**Reader 5 — The Romance/Thriller Super-Fan**: What made you keep reading? What almost made you stop? Pre-order the sequel?\n\nKeep each reader's response to 200-300 words. Be specific with chapter references. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "analysis"
     },
     {
       "label": "Final revision action plan",
       "skill": "revise",
       "taskType": "revision",
-      "promptTemplate": "Synthesize ALL 20 prior revision passes into a final action plan:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCreate:\n1. **Overall Grade**: A-F with justification\n2. **Top 5 Strengths**: What to keep and amplify\n3. **Critical Fixes** (5-7 must-do items, ranked by priority)\n4. **Important Improvements** (5-7 should-do items)\n5. **Polish Items** (3-5 nice-to-have refinements)\n6. **Revision Roadmap**: Pass 1 → Pass 2 → Pass 3 order of operations\n7. **Market Readiness**: Ready for beta readers? Agent? Self-publishing?\n8. **Encouraging Close**: What makes this book worth finishing\n\nMake every recommendation specific and actionable with chapter references.",
+      "promptTemplate": "Synthesize ALL 20 prior revision passes into a final action plan:\n\n**Manuscript**: \"{{title}}\" — {{description}}\n\nCreate:\n1. **Overall Grade**: A-F with justification\n2. **Top 5 Strengths**: What to keep and amplify\n3. **Critical Fixes** (5-7 must-do items, ranked by priority)\n4. **Important Improvements** (5-7 should-do items)\n5. **Polish Items** (3-5 nice-to-have refinements)\n6. **Revision Roadmap**: Pass 1 → Pass 2 → Pass 3 order of operations\n7. **Market Readiness**: Ready for beta readers? Agent? Self-publishing?\n8. **Encouraging Close**: What makes this book worth finishing\n\nMake every recommendation specific and actionable with chapter references. Output only the requested document — no preamble, no commentary, and no questions to the reader.",
       "role": "rewrite"
     },
     {

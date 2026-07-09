@@ -185,7 +185,8 @@ export function writeChapterPrompt(ch: number, title: string, words: number, des
     // #4 beat variety
     `- Do NOT reuse a scene structure already used in an earlier chapter (e.g. the same kind of dramatic event recurring in the same way). Vary the setting and escalate the stakes instead of repeating a beat\n` +
     // #7 no reused epithet/phrase
-    `- Avoid reusing a distinctive epithet, nickname, or signature phrase for a person or place across chapters; vary how you refer to recurring people and things` +
+    `- Avoid reusing a distinctive epithet, nickname, or signature phrase for a person or place across chapters; vary how you refer to recurring people and things\n` +
+    `- Output the chapter prose only. No commentary, no preamble, no "next steps", no list of options, and no questions to the reader` +
     (description ? `\n\n${description}` : '');
 }
 
@@ -473,6 +474,12 @@ export class ProjectEngine {
     const steps: ProjectStep[] = [];
     let stepNum = 0;
 
+    // Output contract appended to every canon/bible/outline/analysis step so no
+    // chat framing leaks into the saved file (2026-07-08). Chapter (`writing`)
+    // steps get their own prose-specific contract from writeChapterPrompt; the
+    // `assembly` report step is exempt (its commentary IS the deliverable).
+    const OUTPUT_CONTRACT =
+      '\n\nOutput only the requested document. No preamble, no commentary, no "next steps", and no questions to the reader.';
     const addStep = (
       label: string,
       phase: string,
@@ -481,12 +488,14 @@ export class ProjectEngine {
       opts: { skill?: string; wordCountTarget?: number; chapterNumber?: number } = {}
     ) => {
       stepNum++;
+      const finalPrompt =
+        (phase === 'assembly' || phase === 'writing') ? prompt : prompt + OUTPUT_CONTRACT;
       steps.push({
         id: `${id}-step-${stepNum}`,
         label,
         phase,
         taskType,
-        prompt,
+        prompt: finalPrompt,
         status: 'pending',
         skill: opts.skill,
         wordCountTarget: opts.wordCountTarget,
