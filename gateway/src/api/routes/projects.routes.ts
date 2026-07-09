@@ -178,7 +178,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           ? opened!.manifest.pipelineSequence
           : [];
         if (pipelineSequence.length > 0) {
-          const seqContext = { ...(context || {}), ...resolvedConfig, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
+          const manifestSeeds = (opened?.manifest?.seeds ?? {}) as { storyArc?: string; characters?: string; world?: string };
+          const seqContext = { storyArc: '', characters: '', world: '', ...manifestSeeds, ...(context || {}), ...resolvedConfig, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
           const { pipelineId, projects } = engine.createBookSequence(
             { slug: activeBook, pipelineSequence },
             title,

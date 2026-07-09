@@ -38,6 +38,12 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
         reviewCadence: z.enum(['per_act', 'per_chapter', 'outline_only', 'autonomous']).optional().describe('Human-review gate cadence for the pipeline'),
         costBudget: z.number().optional().describe('Per-book AI spend cap in USD; generation pauses when exceeded'),
         ensemble: z.object({ enabled: z.boolean().optional(), panel: z.array(z.string()).optional() }).optional().describe('Opt-in ideation ensemble (multi-model divergent premise). panel defaults to the genre sheet, e.g. ["gpt","grok","gemini","claude"]'),
+        // Romance Workflow Foundation: optional author seeds, developed by the
+        // pipeline's front half and preserved (never discarded).
+        storyArc: z.string().optional().describe('Author-provided story arc, developed (not discarded) by the pipeline'),
+        characters: z.string().optional().describe('Author-provided character notes, developed (not discarded) by the pipeline'),
+        world: z.string().optional().describe('Author-provided world/setting notes, developed (not discarded) by the pipeline'),
+        councilSelection: z.enum(['auto', 'propose']).optional().describe('Reserved for the LLM Council sub-project; inert in Foundation'),
       },
     },
     async (args) => toToolResult('create_book', await client.request('POST', '/api/books', args)),

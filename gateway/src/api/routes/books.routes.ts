@@ -593,8 +593,19 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       ensemble = { ...(enabled !== undefined ? { enabled } : {}), ...(panel !== undefined ? { panel: panel as string[] } : {}) };
     }
 
+    // Romance Workflow Foundation: optional author seeds. Free-text prose fields
+    // (developed by the pipeline front half); councilSelection is persisted but
+    // inert in Foundation (reserved for the LLM Council sub-project).
+    const seedStr = (v: unknown) => (typeof v === 'string' ? v : '');
+    const councilSelection = seedStr(body.councilSelection);
+    if (councilSelection && councilSelection !== 'auto' && councilSelection !== 'propose') {
+      return res.status(400).json({ error: "councilSelection must be 'auto' or 'propose'" });
+    }
+    const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), world: seedStr(body.world), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
+    const hasSeeds = seeds.storyArc || seeds.characters || seeds.world || councilSelection;
+
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });
       if (costBudget !== undefined) services.costs?.setBookBudget(manifest.slug, costBudget);
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;
