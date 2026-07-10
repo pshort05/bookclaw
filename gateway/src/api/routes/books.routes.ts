@@ -15,6 +15,7 @@ import { assembleManuscript, validateAssembly } from '../../services/manuscript-
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
 import { PremiseIntakeService } from '../../services/premise-intake.js';
+import { RomanceInterviewService } from '../../services/romance-interview.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -92,6 +93,30 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       }
       console.log(`  ⚠ premise intake failed: ${err?.message ?? err}`);
       res.status(500).json({ error: 'Premise intake failed' });
+    }
+  });
+
+  // Romance Adaptive Interview (sub-project 4): one conversational turn. STATELESS —
+  // the client holds the transcript and posts the whole messages[] each turn; the
+  // server runs a single structured-output AI call and returns { reply, done, seeds? }.
+  app.post('/api/romance/interview', async (req: Request, res: Response) => {
+    const raw = Array.isArray(req.body?.messages) ? req.body.messages : null;
+    if (!raw) return res.status(400).json({ error: 'messages array is required' });
+    const messages = raw
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    const total = messages.reduce((n: number, m: { content: string }) => n + m.content.length, 0);
+    if (total > 200_000) return res.status(400).json({ error: 'conversation is too large (200k char limit)' });
+    try {
+      const svc = new RomanceInterviewService(
+        (r) => services.aiRouter.complete(r as any),
+        (t) => services.aiRouter.selectProvider(t),
+      );
+      const result = await svc.turn(messages);
+      res.json(result);
+    } catch (err: any) {
+      console.log(`  ⚠ romance interview turn failed: ${err?.message ?? err}`);
+      res.status(500).json({ error: 'Interview turn failed' });
     }
   });
 
@@ -201,7 +226,10 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
     if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
     const project = gateway.getProjectEngine?.()?.frontierProjectForBook(slug) ?? null;
-    res.json({ project });
+    // Carry the derived `awaitingSelection` flag (mirrors withAwaitingSelection in
+    // projects.routes) so the Write-screen PipelineRail — which polls THIS route,
+    // not /api/projects/* — can surface a parked LLM-Council base-story gate.
+    res.json({ project: project ? { ...project, awaitingSelection: !!project.selection } : null });
   });
 
   // Book Format & Structure: set/update the declared format on an existing book

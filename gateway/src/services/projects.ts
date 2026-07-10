@@ -83,6 +83,19 @@ export interface Project {
   // for a 'cadence-gate' — set so approve/edit resume with the real text instead
   // of a placeholder (absent for a literal no-op 'pipeline-gate' step).
   review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate'; pendingResult?: string };
+  // LLM Council pause-resume gate (Romance Workflow sub-project 3, Task 2):
+  // set when the pipeline is paused awaiting a base-story pick from a
+  // 'council-origination' step; cleared once resolved via applyCouncilSelection
+  // (choice applied) or clearCouncilSelection (abandoned — stays paused).
+  // Additive-optional, no schema bump — mirrors `review` above.
+  selection?: {
+    stepId: string;
+    candidates: Array<{ id: string; model: string; premise: string; relationshipArc: string; text: string }>;
+    ranking: Array<{ id: string; rank: number; rationale: string }>;
+    recommendedId: string;
+    rationale: string;
+    createdAt: string;
+  };
   // Graceful cost-boundary pause (Flagship Plan 6, Task 3): set when a drive
   // loop pauses at a chapter boundary because the book's own budget or the
   // global daily/monthly cap was reached; cleared by resuming the project
@@ -1023,6 +1036,40 @@ Description: ${description}`;
     const project = this.projects.get(projectId);
     if (!project) return;
     delete project.review;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /**
+   * LLM Council resume (Romance Workflow sub-project 3, Task 2): apply the
+   * user's base-story pick. Mirrors applyReviewResume's approve branch — find the
+   * chosen candidate (falling back to the judge's recommendedId if the given id
+   * doesn't match; a no-op + logged warning if even that is missing), complete
+   * the council step with its `text`, reactivate the project, clear the
+   * selection marker. See services/council-gate.ts.
+   */
+  applyCouncilSelection(projectId: string, candidateId: string): void {
+    const project = this.projects.get(projectId);
+    if (!project?.selection) return;
+    const selection = project.selection;
+    const chosen = selection.candidates.find(c => c.id === candidateId)
+      ?? selection.candidates.find(c => c.id === selection.recommendedId);
+    if (!chosen) {
+      console.log(`  ⚠ Council selection: no matching candidate for '${candidateId}' (project ${projectId})`);
+      return;
+    }
+    this.completeStep(projectId, selection.stepId, chosen.text);
+    if (project.status !== 'completed') project.status = 'active';
+    delete project.selection;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+  }
+
+  /** Clear a project's Council selection marker (abandoned — project stays paused). */
+  clearCouncilSelection(projectId: string): void {
+    const project = this.projects.get(projectId);
+    if (!project) return;
+    delete project.selection;
     project.updatedAt = new Date().toISOString();
     this.persistState();
   }

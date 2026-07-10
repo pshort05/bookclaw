@@ -30,6 +30,8 @@ import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './services/human-review.js';
+import { maybeRunCouncilStep } from './services/council-gate.js';
+import { buildCouncilService } from './services/council.js';
 import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
 import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
@@ -2242,6 +2244,32 @@ class BookClawGateway {
           activeStep = gateway.projectEngine.startProject(projectId) ?? undefined;
         }
         if (!activeStep) return { error: 'No pending steps' };
+
+        // LLM Council gate (romance) — same decision as the studio /auto-execute
+        // driver, via the one shared helper so the two drivers cannot diverge.
+        // A project already parked awaiting a selection must not advance; a
+        // council-origination step is handled by the council engine (auto →
+        // complete + continue by re-resolving the frontier; propose → park + stop);
+        // every non-council step falls straight through ({handled:false}).
+        // A parked project must not advance. autoRunProject flips paused→active
+        // before this loop, so re-assert the park here (parkForReview is
+        // idempotent) — selection is the source of truth for the gate, and this
+        // keeps status consistent on a headless "continue".
+        if (project.selection) { gateway.projectEngine.parkForReview(projectId); return { error: 'awaiting council selection' }; }
+        const councilOutcome = await maybeRunCouncilStep(
+          { engine: gateway.projectEngine, council: buildCouncilService(gateway.aiRouter) },
+          project,
+          activeStep,
+        );
+        if (councilOutcome.gated) return { error: 'awaiting council selection' };
+        if (councilOutcome.handled) {
+          return {
+            completed: activeStep.label,
+            response: '[council base story selected]',
+            wordCount: 0,
+            nextStep: gateway.projectEngine.getProject(projectId)?.steps.find((s: any) => s.status === 'active')?.label,
+          };
+        }
 
         // Human Review gate: a human-review step pauses the pipeline and raises a
         // Confirmations request instead of generating; the resolver resumes on approval.

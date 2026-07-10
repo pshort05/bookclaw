@@ -3,6 +3,8 @@ import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, resolveEnsemblePremise, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
+import { maybeRunCouncilStep } from '../../services/council-gate.js';
+import { buildCouncilService } from '../../services/council.js';
 import { checkBudgetPause, applyBudgetPause } from '../../services/pipeline/budget-gate.js';
 import { acquireDrive, releaseDrive, tryAcquireDriveNow } from '../../services/pipeline/scheduler.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
@@ -178,8 +180,13 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           ? opened!.manifest.pipelineSequence
           : [];
         if (pipelineSequence.length > 0) {
-          const s = (opened?.manifest?.seeds ?? {}) as { storyArc?: string; characters?: string; setting?: string; blueprint?: string };
-          const manifestSeeds = { storyArc: s.storyArc ?? '', characters: s.characters ?? '', setting: s.setting ?? '', blueprint: s.blueprint ?? '' };
+          const s = (opened?.manifest?.seeds ?? {}) as { storyArc?: string; characters?: string; setting?: string; blueprint?: string; councilSelection?: 'auto' | 'propose' };
+          // councilSelection: 'propose' → the romance council pause-resume gate;
+          // default 'auto' (straight-through). heat is NOT a seed — it selects the
+          // pipeline id — so infer it here from the resolved sequence so the
+          // council-gate can tone the prompt (spicy vs. sweet).
+          const heat = pipelineSequence.some((n) => /spicy/i.test(n)) ? 'spicy' : 'sweet';
+          const manifestSeeds = { storyArc: s.storyArc ?? '', characters: s.characters ?? '', setting: s.setting ?? '', blueprint: s.blueprint ?? '', councilSelection: s.councilSelection ?? 'auto', heat };
           const seqContext = { ...manifestSeeds, ...(context || {}), ...resolvedConfig, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
           const { pipelineId, projects } = engine.createBookSequence(
             { slug: activeBook, pipelineSequence },
@@ -327,13 +334,18 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     res.json({ advanced: !!started, project: started ?? null });
   });
 
+  // LLM Council (sub-project 3, Task 5): surface the pause-resume gate to
+  // clients without a new project status — `awaitingSelection` mirrors
+  // `!!project.selection` so the Board/PipelineRail can badge it directly.
+  const withAwaitingSelection = (p: any) => ({ ...p, awaitingSelection: !!p.selection });
+
   app.get('/api/projects/list', (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();
     if (!engine) {
       return res.status(503).json({ error: 'Project engine not initialized' });
     }
     const status = (req.query as any).status;
-    res.json({ projects: engine.listProjects(status) });
+    res.json({ projects: engine.listProjects(status).map(withAwaitingSelection) });
   });
 
   app.get('/api/projects/:id', (req: Request, res: Response) => {
@@ -345,7 +357,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    res.json({ project });
+    res.json({ project: withAwaitingSelection(project) });
   });
 
   app.post('/api/projects/:id/start', (req: Request, res: Response) => {
@@ -468,6 +480,30 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     const activeStep = project.steps.find((s: any) => s.status === 'active');
     if (!activeStep) {
       return res.status(400).json({ error: 'No active step. Start the project first.' });
+    }
+
+    // LLM Council selection gate: if the project is parked awaiting a base-story
+    // pick, a single-step /execute must NOT advance it (mirrors the /auto-execute
+    // guard at the top of the loop) — otherwise clicking "Execute" bypasses the
+    // human base-story selection.
+    if (project.selection) {
+      return res.status(409).json({ error: 'Awaiting council base-story selection', awaitingSelection: true, projectId: project.id });
+    }
+
+    // LLM Council gate (romance): a council-origination step is handled by the
+    // council engine, not the AI router. 'auto' completes it with the judge's top
+    // base story (next step becomes active); 'propose' parks the project awaiting a
+    // selection. Non-council steps and non-romance projects fall straight through.
+    const councilOutcome = await maybeRunCouncilStep(
+      { engine, council: buildCouncilService(services.aiRouter) },
+      project,
+      activeStep,
+    );
+    if (councilOutcome.gated) {
+      return res.status(409).json({ error: 'Awaiting council base-story selection', awaitingSelection: true, projectId: project.id, project: engine.getProject(req.params.id) });
+    }
+    if (councilOutcome.handled) {
+      return res.json({ council: true, project: engine.getProject(req.params.id) });
     }
 
     // Human Review gate: a human-review step pauses the pipeline and raises a
@@ -812,6 +848,14 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         return res.status(409).json({ error: 'Awaiting human review', humanReview: true, confirmationId: project.review.confirmationId });
       }
 
+      // A project parked awaiting an LLM-Council base-story selection must NOT be
+      // un-paused by "continue" — it requires a POST /council/select decision.
+      // Mirrors the project.review guard directly above (the gate sits in front
+      // of the drive loop so a re-fired /auto-execute never re-runs the council).
+      if (project.selection) {
+        return res.status(409).json({ error: 'Awaiting council base-story selection', awaitingSelection: true, projectId: project.id });
+      }
+
       if (project.status === 'pending') {
         engine.startProject(req.params.id);
       } else if (project.status === 'paused') {
@@ -842,6 +886,19 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
       const activeStep = currentProject.steps.find((s: any) => s.status === 'active');
       if (!activeStep) break;
+
+      // LLM Council gate (romance): a council-origination step is handled by the
+      // council engine, not the AI router. In 'auto' mode it completes the step
+      // with the judge's top base story and the loop continues; in 'propose' mode
+      // it parks the project awaiting a selection and the loop STOPS. Non-council
+      // steps and non-romance projects fall straight through ({handled:false}).
+      const councilOutcome = await maybeRunCouncilStep(
+        { engine, council: buildCouncilService(services.aiRouter) },
+        currentProject,
+        activeStep,
+      );
+      if (councilOutcome.gated) { results.push({ step: activeStep.label, success: false, error: 'awaiting council selection' }); break; }
+      if (councilOutcome.handled) { continue; } // auto: step completed, advance to the next frontier
 
       // Human Review gate: a human-review step pauses the pipeline and raises a
       // Confirmations request instead of generating; the resolver resumes on approval.
@@ -1484,6 +1541,47 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       releaseDrive(services.driveScheduler, engine, projectId);
     }
   }
+
+  // ── LLM Council (sub-project 3, Task 5): the propose-mode selection API ─────
+  // GET the pending ranked candidates for the studio review screen.
+  app.get('/api/projects/:id/council', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) {
+      return res.status(503).json({ error: 'Project engine not initialized' });
+    }
+    const project = engine.getProject(req.params.id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (!project.selection) {
+      return res.status(404).json({ error: 'No council selection pending' });
+    }
+    const { candidates, ranking, recommendedId, rationale } = project.selection;
+    res.json({ candidates, ranking, recommendedId, rationale });
+  });
+
+  // Submit the user's base-story pick and resume the pipeline (fire-and-forget
+  // drive, same pattern as /review/action below).
+  app.post('/api/projects/:id/council/select', async (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) {
+      return res.status(503).json({ error: 'Project engine not initialized' });
+    }
+    const project = engine.getProject(req.params.id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (!project.selection) {
+      return res.status(409).json({ error: 'No council selection pending' });
+    }
+    const candidateId = typeof req.body?.candidateId === 'string' ? req.body.candidateId : '';
+    if (!candidateId) {
+      return res.status(400).json({ error: 'candidateId required' });
+    }
+    engine.applyCouncilSelection(project.id, candidateId);
+    void driveResumedProject(project.id).catch(() => {});
+    res.json({ ok: true, project: engine.getProject(req.params.id) });
+  });
 
   // ── Resolve a paused Human Review gate with one of four actions (Flagship
   // Plan 5, Task 3): approve (continue with the generated/pending text),

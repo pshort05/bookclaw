@@ -79,4 +79,11 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
     },
     async (args) => toToolResult('premise_intake', await client.request('POST', '/api/books/intake', args)),
   );
+
+  server.registerTool('romance_interview',
+    { title: 'Romance adaptive interview',
+      description: 'Run one turn of the romance Adaptive Interview: given the conversation so far, returns the AI\'s next question, or when enough is gathered, done=true plus the structured romance seed contract. Stateless — hold the messages array client-side and pass it back each turn.',
+      inputSchema: { messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })).describe('The conversation so far (empty for the opening turn)') } },
+    async (args) => toToolResult('romance_interview', await client.request('POST', '/api/romance/interview', args)),
+  );
 }

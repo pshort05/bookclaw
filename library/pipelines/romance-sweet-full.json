@@ -5,6 +5,13 @@
   "description": "End-to-end sweet romance (spice level 2 / fade-to-black): seed-woven premise, character bible, setting guide and chapter outline, then the full per-chapter production loop (Scene Brief -> First Draft -> Improvement Plan -> Rewrite -> Humanize -> Intimacy, closed-door), a manuscript continuity review, and a completion report. Author seeds (storyArc/characters/setting) are developed and preserved, never discarded.",
   "steps": [
     {
+      "label": "Council — Base Story Origination",
+      "phase": "premise",
+      "skill": "council-origination",
+      "taskType": "general",
+      "promptTemplate": "The LLM Council originates the base story (premise + relationship arc) for \"{{title}}\" from the author's seeds. Handled by the council engine; no direct generation."
+    },
+    {
       "label": "Premise",
       "skill": "premise",
       "taskType": "book_bible",

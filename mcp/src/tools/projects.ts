@@ -51,4 +51,24 @@ export function registerProjectTools(server: McpServer, client: BookClawClient):
     async ({ id }) =>
       toToolResult('get_project_files', await client.request('GET', `/api/projects/${encodeURIComponent(id)}/files`)),
   );
+
+  server.registerTool('get_council_candidates',
+    {
+      title: 'Get council candidates',
+      description: 'Get the LLM Council\'s ranked base-story candidates for a project paused awaiting a selection.',
+      inputSchema: { projectId: z.string() },
+    },
+    async ({ projectId }) =>
+      toToolResult('get_council_candidates', await client.request('GET', `/api/projects/${encodeURIComponent(projectId)}/council`)),
+  );
+
+  server.registerTool('select_council_candidate',
+    {
+      title: 'Select council candidate',
+      description: 'Pick a base-story candidate for a project paused awaiting an LLM Council selection, resuming the pipeline.',
+      inputSchema: { projectId: z.string(), candidateId: z.string() },
+    },
+    async ({ projectId, candidateId }) =>
+      toToolResult('select_council_candidate', await client.request('POST', `/api/projects/${encodeURIComponent(projectId)}/council/select`, { candidateId })),
+  );
 }

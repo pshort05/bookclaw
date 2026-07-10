@@ -6,8 +6,7 @@ import styles from './NewHub.module.css';
 // Layout mirrors the Romance Workflow design's entry taxonomy
 // (docs/superpowers/specs/2026-07-08-romance-workflow-design.md, decision 2):
 //   New ▸ Easy (quick start / full setup)  ·  Advanced (romance seed modes).
-// Guided + Adaptive are designed but not yet built (sub-projects 3 & 4), so they
-// render as disabled "Coming soon" cards; From a premise file is live.
+// From a premise file, Guided, and Adaptive are all live.
 type Option = { icon: string; title: string; tag: string; to?: string; soon?: boolean };
 
 const EASY: Option[] = [
@@ -17,8 +16,8 @@ const EASY: Option[] = [
 
 const ADVANCED: Option[] = [
   { icon: '📄', title: 'From a premise file', tag: 'Seed a romance novel from a free-form premise document — review the extracted seeds, grounded setting and gaps, then create.', to: '/premise' },
-  { icon: '🧭', title: 'Guided', tag: 'A step-by-step form that collects the romance seeds (arc, characters, setting, heat) and builds the book.', soon: true },
-  { icon: '💬', title: 'Adaptive', tag: 'An AI-led conversational interview that draws the story out of you, then converges on the same seeds.', soon: true },
+  { icon: '🧭', title: 'Guided', tag: 'A step-by-step form that collects the romance seeds (arc, characters, setting, heat) and builds the book.', to: '/guided' },
+  { icon: '💬', title: 'Adaptive', tag: 'An AI-led conversational interview that draws the story out of you, then converges on the same seeds.', to: '/adaptive' },
 ];
 
 export function NewHub() {

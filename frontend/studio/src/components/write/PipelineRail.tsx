@@ -7,6 +7,7 @@
  * book's pipeline plan + the most-recent active project, associated loosely.
  */
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, type Project, type ProjectStep, type BookDetail, type LibraryPipeline } from '@bookclaw/shared';
 import styles from '../../routes/Write.module.css';
 
@@ -371,6 +372,16 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
           >
             {actionBusy ? 'Starting…' : 'Start pipeline'}
           </button>
+        ) : activeProject.status === 'paused' && activeProject.awaitingSelection ? (
+          // LLM Council propose-mode gate: the pipeline is parked awaiting a
+          // base-story pick, not a plain pause — Execute/Resume don't apply
+          // until a candidate is selected (see routes/CouncilSelect.tsx).
+          <Link
+            className={`${styles.ctrlBtn} ${styles.ctrlBtnPrimary}`}
+            to={`/council/${activeProject.id}`}
+          >
+            Choose base story
+          </Link>
         ) : activeProject.status === 'pending' || activeProject.status === 'paused' ? (
           <>
             <button

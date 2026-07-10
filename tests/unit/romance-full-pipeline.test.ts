@@ -44,10 +44,26 @@ for (const [name, prodSkill, heatWord] of [
   test(`${name}: empty seeds collapse cleanly (no dangling markers, front half still generates)`, () => {
     const p = load(name);
     const steps = expandSteps(p.steps, buildPipelineVars({ ...SEEDS, storyArc: '', characters: '', setting: '' }));
-    const front = steps.slice(0, 4).map((s) => s.prompt).join('\n');
+    // Front block is now Council + Premise + Character Bible + Setting + Chapter Outline (5 steps).
+    const front = steps.slice(0, 5).map((s) => s.prompt).join('\n');
     assert.ok(!front.includes('undefined') && !front.includes('{{'), 'no unresolved vars');
     assert.ok(front.includes(heatWord), 'heat language baked into front half');
-    assert.ok(steps.length > 4, 'production + report steps still present');
+    assert.ok(steps.length > 5, 'production + report steps still present');
+  });
+}
+
+// LLM Council (sub-project 3, Task 5): the council-origination step is prepended
+// at index 0 in both romance-full pipelines. Its result (the base story) is
+// injected downstream into the Premise step via the existing phase:'premise'
+// step-result chaining (projects.ts buildProjectContext) — no new template var.
+for (const file of ['romance-sweet-full.json', 'romance-spicy-full.json']) {
+  test(`${file}: council-origination step is prepended at index 0`, () => {
+    const pipe = JSON.parse(readFileSync(new URL(`../../library/pipelines/${file}`, import.meta.url), 'utf-8'));
+    const first = pipe.steps[0];
+    assert.equal(first.skill, 'council-origination', `${file} step 0 has skill 'council-origination'`);
+    assert.equal(first.phase, 'premise', `${file} step 0 has phase 'premise'`);
+    const premiseIndex = pipe.steps.findIndex((s: any) => s.label === 'Premise');
+    assert.equal(premiseIndex, 1, `${file} Premise step still follows immediately after the council step`);
   });
 }
 

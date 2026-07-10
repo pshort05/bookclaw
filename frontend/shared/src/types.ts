@@ -162,6 +162,9 @@ export interface Project {
   // Human Review marker (mirrors gateway projects.ts). Present only while parked
   // at a gate; pendingResult is the drafted chapter text a cadence-gate awaits.
   review?: { confirmationId: string; stepId: string; kind: 'pipeline-gate' | 'pipeline-error' | 'cadence-gate'; pendingResult?: string };
+  // LLM Council pause-resume gate (mirrors gateway projects.ts `selection`):
+  // true while parked awaiting a base-story pick (see /api/projects/:id/council).
+  awaitingSelection?: boolean;
   [k: string]: unknown;
 }
 

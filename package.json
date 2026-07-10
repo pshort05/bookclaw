@@ -24,7 +24,8 @@
     "test:unit": "npm run build:frontend && node --import tsx --test tests/unit/*.test.ts",
     "test:api": "bash tests/api/api-test.sh",
     "test:smoke": "npm run build:frontend && bash tests/smoke-test.sh",
-    "test:intake-smoke": "bash tests/romance-premise-intake-smoke.sh"
+    "test:intake-smoke": "bash tests/romance-premise-intake-smoke.sh",
+    "test:adaptive-smoke": "bash tests/romance-adaptive-smoke.sh"
   },
   "keywords": [
     "ai",
