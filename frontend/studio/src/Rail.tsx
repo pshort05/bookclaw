@@ -78,9 +78,9 @@ export function Rail() {
           Write
         </NavLink>
 
-        {/* New Book — Easy: the 3-click Starter-Bundle wizard */}
+        {/* New Book — the hub: Easy / From Premise File / Full setup */}
         <NavLink
-          to="/start"
+          to="/new"
           className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

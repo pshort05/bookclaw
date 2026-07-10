@@ -43,6 +43,7 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
         storyArc: z.string().optional().describe('Author-provided story arc, developed (not discarded) by the pipeline'),
         characters: z.string().optional().describe('Author-provided character notes, developed (not discarded) by the pipeline'),
         setting: z.string().optional().describe('Author-provided real-world setting notes (place/sensory texture), developed (not discarded) by the pipeline'),
+        blueprint: z.string().optional().describe('Author-provided structural blueprint (act breakdown, POV strategy, ending); honored by the outline step, developed (not discarded) by the pipeline'),
         councilSelection: z.enum(['auto', 'propose']).optional().describe('Reserved for the LLM Council sub-project; inert in Foundation'),
       },
     },
@@ -68,5 +69,14 @@ export function registerBookTools(server: McpServer, client: BookClawClient): vo
     async ({ slug, filename }) =>
       toToolResult('read_book_file',
         await client.request('GET', `/api/books/${encodeURIComponent(slug)}/files/${encodeURIComponent(filename)}`)),
+  );
+
+  server.registerTool('premise_intake',
+    {
+      title: 'Premise intake',
+      description: 'Parse a free-form romance premise document into structured seeds, gaps, and a fact-checked setting dossier for review before creating a book.',
+      inputSchema: { premise: z.string().describe('The premise markdown document') },
+    },
+    async (args) => toToolResult('premise_intake', await client.request('POST', '/api/books/intake', args)),
   );
 }

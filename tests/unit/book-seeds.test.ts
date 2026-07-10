@@ -46,12 +46,13 @@ test('BookService.create persists seeds onto the manifest and book.json', async 
     const { books } = await setup(root);
     const manifest = await books.create({
       title: 'Seeded Romance', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [],
-      seeds: { storyArc: 'ARC_X', characters: 'CHAR_X', setting: 'SETTING_X', councilSelection: 'auto' },
+      seeds: { storyArc: 'ARC_X', characters: 'CHAR_X', setting: 'SETTING_X', blueprint: 'BLUEPRINT_X', councilSelection: 'auto' },
     } as any);
-    assert.deepEqual(manifest.seeds, { storyArc: 'ARC_X', characters: 'CHAR_X', setting: 'SETTING_X', councilSelection: 'auto' });
+    assert.deepEqual(manifest.seeds, { storyArc: 'ARC_X', characters: 'CHAR_X', setting: 'SETTING_X', blueprint: 'BLUEPRINT_X', councilSelection: 'auto' });
 
     const onDisk = JSON.parse(readFileSync(join(root, 'workspace', 'books', manifest.slug, 'book.json'), 'utf-8'));
     assert.equal(onDisk.seeds.characters, 'CHAR_X');
     assert.equal(onDisk.seeds.councilSelection, 'auto');
+    assert.equal(onDisk.seeds.blueprint, 'BLUEPRINT_X');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

@@ -1,0 +1,91 @@
+/* New Book hub: the single entry point for every start mode (Easy / Advanced). */
+.wrap {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 36px 26px 60px;
+}
+.h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 340;
+  font-size: 34px;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.h1 em {
+  font-style: italic;
+  color: var(--ember);
+}
+.sub {
+  color: var(--dim);
+  margin: 8px 0 28px;
+  max-width: 56ch;
+}
+.section {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  margin: 26px 0 12px;
+}
+.sectionNote {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--faint);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 22px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: border-color 0.15s var(--ease), transform 0.1s var(--ease);
+}
+.card:not(:disabled):hover {
+  border-color: var(--ember);
+  transform: translateY(-2px);
+}
+.soon {
+  cursor: default;
+  opacity: 0.55;
+}
+.icon {
+  font-size: 30px;
+}
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+}
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.cardTag {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}

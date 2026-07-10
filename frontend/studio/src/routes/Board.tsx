@@ -132,12 +132,12 @@ export function Board() {
     );
   };
 
-  // New Book ghost card → minimal create form (full picker = 6g).
+  // New Book ghost card → the New hub (Easy / From Premise File / Full setup).
   const ghostCard = (
-    <article className={`${styles.card} ${styles.ghost}`} onClick={() => navigate('/new-book')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/new-book'); } }} role="button" tabIndex={0}>
+    <article className={`${styles.card} ${styles.ghost}`} onClick={() => navigate('/new')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/new'); } }} role="button" tabIndex={0}>
       <div className={styles.plus}>+</div>
       <h3>New book</h3>
-      <small>Pull author, voice, genre &amp; pipeline from the library.</small>
+      <small>Easy start, from a premise file, or full setup.</small>
     </article>
   );
 

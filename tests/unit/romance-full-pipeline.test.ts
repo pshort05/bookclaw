@@ -51,6 +51,16 @@ for (const [name, prodSkill, heatWord] of [
   });
 }
 
+for (const file of ['romance-sweet-full.json', 'romance-spicy-full.json']) {
+  test(`${file}: Chapter Outline step weaves {{blueprint}}`, () => {
+    const pipe = JSON.parse(readFileSync(new URL(`../../library/pipelines/${file}`, import.meta.url), 'utf-8'));
+    const outline = pipe.steps.find((s: any) => s.label === 'Chapter Outline');
+    assert.ok(outline, `${file} has a Chapter Outline step`);
+    assert.match(outline.promptTemplate, /\{\{blueprint\}\}/, `${file} outline weaves {{blueprint}}`);
+    assert.match(outline.promptTemplate, /\{\{setupEnd\}\}/, `${file} outline keeps beat-var fallback`);
+  });
+}
+
 // The per-chapter production group is copied verbatim from the shipped romance
 // pipeline; guard that copy against drift (a future edit that keeps skill names
 // but alters prompt text or a modelOverride would otherwise pass undetected).

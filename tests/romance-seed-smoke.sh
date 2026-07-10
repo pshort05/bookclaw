@@ -2,12 +2,13 @@
 # ═══════════════════════════════════════════════════════════
 # BookClaw — Romance Workflow Foundation seed round-trip smoke
 # ═══════════════════════════════════════════════════════════
-# Creates a book with author seeds (storyArc/characters/world) bound to the
-# romance-sweet-full pipeline, makes it active, runs its sequence, and asserts
-# the seed text lands in the resulting project's step prompts (i.e. the
+# Creates a book with author seeds (storyArc/characters/setting/blueprint) bound
+# to the romance-sweet-full pipeline, makes it active, runs its sequence, and
+# asserts the seed text lands in the resulting project's step prompts (i.e. the
 # manifest's `seeds` made it into pipeline `context` and interpolated into
-# {{storyArc}}/{{characters}}/{{setting}}). No AI call needed — the assertion is
-# on the SYNCHRONOUS create-project response's step prompts.
+# {{storyArc}}/{{characters}}/{{setting}} and {{blueprint}} in the outline step).
+# No AI call needed — the assertion is on the SYNCHRONOUS create-project
+# response's step prompts.
 #
 # Hermetic-ish: boots its own gateway (loopback only, token via env, non-default
 # port) and self-cleans the book it creates from the real ./workspace.
@@ -59,7 +60,7 @@ if [[ -z "$AUTHOR" || -z "$VOICE" ]]; then echo "FAIL: no author/voice library e
 BOOK=$(curl -sf "${H[@]}" -X POST "$BASE/api/books" -d "$(cat <<JSON
 { "title": "Seed Smoke Romance", "pipelineSequence": ["romance-sweet-full"],
   "author": "$AUTHOR", "voice": "$VOICE",
-  "storyArc": "$ARC", "characters": "CHAR_MARKER", "setting": "SETTING_MARKER", "councilSelection": "auto" }
+  "storyArc": "$ARC", "characters": "CHAR_MARKER", "setting": "SETTING_MARKER", "blueprint": "BLUEPRINT_MARKER act-lock POV", "councilSelection": "auto" }
 JSON
 )")
 SLUG=$(echo "$BOOK" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).book.slug)}catch(e){}})')
@@ -70,7 +71,7 @@ curl -sf "${H[@]}" -X POST "$BASE/api/books/active" -d "{\"slug\":\"$SLUG\"}" >/
 RUN=$(curl -sf "${H[@]}" -X POST "$BASE/api/projects/create" -d '{"title":"Seed Smoke Romance","description":"seed round-trip"}')
 
 # 3) assert all three seed markers are present in the first project's step prompts
-if echo "$RUN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);const p=(r.projects||[r.project])[0];if(!p||!p.steps){console.error("FAIL: no project/steps in response");process.exit(1)}const blob=JSON.stringify(p.steps.map(x=>x.prompt));for(const m of ["ARC_MARKER","CHAR_MARKER","SETTING_MARKER"]){if(!blob.includes(m)){console.error("FAIL: seed marker "+m+" not woven into project steps");process.exit(1)}}console.log("PASS: all three seed markers threaded into project step prompts")})'; then
+if echo "$RUN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);const p=(r.projects||[r.project])[0];if(!p||!p.steps){console.error("FAIL: no project/steps in response");process.exit(1)}const blob=JSON.stringify(p.steps.map(x=>x.prompt));for(const m of ["ARC_MARKER","CHAR_MARKER","SETTING_MARKER","BLUEPRINT_MARKER"]){if(!blob.includes(m)){console.error("FAIL: seed marker "+m+" not woven into project steps");process.exit(1)}}console.log("PASS: all four seed markers (incl. blueprint) threaded into project step prompts")})'; then
   exit 0
 else
   FAILED=1

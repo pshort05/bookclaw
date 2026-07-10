@@ -14,6 +14,7 @@ import { AI_PROVIDER_IDS } from '../../ai/router.js';
 import { assembleManuscript, validateAssembly } from '../../services/manuscript-assembly.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
+import { PremiseIntakeService } from '../../services/premise-intake.js';
 
 /**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
@@ -64,6 +65,33 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     } catch (err) {
       const msg = (err as Error)?.message || String(err);
       res.status(/unknown/i.test(msg) ? 404 : 500).json({ error: msg });
+    }
+  });
+
+  // Romance Premise-File Intake (Task 4): parse a free-form premise document into
+  // seeds + open gaps, then ground the setting against real-world geography before
+  // handing the payload back for review. Book *creation* still goes through
+  // POST /api/books — this endpoint only produces the review payload.
+  app.post('/api/books/intake', async (req: Request, res: Response) => {
+    const premise = typeof req.body?.premise === 'string' ? req.body.premise.trim() : '';
+    if (!premise) return res.status(400).json({ error: 'premise text is required' });
+    if (premise.length > 200_000) return res.status(400).json({ error: 'premise is too large (200k char limit)' });
+    try {
+      const svc = new PremiseIntakeService(
+        (r) => services.aiRouter.complete(r as any),
+        (t) => services.aiRouter.selectProvider(t),
+        services.researchLookup ? { lookup: (q, o) => services.researchLookup!.lookup(q, o) } : undefined,
+      );
+      const intake = await svc.parse(premise);
+      const grounding = await svc.ground(intake.seeds.setting, intake.realPlace, premise);
+      const seeds = { ...intake.seeds, setting: grounding.dossier };
+      res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, realPlace: intake.realPlace, groundingStatus: grounding.status });
+    } catch (err: any) {
+      if (String(err?.message).includes('PREMISE_INTAKE_PARSE_FAILED')) {
+        return res.status(500).json({ error: 'Could not parse the premise into structured seeds. Try a clearer document or create the book manually.' });
+      }
+      console.log(`  ⚠ premise intake failed: ${err?.message ?? err}`);
+      res.status(500).json({ error: 'Premise intake failed' });
     }
   });
 
@@ -601,8 +629,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (councilSelection && councilSelection !== 'auto' && councilSelection !== 'propose') {
       return res.status(400).json({ error: "councilSelection must be 'auto' or 'propose'" });
     }
-    const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), setting: seedStr(body.setting), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
-    const hasSeeds = seeds.storyArc || seeds.characters || seeds.setting || councilSelection;
+    const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), setting: seedStr(body.setting), blueprint: seedStr(body.blueprint), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
+    const hasSeeds = seeds.storyArc || seeds.characters || seeds.setting || seeds.blueprint || councilSelection;
 
     try {
       const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });

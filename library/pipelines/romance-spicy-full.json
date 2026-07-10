@@ -30,7 +30,7 @@
       "skill": "outline",
       "taskType": "outline",
       "phase": "outline",
-      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and setting guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary."
+      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and setting guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary.\n\nAuthor-provided structural blueprint — treat this as canon: reproduce its act breakdown, POV strategy, black-moment mechanic and ending faithfully, and generate only the beats it leaves unspecified. If the section below is blank, map the beats onto the structure yourself as described above.\nBlueprint:\n{{blueprint}}"
     },
     {
       "expand": "chapters",
