@@ -69,6 +69,21 @@ interface CompletionResponse {
   promptTokens?: number;
   completionTokens?: number;
   model?: string;
+  /** True when the provider stopped due to hitting its max-tokens/length cap
+   *  rather than a natural completion — the text may be cut off mid-thought. */
+  truncated?: boolean;
+  /** The raw provider-reported stop/finish reason, when available. */
+  finishReason?: string;
+}
+
+/**
+ * Anthropic/Gemini both count hidden reasoning ("thinking") tokens against the
+ * same max-output-tokens pool as the visible answer. Without adding the
+ * thinking budget on top, a high thinking budget can consume the entire cap
+ * and leave no room for visible output. Shared by the Claude and Gemini paths.
+ */
+export function effectiveMaxOutputTokens(maxTokens: number, thinkingBudget?: number | null): number {
+  return thinkingBudget ? maxTokens + thinkingBudget : maxTokens;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -135,7 +150,7 @@ export function getRecommendedThinking(taskType: string): 'low' | 'medium' | 'hi
  */
 const TASK_OUTPUT_BUDGET: Record<string, number> = {
   outline:          16384,  // 20-30 chapter outlines + beats per chapter
-  book_bible:       12288,  // Multi-character profiles + worldbuilding
+  book_bible:       16384,  // Multi-character profiles + worldbuilding
   creative_writing: 16384,  // Chapter prose; continuation logic handles overflow
   revision:         16384,  // Pass notes can be long
   consistency:      8192,   // Cross-chapter check report
@@ -163,12 +178,16 @@ export class AIRouter {
   private globalPreferredProvider: string | null = null;
 
   // ── Prompt Cache ──
-  // Caches system prompt hashes so repeated calls with the same soul/style
-  // context can signal cache hits to providers that support it (e.g. Gemini cachedContent).
+  // Caches system prompt hashes so we can locally detect repeated calls with the
+  // same soul/style system prompt (hits/misses below are real Map lookups).
+  // NOTE: this is bookkeeping only — the router never sends a caching directive
+  // to any provider (e.g. Gemini cachedContent, Anthropic prompt caching), so
+  // there is no actual token/cost savings to report. Don't add a "saved
+  // tokens"/savings stat here unless the router is wired to real provider-side
+  // caching — see bug #35a.
   private promptCache: Map<string, { hash: string; timestamp: number }> = new Map();
   private cacheHits = 0;
   private cacheMisses = 0;
-  private savedTokens = 0;
 
   // Per-provider in-flight throttle (Flagship Plan 6, Task 2/4): every AI call
   // funnels through complete() below, so wrapping the dispatch here — rather
@@ -189,8 +208,15 @@ export class AIRouter {
   }
 
   async initialize(): Promise<void> {
-    // Clear any stale providers (important for reinitialize)
-    this.providers.clear();
+    // Bug #27: build the new provider set into a LOCAL map and swap it into
+    // this.providers in ONE synchronous assignment at the END (after every
+    // awaited probe below). Clearing the live map here and repopulating across
+    // awaits leaves a window where a concurrent selectProvider()/complete()
+    // sees an empty map and throws "No AI providers available" — saving an API
+    // key mid-run would fail an in-flight step. Readers always take this.providers
+    // fresh, so the swap gives them either the old fully-populated map or the new
+    // one, never an empty intermediate.
+    const local = new Map<string, AIProvider>();
 
     // ── Ollama (FREE - Local) ──
     if (this.config.ollama?.enabled !== false) {
@@ -198,7 +224,7 @@ export class AIRouter {
         this.config.ollama?.endpoint || 'http://localhost:11434'
       );
       if (ollamaAvailable) {
-        this.providers.set('ollama', {
+        local.set('ollama', {
           id: 'ollama',
           name: 'Ollama',
           model: this.config.ollama?.model || 'llama3.2',
@@ -215,26 +241,33 @@ export class AIRouter {
       }
     }
 
-    // ── Google Gemini (FREE tier) ──
+    // ── Google Gemini (FREE tier by default) ──
+    // Google's API doesn't report whether a key is on the free or a paid tier,
+    // so a paid key's real spend is untracked unless the operator opts in here.
+    // Bug #35b: honor an explicit config signal (config.gemini.paidTier +
+    // costPer1kInput/costPer1kOutput) when present; otherwise keep the
+    // historical $0 rates (correct for the actual free tier) rather than
+    // inventing a pricing table.
     const geminiKey = await this.vault.get('gemini_api_key');
     if (geminiKey) {
-      this.providers.set('gemini', {
+      const geminiPaid = this.config.gemini?.paidTier === true;
+      local.set('gemini', {
         id: 'gemini',
         name: 'Google Gemini',
         model: this.config.gemini?.model || 'gemini-2.5-flash',
-        tier: 'free',
+        tier: geminiPaid ? 'paid' : 'free',
         available: true,
         endpoint: 'https://generativelanguage.googleapis.com/v1beta',
         maxTokens: 65536,
-        costPer1kInput: 0, // Free tier
-        costPer1kOutput: 0,
+        costPer1kInput: geminiPaid ? (this.config.gemini?.costPer1kInput ?? 0) : 0,
+        costPer1kOutput: geminiPaid ? (this.config.gemini?.costPer1kOutput ?? 0) : 0,
       });
     }
 
     // ── DeepSeek (CHEAP) ──
     const deepseekKey = await this.vault.get('deepseek_api_key');
     if (deepseekKey) {
-      this.providers.set('deepseek', {
+      local.set('deepseek', {
         id: 'deepseek',
         name: 'DeepSeek',
         model: this.config.deepseek?.model || 'deepseek-chat',
@@ -250,7 +283,7 @@ export class AIRouter {
     // ── Anthropic Claude (PAID) ──
     const claudeKey = await this.vault.get('anthropic_api_key');
     if (claudeKey) {
-      this.providers.set('claude', {
+      local.set('claude', {
         id: 'claude',
         name: 'Anthropic Claude',
         model: this.config.claude?.model || 'claude-sonnet-4-5-20250929',
@@ -268,7 +301,7 @@ export class AIRouter {
     // ── OpenAI GPT (PAID) ──
     const openaiKey = await this.vault.get('openai_api_key');
     if (openaiKey) {
-      this.providers.set('openai', {
+      local.set('openai', {
         id: 'openai',
         name: 'OpenAI GPT',
         model: this.config.openai?.model || 'gpt-4o',
@@ -287,7 +320,7 @@ export class AIRouter {
     // separate API keys. Requested by users who want one billing surface.
     const openrouterKey = await this.vault.get('openrouter_api_key');
     if (openrouterKey) {
-      this.providers.set('openrouter', {
+      local.set('openrouter', {
         id: 'openrouter',
         name: 'OpenRouter',
         model: this.config.openrouter?.model || 'anthropic/claude-sonnet-4-5',
@@ -305,6 +338,10 @@ export class AIRouter {
         costPer1kOutput: 0.015,
       });
     }
+
+    // Atomic swap: every awaited probe above is done, so publish the fully-built
+    // set in one tick. Drops any stale providers from a previous initialize().
+    this.providers = local;
   }
 
   /**
@@ -391,7 +428,14 @@ export class AIRouter {
     if (paid) {
       return paid;
     }
-    throw new Error('No AI providers available. Please configure at least Ollama (free) or an API key.');
+    // Bug #35e: distinguish "nothing is configured" from "providers are
+    // configured but the budget is exhausted" — the old single message blamed
+    // missing configuration even when a paid provider was set up and simply
+    // over budget, which sent users looking for a nonexistent config problem.
+    if (available.length === 0) {
+      throw new Error('No AI providers available. Please configure at least Ollama (free) or an API key.');
+    }
+    throw new Error('AI budget exhausted: all configured providers are paid and over the daily/monthly budget limit, and no free provider is available. Increase the budget limit or wait for the next reset period.');
   }
 
   /**
@@ -435,16 +479,16 @@ export class AIRouter {
     // ── Prompt cache tracking ──
     // Key by provider + system-prompt hash so concurrent books (each with a
     // different soul/style system prompt) don't evict each other from a single
-    // per-provider slot. The hit/miss/savedTokens counters below are plain
-    // fields and are therefore approximate under concurrent calls (stats only).
+    // per-provider slot. The hit/miss counters below are plain fields and are
+    // therefore approximate under concurrent calls (stats only) — and, per the
+    // note on the fields above, no caching directive is ever sent to the
+    // provider, so a "hit" here is not a real provider-side cache hit.
     const promptHash = this.hashPrompt(request.system);
     const cacheKey = `${provider.id}:${promptHash}`;
     const cached = this.promptCache.get(cacheKey);
 
     if (cached) {
       this.cacheHits++;
-      // Estimate saved tokens: rough system prompt token count (chars / 4)
-      this.savedTokens += Math.ceil(request.system.length / 4);
     } else {
       this.cacheMisses++;
       // Bound the cache: FIFO-evict the oldest entry once we exceed the cap so
@@ -482,13 +526,16 @@ export class AIRouter {
   }
 
   /**
-   * Returns prompt cache statistics for the dashboard
+   * Returns prompt cache statistics for the dashboard. `hits`/`misses` are
+   * real local Map hit/miss counts, NOT provider-side cache savings — no
+   * caching directive is ever sent to a provider, so there is no token/cost
+   * savings figure to report (bug #35a; previously a fabricated `savedTokens`
+   * field was returned here).
    */
-  getCacheStats(): { hits: number; misses: number; savedTokens: number } {
+  getCacheStats(): { hits: number; misses: number } {
     return {
       hits: this.cacheHits,
       misses: this.cacheMisses,
-      savedTokens: this.savedTokens,
     };
   }
 
@@ -501,18 +548,21 @@ export class AIRouter {
 
   /**
    * fetch() wrapper that retries transient rate-limit / overload responses
-   * (HTTP 429 and 503) with exponential backoff, honoring a `Retry-After`
+   * (HTTP 429, 503, and 529) with exponential backoff, honoring a `Retry-After`
    * header (in seconds) when present. Up to 2 retries (3 attempts total);
    * network errors and all other status codes pass through unchanged. Used for
    * the cloud providers (Gemini / Claude / OpenAI-compatible) that rate-limit;
    * Ollama (local) doesn't need it. The caller still handles a final non-OK
    * response, so this only smooths over transient throttling.
+   *
+   * 529 is Anthropic's "Overloaded" status (distinct from the generic 503) —
+   * without it, a transient Claude overload was never retried.
    */
   private async fetchWithRetry(url: string, init: any): Promise<Response> {
     const maxRetries = 2;
     for (let attempt = 0; ; attempt++) {
       const response = await fetch(url, init);
-      if ((response.status === 429 || response.status === 503) && attempt < maxRetries) {
+      if ((response.status === 429 || response.status === 503 || response.status === 529) && attempt < maxRetries) {
         const retryAfter = Number(response.headers.get('retry-after'));
         const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
           ? Math.min(retryAfter * 1000, 30000)
@@ -614,9 +664,13 @@ export class AIRouter {
     const thinkingBudget = request.thinking
       ? { low: 1024, medium: 4096, high: 16384 }[request.thinking]
       : null;
+    // Gemini deducts thinking tokens from the same maxOutputTokens pool, so the
+    // thinking budget must be added ON TOP of the visible output budget —
+    // otherwise a high thinking budget swallows the output room and the
+    // response comes back empty (mirrors the Claude path below).
     const generationConfig: any = {
       temperature: request.temperature ?? 0.7,
-      maxOutputTokens: request.maxTokens ?? provider.maxTokens,
+      maxOutputTokens: effectiveMaxOutputTokens(request.maxTokens ?? provider.maxTokens, thinkingBudget),
     };
     if (thinkingBudget) {
       generationConfig.thinkingConfig = {
@@ -654,7 +708,9 @@ export class AIRouter {
       throw new Error(`Gemini API error: ${data.error.message || 'Unknown error'}`);
     }
     const candidate = data.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text || '';
+    // Bug #29a: a multi-part response (Gemini can split text across multiple
+    // `parts` entries) was truncated to parts[0] — join every text part instead.
+    const text = candidate?.content?.parts?.map((p: any) => p?.text ?? '').join('') || '';
     // Detect Gemini blocking the response (safety filter, recitation, language, etc.)
     // Without this, blocked responses silently came through as empty strings and the
     // outline / writing step failed with a confusing "too-short response" error.
@@ -669,17 +725,31 @@ export class AIRouter {
       }
       throw new Error('Gemini returned an empty response. Try again or fall back to another provider.');
     }
+    // A non-empty response can still be cut off mid-answer when Gemini hits
+    // maxOutputTokens before finishing. Surface it rather than returning a
+    // half-finished outline/bible as silent success.
+    const finishReason: string | undefined = candidate?.finishReason;
+    const truncated = finishReason === 'MAX_TOKENS';
+    if (truncated) {
+      console.warn(`  ⚠ Gemini response truncated (finishReason: MAX_TOKENS) — output may be cut off mid-answer.`);
+    }
     const usage = data.usageMetadata;
     const promptTokens = usage?.promptTokenCount || 0;
     const completionTokens = usage?.candidatesTokenCount || 0;
     return {
       text,
       tokensUsed: promptTokens + completionTokens,
-      estimatedCost: 0, // Free tier
+      // Bug #35b: computed from provider.costPer1kInput/Output, which are 0
+      // for the (default) free tier and only nonzero when the operator opted
+      // into paid-tier tracking via config.gemini.paidTier — see initialize().
+      estimatedCost: (promptTokens / 1000) * provider.costPer1kInput +
+                     (completionTokens / 1000) * provider.costPer1kOutput,
       provider: 'gemini',
       promptTokens,
       completionTokens,
       model: provider.model,
+      truncated,
+      finishReason,
     };
   }
 
@@ -699,9 +769,7 @@ export class AIRouter {
     // Anthropic's budget_tokens counts toward max_tokens, so the thinking budget
     // must be added ON TOP of the visible output budget — otherwise a high
     // thinking budget swallows the output room and the report is truncated.
-    const effectiveMaxTokens = thinkingBudget
-      ? maxTokens + thinkingBudget
-      : maxTokens;
+    const effectiveMaxTokens = effectiveMaxOutputTokens(maxTokens, thinkingBudget);
 
     const body: any = {
       model: provider.model,
@@ -759,6 +827,13 @@ export class AIRouter {
         `. Likely thinking-budget exhaustion, a refusal, or a truncated call.`
       );
     }
+    // A non-empty response can still be cut off mid-answer when max_tokens is
+    // exhausted after the text block starts. Surface it rather than returning
+    // a half-finished outline/bible as silent success.
+    const truncated = data.stop_reason === 'max_tokens';
+    if (truncated) {
+      console.warn(`  ⚠ Claude response truncated (stop_reason: max_tokens) — output may be cut off mid-answer.`);
+    }
     const inputTokens = data.usage?.input_tokens || 0;
     const outputTokens = data.usage?.output_tokens || 0;
     return {
@@ -770,6 +845,8 @@ export class AIRouter {
       promptTokens: inputTokens,
       completionTokens: outputTokens,
       model: provider.model,
+      truncated,
+      finishReason: data.stop_reason,
     };
   }
 
@@ -790,7 +867,13 @@ export class AIRouter {
       if (provider.id === 'deepseek') {
         // DeepSeek: swap to the dedicated reasoner endpoint model.
         // It accepts the same Chat Completions API but produces a reasoning_content block.
-        effectiveModel = 'deepseek-reasoner';
+        // Bug #35d: skip the swap when the caller explicitly pinned a model
+        // (request.model set) — pinning is a deliberate choice (e.g. Casting
+        // pins deepseek-chat for prose) that `thinking` must not silently
+        // override. Only the provider's own default model gets swapped.
+        if (!request.model) {
+          effectiveModel = 'deepseek-reasoner';
+        }
       } else if (provider.id === 'openai') {
         // OpenAI: only the o-series (o1, o3, o4) and reasoning gpt-5 variants
         // support reasoning_effort. gpt-4o silently ignores it, and the
@@ -811,7 +894,14 @@ export class AIRouter {
     // 16384) exceed some providers' limits — DeepSeek-chat caps output at 8192
     // and rejects a larger max_tokens outright with HTTP 400, breaking every
     // length-heavy task routed to it.
-    const clampedMaxTokens = Math.min(request.maxTokens ?? provider.maxTokens, provider.maxTokens);
+    const requestedMaxTokens = request.maxTokens ?? provider.maxTokens;
+    const clampedMaxTokens = Math.min(requestedMaxTokens, provider.maxTokens);
+    if (clampedMaxTokens < requestedMaxTokens) {
+      console.warn(
+        `  ⚠ ${provider.name} max_tokens clamped from ${requestedMaxTokens} to ${clampedMaxTokens} ` +
+        `(provider cap) — response may arrive shorter than the task budget intended.`
+      );
+    }
     const body: any = {
       model: effectiveModel,
       messages: [
@@ -825,7 +915,13 @@ export class AIRouter {
       // OpenAI reasoning models reject max_tokens (use max_completion_tokens) and ignore temperature.
       delete body.max_tokens;
       delete body.temperature;
-      body.max_completion_tokens = clampedMaxTokens;
+      // Bug #29b: o-series/gpt-5 reasoning models count hidden reasoning
+      // tokens against the SAME max_completion_tokens pool as the visible
+      // answer (mirrors Claude's thinking budget and Gemini's
+      // thinkingBudget) — without adding it on top, a high reasoning effort
+      // can consume the whole cap and starve the visible output.
+      const thinkingBudget = { low: 1024, medium: 4096, high: 16384 }[reasoningEffort];
+      body.max_completion_tokens = effectiveMaxOutputTokens(clampedMaxTokens, thinkingBudget);
       body.reasoning_effort = reasoningEffort;
     }
     // OpenRouter: opt into usage accounting so the response carries the ACTUAL
@@ -877,6 +973,14 @@ export class AIRouter {
         `. Likely a safety/content-filter block, a refusal, or a truncated/timed-out call.`
       );
     }
+    // A non-empty response can still be cut off mid-answer when max_tokens is
+    // exhausted. Surface it rather than returning a half-finished outline/bible
+    // as silent success.
+    const finishReason: string | undefined = data.choices?.[0]?.finish_reason;
+    const truncated = finishReason === 'length';
+    if (truncated) {
+      console.warn(`  ⚠ ${provider.name} response truncated (finish_reason: length) — output may be cut off mid-answer.`);
+    }
     const usage = data.usage;
     const inputTokens = usage?.prompt_tokens || 0;
     const outputTokens = usage?.completion_tokens || 0;
@@ -896,6 +1000,8 @@ export class AIRouter {
       promptTokens: inputTokens,
       completionTokens: outputTokens,
       model: effectiveModel,
+      truncated,
+      finishReason,
     };
   }
 

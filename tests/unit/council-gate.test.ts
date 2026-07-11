@@ -9,7 +9,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COUNCIL_SKILL, isCouncilStep, maybeRunCouncilStep } from '../../gateway/src/services/council-gate.js';
+import { COUNCIL_SKILL, isCouncilStep, maybeRunCouncilStep, seedFallbackBaseStory } from '../../gateway/src/services/council-gate.js';
 
 const COUNCIL_RESULT = {
   candidates: [
@@ -161,4 +161,13 @@ test('council.originate throwing degrades to a seed-fallback base story, not gat
   assert.ok(engine.calls.completed[0].result.includes('PREMISE'), 'fallback text is a minimal base story');
   assert.equal(engine.calls.parked.length, 0);
   assert.equal((project as any).selection, undefined);
+});
+
+// ── Bug #32(b): fallback base story mislabels the character roster ──────────
+
+test('seedFallbackBaseStory labels the character roster as CHARACTERS, not RELATIONSHIP ARC', () => {
+  const text = seedFallbackBaseStory({ storyArc: 'A meet-cute at a bakery.', characters: 'Ava, a baker. Theo, a rival chef.' });
+  assert.match(text, /^PREMISE\n/);
+  assert.match(text, /CHARACTERS\nAva, a baker\. Theo, a rival chef\./);
+  assert.doesNotMatch(text, /RELATIONSHIP ARC/, 'must not mislabel the character roster as a relationship arc');
 });

@@ -272,128 +272,136 @@ export class BookService {
     const dir = join(this.booksDir, slug);
     const now = new Date().toISOString();
 
-    await mkdir(join(dir, 'templates', 'author'), { recursive: true });
-    for (const [file, content] of Object.entries(author.files)) {
-      await writeFile(join(dir, 'templates', 'author', file), content, 'utf-8');
-    }
-    if (typeof author.description === 'string') {
-      await writeFile(join(dir, 'templates', 'author', 'meta.json'), JSON.stringify({ description: author.description }), 'utf-8');
-    }
-    await mkdir(join(dir, 'templates', 'voice'), { recursive: true });
-    for (const [file, content] of Object.entries(voice.files)) {
-      await writeFile(join(dir, 'templates', 'voice', file), content, 'utf-8');
-    }
-    if (typeof voice.description === 'string') {
-      await writeFile(join(dir, 'templates', 'voice', 'meta.json'), JSON.stringify({ description: voice.description }), 'utf-8');
-    }
-    if (genre && genre.files) {
-      await mkdir(join(dir, 'templates', 'genre'), { recursive: true });
-      for (const [file, content] of Object.entries(genre.files)) {
-        await writeFile(join(dir, 'templates', 'genre', file), content, 'utf-8');
+    try {
+      await mkdir(join(dir, 'templates', 'author'), { recursive: true });
+      for (const [file, content] of Object.entries(author.files)) {
+        await writeFile(join(dir, 'templates', 'author', file), content, 'utf-8');
       }
-      if (typeof genre.description === 'string') {
-        await writeFile(join(dir, 'templates', 'genre', 'meta.json'), JSON.stringify({ description: genre.description }), 'utf-8');
+      if (typeof author.description === 'string') {
+        await writeFile(join(dir, 'templates', 'author', 'meta.json'), JSON.stringify({ description: author.description }), 'utf-8');
       }
-    }
-    // v2 snapshot layout: one templates/pipeline/<name>.json per sequence entry.
-    await mkdir(join(dir, 'templates', 'pipeline'), { recursive: true });
-    for (const p of orderedPipelines) {
-      await writeFile(join(dir, 'templates', 'pipeline', `${p.name}.json`), JSON.stringify(p.pipeline, null, 2) + '\n', 'utf-8');
-    }
-    // Frozen skills record: snapshot the SKILL.md of each skill referenced across
-    // ALL sequence pipelines' steps (union). SkillLoader matching stays global
-    // (not driven by this snapshot); a missing skill is skipped fail-soft.
-    const skillNames = Array.from(new Set(
-      orderedPipelines.flatMap((p) => (p.pipeline.steps || [])
-        .map((s) => s.skill)
-        .filter((n): n is string => typeof n === 'string' && n.length > 0)),
-    ));
-    const snappedSkills: string[] = [];
-    for (const name of skillNames) {
-      const sk = this.library.get('skill', name);
-      if (!sk || typeof sk.content !== 'string') {
-        console.warn(`  ⚠ Books: skill "${name}" referenced by pipeline not found — skipping snapshot`);
-        continue;
+      await mkdir(join(dir, 'templates', 'voice'), { recursive: true });
+      for (const [file, content] of Object.entries(voice.files)) {
+        await writeFile(join(dir, 'templates', 'voice', file), content, 'utf-8');
       }
-      await mkdir(join(dir, 'templates', 'skills', name), { recursive: true });
-      await writeFile(join(dir, 'templates', 'skills', name, 'SKILL.md'), sk.content, 'utf-8');
-      snappedSkills.push(name);
-    }
-    if (sectionEntries.length) {
-      await mkdir(join(dir, 'templates', 'sections'), { recursive: true });
-      for (const s of sectionEntries) {
-        await writeFile(join(dir, 'templates', 'sections', `${s.name}.md`), s.content, 'utf-8');
-        const sectionEntry = this.library.get('section', s.name);
-        if (typeof sectionEntry?.description === 'string') {
-          await writeFile(join(dir, 'templates', 'sections', `${s.name}.meta.json`), JSON.stringify({ description: sectionEntry.description }), 'utf-8');
+      if (typeof voice.description === 'string') {
+        await writeFile(join(dir, 'templates', 'voice', 'meta.json'), JSON.stringify({ description: voice.description }), 'utf-8');
+      }
+      if (genre && genre.files) {
+        await mkdir(join(dir, 'templates', 'genre'), { recursive: true });
+        for (const [file, content] of Object.entries(genre.files)) {
+          await writeFile(join(dir, 'templates', 'genre', file), content, 'utf-8');
+        }
+        if (typeof genre.description === 'string') {
+          await writeFile(join(dir, 'templates', 'genre', 'meta.json'), JSON.stringify({ description: genre.description }), 'utf-8');
         }
       }
-    }
-    // Series Phase B: snapshot the series' world-building (non-empty files only),
-    // BEFORE the .baseline cp below so the baseline captures it too.
-    if (sel.worldbuilding) {
-      const wb = sel.worldbuilding;
-      const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof wb[k] === 'string' && wb[k]!.length > 0);
-      if (entries.length) {
-        await mkdir(join(dir, 'templates', 'worldbuilding'), { recursive: true });
-        for (const k of entries) await writeFile(join(dir, 'templates', 'worldbuilding', `${k}.md`), wb[k]!, 'utf-8');
+      // v2 snapshot layout: one templates/pipeline/<name>.json per sequence entry.
+      await mkdir(join(dir, 'templates', 'pipeline'), { recursive: true });
+      for (const p of orderedPipelines) {
+        await writeFile(join(dir, 'templates', 'pipeline', `${p.name}.json`), JSON.stringify(p.pipeline, null, 2) + '\n', 'utf-8');
       }
+      // Frozen skills record: snapshot the SKILL.md of each skill referenced across
+      // ALL sequence pipelines' steps (union). SkillLoader matching stays global
+      // (not driven by this snapshot); a missing skill is skipped fail-soft.
+      const skillNames = Array.from(new Set(
+        orderedPipelines.flatMap((p) => (p.pipeline.steps || [])
+          .map((s) => s.skill)
+          .filter((n): n is string => typeof n === 'string' && n.length > 0)),
+      ));
+      const snappedSkills: string[] = [];
+      for (const name of skillNames) {
+        const sk = this.library.get('skill', name);
+        if (!sk || typeof sk.content !== 'string') {
+          console.warn(`  ⚠ Books: skill "${name}" referenced by pipeline not found — skipping snapshot`);
+          continue;
+        }
+        await mkdir(join(dir, 'templates', 'skills', name), { recursive: true });
+        await writeFile(join(dir, 'templates', 'skills', name, 'SKILL.md'), sk.content, 'utf-8');
+        snappedSkills.push(name);
+      }
+      if (sectionEntries.length) {
+        await mkdir(join(dir, 'templates', 'sections'), { recursive: true });
+        for (const s of sectionEntries) {
+          await writeFile(join(dir, 'templates', 'sections', `${s.name}.md`), s.content, 'utf-8');
+          const sectionEntry = this.library.get('section', s.name);
+          if (typeof sectionEntry?.description === 'string') {
+            await writeFile(join(dir, 'templates', 'sections', `${s.name}.meta.json`), JSON.stringify({ description: sectionEntry.description }), 'utf-8');
+          }
+        }
+      }
+      // Series Phase B: snapshot the series' world-building (non-empty files only),
+      // BEFORE the .baseline cp below so the baseline captures it too.
+      if (sel.worldbuilding) {
+        const wb = sel.worldbuilding;
+        const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof wb[k] === 'string' && wb[k]!.length > 0);
+        if (entries.length) {
+          await mkdir(join(dir, 'templates', 'worldbuilding'), { recursive: true });
+          for (const k of entries) await writeFile(join(dir, 'templates', 'worldbuilding', `${k}.md`), wb[k]!, 'utf-8');
+        }
+      }
+      await mkdir(join(dir, 'data'), { recursive: true });
+
+      // Phase 4: capture a pristine baseline mirror of the snapshot so re-pull can
+      // 3-way-merge (baseline vs the book's edited copy vs the current library).
+      // Never edited by the editor — only create() and a successful re-pull write it.
+      await cp(join(dir, 'templates'), join(dir, '.baseline'), { recursive: true });
+
+      const ref = (name: string, source: PulledRef['source'], version?: number): PulledRef =>
+        ({ name, source, ...(version != null ? { version } : {}) });
+
+      // Content ceiling: an explicit per-book value wins; otherwise inherit the
+      // bound author's contentBrand (spiceCeiling/violenceCeiling) when set.
+      // Absent either way → no contentCeiling → fade-to-black, untouched by the
+      // heat_check/intimacy routing (Flagship Plan 2).
+      const contentCeiling = sel.contentCeiling
+        ?? (author.contentBrand ? { spice: author.contentBrand.spiceCeiling, violence: author.contentBrand.violenceCeiling } : undefined);
+
+      // Review cadence (Flagship Plan 5): same precedence as contentCeiling — an
+      // explicit per-book value wins; otherwise inherit the bound author's
+      // reviewCadence when set. Absent either way → no review.cadence on the
+      // manifest → resolveCadence falls back to 'per_act' (today's behavior).
+      const reviewCadence = sel.reviewCadence ?? author.reviewCadence;
+
+      const manifest: BookManifest = {
+        id: slug,
+        slug,
+        title,
+        schemaVersion: BOOK_SCHEMA_VERSION,
+        createdByApp: this.appVersion,
+        lastWrittenByApp: this.appVersion,
+        phase: 'planning',
+        pipelineSequence,
+        createdAt: now,
+        pulledFrom: {
+          author: ref(sel.author, author.source),
+          voice: ref(sel.voice, voice.source),
+          genre: genre ? ref(sel.genre as string, genre.source) : null,
+          pipeline: ref(orderedPipelines[0].name, orderedPipelines[0].source, orderedPipelines[0].pipeline.schemaVersion),
+          sections: sectionEntries.map((s) => s.name),
+          skills: snappedSkills,
+          ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
+        },
+        ...(sel.format ? { format: sel.format } : {}),
+        ...(sel.preferredProvider ? { preferredProvider: sel.preferredProvider } : {}),
+        ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
+        ...(contentCeiling ? { contentCeiling } : {}),
+        ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
+        ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
+        ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),
+        ...(sel.ensemble ? { ensemble: sel.ensemble } : {}),
+        ...(sel.seeds ? { seeds: sel.seeds } : {}),
+        history: [{ at: now, event: 'created' }],
+      };
+      await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    } catch (err) {
+      // Bug #36f: a failure after claimSlug must not permanently burn the
+      // slug — remove the partially-created (claimed) book dir so the base
+      // slug can be reused on retry, then rethrow the original error.
+      await rm(dir, { recursive: true, force: true }).catch(() => {});
+      throw err;
     }
-    await mkdir(join(dir, 'data'), { recursive: true });
-
-    // Phase 4: capture a pristine baseline mirror of the snapshot so re-pull can
-    // 3-way-merge (baseline vs the book's edited copy vs the current library).
-    // Never edited by the editor — only create() and a successful re-pull write it.
-    await cp(join(dir, 'templates'), join(dir, '.baseline'), { recursive: true });
-
-    const ref = (name: string, source: PulledRef['source'], version?: number): PulledRef =>
-      ({ name, source, ...(version != null ? { version } : {}) });
-
-    // Content ceiling: an explicit per-book value wins; otherwise inherit the
-    // bound author's contentBrand (spiceCeiling/violenceCeiling) when set.
-    // Absent either way → no contentCeiling → fade-to-black, untouched by the
-    // heat_check/intimacy routing (Flagship Plan 2).
-    const contentCeiling = sel.contentCeiling
-      ?? (author.contentBrand ? { spice: author.contentBrand.spiceCeiling, violence: author.contentBrand.violenceCeiling } : undefined);
-
-    // Review cadence (Flagship Plan 5): same precedence as contentCeiling — an
-    // explicit per-book value wins; otherwise inherit the bound author's
-    // reviewCadence when set. Absent either way → no review.cadence on the
-    // manifest → resolveCadence falls back to 'per_act' (today's behavior).
-    const reviewCadence = sel.reviewCadence ?? author.reviewCadence;
-
-    const manifest: BookManifest = {
-      id: slug,
-      slug,
-      title,
-      schemaVersion: BOOK_SCHEMA_VERSION,
-      createdByApp: this.appVersion,
-      lastWrittenByApp: this.appVersion,
-      phase: 'planning',
-      pipelineSequence,
-      createdAt: now,
-      pulledFrom: {
-        author: ref(sel.author, author.source),
-        voice: ref(sel.voice, voice.source),
-        genre: genre ? ref(sel.genre as string, genre.source) : null,
-        pipeline: ref(orderedPipelines[0].name, orderedPipelines[0].source, orderedPipelines[0].pipeline.schemaVersion),
-        sections: sectionEntries.map((s) => s.name),
-        skills: snappedSkills,
-        ...(sel.series ? { series: { id: sel.series.id, title: sel.series.title } } : {}),
-      },
-      ...(sel.format ? { format: sel.format } : {}),
-      ...(sel.preferredProvider ? { preferredProvider: sel.preferredProvider } : {}),
-      ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
-      ...(contentCeiling ? { contentCeiling } : {}),
-      ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
-      ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
-      ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),
-      ...(sel.ensemble ? { ensemble: sel.ensemble } : {}),
-      ...(sel.seeds ? { seeds: sel.seeds } : {}),
-      history: [{ at: now, event: 'created' }],
-    };
-    await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
-    return manifest;
   }
 
   /** Persist the declared format block onto an existing book's manifest. */
@@ -1068,6 +1076,7 @@ export class BookService {
     return this.withBookLock(slug, async () => {
       const opened = await this.open(slug);
       if (!opened) return undefined;
+      await this.assertWritable(slug); // schemaVersion gate (mirrors clearWorld/applySeriesAssets)
       const manifest = opened.manifest;
       manifest.appendix = [...entries].sort((a, b) => a.order - b.order);
       const base = this.bookDir(slug);
@@ -1326,7 +1335,21 @@ export class BookService {
         if (kind === 'author') m.pulledFrom.author = newRef;
         else if (kind === 'voice') m.pulledFrom.voice = newRef;
         else if (kind === 'genre') m.pulledFrom.genre = newRef;
-        else if (kind === 'pipeline') m.pulledFrom.pipeline = newRef;
+        else if (kind === 'pipeline') {
+          // pulledFrom.pipeline alone is inert — pipelineSequence is the source
+          // of truth for what runs (create() sets it from orderedPipelines).
+          // Swap the OLD primary pipeline name for the pulled one in the
+          // sequence so the pull actually takes effect, preserving position and
+          // any sibling pipelines. Fall back to setting the sequence when the
+          // old name isn't present (or there was no sequence).
+          const oldName = m.pulledFrom.pipeline?.name;
+          m.pulledFrom.pipeline = newRef;
+          const seq = Array.isArray(m.pipelineSequence) ? [...m.pipelineSequence] : [];
+          const idx = oldName ? seq.indexOf(oldName) : -1;
+          if (idx >= 0) seq[idx] = ref.name;
+          else if (!seq.includes(ref.name)) seq.push(ref.name);
+          m.pipelineSequence = seq.length ? seq : [ref.name];
+        }
         applied.push(`${kind}/${ref.name}`);
       }
       // Series Phase B: resync world-building (rm+rewrite templates/ + .baseline/).
@@ -1496,7 +1519,15 @@ export class BookService {
     const pf = opened.manifest.pulledFrom;
     const out: Array<{ kind: RepullAsset['kind']; name: string }> = [];
     if (pf.author?.name) out.push({ kind: 'author', name: pf.author.name });
-    if (pf.pipeline?.name) out.push({ kind: 'pipeline', name: pf.pipeline.name });
+    // Surface EVERY sequence pipeline as repullable (each has its own
+    // templates/pipeline/<name>.json snapshot + baseline). pulledFrom.pipeline is
+    // a singular ref (only orderedPipelines[0]), so relying on it alone left the
+    // non-primary pipelines of a multi-pipeline book un-repullable. Fall back to
+    // the singular ref when there is no sequence (un-migrated v1 book).
+    const seq = Array.isArray(opened.manifest.pipelineSequence) && opened.manifest.pipelineSequence.length
+      ? opened.manifest.pipelineSequence
+      : (pf.pipeline?.name ? [pf.pipeline.name] : []);
+    for (const pname of seq) out.push({ kind: 'pipeline', name: pname });
     if (pf.voice?.name) out.push({ kind: 'voice', name: pf.voice.name });
     if (pf.genre?.name) out.push({ kind: 'genre', name: pf.genre.name });
     for (const s of pf.sections || []) out.push({ kind: 'section', name: s });
@@ -1538,7 +1569,13 @@ export class BookService {
    */
   private async assertWritable(slug: string): Promise<void> {
     const opened = await this.open(slug);
-    if (opened && opened.status !== 'ok') {
+    // Fail CLOSED: open() returns undefined for a missing/corrupt/unparseable
+    // manifest. Treating that as writable (the old `opened &&` short-circuit)
+    // would let a write proceed against a book we can't even read — refuse.
+    if (!opened) {
+      throw new Error(`book ${slug} is unreadable; refusing to write`);
+    }
+    if (opened.status !== 'ok') {
       throw new Error(`book ${slug} is ${opened.status}; refusing to write`);
     }
   }
@@ -1565,9 +1602,26 @@ export class BookService {
     const writeMap = async (root: 'templates' | '.baseline', files: Record<string, string>) => {
       const rel = this.assetRel(kind, name);
       const dir = join(base, root, rel);
+      // Clear the asset's dedicated dir before rewriting so a library-side file
+      // DELETION converges: writeMap only writes the current file set, and a
+      // stale on-disk file would keep repullStatus from ever reaching in-sync.
+      // Mirror applySeriesAssets — only author/voice/genre own a dedicated
+      // multi-file dir that is safe to wipe; pipeline/section/world SHARE a dir
+      // with sibling assets, so clearing them would destroy the siblings.
+      const dedicatedDir = kind === 'author' || kind === 'voice' || kind === 'genre';
+      if (dedicatedDir) { try { await rm(dir, { recursive: true, force: true }); } catch { /* fresh */ } }
       await mkdir(dir, { recursive: true });
       for (const [libName, content] of Object.entries(files)) {
         await writeFile(join(dir, this.assetFileName(kind, libName, name)), content, 'utf-8');
+      }
+      // The rm above wiped the description meta.json sidecar (not part of the
+      // library .md file set) — restore it so a re-pull never silently drops
+      // the author/voice/genre description. Mirrors applySeriesAssets.
+      if (dedicatedDir) {
+        const desc = this.library.get(kind, name)?.description;
+        if (typeof desc === 'string') {
+          await writeFile(join(dir, 'meta.json'), JSON.stringify({ description: desc }), 'utf-8');
+        }
       }
     };
 

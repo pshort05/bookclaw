@@ -9,9 +9,20 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, rename } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
+
+/**
+ * Crash-safe write: write a temp file in the SAME directory, then rename over
+ * the target (atomic on the same filesystem). A crash mid-write can then never
+ * leave a truncated orchestrator.json behind. Mirrors book.ts's writeFileAtomic.
+ */
+export async function writeFileAtomic(path: string, content: string): Promise<void> {
+  const tmp = `${path}.tmp`;
+  await writeFile(tmp, content, 'utf-8');
+  await rename(tmp, path);
+}
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -49,13 +60,15 @@ export interface ScriptStatus {
 // ═══════════════════════════════════════════════════════════
 
 /** Build a safe environment that doesn't leak sensitive vars */
-function buildSafeEnv(extra?: Record<string, string>): NodeJS.ProcessEnv {
+export function buildSafeEnv(extra?: Record<string, string>): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  // Redact sensitive keys
+  // Redact sensitive keys — vault key, AI provider keys, and the gateway's own
+  // bearer/MCP auth tokens (a user script must never inherit our credentials).
   const sensitiveKeys = [
     'BOOKCLAW_VAULT_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY',
     'GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'TOGETHER_API_KEY',
     'ELEVENLABS_API_KEY', 'OPENROUTER_API_KEY',
+    'BOOKCLAW_AUTH_TOKEN', 'BOOKCLAW_MCP_TOKEN',
   ];
   for (const key of sensitiveKeys) {
     delete env[key];
@@ -237,36 +250,49 @@ class ManagedScript {
           ? `Killed by signal ${signal}`
           : `Exited with code ${code}`;
         this.logs.push(`[system] Process exited: ${this._lastError}`);
-
-        if (this.config.autoRestart && this._restartCount < this.config.maxRestarts) {
-          this._state = 'restarting';
-          this._restartCount++;
-          this.emitter.emit('script-crashed', {
-            id: this.config.id, error: this._lastError, restartCount: this._restartCount,
-          });
-
-          this.restartTimer = setTimeout(() => {
-            this.restartTimer = null;
-            this.start();
-          }, this.config.restartDelayMs);
-        } else {
-          this._state = 'crashed';
-          this.emitter.emit('script-crashed', {
-            id: this.config.id, error: this._lastError, restartCount: this._restartCount,
-          });
-        }
+        this.scheduleRestartOrCrash();
       });
 
       this.process.on('error', (err) => {
+        // Spawn failure (e.g. command not found). Mirror the exit handler's crash
+        // handling so a spawn error is observable (emits 'script-crashed') and,
+        // when autoRestart is set, retried — otherwise it was a silent dead-end.
+        if (this.stopping) return;
         this._lastError = err.message;
-        this._state = 'crashed';
         this.process = null;
         this.logs.push(`[system] Spawn error: ${err.message}`);
+        this.scheduleRestartOrCrash();
       });
     } catch (err) {
       this._lastError = String(err);
       this._state = 'crashed';
       this.logs.push(`[system] Failed to start: ${this._lastError}`);
+    }
+  }
+
+  /**
+   * Shared crash handler for both the 'exit' and 'error' paths: schedule an
+   * auto-restart when configured and still under the retry cap, otherwise mark
+   * the script crashed. Either way emit 'script-crashed' so the crash is
+   * observable. Caller sets _lastError and logs before invoking.
+   */
+  private scheduleRestartOrCrash(): void {
+    if (this.config.autoRestart && this._restartCount < this.config.maxRestarts) {
+      this._state = 'restarting';
+      this._restartCount++;
+      this.emitter.emit('script-crashed', {
+        id: this.config.id, error: this._lastError, restartCount: this._restartCount,
+      });
+
+      this.restartTimer = setTimeout(() => {
+        this.restartTimer = null;
+        this.start();
+      }, this.config.restartDelayMs);
+    } else {
+      this._state = 'crashed';
+      this.emitter.emit('script-crashed', {
+        id: this.config.id, error: this._lastError, restartCount: this._restartCount,
+      });
     }
   }
 
@@ -344,6 +370,30 @@ class ManagedScript {
       return false;
     }
   }
+}
+
+/** Minimal surface the health check needs — lets it be unit-tested with a fake. */
+export interface HealthCheckable {
+  getStatus(): ScriptStatus;
+  isHealthy(): boolean;
+  stop(): Promise<void>;
+  start(): void;
+}
+
+/**
+ * Restart a script only if it is 'running' but no longer healthy (its process
+ * died out from under us). A bare start() is a no-op on a 'running' script
+ * (start() early-returns while running), so the script MUST be stopped first,
+ * then started, to actually recover. A healthy script is left untouched.
+ * Returns true if a restart was performed.
+ */
+export async function restartIfUnhealthy(script: HealthCheckable): Promise<boolean> {
+  if (script.getStatus().state === 'running' && !script.isHealthy()) {
+    await script.stop();
+    script.start();
+    return true;
+  }
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -477,10 +527,9 @@ export class OrchestratorService extends EventEmitter {
     this.stopHealthCheck();
     this.healthCheckInterval = setInterval(() => {
       for (const script of this.scripts.values()) {
-        const status = script.getStatus();
-        if (status.state === 'running' && !script.isHealthy()) {
-          script.start();
-        }
+        // An unhealthy 'running' script must be stopped THEN started — a bare
+        // start() early-returns while 'running', so it would never recover.
+        void restartIfUnhealthy(script);
       }
     }, intervalMs);
   }
@@ -527,7 +576,7 @@ export class OrchestratorService extends EventEmitter {
     try {
       const dir = join(this.configPath, '..');
       await mkdir(dir, { recursive: true });
-      await writeFile(this.configPath, JSON.stringify({ scripts: this.configs }, null, 2), 'utf-8');
+      await writeFileAtomic(this.configPath, JSON.stringify({ scripts: this.configs }, null, 2));
     } catch (err) {
       console.error('  ✗ Failed to persist orchestrator config:', err);
     }

@@ -191,10 +191,18 @@ export class ManuscriptHubService {
       const bucket = byDate.get(date);
       if (!bucket) continue;
 
-      if (entry.type === 'file_saved' || entry.type === 'step_completed') {
-        bucket.stepsCompleted++;
+      // Bug #23: a single step completion emits BOTH a `file_saved` and a
+      // `step_completed` carrying the SAME `wordCount`. Count each logical step
+      // once by sourcing each metric from a single event type: words from
+      // `file_saved` (actual saved manuscript words), steps from
+      // `step_completed` (so a non-saving step with no paired file_saved is
+      // still counted once). Summing both for either metric would double it.
+      if (entry.type === 'file_saved') {
         const wc = entry.metadata?.wordCount;
         if (typeof wc === 'number' && wc > 0) bucket.wordCount += wc;
+      }
+      if (entry.type === 'step_completed') {
+        bucket.stepsCompleted++;
       }
     }
 

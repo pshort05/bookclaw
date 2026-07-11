@@ -46,11 +46,15 @@ export class RomanceInterviewService {
   constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider) {}
 
   async turn(messages: TurnMessage[]): Promise<TurnResult> {
-    // Client holds the transcript; on the opening turn there is nothing yet, so seed a kickoff
-    // user turn (some providers reject an all-system message list).
-    const convo: TurnMessage[] = messages.length
+    // Client holds the transcript; on the opening turn there is nothing yet, and from turn 2
+    // on the client's stored history starts with the assistant's first question. Some
+    // providers (Claude, Gemini) reject a messages array that doesn't start with 'user', so
+    // normalize by prepending a kickoff user turn whenever the transcript isn't already
+    // user-first — this fixes it server-side regardless of what the client sent.
+    const kickoff: TurnMessage = { role: 'user', content: 'Let us begin. Ask your first question to start drawing out my romance story.' };
+    const convo: TurnMessage[] = (messages.length && messages[0].role === 'user')
       ? messages
-      : [{ role: 'user', content: 'Let us begin. Ask your first question to start drawing out my romance story.' }];
+      : [kickoff, ...messages];
 
     const provider = this.aiSelectProvider('editor_chat').id;
     const { text } = await this.aiComplete({ provider, system: INTERVIEW_SYSTEM, messages: convo, maxTokens: 4000, thinking: 'low' });
@@ -76,6 +80,15 @@ export class RomanceInterviewService {
       wordsPerChapter: num(s.wordsPerChapter, 2500),
       councilSelection: s.councilSelection === 'propose' ? 'propose' : 'auto',
     };
+
+    // Don't trust done:true unless the essential free-text seeds are actually present —
+    // an AI turn that signals done with a blank storyArc/characters/setting would otherwise
+    // hand the client an unrecoverable blank review form.
+    const hasEssentialSeeds = seeds.storyArc.trim() !== '' && seeds.characters.trim() !== '' && seeds.setting.trim() !== '';
+    if (!hasEssentialSeeds) {
+      return { reply: 'Almost there — tell me a bit more about the story, the leads, and the setting so I can pull it all together.', done: false };
+    }
+
     return { reply, done: true, seeds };
   }
 }

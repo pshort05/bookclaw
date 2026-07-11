@@ -98,14 +98,21 @@ export class LibraryService {
   }
 
   async loadAll(): Promise<void> {
-    this.entries.clear();
+    // Bug #27: build the full new catalog into a LOCAL map and swap it into
+    // this.entries in ONE synchronous assignment at the END (after every awaited
+    // loadKind() below). Clearing the live map here and repopulating across
+    // awaits leaves a window where a concurrent list()/get() during a reload()
+    // returns empty. Readers take this.entries fresh, so the swap gives them
+    // either the old fully-populated catalog or the new one, never an empty one.
+    const next = new Map<FileKind, Map<string, LibraryEntryFull>>();
     for (const kind of FILE_KINDS) {
       const byName = new Map<string, LibraryEntryFull>();
       // built-in first, then workspace overlay overrides by name.
       await this.loadKind(kind, join(this.builtinDir, DIR_LAYOUT[kind]), 'builtin', byName);
       await this.loadKind(kind, join(this.workspaceDir, DIR_LAYOUT[kind]), 'workspace', byName);
-      this.entries.set(kind, byName);
+      next.set(kind, byName);
     }
+    this.entries = next;
   }
 
   /** Re-read all file-backed kinds from disk (skills reload via SkillLoader.reload()). */
@@ -291,7 +298,10 @@ export class LibraryService {
         if (kind === 'pipeline') {
           if (!item.isFile() || !item.name.endsWith('.json')) continue;
           const raw = await readFile(join(dir, item.name), 'utf-8');
-          const pipeline = JSON.parse(raw) as LibraryPipeline;
+          // Bug #36d: validate on load (matching the write path + the
+          // sequence/editor/prompt branches below) — a malformed pipeline
+          // throws here and is skipped by the per-item catch, not loaded raw.
+          const pipeline = parsePipelineJson(raw) as unknown as LibraryPipeline;
           const name = item.name.replace(/\.json$/, '');
           out.set(name, { kind, name, source, description: pipeline.description, pipeline });
         } else if (kind === 'sequence') {

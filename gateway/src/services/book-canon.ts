@@ -10,7 +10,7 @@
  * registry, and outline read from the book's data/ — to inject into every
  * generation step so the model is bound to one set of facts.
  */
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
 const SECTION_CAP = 6000; // chars per canon section — keep the prompt bounded
@@ -81,6 +81,27 @@ export function extractPovDirective(styleText: string): string {
   return cap(best, 600);
 }
 
+/**
+ * Bug #36c: deterministic pick among filenames matching suffixRe. Multiple
+ * matches (e.g. two character-bible.md-suffixed files) previously resolved to
+ * whatever readdirSync's filesystem-dependent order happened to return first.
+ * Tiebreak: most-recently-modified wins (the "canon" file is the latest one
+ * written); ties broken by filename ascending so the result never varies
+ * between calls on the same disk state. Returns '' when there's no match.
+ */
+export function pickCanonFile(dataDir: string, files: string[], suffixRe: RegExp): string {
+  const matches = files.filter((n) => suffixRe.test(n));
+  if (matches.length === 0) return '';
+  if (matches.length === 1) return matches[0];
+  const withMtime = matches.map((n) => {
+    let mtimeMs = 0;
+    try { mtimeMs = statSync(join(dataDir, n)).mtimeMs; } catch { /* fail-soft: treat as oldest */ }
+    return { n, mtimeMs };
+  });
+  withMtime.sort((a, b) => b.mtimeMs - a.mtimeMs || a.n.localeCompare(b.n));
+  return withMtime[0].n;
+}
+
 /** Read the canon sources from a book's data/ dir + manifest and format them.
  * Fail-soft: returns '' on any error or when no canon files exist. */
 export function buildBookCanonBlock(dataDir: string | null | undefined, manifest: any): string {
@@ -91,7 +112,7 @@ export function buildBookCanonBlock(dataDir: string | null | undefined, manifest
     if (dataDir && existsSync(dataDir)) {
       const files = readdirSync(dataDir).filter((n) => n.endsWith('.md'));
       const read = (suffixRe: RegExp): string => {
-        const name = files.find((n) => suffixRe.test(n));
+        const name = pickCanonFile(dataDir, files, suffixRe);
         if (!name) return '';
         try { return readFileSync(join(dataDir, name), 'utf-8'); } catch { return ''; }
       };

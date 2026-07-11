@@ -35,10 +35,10 @@ interface CouncilLike {
 interface Deps { engine: EngineLike; council: CouncilLike; }
 
 /** Minimal seed-derived base story used to degrade gracefully when the council fails. */
-function seedFallbackBaseStory(seeds: Record<string, any>): string {
+export function seedFallbackBaseStory(seeds: Record<string, any>): string {
   const storyArc = typeof seeds?.storyArc === 'string' ? seeds.storyArc : '';
   const characters = typeof seeds?.characters === 'string' ? seeds.characters : '';
-  return `PREMISE\n${storyArc}\n\nRELATIONSHIP ARC\n${characters}`;
+  return `PREMISE\n${storyArc}\n\nCHARACTERS\n${characters}`;
 }
 
 /** Build CouncilSeeds from a project's context (Foundation/Premise-Intake seed fields). */

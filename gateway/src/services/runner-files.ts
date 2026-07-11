@@ -22,6 +22,10 @@ function within(base: string, target: string): boolean {
 export function mapRunnerPath(bookDir: string, relPath: string): { baseDir: string; filename: string } | null {
   const m = /^(data|templates)\/(.+)$/.exec(relPath || '');
   if (!m) return null;
+  // Reject any dot-prefixed segment (.versions/.baseline/dotfiles) or `..`
+  // traversal inside the subtree, so history sidecars stay unreachable —
+  // matching the dotfile filtering listRunnerFiles already does.
+  if (m[2].split('/').some((seg) => seg.startsWith('.'))) return null;
   const baseDir = join(bookDir, m[1]);
   if (!within(baseDir, join(baseDir, m[2]))) return null;
   return { baseDir, filename: m[2] };

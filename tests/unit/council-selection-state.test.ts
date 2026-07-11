@@ -67,28 +67,45 @@ test('applyCouncilSelection completes the council step with the chosen candidate
   clearTimeout((e as any).saveDebounceTimer);
 });
 
-test('applyCouncilSelection with an unknown candidateId falls back to the recommendedId text', () => {
+// Bug #31: an explicitly-supplied unknown candidateId must be REJECTED, not
+// silently substituted with the judge's recommendedId pick.
+test('applyCouncilSelection returns false and is a no-op when candidateId is unknown', () => {
   const { e, p } = gatedProject();
   withSelection(p, 'c3');
 
-  (e as any).applyCouncilSelection(p.id, 'bogus');
+  const result = (e as any).applyCouncilSelection(p.id, 'bogus');
 
+  assert.equal(result, false, 'unknown candidateId must be signaled, not silently substituted');
+  assert.equal(p.steps[0].status, 'active', 'step untouched');
+  assert.ok((p as any).selection, 'selection left in place');
+  assert.equal(p.status, 'paused');
+  clearTimeout((e as any).saveDebounceTimer);
+});
+
+test('applyCouncilSelection returns false and is a no-op when neither the given id nor recommendedId match any candidate', () => {
+  const { e, p } = gatedProject();
+  withSelection(p, 'does-not-exist');
+
+  const result = (e as any).applyCouncilSelection(p.id, 'also-bogus');
+
+  assert.equal(result, false);
+  assert.equal(p.steps[0].status, 'active', 'step untouched');
+  assert.ok((p as any).selection, 'selection left in place');
+  assert.equal(p.status, 'paused');
+  clearTimeout((e as any).saveDebounceTimer);
+});
+
+test('applyCouncilSelection with no candidateId supplied falls back to the recommendedId text', () => {
+  const { e, p } = gatedProject();
+  withSelection(p, 'c3');
+
+  const result = (e as any).applyCouncilSelection(p.id, '');
+
+  assert.equal(result, true);
   assert.equal(p.steps[0].status, 'completed');
   assert.equal(p.steps[0].result, 'Text for c3');
   assert.equal((p as any).selection, undefined);
   assert.equal(p.status, 'active');
-  clearTimeout((e as any).saveDebounceTimer);
-});
-
-test('applyCouncilSelection is a no-op when neither the given id nor recommendedId match any candidate', () => {
-  const { e, p } = gatedProject();
-  withSelection(p, 'does-not-exist');
-
-  (e as any).applyCouncilSelection(p.id, 'also-bogus');
-
-  assert.equal(p.steps[0].status, 'active', 'step untouched');
-  assert.ok((p as any).selection, 'selection left in place');
-  assert.equal(p.status, 'paused');
   clearTimeout((e as any).saveDebounceTimer);
 });
 

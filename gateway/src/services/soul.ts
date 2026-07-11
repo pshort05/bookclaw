@@ -79,21 +79,21 @@ export class SoulService {
   }
 
   async load(): Promise<void> {
-    // Reset loaded fields first so a re-point (useBook) fully replaces the
-    // prior author instead of leaking values for files the new dir omits.
-    this.personality = '';
-    this.personalityOverride = '';
-    this.styleGuide = '';
-    this.voiceProfile = '';
-    this.name = 'BookClaw';
-
+    // Read into locals FIRST; only mutate instance fields once every read has
+    // succeeded. A mid-read throw (transient FS error) therefore leaves the
+    // prior author identity fully intact instead of silently blanking it.
+    // composeFrom returns '' for any file the new dir omits, so assigning the
+    // returned parts still fully replaces the prior author on a successful
+    // re-point (useBook) — no old values leak.
     const parts = await this.composeFrom(this.soulDir, this.voiceDir);
+
     this.personality = parts.personality;
     this.personalityOverride = parts.personalityOverride;
     this.styleGuide = parts.styleGuide;
     this.voiceProfile = parts.voiceProfile;
 
-    // Extract name from first heading of personality
+    // Extract name from first heading of personality; default when absent.
+    this.name = 'BookClaw';
     if (this.personality) {
       const nameMatch = this.personality.match(/^#\s+(.+)/m);
       if (nameMatch) this.name = nameMatch[1].trim();

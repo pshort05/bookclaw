@@ -660,16 +660,34 @@ export class ContextEngine {
       charBudget -= slice.length;
     };
 
-    // Find current chapter index
+    // Find current chapter index. Summaries are sorted ascending by chapterNumber.
     const currentIdx = ctx.summaries.findIndex(s => s.chapterId === currentStepId);
 
+    // The chapter number being generated. When the current chapter is already
+    // summarized (a regeneration), use its own number. When it isn't summarized
+    // yet (forward generation of the next chapter), treat it as coming after
+    // every known chapter, so only genuinely-earlier chapters are ever eligible.
+    const maxChapterNumber = ctx.summaries.reduce(
+      (max, s) => Math.max(max, s.chapterNumber),
+      0,
+    );
+    const currentChapterNumber =
+      currentIdx >= 0 ? ctx.summaries[currentIdx].chapterNumber : maxChapterNumber + 1;
+
     // ── Priority 1: Previous chapter summary ──
-    const prevChapter =
-      currentIdx > 0
-        ? ctx.summaries[currentIdx - 1]
-        : ctx.summaries.length > 0
-          ? ctx.summaries[ctx.summaries.length - 1]
-          : null;
+    // "Previous" must only ever reference a chapter BEFORE the one being generated.
+    // - currentIdx > 0: the immediately-preceding summary (correct order).
+    // - currentIdx === 0: this IS the first chapter — there is no previous one.
+    //   (Previously this fell through to the LAST summary, leaking the finale into
+    //   a regenerated opening chapter.)
+    // - currentIdx < 0: current chapter not summarized yet (forward generation);
+    //   every existing summary is earlier, so the last one is the true previous.
+    let prevChapter: ChapterSummary | null = null;
+    if (currentIdx > 0) {
+      prevChapter = ctx.summaries[currentIdx - 1];
+    } else if (currentIdx < 0 && ctx.summaries.length > 0) {
+      prevChapter = ctx.summaries[ctx.summaries.length - 1];
+    }
 
     if (prevChapter) {
       addPartTruncated(
@@ -735,6 +753,9 @@ export class ContextEngine {
       if (currentCharacters.size > 0 || currentLocations.size > 0) {
         const relatedSummaries = ctx.summaries.filter(s => {
           if (s.chapterId === currentStepId) return false;
+          // Only surface genuinely-earlier chapters — never a later chapter
+          // (including the finale) when regenerating an earlier one.
+          if (s.chapterNumber >= currentChapterNumber) return false;
           if (prevChapter && s.chapterId === prevChapter.chapterId) return false;
           const hasCharOverlap = s.characters.some(c =>
             currentCharacters.has(c.toLowerCase()),

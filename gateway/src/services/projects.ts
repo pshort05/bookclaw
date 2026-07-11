@@ -265,6 +265,30 @@ export function formatPriorPhaseContext(
     phaseBlocks.join('\n\n');
 }
 
+/**
+ * Extract a single chapter's section from a joined outline block (bug #18a
+ * helper): find the "Chapter <n>" heading matching `chapterNum` and slice up
+ * to the next "Chapter <...>" heading (or end of text). Returns null if no
+ * heading for that chapter number is found — callers keep the default
+ * head-truncated block unchanged (fail-soft).
+ */
+function extractOutlineChapterSection(outlineText: string, chapterNum: number): string | null {
+  const headingRe = /\bChapter\s+(\d+)\b/gi;
+  let match: RegExpExecArray | null;
+  let start = -1;
+  let end = outlineText.length;
+  while ((match = headingRe.exec(outlineText)) !== null) {
+    if (start === -1) {
+      if (Number(match[1]) === chapterNum) start = match.index;
+      continue;
+    }
+    end = match.index;
+    break;
+  }
+  if (start === -1) return null;
+  return outlineText.slice(start, end).trim();
+}
+
 // ═══════════════════════════════════════════════════════════
 // Project Engine
 // ═══════════════════════════════════════════════════════════
@@ -502,13 +526,11 @@ export class ProjectEngine {
       ? `\n\nProject Configuration:\n${premiseContext}`
       : '';
 
-    // Calculate structural beats for outline
-    const setupEnd = Math.max(Math.round(chapters * 0.12), 1);
-    const incitingEnd = Math.max(Math.round(chapters * 0.20), setupEnd + 1);
-    const midpoint = Math.round(chapters * 0.50);
-    const twist75 = Math.round(chapters * 0.75);
-    const climaxStart = chapters - 2;
-    const climaxEnd = chapters - 1;
+    // Calculate structural beats for outline (Bug #33a: DRY'd — pipeline-vars.ts
+    // is the canonical implementation; see its computeBeats for the monotonic,
+    // gap-free boundary math).
+    const { setupEnd, incitingEnd, midpoint, twist75, climaxStart, climaxEnd } =
+      buildPipelineVars({ title, description, targetChapters: chapters, targetWordsPerChapter: wordsPerChapter });
 
     const steps: ProjectStep[] = [];
     let stepNum = 0;
@@ -585,8 +607,14 @@ export class ProjectEngine {
     );
 
     // ── Phase: Outline (2 steps) ──
+    // Bug #33a: guard the "-1"-offset ranges with Math.max so a tiny book
+    // (whose boundaries computeBeats had to collapse together) can never
+    // render a backward "Chapters X-Y" range in the prompt.
+    const incitingRangeEnd = Math.max(setupEnd + 1, incitingEnd);
+    const risingActionEnd = Math.max(incitingEnd + 1, midpoint - 1);
+    const complicationsEnd = Math.max(midpoint + 1, twist75 - 1);
     addStep('Chapter outline', 'outline', 'outline',
-      `Create a ${chapters}-chapter outline for "${title}" with structural beats.\n\nFor each chapter include:\n- Chapter number and title\n- POV character\n- Primary location\n- 3-5 key beats\n- Tension level (1-10)\n- Chapter ending hook\n\nStructure:\n- Chapters 1-${setupEnd}: Setup and world introduction\n- Chapters ${setupEnd + 1}-${incitingEnd}: Inciting incident\n- Chapters ${incitingEnd + 1}-${midpoint - 1}: Rising action\n- Chapter ${midpoint}: Midpoint twist\n- Chapters ${midpoint + 1}-${twist75 - 1}: Complications multiply\n- Chapter ${twist75}: 75% twist / all is lost\n- Chapters ${climaxStart}-${climaxEnd}: Climax sequence\n- Chapter ${chapters}: Resolution\n\nYou MUST include ALL ${chapters} chapters. Do NOT stop early. Number every chapter.`,
+      `Create a ${chapters}-chapter outline for "${title}" with structural beats.\n\nFor each chapter include:\n- Chapter number and title\n- POV character\n- Primary location\n- 3-5 key beats\n- Tension level (1-10)\n- Chapter ending hook\n\nStructure:\n- Chapters 1-${setupEnd}: Setup and world introduction\n- Chapters ${setupEnd + 1}-${incitingRangeEnd}: Inciting incident\n- Chapters ${incitingEnd + 1}-${risingActionEnd}: Rising action\n- Chapter ${midpoint}: Midpoint twist\n- Chapters ${midpoint + 1}-${complicationsEnd}: Complications multiply\n- Chapter ${twist75}: 75% twist / all is lost\n- Chapters ${climaxStart}-${climaxEnd}: Climax sequence\n- Chapter ${chapters}: Resolution\n\nYou MUST include ALL ${chapters} chapters. Do NOT stop early. Number every chapter.`,
       { skill: 'outline' }
     );
 
@@ -1012,9 +1040,9 @@ Description: ${description}`;
    *     already-generated `project.review.pendingResult` (the real drafted
    *     text); a literal no-op 'pipeline-gate' step has none, so it falls back
    *     to the original placeholder — byte-for-byte the pre-Plan-5 behavior.
-   *   - 'edit' (cadence-gate only): complete the step with `extra.editedText`
+   *   - 'edit' (either gate kind): complete the step with `extra.editedText`
    *     as its canonical result instead of the generated draft.
-   *   - 'regenerate' (cadence-gate only): reset the step to 'active' with
+   *   - 'regenerate' (either gate kind): reset the step to 'active' with
    *     `extra.note` attached (`ProjectStep.regenerateNote`) so the next run
    *     injects it into the prompt, WITHOUT completing — the pipeline stays on
    *     this step.
@@ -1033,14 +1061,21 @@ Description: ${description}`;
       const step = project.steps.find(s => s.id === stepId);
       if (step) { step.status = 'active'; step.error = undefined; step.result = undefined; }
       project.status = 'active';
-    } else if (kind === 'cadence-gate' && action === 'edit') {
+    } else if (action === 'edit') {
+      // Bug #15: was 'cadence-gate' only — a 'pipeline-gate' edit fell through
+      // to the 'approve' branch below and silently discarded the edited text.
+      // `kind` here is only 'pipeline-gate' or 'cadence-gate' (pipeline-error
+      // is handled above), so both gate kinds get the same edit semantics.
       this.completeStep(projectId, stepId, extra?.editedText ?? '');
       if (project.status !== 'completed') project.status = 'active';
-    } else if (kind === 'cadence-gate' && action === 'regenerate') {
+    } else if (action === 'regenerate') {
+      // Bug #15: was 'cadence-gate' only — a 'pipeline-gate' regenerate fell
+      // through to 'approve' below and silently completed the step instead of
+      // reopening it. See note above.
       const step = project.steps.find(s => s.id === stepId);
       if (step) { step.status = 'active'; step.error = undefined; step.result = undefined; step.regenerateNote = extra?.note; }
       project.status = 'active';
-    } else if (kind === 'cadence-gate' && action === 'stop') {
+    } else if (action === 'stop') {
       // Stays paused (mirrors clearReview) — the human declined to continue.
     } else {
       // 'approve' (default, both gate kinds — the pre-Plan-5 behavior).
@@ -1048,8 +1083,15 @@ Description: ${description}`;
       // completeStep sets status='completed' when the gate was the LAST step; in
       // that case leave it completed (so onProjectCompleted fires) rather than
       // forcing it back to 'active'.
-      const pendingResult = kind === 'cadence-gate' ? project.review?.pendingResult : undefined;
-      this.completeStep(projectId, stepId, pendingResult ?? '[approved by human review]');
+      // Bug #6 belt-and-suspenders: if the step was ALREADY completed (e.g.
+      // regenerated with fresh text while the review sat parked), do NOT
+      // re-complete it — completing again would clobber the fresh result with
+      // the stale pre-gate pendingResult. Just clear the gate and resume.
+      const gateStep = project.steps.find(s => s.id === stepId);
+      if (gateStep?.status !== 'completed') {
+        const pendingResult = kind === 'cadence-gate' ? project.review?.pendingResult : undefined;
+        this.completeStep(projectId, stepId, pendingResult ?? '[approved by human review]');
+      }
       if (project.status !== 'completed') project.status = 'active';
     }
     delete project.review;
@@ -1068,21 +1110,27 @@ Description: ${description}`;
 
   /**
    * LLM Council resume (Romance Workflow sub-project 3, Task 2): apply the
-   * user's base-story pick. Mirrors applyReviewResume's approve branch — find the
-   * chosen candidate (falling back to the judge's recommendedId if the given id
-   * doesn't match; a no-op + logged warning if even that is missing), complete
-   * the council step with its `text`, reactivate the project, clear the
-   * selection marker. See services/council-gate.ts.
+   * user's base-story pick. Mirrors applyReviewResume's approve branch — find
+   * the chosen candidate, complete the council step with its `text`,
+   * reactivate the project, clear the selection marker. See services/council-gate.ts.
+   *
+   * Bug #31: an explicitly-supplied candidateId that matches no candidate is
+   * rejected (returns false) rather than silently substituted with the
+   * judge's recommendedId — a caller passing a bad/stale id must not get a
+   * silent substitution reported as success. The recommendedId fallback is
+   * kept only for the case no candidateId is supplied at all (falsy).
+   * Returns true iff a candidate was applied.
    */
-  applyCouncilSelection(projectId: string, candidateId: string): void {
+  applyCouncilSelection(projectId: string, candidateId: string): boolean {
     const project = this.projects.get(projectId);
-    if (!project?.selection) return;
+    if (!project?.selection) return false;
     const selection = project.selection;
-    const chosen = selection.candidates.find(c => c.id === candidateId)
-      ?? selection.candidates.find(c => c.id === selection.recommendedId);
+    const chosen = candidateId
+      ? selection.candidates.find(c => c.id === candidateId)
+      : selection.candidates.find(c => c.id === selection.recommendedId);
     if (!chosen) {
       console.log(`  ⚠ Council selection: no matching candidate for '${candidateId}' (project ${projectId})`);
-      return;
+      return false;
     }
     this.completeStep(projectId, selection.stepId, chosen.text);
     // BUG C5: council paths bypass the route layer's per-step file write —
@@ -1093,6 +1141,7 @@ Description: ${description}`;
     delete project.selection;
     project.updatedAt = new Date().toISOString();
     this.persistState();
+    return true;
   }
 
   /** Clear a project's Council selection marker (abandoned — project stays paused). */
@@ -1323,9 +1372,15 @@ Description: ${description}`;
       return next;
     }
 
-    // Truly all steps done — mark project complete only if no pending/active remain
+    // Truly all steps done — mark project complete only if no pending/active
+    // remain AND no step is 'failed'. A 'failed' step is a hole in the
+    // manuscript (bug #8): without this guard the surviving steps drive to the
+    // end, remaining.length hits 0, and the project flips to 'completed' —
+    // firing completion hooks (website auto-add-book) on a book with a missing
+    // chapter. Leave the status untouched so the hole stays visible.
     const remaining = project.steps.filter(s => s.status === 'pending' || s.status === 'active');
-    if (remaining.length === 0) {
+    const hasFailed = project.steps.some(s => s.status === 'failed');
+    if (remaining.length === 0 && !hasFailed) {
       project.status = 'completed';
       project.completedAt = new Date().toISOString();
       // Fire the completion hook (used by AutoSkill + UserModel observation).
@@ -1472,6 +1527,15 @@ Description: ${description}`;
       step.status = 'skipped';
     }
 
+    // Bug #30: skipping the parked council-origination step must abandon its
+    // pending base-story selection — otherwise `project.selection` stays set
+    // and every subsequent /execute + /auto-execute 409s "Awaiting council
+    // base-story selection" forever (phantom gate). Wires clearCouncilSelection
+    // into a real call path.
+    if (project.selection?.stepId === stepId) {
+      this.clearCouncilSelection(projectId);
+    }
+
     // Update progress
     const done = project.steps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
     project.progress = Math.round((done / project.steps.length) * 100);
@@ -1492,9 +1556,12 @@ Description: ${description}`;
       return next;
     }
 
-    // Only complete when no pending AND no active steps remain.
+    // Only complete when no pending AND no active steps remain — and no step is
+    // 'failed' (mirrors completeStep): otherwise skipping the last runnable step
+    // over a failed chapter flips the project to 'completed' with a hole.
     const remaining = project.steps.filter(s => s.status === 'pending' || s.status === 'active');
-    if (remaining.length === 0) {
+    const hasFailed = project.steps.some(s => s.status === 'failed');
+    if (remaining.length === 0 && !hasFailed) {
       project.status = 'completed';
       project.completedAt = new Date().toISOString();
     }
@@ -1689,7 +1756,20 @@ Description: ${description}`;
         // slice dropped them and later steps (e.g. the outline) re-invented
         // character names. Head+tail preserves identities and recent content.
         const HEAD = 5000, TAIL = 3000;
-        for (const cs of completedSteps) {
+        // Bug #18b: per-step cap alone still let this section grow unbounded
+        // across many steps (~160k chars by step 21 of deep-revision). Bound
+        // the overall section too, keeping the most recent (most relevant)
+        // steps when the budget is exceeded.
+        const TOTAL_CAP = 40000;
+        let used = 0;
+        const included: ProjectStep[] = [];
+        for (let i = completedSteps.length - 1; i >= 0; i--) {
+          const len = Math.min(completedSteps[i].result!.length, HEAD + TAIL);
+          if (used + len > TOTAL_CAP && included.length > 0) break;
+          included.unshift(completedSteps[i]);
+          used += len;
+        }
+        for (const cs of included) {
           context += `### ${cs.label}\n`;
           const result = cs.result!;
           if (result.length > HEAD + TAIL) {
@@ -1963,10 +2043,26 @@ Description: ${description}`;
             context += `### ${bs.label}\n${truncate(bs.result!, 600)}\n\n`;
           }
         }
-        // Full outline
+        // Full outline. Bug #18a: head-truncating the joined outline at 4000
+        // chars silently drops later chapters' own beats once earlier
+        // chapters fill the budget (chapter ~10+ never saw its own outline).
+        // Fix: keep the bounded head-truncated block for overall context, but
+        // always guarantee THIS step's own chapter section is present — append
+        // it explicitly if the head slice cut it off.
         const outlineResults = getPhaseResults('outline');
         if (outlineResults.length > 0) {
-          context += `## Outline\n\n${truncate(outlineResults.map(s => s.result).join('\n\n'), 4000)}\n\n`;
+          const fullOutline = outlineResults.map(s => s.result).join('\n\n');
+          let outlineBlock = truncate(fullOutline, 4000);
+          if (step.chapterNumber) {
+            const chapterHeadingRe = new RegExp(`\\bChapter\\s+${step.chapterNumber}\\b`, 'i');
+            if (!chapterHeadingRe.test(outlineBlock)) {
+              const section = extractOutlineChapterSection(fullOutline, step.chapterNumber);
+              if (section) {
+                outlineBlock += `\n\n### Chapter ${step.chapterNumber} outline (this chapter — always included)\n${section}`;
+              }
+            }
+          }
+          context += `## Outline\n\n${outlineBlock}\n\n`;
         }
         // Try ContextEngine first for smarter context
         const engineContext = this.contextEngine?.getRelevantContext(project.id, step.id, step.prompt || '', 12000);
@@ -2117,8 +2213,11 @@ Description: ${description}`;
     for (const phase of phases) {
       let project: Project;
       if (phase.type === 'book-production') {
-        // Book production uses the novel pipeline chapter-writing logic
-        project = this.createBookProduction(phase.label, description, config);
+        // Book production uses the novel pipeline chapter-writing logic.
+        // Bug #33b: `phase.label` (e.g. "MyBook — Production") is the project's
+        // display title, not the book's title — pass the clean `title` too so
+        // chapter/polish/assembly prompts don't leak the phase suffix.
+        project = this.createBookProduction(phase.label, description, config, title);
         // Phase 8: createBookProduction takes no context; stamp bookSlug directly.
         if (bookSlug) project.bookSlug = bookSlug;
       } else {
@@ -2143,12 +2242,19 @@ Description: ${description}`;
 
   /**
    * Create a Book Production project with dynamic chapter steps.
+   *
+   * `title` is the project's own display title (e.g. "MyBook — Production" when
+   * called from createPipeline). Bug #33b: chapter/polish/assembly prompts must
+   * reference the clean book title instead — `bookTitle` carries that when it
+   * differs, defaulting to `title` for callers (tests, direct API use) that
+   * already pass the plain book title.
    */
-  createBookProduction(title: string, description: string, config: NovelPipelineConfig = {}): Project {
+  createBookProduction(title: string, description: string, config: NovelPipelineConfig = {}, bookTitle?: string): Project {
     const id = `project-${this.nextId++}`;
     const now = new Date().toISOString();
     const chapters = Math.min(Math.max(config.targetChapters || 25, 1), 200);
     const wordsPerChapter = Math.max(config.targetWordsPerChapter || 3000, 100);
+    const promptTitle = bookTitle ?? title;
 
     const steps: ProjectStep[] = [];
     for (let ch = 1; ch <= chapters; ch++) {
@@ -2158,7 +2264,7 @@ Description: ${description}`;
         phase: 'writing',
         skill: 'write',
         taskType: 'creative_writing',
-        prompt: writeChapterPrompt(ch, title, wordsPerChapter, description),
+        prompt: writeChapterPrompt(ch, promptTitle, wordsPerChapter, description),
         status: 'pending',
         wordCountTarget: wordsPerChapter,
         chapterNumber: ch,
@@ -2176,7 +2282,7 @@ Description: ${description}`;
         phase: 'polish',
         skill: 'revise',
         taskType: 'revision',
-        prompt: polishChapterPrompt(ch, title, wordsPerChapter),
+        prompt: polishChapterPrompt(ch, promptTitle, wordsPerChapter),
         status: 'pending',
         wordCountTarget: wordsPerChapter,
         chapterNumber: ch,
@@ -2189,7 +2295,7 @@ Description: ${description}`;
       label: 'Compile manuscript',
       phase: 'assembly',
       taskType: 'general',
-      prompt: `Generate a completion report for "${title}". Total chapters: ${chapters}. Target: ~${(chapters * wordsPerChapter).toLocaleString()} words. Assess strengths, areas for improvement, and next steps.`,
+      prompt: `Generate a completion report for "${promptTitle}". Total chapters: ${chapters}. Target: ~${(chapters * wordsPerChapter).toLocaleString()} words. Assess strengths, areas for improvement, and next steps.`,
       status: 'pending',
     });
 

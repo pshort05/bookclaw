@@ -37,12 +37,17 @@ export async function generateEpubBuffer(options: EpubExportOptions): Promise<Bu
   } = options;
 
   const bookId = isbn || `bookclaw-${Date.now()}`;
-  const chapters = splitIntoChapters(content);
+  const chapters = splitIntoChapters(content, title);
   const appendix = options.appendix ?? [];
-  const zip = new AdmZip();
+  // noSort keeps entries in insertion order so mimetype stays first in the
+  // central directory (adm-zip alphabetically re-sorts by default).
+  const zip = new AdmZip(undefined, { noSort: true });
 
   // ── 1. mimetype (must be first, uncompressed) ──
-  zip.addFile('mimetype', Buffer.from('application/epub+zip', 'utf-8'));
+  // OCF requires this entry to be STORED (uncompressed); adm-zip's addFile
+  // always DEFLATEs non-empty content, so force the method back to STORED (0).
+  const mimetypeEntry = zip.addFile('mimetype', Buffer.from('application/epub+zip', 'utf-8'));
+  mimetypeEntry.header.method = 0; // Constants.STORED
 
   // ── 2. META-INF/container.xml ──
   zip.addFile('META-INF/container.xml', Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
@@ -238,9 +243,12 @@ ${attrib}${bodyHtml}
 }
 
 /**
- * Split markdown content into chapters based on # or ## headings.
+ * Split markdown content into chapters based on # or ## headings. `bookTitle`,
+ * if given, lets a leading title/byline block whose heading text matches the
+ * book title be dropped instead of becoming a phantom first chapter / TOC
+ * entry — it duplicates the dedicated front-matter title page built separately.
  */
-function splitIntoChapters(content: string): Chapter[] {
+export function splitIntoChapters(content: string, bookTitle?: string): Chapter[] {
   const chapters: Chapter[] = [];
   const lines = content.split('\n');
   let currentTitle = 'Untitled';
@@ -249,8 +257,13 @@ function splitIntoChapters(content: string): Chapter[] {
 
   for (const line of lines) {
     if (line.match(/^#{1,2}\s/)) {
+      // chapterNum === 0 guarantees this only ever applies to the very first
+      // heading found, so a real chapter that happens to share the book's
+      // title later on is never mistakenly dropped.
+      const isTitleBlock = chapterNum === 0 && !!bookTitle &&
+        currentTitle.trim().toLowerCase() === bookTitle.trim().toLowerCase();
       // Save previous chapter
-      if (currentContent.length > 0 || chapterNum > 0) {
+      if ((currentContent.length > 0 || chapterNum > 0) && !isTitleBlock) {
         chapterNum++;
         chapters.push({
           title: currentTitle,
@@ -290,7 +303,7 @@ function splitIntoChapters(content: string): Chapter[] {
 /**
  * Convert markdown content to XHTML paragraphs.
  */
-function markdownToXhtml(markdown: string): string {
+export function markdownToXhtml(markdown: string): string {
   const lines = markdown.split('\n');
   const output: string[] = [];
   let isFirstParagraph = true;
@@ -303,8 +316,9 @@ function markdownToXhtml(markdown: string): string {
       continue;
     }
 
-    // Scene breaks
-    if (trimmed.match(/^(\*\s*\*\s*\*|~~~|---|\* \* \*)$/)) {
+    // Scene breaks (deliberate separators only — a plain "---" is a markdown
+    // horizontal rule, not a scene break, and must pass through unconverted).
+    if (trimmed.match(/^(\*\s*\*\s*\*|~~~|\* \* \*)$/)) {
       output.push('  <p class="scene-break">* * *</p>');
       isFirstParagraph = true;
       continue;
@@ -317,13 +331,32 @@ function markdownToXhtml(markdown: string): string {
       continue;
     }
 
+    // Deeper headings (#### and up)
+    if (trimmed.match(/^#{4,6}\s/)) {
+      output.push(`  <h4>${escapeXml(trimmed.replace(/^#{4,6}\s+/, ''))}</h4>`);
+      isFirstParagraph = true;
+      continue;
+    }
+
+    // Blockquotes
+    if (/^>\s?/.test(trimmed)) {
+      let html = escapeXml(trimmed.replace(/^>\s?/, ''));
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
+      output.push(`  <blockquote><p>${html}</p></blockquote>`);
+      isFirstParagraph = true;
+      continue;
+    }
+
     // Regular paragraph
     let html = escapeXml(trimmed);
 
     // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    // Italic
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Italic — require a non-space character immediately inside each asterisk
+    // so a stray/typo pair with spaced-out asterisks (e.g. "3 * 4 * 5") is
+    // left as literal text instead of being treated as emphasis.
+    html = html.replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
 
     const cssClass = isFirstParagraph ? ' class="first"' : '';
     output.push(`  <p${cssClass}>${html}</p>`);

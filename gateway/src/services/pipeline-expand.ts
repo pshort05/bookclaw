@@ -13,9 +13,18 @@ export interface ResolvedStepInput {
   parallelGroup?: string;
 }
 
+// Bug #36a: warn (once per var name) when a {{var}} references a key that is
+// genuinely absent from vars — a typo'd template var otherwise silently
+// renders as ''. A present-but-empty/null value stays silent (not a typo).
+const warnedMissingVars = new Set<string>();
+
 /** {{var}} substitution (whitespace-tolerant); replacer fn so values insert verbatim. */
 export function interpolate(tpl: string, vars: Record<string, string | number>): string {
   return String(tpl ?? '').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, k) => {
+    if (!(k in vars) && !warnedMissingVars.has(k)) {
+      warnedMissingVars.add(k);
+      console.warn(`  ⚠ Pipeline: template var {{${k}}} is not defined — rendering as empty (check for a typo)`);
+    }
     const v = vars[k];
     return v === undefined || v === null ? '' : String(v);
   });

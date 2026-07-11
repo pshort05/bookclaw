@@ -57,17 +57,30 @@ const PROSE_EPILOGUE_HEADING =
 // prose after it) can never trigger the slice.
 const EPILOGUE_WINDOW = 4;
 
-// A standalone production-meta line: a bolded word-count label the compile/assemble
-// step leaks (e.g. `**Target Word Count per Chapter:** ~2500 words`, `**Final Word
-// Count:** 800,000 words`). Anchored to the `**… Word Count …:**` label form —
-// real prose never opens a line with a bolded word-count label ending in a colon.
-const PRODUCTION_META_LINE =
-  /^\s*\*{1,2}\s*(?:target|final|total|estimated)\s+word\s+count(?:\s+per\s+chapter)?\s*:?\s*\*{0,2}\s*:?/i;
+// Standalone production-meta word-count lines the compile/assemble step leaks
+// (e.g. `**Target Word Count per Chapter:** ~2500 words`, `**Final Word Count:**
+// 800,000 words`). These whole-book / planning labels are NEVER legitimate
+// deliverable content — not in prose, not in an outline/breakdown — so they are
+// stripped unconditionally.
+const WHOLE_BOOK_WORDCOUNT_LINE =
+  /^\s*\*{1,2}\s*(?:target|final|total)\s+word\s+count(?:\s+per\s+chapter)?\s*:?\s*\*{0,2}\s*:?/i;
+// The `Estimated word count` (per scene) form is the intended DELIVERABLE of a
+// non-prose scene-breakdown step, so it is stripped only in prose (a chapter /
+// manuscript step), where a leaked estimate label IS stray meta. Gating just this
+// ambiguous form keeps breakdowns intact while the whole-book form above (compile
+// leakage) is always removed — a single `prose` flag can't separate the two, so
+// the label distinguishes them.
+const ESTIMATE_WORDCOUNT_LINE =
+  /^\s*\*{1,2}\s*estimated\s+word\s+count(?:\s+per\s+scene)?\s*:?\s*\*{0,2}\s*:?/i;
 
 export function stripMetaCommentary(input: string, opts: { prose?: boolean } = {}): string {
   const lines = String(input ?? '').replace(/\r\n/g, '\n').split('\n')
-    // ── drop standalone production-meta lines anywhere (run-review B4) ──
-    .filter((line) => !PRODUCTION_META_LINE.test(line));
+    // ── word-count meta (run-review B4). Whole-book / planning labels
+    //    (Final/Total/Target Word Count) are compile-step leakage and are dropped
+    //    ALWAYS; the `Estimated word count` (per scene) form is a legitimate
+    //    scene-breakdown deliverable, so it is dropped only in prose. Both steps
+    //    are non-prose, so the label — not the `prose` flag — separates them. ──
+    .filter((line) => !(WHOLE_BOOK_WORDCOUNT_LINE.test(line) || (opts.prose && ESTIMATE_WORDCOUNT_LINE.test(line))));
 
   // ── leading: drop a step header / clear preamble line (single line) ──
   let s = 0;

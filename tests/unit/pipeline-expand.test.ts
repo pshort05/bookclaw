@@ -10,7 +10,11 @@ test('buildPipelineVars computes chapter count, words, and structural beats', ()
   assert.equal(v.wordsPerChapter, 2500);
   assert.equal(v.midpoint, 10);      // round(20*0.5)
   assert.equal(v.twist75, 15);       // round(20*0.75)
-  assert.equal(v.climaxStart, 18);   // chapters-2
+  // Bug #33a: climaxStart now sits immediately after twist75 (16), not a fixed
+  // chapters-2 (18) — the old fixed offset left chapters 16-17 unassigned to
+  // any outline beat for this chapter count.
+  assert.equal(v.climaxStart, 16);
+  assert.equal(v.climaxEnd, 19);
 });
 test('buildPipelineVars applies defaults and clamps', () => {
   const v = buildPipelineVars({ title: 'T', description: 'D' });

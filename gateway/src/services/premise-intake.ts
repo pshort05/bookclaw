@@ -53,7 +53,7 @@ export class PremiseIntakeService {
   }
 
   async ground(setting: string, realPlace: RealPlace, premiseText: string): Promise<GroundingResult> {
-    if (!realPlace.isReal) return { dossier: setting, discrepancies: [], status: 'skipped', citations: [] };
+    if (!realPlace.isReal || !realPlace.canonicalName) return { dossier: setting, discrepancies: [], status: 'skipped', citations: [] };
 
     let researchText = ''; let citations: Array<{ title: string; url?: string }> = []; let status: GroundingStatus = 'fallback-llm';
     if (this.researchLookup) {

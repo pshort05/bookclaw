@@ -8,6 +8,16 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 
+// Bug #36e: the daily budget resets at the OPERATOR's local midnight, not UTC
+// midnight — toISOString() is always UTC and would reset hours off from the
+// user's actual day boundary.
+export function localDayKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 interface CostConfig {
   dailyLimit: number;
   monthlyLimit: number;
@@ -42,7 +52,7 @@ export class CostTracker {
     this.dailyLimit = config.dailyLimit ?? 5;
     this.monthlyLimit = config.monthlyLimit ?? 50;
     this.alertAt = config.alertAt ?? 0.8;
-    this.lastResetDay = new Date().toISOString().split('T')[0];
+    this.lastResetDay = localDayKey();
     this.lastResetMonth = new Date().toISOString().substring(0, 7);
     this.persistPath = config.persistPath;
   }
@@ -175,7 +185,7 @@ export class CostTracker {
   async reset(): Promise<void> {
     this.dailySpend = 0;
     this.monthlySpend = 0;
-    this.lastResetDay = new Date().toISOString().split('T')[0];
+    this.lastResetDay = localDayKey();
     this.lastResetMonth = new Date().toISOString().substring(0, 7);
     await this.persist();
   }
@@ -189,7 +199,7 @@ export class CostTracker {
   }
 
   private checkReset(): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDayKey();
     const month = new Date().toISOString().substring(0, 7);
     let changed = false;
     if (today !== this.lastResetDay) {

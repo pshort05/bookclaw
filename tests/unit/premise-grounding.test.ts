@@ -32,3 +32,25 @@ test('ground falls back when research is unavailable', async () => {
   const out = await svc.ground('Surf City...', { isReal: true, canonicalName: 'LBI' }, 'premise');
   assert.equal(out.status, 'fallback-llm');
 });
+
+// Bug #32(a): isReal:true with a missing/empty canonicalName must not research "undefined".
+test('ground skips research when isReal is true but canonicalName is missing', async () => {
+  const queries: string[] = [];
+  const spyResearch = { lookup: async (query: string) => { queries.push(query); return research.lookup(); } };
+  const svc = new PremiseIntakeService(async () => ({ text: groundingJson }), () => ({ id: 'gemini' }), spyResearch);
+  const out = await svc.ground('a coastal town', { isReal: true, canonicalName: undefined }, 'premise');
+  assert.equal(out.status, 'skipped');
+  assert.deepEqual(out.discrepancies, []);
+  assert.equal(out.dossier, 'a coastal town');
+  assert.equal(queries.length, 0, 'research lookup must not be called');
+  assert.ok(!queries.some(q => q.includes('undefined')), 'no query should ever contain the literal "undefined"');
+});
+
+test('ground skips research when isReal is true but canonicalName is an empty string', async () => {
+  const queries: string[] = [];
+  const spyResearch = { lookup: async (query: string) => { queries.push(query); return research.lookup(); } };
+  const svc = new PremiseIntakeService(async () => ({ text: groundingJson }), () => ({ id: 'gemini' }), spyResearch);
+  const out = await svc.ground('a coastal town', { isReal: true, canonicalName: '' }, 'premise');
+  assert.equal(out.status, 'skipped');
+  assert.equal(queries.length, 0, 'research lookup must not be called');
+});

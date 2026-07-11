@@ -35,7 +35,10 @@ export class ProviderThrottle {
   }
 
   private limitFor(provider: string): number {
-    return this.limits[provider] ?? this.defaultLimit;
+    const limit = this.limits[provider] ?? this.defaultLimit;
+    // Bug #36b: a configured limit <= 0 (hand-edited config) must never
+    // deadlock every call to that provider — clamp to a minimum of 1.
+    return limit > 0 ? limit : 1;
   }
 
   private acquireSlot(provider: string): Promise<void> {

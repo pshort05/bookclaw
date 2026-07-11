@@ -35,7 +35,7 @@ async function makeRouter(opts: { keys?: string[]; overBudget?: boolean; config?
 test('getOutputBudget returns the per-task budget, 4096 for unknown tasks', () => {
   assert.equal(getOutputBudget('outline'), 16384);
   assert.equal(getOutputBudget('creative_writing'), 16384);
-  assert.equal(getOutputBudget('book_bible'), 12288);
+  assert.equal(getOutputBudget('book_bible'), 16384);
   assert.equal(getOutputBudget('general'), 4096);
   assert.equal(getOutputBudget('totally-unknown-task'), 4096);
 });
@@ -134,8 +134,12 @@ test('over budget with only paid providers, selectProvider fails closed (matches
   // silently burning budget, mirroring getFallbackProvider's fail-closed return.
   // (Code-review 2026-06-12, finding F17: the absolute fallback must honor the
   // budget cap instead of bypassing it.)
+  // Bug #35e: a provider IS configured here, just over budget, so the error
+  // must be the budget-exhausted message, not the "please configure" one
+  // (that one is reserved for the zero-providers-configured case, covered
+  // below by 'selectProvider throws when no providers are available').
   const router = await makeRouter({ keys: ['anthropic_api_key'], overBudget: true });
-  assert.throws(() => router.selectProvider('final_edit'), /No AI providers available/);
+  assert.throws(() => router.selectProvider('final_edit'), /budget exhausted/i);
 });
 
 test('selectProvider throws when no providers are available', async () => {

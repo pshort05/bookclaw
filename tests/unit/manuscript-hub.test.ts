@@ -130,7 +130,7 @@ test('recent: 14 contiguous day buckets, ascending, with file_saved/step_complet
   assert.deepEqual([...dates].sort(), dates);
   const today = rep.recent.find(d => d.date === todayISO)!;
   assert.equal(today.wordCount, 800);      // only file_saved word count
-  assert.equal(today.stepsCompleted, 2);   // file_saved + step_completed (chat ignored)
+  assert.equal(today.stepsCompleted, 1);   // bug #23: steps come from step_completed only (file_saved + chat ignored)
 });
 
 test('recent: entries older than the cutoff window are excluded', async () => {

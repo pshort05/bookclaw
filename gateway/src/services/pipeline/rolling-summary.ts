@@ -39,6 +39,7 @@ export function buildRollingSummary(args: {
   const arc = prior.slice(arcStart, recentStart);
   const macro = prior.slice(0, arcStart);
 
+  // Narrative (prose) sections. These are the compressible tiers.
   const parts: string[] = ['## Rolling Story Memory'];
 
   if (recent.length > 0) {
@@ -64,19 +65,38 @@ export function buildRollingSummary(args: {
     );
   }
 
-  if (entities.length > 0) {
-    parts.push(
-      '### Entity Registry\n' +
+  // Entity Registry — the cross-chapter continuity roster. This is the single
+  // most important thing to preserve, so it gets a protected slice of the
+  // budget and the NARRATIVE sections above are truncated to fit around it,
+  // rather than a naive whole-block head-slice sacrificing the registry last.
+  const registry = entities.length > 0
+    ? '### Entity Registry\n' +
       entities.map(e => {
         const attrs = Object.entries(e.attributes).map(([k, v]) => `${k}: ${v}`).join(', ');
         return `- **${e.name}** (${e.type}): ${e.description}${attrs ? ` (${attrs})` : ''}`;
       }).join('\n')
-    );
+    : '';
+
+  const SEP = '\n\n';
+  const TRUNC = '\n…[truncated]';
+  let narrative = parts.join(SEP);
+
+  if (!registry) {
+    if (narrative.length > BLOCK_CAP) {
+      narrative = narrative.slice(0, BLOCK_CAP - TRUNC.length) + TRUNC;
+    }
+    return narrative;
   }
 
-  let block = parts.join('\n\n');
-  if (block.length > BLOCK_CAP) {
-    block = block.slice(0, BLOCK_CAP) + '\n…[truncated]';
+  if (registry.length >= BLOCK_CAP) {
+    // Registry alone fills the budget — keep as much of it as fits.
+    return registry.slice(0, BLOCK_CAP - TRUNC.length) + TRUNC;
   }
-  return block;
+
+  // Reserve the full registry; budget what's left for the narrative sections.
+  const narrativeBudget = BLOCK_CAP - registry.length - SEP.length;
+  if (narrative.length > narrativeBudget) {
+    narrative = narrative.slice(0, Math.max(0, narrativeBudget - TRUNC.length)) + TRUNC;
+  }
+  return narrative + SEP + registry;
 }

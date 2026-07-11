@@ -16,6 +16,14 @@ export interface ChapterFile { name: string; content: string; mtime: number; }
 // Chapter 1: The Night Shift" sanitizes to ...-write-chapter-1-the-night-shift.md).
 const CHAPTER_RE = /(write|polish)-chapter-(\d+)(?:-[^/]*)?\.md$/i;
 
+// The deep-revision pipeline's "Apply {macro,scene-level,line-level} revisions
+// (full manuscript rewrite)" steps save the ENTIRE rewritten manuscript as one
+// file (no chapter number in the filename — see library/pipelines/deep-revision.json),
+// slugified from the step label, e.g. "...-apply-macro-revisions-full-manuscript-rewrite-.md".
+// This is the latest post-polish pass, so it should supersede write/polish for
+// any chapter it contains.
+const REVISION_RE = /apply-.*revisions.*full-manuscript-rewrite-?\.md$/i;
+
 /** Parse a step-output filename into its chapter number + kind, or null. */
 export function parseChapterFile(name: string): { number: number; kind: 'write' | 'polish' } | null {
   const m = CHAPTER_RE.exec(name);
@@ -23,13 +31,42 @@ export function parseChapterFile(name: string): { number: number; kind: 'write' 
   return { number: Number(m[2]), kind: m[1].toLowerCase() as 'write' | 'polish' };
 }
 
+/** Split a whole-manuscript revision-rewrite file into per-chapter chunks keyed
+ * by chapter number, using "# Chapter N" / "## Chapter N: Title" headings — the
+ * shape the deep-revision "apply revisions" steps are instructed to preserve. */
+function splitRevisionChapters(content: string): Map<number, string> {
+  const chapters = new Map<number, string>();
+  let number: number | null = null;
+  let buf: string[] = [];
+  const flush = () => { if (number !== null && buf.length) chapters.set(number, buf.join('\n').trim()); };
+  for (const line of String(content ?? '').split('\n')) {
+    const m = /^#{1,2}\s+Chapter\s+(\d+)\b/i.exec(line);
+    if (m) {
+      flush();
+      number = Number(m[1]);
+      buf = [line];
+    } else if (number !== null) {
+      buf.push(line);
+    }
+  }
+  flush();
+  return chapters;
+}
+
 /**
  * One file per chapter number: polish wins over write (the canonical output);
- * within the same kind, the newest mtime wins. Returned ordered by chapter
- * number. Non-chapter files are dropped.
+ * within the same kind, the newest mtime wins. A deep-revision whole-manuscript
+ * rewrite (see REVISION_RE) then overrides write/polish for any chapter number
+ * it covers — it's a later, post-polish pass. Chapters it doesn't cover keep
+ * their write/polish pick. Returned ordered by chapter number. Non-chapter,
+ * non-revision files are dropped.
+ *
+ * Minimal-version note: if more than one revision-rewrite file exists (e.g. a
+ * truncated pass that continued in a later run), only the single newest by
+ * mtime is used — earlier revision passes are not merged in chapter-by-chapter.
  */
 export function pickLatestChapters(files: ChapterFile[]): ChapterFile[] {
-  const best = new Map<number, { file: ChapterFile; kind: 'write' | 'polish' }>();
+  const best = new Map<number, { file: ChapterFile; kind: 'write' | 'polish' | 'revision' }>();
   for (const f of files) {
     const meta = parseChapterFile(f.name);
     if (!meta) continue;
@@ -40,6 +77,15 @@ export function pickLatestChapters(files: ChapterFile[]): ChapterFile[] {
       (meta.kind === cur.kind && f.mtime > cur.file.mtime);                 // newer same-kind wins
     if (better) best.set(meta.number, { file: f, kind: meta.kind });
   }
+
+  const revisionFiles = files.filter((f) => REVISION_RE.test(f.name));
+  const latestRevision = revisionFiles.sort((a, b) => b.mtime - a.mtime)[0];
+  if (latestRevision) {
+    for (const [number, content] of splitRevisionChapters(latestRevision.content)) {
+      best.set(number, { file: { name: latestRevision.name, content, mtime: latestRevision.mtime }, kind: 'revision' });
+    }
+  }
+
   return [...best.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v.file);
 }
 

@@ -126,7 +126,7 @@ ISBN: [ISBN placeholder]`;
   // MAIN CONTENT (chapters)
   // ═══════════════════════════════════════
 
-  const mainParagraphs = parseMarkdownToDocx(content);
+  const mainParagraphs = parseMarkdownToDocx(content, title);
 
   sections.push({
     properties: { type: SectionType.NEXT_PAGE, page: { margin: margins } },
@@ -235,9 +235,30 @@ ISBN: [ISBN placeholder]`;
 }
 
 /**
- * Parse markdown content into DOCX paragraphs with professional formatting.
+ * A book's own title/byline block ("# Title\n\n*by Author*", as prepended by
+ * assembleManuscript, or a bare "# Title" as prepended by other compile paths)
+ * is redundant with the dedicated front-matter title page built separately —
+ * it must not become a phantom first "chapter" heading in the body. Strip a
+ * leading heading whose text matches the book title, plus everything up to
+ * (not including) the next real heading.
  */
-function parseMarkdownToDocx(content: string): any[] {
+export function stripLeadingTitleBlock(content: string, bookTitle?: string): string {
+  if (!bookTitle) return content;
+  const lines = content.split('\n');
+  const first = lines[0]?.match(/^#{1,2}\s+(.*)$/);
+  if (!first || first[1].trim().toLowerCase() !== bookTitle.trim().toLowerCase()) return content;
+  let next = 1;
+  while (next < lines.length && !/^#{1,2}\s/.test(lines[next])) next++;
+  return next < lines.length ? lines.slice(next).join('\n') : content;
+}
+
+/**
+ * Parse markdown content into DOCX paragraphs with professional formatting.
+ * `bookTitle`, if given, lets a redundant leading title/byline block (see
+ * stripLeadingTitleBlock) be dropped instead of rendered as a phantom chapter.
+ */
+export function parseMarkdownToDocx(content: string, bookTitle?: string): any[] {
+  content = stripLeadingTitleBlock(content, bookTitle);
   const paragraphs: any[] = [];
   const lines = content.split('\n');
   let isFirstChapter = true;
@@ -287,8 +308,31 @@ function parseMarkdownToDocx(content: string): any[] {
       continue;
     }
 
-    // Scene break markers
-    if (line.trim().match(/^(\*\s*\*\s*\*|~~~|---|\* \* \*)$/)) {
+    // Deeper headings (#### and up)
+    if (line.match(/^#{4,6}\s/)) {
+      paragraphs.push(new Paragraph({
+        text: line.replace(/^#{4,6}\s+/, ''),
+        heading: HeadingLevel.HEADING_4,
+        spacing: { before: 150, after: 100 },
+      }));
+      continue;
+    }
+
+    // Blockquotes
+    if (/^>\s?/.test(line.trim())) {
+      const quoted = line.trim().replace(/^>\s?/, '');
+      paragraphs.push(new Paragraph({
+        children: parseInlineFormatting(quoted),
+        indent: { left: 720 },
+        spacing: { after: 100, line: 276 },
+      }));
+      continue;
+    }
+
+    // Scene break markers (deliberate separators only — a plain "---" is a
+    // markdown horizontal rule, not a scene break, and must pass through
+    // unconverted).
+    if (line.trim().match(/^(\*\s*\*\s*\*|~~~|\* \* \*)$/)) {
       paragraphs.push(new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [new TextRun({ text: '* * *', size: 22, font: 'Georgia' })],
@@ -321,10 +365,13 @@ function parseMarkdownToDocx(content: string): any[] {
 /**
  * Parse inline markdown formatting (bold, italic) into TextRuns.
  */
-function parseInlineFormatting(text: string): any[] {
+export function parseInlineFormatting(text: string): any[] {
   const children: any[] = [];
-  // Split by bold (**text**) and italic (*text*) markers
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/);
+  // Split by bold (**text**) and italic (*text*) markers. The italic marker
+  // requires a non-space character immediately inside each asterisk, so a
+  // stray/typo pair with spaced-out asterisks (e.g. "3 * 4 * 5") is left as
+  // literal text instead of being treated as emphasis.
+  const parts = text.split(/(\*\*.*?\*\*|\*\S(?:.*?\S)?\*)/);
 
   for (const part of parts) {
     if (part.startsWith('**') && part.endsWith('**')) {

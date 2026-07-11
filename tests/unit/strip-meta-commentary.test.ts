@@ -56,7 +56,7 @@ test('empty / whitespace input is safe', () => {
   assert.equal(stripMetaCommentary('   \n\n  '), '');
 });
 
-test('run-review B4: drops leaked production word-count meta lines, keeps prose', () => {
+test('run-review B4: drops leaked whole-book/planning word-count meta lines on the (non-prose) compile step', () => {
   const input = [
     '# Compile Manuscript', '',
     '**Target Word Count per Chapter:** ~2500 words',
@@ -64,9 +64,14 @@ test('run-review B4: drops leaked production word-count meta lines, keeps prose'
     '# Chapter 1', '',
     'She checked the final word count on the ledger and sighed.',
   ].join('\n');
-  const out = stripMetaCommentary(input);
-  assert.doesNotMatch(out, /Target Word Count/, 'target-per-chapter meta line removed');
-  assert.doesNotMatch(out, /\*\*Final Word Count/, 'bold final-count meta line removed');
+  // The compile/assemble step is NON-prose (taskType 'general'), so it is called
+  // with prose:false — yet its leaked whole-book/planning word-count labels must
+  // STILL be stripped (they are never legitimate deliverable content). Bug #20's
+  // first fix wrongly gated all word-count strips on prose, re-leaking these into
+  // the exported book; the whole-book/Target/Final forms strip unconditionally.
+  const out = stripMetaCommentary(input, { prose: false });
+  assert.doesNotMatch(out, /Target Word Count/, 'target-per-chapter meta line removed even on a non-prose step');
+  assert.doesNotMatch(out, /\*\*Final Word Count/, 'bold final-count meta line removed even on a non-prose step');
   assert.match(out, /# Chapter 1/, 'real heading preserved');
   assert.match(out, /final word count on the ledger/, 'mid-prose mention of "word count" preserved');
 });
@@ -74,6 +79,21 @@ test('run-review B4: drops leaked production word-count meta lines, keeps prose'
 test('run-review B4: an unbolded prose line mentioning word count is never dropped', () => {
   const prose = 'Total word count was the last thing on her mind as she ran.';
   assert.equal(stripMetaCommentary(prose), prose);
+});
+
+test('bug #20: non-prose (deliverable) steps PRESERVE bolded word-count lines', () => {
+  // A Scene-breakdown (outline-type, NON-prose) step legitimately emits a bolded
+  // "Estimated word count" per scene — that IS the deliverable, not meta noise.
+  const breakdown = '**Estimated word count:** 800\n\nScene 1: The confrontation on the pier.';
+  assert.equal(stripMetaCommentary(breakdown, { prose: false }), breakdown);
+  // Same when opts omitted entirely (defaults to non-prose).
+  assert.equal(stripMetaCommentary(breakdown), breakdown);
+});
+
+test('bug #20: prose steps still STRIP a trailing bolded word-count meta line', () => {
+  const out = stripMetaCommentary('Chapter prose ran long and true.\n\n**Total word count:** 2500', { prose: true });
+  assert.doesNotMatch(out, /Total word count/, 'prose-mode word-count meta noise still stripped');
+  assert.equal(out, 'Chapter prose ran long and true.');
 });
 
 test('prose-mode strips a BARE (no-#) "Polish/Write Chapter N" leading label (2026-07-08)', () => {
