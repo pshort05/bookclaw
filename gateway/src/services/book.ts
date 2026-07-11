@@ -10,7 +10,7 @@
  * Phase 2 STORES books; it does not wire them into generation (Phase 3). Skills
  * are not snapshotted yet (Phase 3/4). Reads/writes stay under booksDir.
  */
-import { readFile, writeFile, mkdir, rm, cp } from 'fs/promises';
+import { readFile, writeFile, mkdir, rm, cp, rename } from 'fs/promises';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import type { LibraryService, LibraryEntryFull } from './library.js';
@@ -106,6 +106,18 @@ function composeGenreGuide(files: Record<string, string>): string | null {
   return parts.length ? parts.join('\n\n') : null;
 }
 
+/**
+ * Crash-safe write for book.json and the active-book/channel pointer files (C2):
+ * write a temp file in the SAME directory, then rename over the target (atomic
+ * on the same filesystem). A crash mid-write can then never leave a truncated
+ * manifest behind — open() would return undefined and list() would skip the book.
+ */
+async function writeFileAtomic(path: string, content: string): Promise<void> {
+  const tmp = `${path}.tmp`;
+  await writeFile(tmp, content, 'utf-8');
+  await rename(tmp, path);
+}
+
 /** The library names used to seed the first-run Default Book. */
 const DEFAULT_BOOK_SELECTION: BookSelection = {
   title: 'Default Book',
@@ -135,6 +147,11 @@ export class BookService {
   // used by the re-pull library side to read world documents. Fail-soft when
   // absent — world assets classify `library-removed` rather than throwing.
   private worldService: WorldService | null = null;
+  // C2: per-slug write serialization for manifest read-modify-write mutators
+  // (setPhase, setFormat, …). Each mutator's open→mutate→write runs on the
+  // slug's promise chain so two concurrent mutators can't both read the old
+  // manifest and silently lose one update. Mirrors lessons.ts writeChain.
+  private bookLocks: Map<string, Promise<void>> = new Map();
 
   constructor(booksDir: string, library: LibraryService, appVersion: string) {
     this.booksDir = booksDir;
@@ -145,6 +162,14 @@ export class BookService {
     this.activePtrPath = join(dirname(this.booksDir), '.config', 'active-book.json');
     this.channelPtrPath = join(dirname(this.booksDir), '.config', 'channel-books.json');
     this.channelGenrePath = join(dirname(this.booksDir), '.config', 'channel-genres.json');
+  }
+
+  /** Run fn on the slug's write chain (see bookLocks). The chain never rejects. */
+  private withBookLock<T>(slug: string, fn: () => Promise<T>): Promise<T> {
+    const prev = this.bookLocks.get(slug) ?? Promise.resolve();
+    const run = prev.then(fn);
+    this.bookLocks.set(slug, run.then(() => undefined, () => undefined));
+    return run;
   }
 
   async initialize(): Promise<void> {
@@ -367,34 +392,38 @@ export class BookService {
       ...(sel.seeds ? { seeds: sel.seeds } : {}),
       history: [{ at: now, event: 'created' }],
     };
-    await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
     return manifest;
   }
 
   /** Persist the declared format block onto an existing book's manifest. */
   async setFormat(slug: string, format: BookFormat): Promise<BookManifest> {
-    const opened = await this.open(slug);
-    if (!opened) throw new Error(`book not found: ${slug}`);
-    const { manifest } = opened;
-    await this.assertWritable(slug);
-    manifest.format = format;
-    manifest.history.push({ at: new Date().toISOString(), event: 'format-set', detail: `${format.formId}/${format.structureId} ${format.chapterCount}×${format.wordsPerChapter}` });
-    await writeFile(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
-    return manifest;
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      manifest.format = format;
+      manifest.history.push({ at: new Date().toISOString(), event: 'format-set', detail: `${format.formId}/${format.structureId} ${format.chapterCount}×${format.wordsPerChapter}` });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
   }
 
   async setConsistencyModel(slug: string, sel: { provider?: string; model?: string }): Promise<BookManifest> {
-    const opened = await this.open(slug);
-    if (!opened) throw new Error(`book not found: ${slug}`);
-    const { manifest } = opened;
-    await this.assertWritable(slug);
-    const provider = sel?.provider?.trim();
-    const model = sel?.model?.trim();
-    if (provider) manifest.consistency = model ? { provider, model } : { provider };
-    else delete manifest.consistency;
-    manifest.history.push({ at: new Date().toISOString(), event: 'consistency-model-set', detail: provider ? (model ? `${provider}/${model}` : provider) : 'auto' });
-    await writeFile(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
-    return manifest;
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      const provider = sel?.provider?.trim();
+      const model = sel?.model?.trim();
+      if (provider) manifest.consistency = model ? { provider, model } : { provider };
+      else delete manifest.consistency;
+      manifest.history.push({ at: new Date().toISOString(), event: 'consistency-model-set', detail: provider ? (model ? `${provider}/${model}` : provider) : 'auto' });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
   }
 
   /**
@@ -512,7 +541,7 @@ export class BookService {
       manifest.lastWrittenByApp = this.appVersion;
       manifest.history = manifest.history ?? [];
       manifest.history.push({ at: new Date().toISOString(), event: 'migrate', detail: 'v1->v2' });
-      await writeFile(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+      await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
     } catch (err) {
       console.warn(`  ⚠ Books: v1->v2 migration failed for "${manifest.slug}" — leaving readable. ${(err as Error)?.message || err}`);
     }
@@ -583,7 +612,7 @@ export class BookService {
     }
     this.activeBookSlug = slug;
     await mkdir(dirname(this.activePtrPath), { recursive: true });
-    await writeFile(this.activePtrPath, JSON.stringify({ slug, at: new Date().toISOString() }, null, 2) + '\n', 'utf-8');
+    await writeFileAtomic(this.activePtrPath, JSON.stringify({ slug, at: new Date().toISOString() }, null, 2) + '\n');
   }
 
   /** The raw per-channel override for a channel, or null (no fallback). */
@@ -619,7 +648,7 @@ export class BookService {
   private async persistChannelBooks(): Promise<void> {
     await mkdir(dirname(this.channelPtrPath), { recursive: true });
     const obj = Object.fromEntries(this.channelBooks);
-    await writeFile(this.channelPtrPath, JSON.stringify(obj, null, 2) + '\n', 'utf-8');
+    await writeFileAtomic(this.channelPtrPath, JSON.stringify(obj, null, 2) + '\n');
   }
 
   /** The genre selected for a channel, or null if none is set. */
@@ -645,7 +674,7 @@ export class BookService {
   private async persistChannelGenres(): Promise<void> {
     await mkdir(dirname(this.channelGenrePath), { recursive: true });
     const obj = Object.fromEntries(this.channelGenres);
-    await writeFile(this.channelGenrePath, JSON.stringify(obj, null, 2) + '\n', 'utf-8');
+    await writeFileAtomic(this.channelGenrePath, JSON.stringify(obj, null, 2) + '\n');
   }
 
   /** Absolute dir of the active book, or null. */
@@ -989,15 +1018,16 @@ export class BookService {
     // Mirror the snapshot into the re-pull baseline.
     await cp(worldTpl, worldBase, { recursive: true });
 
-    const opened = await this.open(slug);
-    if (opened) {
+    await this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) return;
       const m = opened.manifest;
       m.pulledFrom.world = { name: world.name, source: world.source };
       m.worldDocs = written;
       m.lastWrittenByApp = this.appVersion;
       m.history.push({ at: new Date().toISOString(), event: 'world-pull', detail: written.join(',') });
-      await writeFile(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
-    }
+      await writeFileAtomic(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n');
+    });
     return { written, missing };
   }
 
@@ -1012,15 +1042,17 @@ export class BookService {
     if (!base) throw new Error(`Invalid slug: ${slug}`);
     await rm(join(base, 'templates', 'world'), { recursive: true, force: true });
     await rm(join(base, '.baseline', 'world'), { recursive: true, force: true });
-    const opened = await this.open(slug);
-    if (!opened) return false;
-    const m = opened.manifest;
-    if (m.pulledFrom) m.pulledFrom.world = null;
-    m.worldDocs = [];
-    m.lastWrittenByApp = this.appVersion;
-    m.history.push({ at: new Date().toISOString(), event: 'world-unbind' });
-    await writeFile(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
-    return true;
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) return false;
+      const m = opened.manifest;
+      if (m.pulledFrom) m.pulledFrom.world = null;
+      m.worldDocs = [];
+      m.lastWrittenByApp = this.appVersion;
+      m.history.push({ at: new Date().toISOString(), event: 'world-unbind' });
+      await writeFileAtomic(join(base, 'book.json'), JSON.stringify(m, null, 2) + '\n');
+      return true;
+    });
   }
 
   /**
@@ -1033,14 +1065,16 @@ export class BookService {
     slug: string,
     entries: Array<{ docId: string; title?: string; order: number }>,
   ): Promise<BookManifest | undefined> {
-    const opened = await this.open(slug);
-    if (!opened) return undefined;
-    const manifest = opened.manifest;
-    manifest.appendix = [...entries].sort((a, b) => a.order - b.order);
-    const base = this.bookDir(slug);
-    if (!base) return undefined;
-    await writeFile(join(base, 'book.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
-    return manifest;
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) return undefined;
+      const manifest = opened.manifest;
+      manifest.appendix = [...entries].sort((a, b) => a.order - b.order);
+      const base = this.bookDir(slug);
+      if (!base) return undefined;
+      await writeFileAtomic(join(base, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
   }
 
   /**
@@ -1256,60 +1290,62 @@ export class BookService {
     await this.assertWritable(slug);
     const dir = this.bookDir(slug);
     if (!dir) return;
-    const opened = await this.open(slug);
-    if (!opened) return;
-    const m = opened.manifest;
-    const applied: string[] = [];
-    for (const kind of ['author', 'voice', 'genre', 'pipeline'] as const) {
-      const ref = refs[kind];
-      if (!ref || !ref.name) continue;
-      const files = this.libraryFiles(kind, ref.name);
-      if (!files) { console.warn(`  ⚠ Series pull: ${kind}/${ref.name} not in library — skipping`); continue; }
-      for (const root of ['templates', '.baseline'] as const) {
-        const rel = this.assetRel(kind, ref.name);
-        const target = rel ? join(dir, root, rel) : join(dir, root);
-        // pipeline shares one dir across a book's whole sequence; rm'ing it would
-        // wipe the other sequence pipelines. Mirror repull's writeMap: mkdir +
-        // overwrite only the single <name>.json (done in the writeFile below).
-        if (rel && kind !== 'pipeline') { try { await rm(target, { recursive: true, force: true }); } catch { /* fresh */ } }
-        await mkdir(target, { recursive: true });
-        for (const [libName, content] of Object.entries(files)) {
-          await writeFile(join(target, this.assetFileName(kind, libName, ref.name)), content, 'utf-8');
-        }
-        // libraryFiles returns only .md content; the rm above wiped the description
-        // meta.json sidecar createBook/writeTemplate persist. Restore it so the
-        // author/voice/genre description isn't silently dropped by a series pull.
-        if (kind === 'author' || kind === 'voice' || kind === 'genre') {
-          const desc = this.library.get(kind, ref.name)?.description;
-          if (typeof desc === 'string') {
-            await writeFile(join(target, 'meta.json'), JSON.stringify({ description: desc }), 'utf-8');
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) return;
+      const m = opened.manifest;
+      const applied: string[] = [];
+      for (const kind of ['author', 'voice', 'genre', 'pipeline'] as const) {
+        const ref = refs[kind];
+        if (!ref || !ref.name) continue;
+        const files = this.libraryFiles(kind, ref.name);
+        if (!files) { console.warn(`  ⚠ Series pull: ${kind}/${ref.name} not in library — skipping`); continue; }
+        for (const root of ['templates', '.baseline'] as const) {
+          const rel = this.assetRel(kind, ref.name);
+          const target = rel ? join(dir, root, rel) : join(dir, root);
+          // pipeline shares one dir across a book's whole sequence; rm'ing it would
+          // wipe the other sequence pipelines. Mirror repull's writeMap: mkdir +
+          // overwrite only the single <name>.json (done in the writeFile below).
+          if (rel && kind !== 'pipeline') { try { await rm(target, { recursive: true, force: true }); } catch { /* fresh */ } }
+          await mkdir(target, { recursive: true });
+          for (const [libName, content] of Object.entries(files)) {
+            await writeFile(join(target, this.assetFileName(kind, libName, ref.name)), content, 'utf-8');
+          }
+          // libraryFiles returns only .md content; the rm above wiped the description
+          // meta.json sidecar createBook/writeTemplate persist. Restore it so the
+          // author/voice/genre description isn't silently dropped by a series pull.
+          if (kind === 'author' || kind === 'voice' || kind === 'genre') {
+            const desc = this.library.get(kind, ref.name)?.description;
+            if (typeof desc === 'string') {
+              await writeFile(join(target, 'meta.json'), JSON.stringify({ description: desc }), 'utf-8');
+            }
           }
         }
+        const version = kind === 'pipeline' ? this.library.get('pipeline', ref.name)?.pipeline?.schemaVersion : undefined;
+        const newRef: PulledRef = { name: ref.name, source: ref.source, ...(version != null ? { version } : {}) };
+        if (kind === 'author') m.pulledFrom.author = newRef;
+        else if (kind === 'voice') m.pulledFrom.voice = newRef;
+        else if (kind === 'genre') m.pulledFrom.genre = newRef;
+        else if (kind === 'pipeline') m.pulledFrom.pipeline = newRef;
+        applied.push(`${kind}/${ref.name}`);
       }
-      const version = kind === 'pipeline' ? this.library.get('pipeline', ref.name)?.pipeline?.schemaVersion : undefined;
-      const newRef: PulledRef = { name: ref.name, source: ref.source, ...(version != null ? { version } : {}) };
-      if (kind === 'author') m.pulledFrom.author = newRef;
-      else if (kind === 'voice') m.pulledFrom.voice = newRef;
-      else if (kind === 'genre') m.pulledFrom.genre = newRef;
-      else if (kind === 'pipeline') m.pulledFrom.pipeline = newRef;
-      applied.push(`${kind}/${ref.name}`);
-    }
-    // Series Phase B: resync world-building (rm+rewrite templates/ + .baseline/).
-    if (worldbuilding) {
-      const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof worldbuilding[k] === 'string' && worldbuilding[k]!.length > 0);
-      for (const root of ['templates', '.baseline'] as const) {
-        const wbDir = join(dir, root, 'worldbuilding');
-        try { await rm(wbDir, { recursive: true, force: true }); } catch { /* fresh */ }
-        if (entries.length) {
-          await mkdir(wbDir, { recursive: true });
-          for (const k of entries) await writeFile(join(wbDir, `${k}.md`), worldbuilding[k]!, 'utf-8');
+      // Series Phase B: resync world-building (rm+rewrite templates/ + .baseline/).
+      if (worldbuilding) {
+        const entries = (['characters', 'places', 'lore'] as const).filter((k) => typeof worldbuilding[k] === 'string' && worldbuilding[k]!.length > 0);
+        for (const root of ['templates', '.baseline'] as const) {
+          const wbDir = join(dir, root, 'worldbuilding');
+          try { await rm(wbDir, { recursive: true, force: true }); } catch { /* fresh */ }
+          if (entries.length) {
+            await mkdir(wbDir, { recursive: true });
+            for (const k of entries) await writeFile(join(wbDir, `${k}.md`), worldbuilding[k]!, 'utf-8');
+          }
         }
+        if (entries.length) applied.push('worldbuilding');   // history reflects real content, not empty resyncs
       }
-      if (entries.length) applied.push('worldbuilding');   // history reflects real content, not empty resyncs
-    }
-    m.lastWrittenByApp = this.appVersion;
-    m.history.push({ at: new Date().toISOString(), event: 'series-pull', detail: applied.join(',') });
-    await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
+      m.lastWrittenByApp = this.appVersion;
+      m.history.push({ at: new Date().toISOString(), event: 'series-pull', detail: applied.join(',') });
+      await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n');
+    });
   }
 
   /**
@@ -1356,17 +1392,19 @@ export class BookService {
     const dir = this.bookDir(slug);
     if (!dir || !existsSync(join(dir, 'book.json'))) return;
     await this.assertWritable(slug); // schemaVersion gate (mirrors writeTemplate/repull)
-    let m: BookManifest;
-    try {
-      m = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
-    } catch {
-      return; // corrupt manifest — don't clobber it
-    }
-    if (m.phase === phase) return;
-    m.phase = phase;
-    m.lastWrittenByApp = this.appVersion;
-    m.history.push({ at: new Date().toISOString(), event: 'phase', detail: phase });
-    await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
+    return this.withBookLock(slug, async () => {
+      let m: BookManifest;
+      try {
+        m = JSON.parse(readFileSync(join(dir, 'book.json'), 'utf-8'));
+      } catch {
+        return; // corrupt manifest — don't clobber it
+      }
+      if (m.phase === phase) return;
+      m.phase = phase;
+      m.lastWrittenByApp = this.appVersion;
+      m.history.push({ at: new Date().toISOString(), event: 'phase', detail: phase });
+      await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n');
+    });
   }
 
   // ── Phase 4: per-asset re-pull from the library ────────────────────────────
@@ -1700,31 +1738,33 @@ export class BookService {
   private async updatePulledFrom(slug: string, kind: RepullAsset['kind'], name: string): Promise<void> {
     // sections/skills are tracked as name arrays (no per-entry ref); nothing to update.
     if (kind === 'section' || kind === 'skill') return;
-    const opened = await this.open(slug);
-    if (!opened) return;
-    const m = opened.manifest;
-    const entry = this.library.get(kind, name);
-    const prev = (m.pulledFrom as unknown as Record<string, PulledRef | null | undefined>)[kind];
-    const source: PulledRef['source'] = entry?.source ?? prev?.source ?? 'workspace';
-    const version = kind === 'pipeline' ? entry?.pipeline?.schemaVersion : undefined;
-    const ref: PulledRef = { name, source, ...(version != null ? { version } : {}) };
-    if (kind === 'author') m.pulledFrom.author = ref;
-    else if (kind === 'voice') m.pulledFrom.voice = ref;
-    else if (kind === 'genre') m.pulledFrom.genre = ref;
-    else if (kind === 'pipeline') m.pulledFrom.pipeline = ref;
-    else if (kind === 'world') {
-      // The asset `name` here is the docId; the per-doc identity stays in
-      // worldDocs. Refresh pulledFrom.world (the bound world) by NAME, preserving
-      // its source — the docId never becomes the world ref name.
-      const wname = m.pulledFrom.world?.name;
-      if (wname) {
-        const wsource: PulledRef['source'] = this.library.get('world', wname)?.source ?? m.pulledFrom.world?.source ?? 'workspace';
-        m.pulledFrom.world = { name: wname, source: wsource };
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) return;
+      const m = opened.manifest;
+      const entry = this.library.get(kind, name);
+      const prev = (m.pulledFrom as unknown as Record<string, PulledRef | null | undefined>)[kind];
+      const source: PulledRef['source'] = entry?.source ?? prev?.source ?? 'workspace';
+      const version = kind === 'pipeline' ? entry?.pipeline?.schemaVersion : undefined;
+      const ref: PulledRef = { name, source, ...(version != null ? { version } : {}) };
+      if (kind === 'author') m.pulledFrom.author = ref;
+      else if (kind === 'voice') m.pulledFrom.voice = ref;
+      else if (kind === 'genre') m.pulledFrom.genre = ref;
+      else if (kind === 'pipeline') m.pulledFrom.pipeline = ref;
+      else if (kind === 'world') {
+        // The asset `name` here is the docId; the per-doc identity stays in
+        // worldDocs. Refresh pulledFrom.world (the bound world) by NAME, preserving
+        // its source — the docId never becomes the world ref name.
+        const wname = m.pulledFrom.world?.name;
+        if (wname) {
+          const wsource: PulledRef['source'] = this.library.get('world', wname)?.source ?? m.pulledFrom.world?.source ?? 'workspace';
+          m.pulledFrom.world = { name: wname, source: wsource };
+        }
       }
-    }
-    m.lastWrittenByApp = this.appVersion;
-    m.history.push({ at: new Date().toISOString(), event: 'repull', detail: `${kind}/${name}` });
-    const dir = this.bookDir(slug);
-    if (dir) await writeFile(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n', 'utf-8');
+      m.lastWrittenByApp = this.appVersion;
+      m.history.push({ at: new Date().toISOString(), event: 'repull', detail: `${kind}/${name}` });
+      const dir = this.bookDir(slug);
+      if (dir) await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(m, null, 2) + '\n');
+    });
   }
 }

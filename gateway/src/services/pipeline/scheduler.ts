@@ -23,7 +23,6 @@ export interface DriveLock {
 interface QueueEntry {
   projectId: string;
   resolve: (acquired: boolean) => void;
-  promise: Promise<boolean>;
 }
 
 export class DriveScheduler {
@@ -44,11 +43,13 @@ export class DriveScheduler {
    * (same-project reentrancy — mirrors tryStartDriving's own guard); otherwise
    * queues and resolves once a slot frees and this project is dequeued.
    *
-   * M3 fix: if this projectId is already sitting in the queue (e.g. the 60s
-   * review-resolver sweep re-fires, or a caller retries), returns the SAME
-   * pending promise instead of pushing a second queue entry — otherwise the
-   * queue can grow unbounded and a stale duplicate can re-drive a project
-   * that's already been dequeued and completed.
+   * C3 fix (was M3): if this projectId is already sitting in the queue (e.g.
+   * the 60s review-resolver sweep re-fires, or a caller retries), resolves
+   * false immediately — mirroring the isDriving reentrancy guard above. The
+   * original queued caller keeps its promise and will drive; the duplicate
+   * backs off. (Sharing the pending promise instead would resolve true to
+   * BOTH callers when the slot frees, and two runners would drive the same
+   * project concurrently.)
    */
   acquire(projectId: string): Promise<boolean> {
     if (this.lock.isDriving(projectId)) {
@@ -57,11 +58,12 @@ export class DriveScheduler {
     if (this.runningSet.size < this.maxConcurrent) {
       return Promise.resolve(this.startNow(projectId));
     }
-    const existing = this.queue.find((q) => q.projectId === projectId);
-    if (existing) return existing.promise;
+    if (this.queue.some((q) => q.projectId === projectId)) {
+      return Promise.resolve(false);
+    }
     let resolve!: (acquired: boolean) => void;
     const promise = new Promise<boolean>((r) => { resolve = r; });
-    this.queue.push({ projectId, resolve, promise });
+    this.queue.push({ projectId, resolve });
     return promise;
   }
 

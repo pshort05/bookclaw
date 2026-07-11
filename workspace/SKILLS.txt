@@ -1,12 +1,16 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 49 skills loaded
+Auto-generated on startup — 50 skills loaded
 ════════════════════════════════════════════════════════════
 
-── Core Skills (7) ──
+── Core Skills (8) ──
 
   after-action-review
     Structured post-goal reflection that extracts lessons, evaluates quality, and feeds the self-improvement loop
     Keywords: after action review, review goal, post mortem, what went well, what went wrong, retrospective, goal review, debrief
+
+  council-origination
+    Pipeline marker — the LLM Council originates the base story (premise + relationship arc) at this step. Handled by the council engine, not the AI router; in 'propose' mode it pauses for the author to pick from ranked candidates.
+    Keywords: council origination, base story council, ranked base stories, council selection
 
   error-recovery
     Intelligent error diagnosis, automatic recovery strategies, and prevention of recurring failures

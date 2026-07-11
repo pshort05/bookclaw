@@ -19,6 +19,10 @@ interface EngineLike {
   getProject(id: string): any;
   completeStep(projectId: string, stepId: string, result: string): void;
   parkForReview(id: string): void; // reused: sets status 'paused' AND persists (projects.ts:1102) — no separate persist needed, mirroring human-review.ts's EngineLike
+  // BUG C5: write the full result to the per-step .md file rehydration reads
+  // after a restart — completeStep alone stores a 500-char stub in the state
+  // file. Optional so lightweight test stubs keep working; fail-soft in the engine.
+  persistStepResultFile?(projectId: string, stepId: string, result: string): Promise<void>;
 }
 interface CouncilLike {
   originate(seeds: any): Promise<{
@@ -79,7 +83,9 @@ export async function maybeRunCouncilStep(deps: Deps, project: any, step: any): 
     council = await deps.council.originate(seeds);
   } catch (err) {
     console.log(`  ⚠ Council origination failed for project ${project?.id}, degrading to a seed-derived base story: ${(err as Error)?.message || err}`);
-    deps.engine.completeStep(project.id, step.id, seedFallbackBaseStory(seeds));
+    const fallback = seedFallbackBaseStory(seeds);
+    deps.engine.completeStep(project.id, step.id, fallback);
+    await deps.engine.persistStepResultFile?.(project.id, step.id, fallback); // BUG C5
     return { handled: true, gated: false };
   }
 
@@ -88,6 +94,7 @@ export async function maybeRunCouncilStep(deps: Deps, project: any, step: any): 
   if (mode === 'auto') {
     const pick = council.candidates.find(c => c.id === council.recommendedId) ?? council.candidates[0];
     deps.engine.completeStep(project.id, step.id, pick.text);
+    await deps.engine.persistStepResultFile?.(project.id, step.id, pick.text); // BUG C5
     return { handled: true, gated: false };
   }
 

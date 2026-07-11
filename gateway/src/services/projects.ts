@@ -23,7 +23,7 @@ import { applyStructureRail } from './format-guide.js';
 import { isStepRole, inferRole, type StepRole } from './casting/roles.js';
 import { buildRollingSummary } from './pipeline/rolling-summary.js';
 import { readFile } from 'fs/promises';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, renameSync } from 'fs';
 import { join } from 'path';
 
 // ═══════════════════════════════════════════════════════════
@@ -375,8 +375,13 @@ export class ProjectEngine {
             })),
           })),
         };
-        const { writeFile: wf } = await import('fs/promises');
-        await wf(this.stateFilePath, JSON.stringify(state, null, 2), 'utf-8');
+        // BUG C1: atomic replace — write to a temp file in the same dir, then
+        // rename over the state file, so a crash mid-write can never leave a
+        // truncated projects-state.json behind.
+        const { writeFile: wf, rename } = await import('fs/promises');
+        const tmpPath = `${this.stateFilePath}.tmp`;
+        await wf(tmpPath, JSON.stringify(state, null, 2), 'utf-8');
+        await rename(tmpPath, this.stateFilePath);
       } catch (err) {
         console.error('  ⚠ Failed to persist project state:', err);
       }
@@ -387,9 +392,10 @@ export class ProjectEngine {
    * Load project state from disk on startup.
    */
   private loadState(): void {
+    let raw: string | undefined;
     try {
       if (!existsSync(this.stateFilePath)) return;
-      const raw = readFileSync(this.stateFilePath, 'utf-8');
+      raw = readFileSync(this.stateFilePath, 'utf-8');
       const state = JSON.parse(raw);
       if (state.nextId) this.nextId = state.nextId;
       if (Array.isArray(state.projects)) {
@@ -430,6 +436,26 @@ export class ProjectEngine {
       }
     } catch (err) {
       console.error('  ⚠ Failed to load project state:', err);
+      // BUG C1: a corrupt state file must not be silently overwritten by the
+      // next persist (all prior state would be unrecoverable) and its project
+      // IDs must not be reused (a fresh project-1 would overwrite the old
+      // project-1's chapter files in the shared book data dir). Fail-soft:
+      // preserve the evidence, recover nextId, keep starting up.
+      if (raw !== undefined) {
+        try {
+          const corruptPath = `${this.stateFilePath}.corrupt-${Date.now()}`;
+          renameSync(this.stateFilePath, corruptPath);
+          console.error(`  ⚠ Corrupt project state preserved at ${corruptPath} for hand-recovery; starting with an empty project list`);
+        } catch (moveErr) {
+          console.error('  ⚠ Could not preserve the corrupt project state file:', moveErr);
+        }
+        let maxId = 0;
+        for (const m of raw.matchAll(/project-(\d+)/g)) {
+          const n = parseInt(m[1], 10);
+          if (Number.isFinite(n) && n > maxId) maxId = n;
+        }
+        if (maxId > 0) this.nextId = Math.max(this.nextId, maxId + 1);
+      }
     }
   }
 
@@ -1059,6 +1085,10 @@ Description: ${description}`;
       return;
     }
     this.completeStep(projectId, selection.stepId, chosen.text);
+    // BUG C5: council paths bypass the route layer's per-step file write —
+    // persist the full base story so post-restart rehydration doesn't leave a
+    // 500-char stub. Fire-and-forget; the helper is fail-soft.
+    void this.persistStepResultFile(projectId, selection.stepId, chosen.text);
     if (project.status !== 'completed') project.status = 'active';
     delete project.selection;
     project.updatedAt = new Date().toISOString();
@@ -1589,11 +1619,49 @@ Description: ${description}`;
     }
   }
 
+  /**
+   * Persist a step's full result to the SAME per-step .md file that
+   * rehydrateTruncatedResults reads (BUG C5). The AI-generation route paths
+   * write this file themselves, but the council completion paths (auto mode in
+   * council-gate.ts and applyCouncilSelection) complete steps directly — without
+   * this write, a restart truncates the council base story to the 500-char
+   * state-file stub and every remaining step generates from it. Mirrors
+   * rehydrateTruncatedResults' exact dir + filename derivation and the route
+   * layer's `# <label>` heading. Fail-soft: a write failure logs ⚠ and never
+   * blocks step completion.
+   */
+  async persistStepResultFile(projectId: string, stepId: string, result: string): Promise<void> {
+    try {
+      const project = this.projects.get(projectId);
+      const step = project?.steps.find(s => s.id === stepId);
+      if (!project || !step) return;
+      let dataDir: string | null = null;
+      try { dataDir = this.dataDirResolver?.(project) ?? null; } catch { dataDir = null; }
+      // Legacy fallback: per-project dir under the workspace, derived from the title.
+      if (!dataDir) {
+        const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        dataDir = join(this.rootDir, 'workspace', 'projects', projectSlug);
+      }
+      const { mkdir, writeFile } = await import('fs/promises');
+      await mkdir(dataDir, { recursive: true });
+      const filename = `${step.id}-${step.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+      await writeFile(join(dataDir, filename), `# ${step.label}\n\n${result}`, 'utf-8');
+    } catch (err) {
+      console.error(`  ⚠ Failed to persist step result file (${projectId}/${stepId}):`, err);
+    }
+  }
+
   async buildProjectContext(project: Project, step: ProjectStep): Promise<string> {
     // BUG M6: restore any step results truncated for the state file before any
     // sub-builder reads them, so polish/revision context isn't built from a 500-
     // char fragment.
     await this.rehydrateTruncatedResults(project);
+
+    // BUG C4: the ContextEngine getters below (getRelevantContext/getSummaries/
+    // getEntities) are synchronous in-memory reads — hydrate from disk first so
+    // a resumed project keeps its story context across a gateway restart.
+    // ensureLoaded is fail-soft internally.
+    if (this.contextEngine) await this.contextEngine.ensureLoaded(project.id);
 
     let context = `\n# Current Project\n\n`;
     context += `**Project**: ${project.title}\n`;

@@ -403,6 +403,21 @@ export class ContextEngine {
     return empty;
   }
 
+  /**
+   * Hydrate the in-memory context from disk if the map has no entry yet — the
+   * generation-path getters (getRelevantContext/getSummaries/getEntities) are
+   * synchronous map reads, so after a gateway restart a resumed project would
+   * otherwise generate with zero story context until its next summary lands.
+   * Fail-soft: a missing file seeds an empty context (harmless for a fresh
+   * project) and disk/parse errors never throw into generation.
+   */
+  async ensureLoaded(projectId: string): Promise<void> {
+    if (this.contexts.has(projectId)) return;
+    await this.loadContext(projectId).catch((err) => {
+      console.log(`  ⚠ ContextEngine: failed to load context for ${projectId}: ${err?.message ?? err}`);
+    });
+  }
+
   async persistContext(projectId: string): Promise<void> {
     const ctx = this.contexts.get(projectId);
     if (!ctx) return;

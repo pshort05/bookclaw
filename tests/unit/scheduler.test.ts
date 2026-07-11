@@ -97,29 +97,44 @@ test('release on a project the scheduler never tracked is a no-op (does not touc
   assert.deepEqual(scheduler.running(), ['a']);
 });
 
-// ── M3: acquiring an already-queued projectId must not add a second queue entry ──
+// ── C3: a duplicate acquire for an already-queued projectId must back off, not
+// share the queued promise — otherwise two runners both get true and drive the
+// same project concurrently ──
 
-test('acquiring the same queued projectId twice does not create two queue entries', async () => {
+test('duplicate acquire for a queued projectId: exactly one caller wins the slot', async () => {
   const lock = fakeLock();
   const scheduler = new DriveScheduler(lock, 1);
   await scheduler.acquire('a'); // takes the only slot
 
-  let firstResolved = false;
-  let secondResolved = false;
-  const first = scheduler.acquire('b').then((v) => { firstResolved = true; return v; });
-  const second = scheduler.acquire('b').then((v) => { secondResolved = true; return v; }); // duplicate queue attempt
+  const first = scheduler.acquire('b'); // queues
+  const second = scheduler.acquire('b'); // duplicate — must back off
 
   await new Promise((r) => setTimeout(r, 20));
-  assert.equal(firstResolved, false);
-  assert.equal(secondResolved, false);
   assert.deepEqual(scheduler.queued(), ['b'], 'only one queue entry for the duplicate projectId');
 
   scheduler.release('a');
   const [firstResult, secondResult] = await Promise.all([first, second]);
-  assert.equal(firstResult, true);
-  assert.equal(secondResult, true, 'the duplicate acquire resolves via the same pending promise');
+  assert.equal(firstResult, true, 'the original queued caller wins the slot');
+  assert.equal(secondResult, false, 'the duplicate caller backs off');
   assert.deepEqual(scheduler.running(), ['b'], 'b started exactly once, after a released its slot');
   assert.deepEqual(scheduler.queued(), []);
+});
+
+test('after the winning caller releases, the project can be acquired fresh', async () => {
+  const lock = fakeLock();
+  const scheduler = new DriveScheduler(lock, 1);
+  await scheduler.acquire('a');
+
+  const first = scheduler.acquire('b');
+  const second = scheduler.acquire('b'); // duplicate — backs off
+  scheduler.release('a');
+  assert.equal(await first, true);
+  assert.equal(await second, false);
+
+  // The winner finishes and releases — the lock must actually be free again.
+  scheduler.release('b');
+  assert.equal(lock.isDriving('b'), false, 'release freed the underlying drive lock');
+  assert.equal(await scheduler.acquire('b'), true, 'fresh acquire succeeds after the winner released');
 });
 
 test('tryAcquireNow takes a free slot immediately and returns false at capacity without queuing', async () => {
