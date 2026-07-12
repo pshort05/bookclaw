@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import { DISPLAY_VERSION, BREAKING_VERSION } from '../../version.js';
 import { asyncHandler } from './_shared.js';
 import { isChatCommand } from '../../services/chat-command.js';
+import { computeOnboardingStatus } from './onboarding-status.js';
 
 /**
  * Core endpoints: health/liveness/readiness probes, status dashboard, chat API,
@@ -75,6 +76,17 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
       } : { count: 0, list: [] },
     });
   });
+
+  // ── Onboarding / First-Run Readiness ──
+  // Pure-read checklist over existing services; projectEngine lives behind a
+  // separate gateway accessor, so it's folded into the services bag here.
+  app.get('/api/onboarding/status', asyncHandler(async (_req: Request, res: Response) => {
+    const status = await computeOnboardingStatus(
+      { ...services, projectEngine: gateway.getProjectEngine?.() },
+      baseDir
+    );
+    res.json(status);
+  }));
 
   // ── Chat API (for integrations) ──
   app.post('/api/chat', async (req: Request, res: Response) => {

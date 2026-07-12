@@ -25,7 +25,7 @@ export async function runPrompt(
   deps: {
     prompts?: { get(name: string): LibraryPrompt | null };
     aiRouter: { selectProvider?(t: string, p?: string): { id: string }; complete(req: any): Promise<{ text: string; tokensUsed?: number; estimatedCost?: number; promptTokens?: number; completionTokens?: number; model?: string }> };
-    costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void };
+    costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string, model?: string, promptTokens?: number, completionTokens?: number): void };
   },
   promptName: string, content: string, bookSlug?: string,
   override?: { provider?: string; model?: string },
@@ -52,7 +52,7 @@ export async function runPrompt(
   const ms = Date.now() - t0;
   const tokensUsed = res.tokensUsed ?? ((res.promptTokens ?? 0) + (res.completionTokens ?? 0));
   const tokensPerSecond = (res.completionTokens && ms > 0) ? res.completionTokens / (ms / 1000) : undefined;
-  try { deps.costs?.record(provider.id, tokensUsed, res.estimatedCost, bookSlug); } catch { /* non-fatal */ }
+  try { deps.costs?.record(provider.id, tokensUsed, res.estimatedCost, bookSlug, res.model, res.promptTokens, res.completionTokens); } catch { /* non-fatal */ }
   const meta: RunMeta = {
     provider: provider.id,
     model: res.model ?? model ?? provider.id,

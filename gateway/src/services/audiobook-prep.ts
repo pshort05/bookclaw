@@ -23,6 +23,24 @@
  * Google Play, and Spotify all require disclosure of AI-narrated audio.
  */
 
+import {
+  splitParagraphs,
+  startsWithQuote,
+  matchSpeakerTag,
+  buildNameLookup,
+} from './dialogue-parser.js';
+
+/** This file's original explicit-tag verb list, passed explicitly to
+ *  matchSpeakerTag so migrating to the shared parser doesn't widen matches
+ *  beyond what attributeMultiVoice previously recognized for explicit tags
+ *  (it happens to equal the shared module's DEFAULT_SPEECH_VERBS union). */
+const AUDIOBOOK_SPEECH_VERBS = [
+  'said', 'asked', 'whispered', 'shouted', 'murmured', 'replied', 'added',
+  'continued', 'growled', 'hissed', 'breathed', 'spat', 'snapped', 'laughed',
+  'cried', 'exclaimed', 'gasped', 'muttered', 'sighed', 'stammered',
+  'interjected', 'noted', 'protested', 'objected',
+];
+
 export interface PronunciationEntry {
   name: string;
   type: 'character' | 'location' | 'item' | 'event' | 'rule';
@@ -336,11 +354,7 @@ export class AudiobookPrepService {
     let segIdx = 0;
 
     // Build a fast-lookup set of canonical character names (lowercased).
-    const charNameLower = new Map<string, string>();
-    for (const n of input.characterNames || []) {
-      const k = n.toLowerCase().trim();
-      if (k) charNameLower.set(k, n);
-    }
+    const charNameLower = buildNameLookup(input.characterNames || []);
 
     // Helper: resolve a speaker name to a voice + flag unmapped.
     const resolveVoice = (name: string): string => {
@@ -359,18 +373,12 @@ export class AudiobookPrepService {
 
     // Split into paragraphs first — dialogue convention is one
     // speaker-per-paragraph in modern fiction.
-    const paragraphs = input.text.split(/\n\s*\n+/).filter(p => p.trim());
-
-    // Patterns we look for in attribution tags.
-    // Matches: "..." NAME said|asked|whispered|... | said|asked|... NAME ...
-    const explicitTagRe = /(?:["\u201D\u201C]\s*[,.?!]?\s*)([A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)?)\s+(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed|stammered|interjected|noted|protested|objected)\b/i;
-    const reverseTagRe = /\b(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed)\s+([A-Z][a-z]{2,}(?:\s[A-Z][a-z]+)?)/i;
+    const paragraphs = splitParagraphs(input.text);
 
     for (const para of paragraphs) {
       const trimmed = para.trim();
       // Detect dialogue paragraphs by leading quote character.
-      const startsWithQuote = /^[""\u201C"]/.test(trimmed);
-      if (!startsWithQuote) {
+      if (!startsWithQuote(trimmed)) {
         // Pure narration / action beat — narrator voice.
         segments.push({
           index: segIdx++,
@@ -386,13 +394,8 @@ export class AudiobookPrepService {
       let speakerName: string | null = null;
       let inferred = false;
 
-      const explicit = trimmed.match(explicitTagRe);
-      if (explicit?.[1]) {
-        speakerName = explicit[1].trim();
-      } else {
-        const reverse = trimmed.match(reverseTagRe);
-        if (reverse?.[1]) speakerName = reverse[1].trim();
-      }
+      const tag = matchSpeakerTag(trimmed, { speechVerbs: AUDIOBOOK_SPEECH_VERBS });
+      if (tag) speakerName = tag.name;
 
       // Validate the candidate against the known character list.
       if (speakerName) {

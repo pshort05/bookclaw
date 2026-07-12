@@ -216,7 +216,7 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
             ai: {
               complete: async (r: any) => {
                 const resp = await gw.aiRouter.complete(r);
-                try { gw.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug); } catch { /* best-effort */ }
+                try { gw.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug, resp.model, resp.promptTokens, resp.completionTokens); } catch { /* best-effort */ }
                 return resp;
               },
               select: (t: string, pref?: string) => {

@@ -41,8 +41,8 @@ export function renderSkillPrompt(tpl: string, vars: { input: string; previous: 
 export async function runExecutableSkillStep(
   deps: {
     skills?: { getSkillByName(n: string): { steps?: SkillStep[]; retries?: number; content?: string } | undefined };
-    aiRouter: { complete(req: SkillCompletionRequest): Promise<{ text: string; tokensUsed?: number; estimatedCost?: number }> };
-    costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void };
+    aiRouter: { complete(req: SkillCompletionRequest): Promise<{ text: string; tokensUsed?: number; estimatedCost?: number; promptTokens?: number; completionTokens?: number; model?: string }> };
+    costs?: { record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string, model?: string, promptTokens?: number, completionTokens?: number): void };
   },
   skillName: string | undefined,
   input: string,
@@ -53,7 +53,7 @@ export async function runExecutableSkillStep(
   if (!skill?.steps?.length) return null;
   const complete: SkillCompleteFn = async (req) => {
     const res = await deps.aiRouter.complete(req);
-    try { deps.costs?.record(req.provider, res.tokensUsed ?? 0, res.estimatedCost, bookSlug); } catch { /* non-fatal */ }
+    try { deps.costs?.record(req.provider, res.tokensUsed ?? 0, res.estimatedCost, bookSlug, res.model, res.promptTokens, res.completionTokens); } catch { /* non-fatal */ }
     return res;
   };
   try {

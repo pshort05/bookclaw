@@ -294,6 +294,29 @@ test('ingest persists to disk and survives a fresh service instance', async () =
   }
 });
 
+// #16 regression: a character name with stray whitespace (e.g. from a sloppy
+// entity list) used to be silently dropped by canonicalize()'s untrimmed
+// comparison — the whole dialogue line was lost. buildNameLookup (shared
+// dialogue-parser) trims both the lookup key and the stored canonical value,
+// so the line is now attributed and the character record is created.
+test('a character name with trailing whitespace still attributes dialogue (untrimmed-name bug fix)', async () => {
+  const { svc, dir } = await freshService();
+  try {
+    const r = await svc.ingestChapter({
+      projectId: 'trim', chapterNumber: 1,
+      chapterText: '"Hello there," said Sarah.',
+      characterNames: ['Sarah '],
+    });
+    assert.equal(r.linesIngested, 1);
+    assert.deepEqual(r.charactersTouched, ['Sarah']);
+    const store = await svc.getProjectVoices('trim');
+    assert.deepEqual(Object.keys(store.characters), ['Sarah']);
+    assert.deepEqual(store.characters['Sarah'].dialogueCorpus, ['Hello there,']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 // M2: the CharacterVoice record now has a `profanity` field (schema-present;
 // population UI is a later sub-project). It must round-trip through the same
 // JSON persist/load path as every other field on the record.

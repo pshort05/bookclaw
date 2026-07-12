@@ -148,6 +148,26 @@ test('attributeMultiVoice keeps an off-list speaker literal, flags inferred, and
   assert.deepEqual(r.unmappedSpeakers, ['Bob']);
 });
 
+// #16 regression: a character name with trailing whitespace used to be
+// stored untrimmed in the charNameLower lookup, so the resolved speaker name
+// (also untrimmed) failed the voiceMap's exact/case-insensitive lookup and
+// fell through to the narrator voice + unmappedSpeakers. buildNameLookup
+// (shared dialogue-parser) trims both the key and the stored canonical
+// value, so the dirty name now resolves to its mapped voice.
+test('attributeMultiVoice resolves a character name with trailing whitespace to its mapped voice (untrimmed-name bug fix)', () => {
+  const r = svc.attributeMultiVoice({
+    chapterNumber: 1,
+    title: 'C',
+    text: '"Hello there," said Sarah.',
+    characterNames: ['Sarah '],
+    voiceMap: { narratorVoice: 'narr', characterVoices: { Sarah: 'vs' } },
+  });
+  assert.deepEqual(r.segments[0].speaker, { kind: 'character', name: 'Sarah' });
+  assert.equal(r.segments[0].voiceId, 'vs');
+  assert.equal(r.segments[0].inferred, false);
+  assert.deepEqual(r.unmappedSpeakers, []);
+});
+
 // ── buildDefaultVoiceMap ──
 
 test('buildDefaultVoiceMap assigns voices alphabetically, excluding the narrator voice', () => {

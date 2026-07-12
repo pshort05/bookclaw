@@ -7,6 +7,7 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
+import { getLLMPrice } from '../ai/pricing.js';
 
 // Bug #36e: the daily budget resets at the OPERATOR's local midnight, not UTC
 // midnight — toISOString() is always UTC and would reset hours off from the
@@ -129,19 +130,32 @@ export class CostTracker {
    * Record a cost directly from the router response. Prefer passing the
    * router-supplied `estimatedCost` so we don't disagree with the per-provider
    * pricing table in router.ts.
+   *
+   * When `model`, `promptTokens`, and `completionTokens` are all supplied and
+   * the provider isn't 'openrouter', the model-aware price from
+   * `gateway/src/ai/pricing.ts` OVERRIDES `estimatedCost` — this fixes bug
+   * #35b, where every non-default-model call was billed at the provider's
+   * flat boot rate (underpricing e.g. Opus by ~40%). OpenRouter is excluded
+   * because its `estimatedCost` may already be real provider-reported
+   * `usage.cost`. Without those three args, behavior is unchanged from
+   * before: use `estimatedCost`, or the flat per-provider fallback below.
    */
-  record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string): void {
+  record(provider: string, tokens: number, estimatedCost?: number, bookSlug?: string, model?: string, promptTokens?: number, completionTokens?: number): void {
     this.checkReset();
+    // Fallback estimation. Used only if the router didn't provide a cost
+    // (older call-sites). Per-1k blended rates kept roughly in line with
+    // router.ts's per-provider input/output rates; this path is a coarse
+    // safety net, not the source of truth.
+    const costPer1k: Record<string, number> = {
+      ollama: 0, gemini: 0, deepseek: 0.0003,
+      claude: 0.009, openai: 0.006, openrouter: 0.006,
+    };
     let cost = estimatedCost;
-    if (cost === undefined || cost === null || isNaN(cost)) {
-      // Fallback estimation. Used only if the router didn't provide a cost
-      // (older call-sites). Per-1k blended rates kept roughly in line with
-      // router.ts's per-provider input/output rates; this path is a coarse
-      // safety net, not the source of truth.
-      const costPer1k: Record<string, number> = {
-        ollama: 0, gemini: 0, deepseek: 0.0003,
-        claude: 0.009, openai: 0.006, openrouter: 0.006,
-      };
+    if (provider !== 'openrouter' && model && promptTokens != null && completionTokens != null) {
+      const flat = costPer1k[provider] || 0;
+      const price = getLLMPrice(model, { costPer1kInput: flat, costPer1kOutput: flat });
+      cost = (promptTokens / 1000) * price.costPer1kInput + (completionTokens / 1000) * price.costPer1kOutput;
+    } else if (cost === undefined || cost === null || isNaN(cost)) {
       cost = (tokens / 1000) * (costPer1k[provider] || 0);
     }
     this.dailySpend += cost;

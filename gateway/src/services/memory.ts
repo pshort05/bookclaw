@@ -6,6 +6,7 @@
 import { readFile, writeFile, readdir, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { sanitizeSegment } from '../security/paths.js';
 
 interface MemoryConfig {
   maxConversationHistory: number;
@@ -44,7 +45,7 @@ export class MemoryService {
     // Check for active project
     const activePath = join(this.memoryDir, 'active-project.txt');
     if (existsSync(activePath)) {
-      this.activeProjectPath = this.sanitizeSegment((await readFile(activePath, 'utf-8')).trim(), 'project');
+      this.activeProjectPath = sanitizeSegment((await readFile(activePath, 'utf-8')).trim(), 'project');
     }
 
     // Active persona — every conversation turn is tagged with this so each
@@ -209,19 +210,8 @@ export class MemoryService {
     } catch { /* search indexing failures should never block memory writes */ }
   }
 
-  /** Sanitize a path segment — strip traversal, separators, and null bytes. */
-  private sanitizeSegment(segment: string, fallback: string): string {
-    const cleaned = String(segment || '')
-      .replace(/[\x00-\x1f]/g, '')
-      .replace(/[\\/:*?"<>|]/g, '_')
-      .replace(/\.\.+/g, '_')
-      .replace(/^\.+/, '')
-      .slice(0, 200);
-    return cleaned || fallback;
-  }
-
   async setActiveProject(projectId: string): Promise<void> {
-    const safeId = this.sanitizeSegment(projectId, 'project');
+    const safeId = sanitizeSegment(projectId, 'project');
     this.activeProjectPath = safeId;
     await writeFile(
       join(this.memoryDir, 'active-project.txt'),
@@ -230,8 +220,8 @@ export class MemoryService {
   }
 
   async saveBookBibleEntry(projectId: string, filename: string, content: string): Promise<void> {
-    const safeProject = this.sanitizeSegment(projectId, 'project');
-    const safeFile = this.sanitizeSegment(filename, 'entry.md');
+    const safeProject = sanitizeSegment(projectId, 'project');
+    const safeFile = sanitizeSegment(filename, 'entry.md');
     const dir = join(this.memoryDir, 'book-bible', safeProject);
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, safeFile), content);

@@ -49,6 +49,16 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
     async ({ id }) => toToolResult('craft_critique', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/craft-critique`)),
   );
 
+  server.registerTool('motivation_critique',
+    { title: 'Character motivation critique', description: "Flag chapter lines that contradict a character's established motivation/arc.", inputSchema: { id: pid, chapterText: z.string().describe('The chapter prose to critique'), chapterId: z.string().optional(), characters: z.array(z.string()).optional().describe('Subset of character names; omit for all major characters') } },
+    async ({ id, ...body }) => toToolResult('motivation_critique', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/motivation-critique`, body)),
+  );
+
+  server.registerTool('revision_report',
+    { title: 'Unified revision report', description: 'Aggregate craft/dialogue/continuity/voice-drift/mechanical findings into one severity-ranked report.', inputSchema: { id: pid, passes: z.array(z.string()).optional().describe('Subset of passes: craft|dialogue|continuity|voice|mechanical; omit for all') } },
+    async ({ id, passes }) => toToolResult('revision_report', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/revision-report`, passes ? { passes } : {})),
+  );
+
   // ── Prose evolver (GEPA-style score→reflect→revise loop) ──
   server.registerTool('evolve_prose',
     {

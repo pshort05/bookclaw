@@ -122,6 +122,32 @@ test('wouldExceedBook accounts for a projected additional cost', () => {
   assert.equal(c.wouldExceedBook('book-a', 3), true, '8 + 3 = 11, would exceed 10');
 });
 
+// ── #14: model-aware pricing override ──
+
+test('record() with model+promptTokens+completionTokens overrides estimatedCost using the pricing table', () => {
+  const c = new CostTracker({});
+  // Old flat claude rate (0.009/1k blended) would price this at 2000/1000*0.009 = 0.018.
+  // Model-aware Opus pricing (0.005 in / 0.025 out per 1k) prices it at 0.03 instead.
+  c.record('claude', 0, undefined, 'book-a', 'claude-opus-4-8', 1000, 1000);
+  const s = c.getStatus();
+  assert.equal(s.byBook['book-a'], 0.03);
+});
+
+test('record() with an unknown model falls back to the flat provider rate and stays finite', () => {
+  const c = new CostTracker({});
+  c.record('claude', 0, undefined, 'book-a', 'some-unreleased-model', 1000, 1000);
+  const s = c.getStatus();
+  assert.ok(Number.isFinite(s.byBook['book-a']));
+  assert.equal(s.byBook['book-a'], 0.018); // (1000/1000*0.009) + (1000/1000*0.009), flat used as both in/out fallback
+});
+
+test('record() on openrouter keeps the passed estimatedCost unchanged even with model/token args present', () => {
+  const c = new CostTracker({});
+  c.record('openrouter', 2000, 0.42, 'book-a', 'claude-opus-4-8', 1000, 1000);
+  const s = c.getStatus();
+  assert.equal(s.byBook['book-a'], 0.42);
+});
+
 test('setBookBudget(slug, undefined) clears a previously set budget', () => {
   const c = new CostTracker({});
   c.setBookBudget('book-a', 1);

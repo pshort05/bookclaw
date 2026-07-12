@@ -1,5 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { safePath } from './_shared.js';
+import { safeResolveWithin } from '../../security/paths.js';
 import path from 'path';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 
@@ -317,8 +318,7 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
     // Security: the resolved input must stay within the workspace. Confining to
     // the repo root (baseDir) instead let `../.env` escape to repo-root secrets
     // while still passing the check (bug-review #6).
-    const resolvedBase = r(workspaceDir);
-    if (!resolvedInput.startsWith(resolvedBase + path.sep) && resolvedInput !== resolvedBase) {
+    if (!safeResolveWithin(workspaceDir, resolvedInput)) {
       return res.status(403).json({ error: 'Path traversal blocked' });
     }
 

@@ -2,6 +2,7 @@ import { join } from 'path';
 import { KDPExporter } from '../services/kdp-exporter.js';
 import { BetaReaderService } from '../services/beta-reader.js';
 import { DialogueAuditor } from '../services/dialogue-auditor.js';
+import { RevisionOrchestrator } from '../services/revision-orchestrator.js';
 import { ManuscriptHubService } from '../services/manuscript-hub.js';
 import { CoverTypographyService } from '../services/cover-typography.js';
 import { ExternalToolsService } from '../services/external-tools.js';
@@ -122,6 +123,26 @@ export async function initExportAndWaves(gw: BookClawGateway): Promise<void> {
 
   gw.translationPipeline = new TranslationPipelineService();
   gw.translationPipeline.setGate(gw.confirmationGate);
+  // AuthorAgent #13: wire the AI router so executeTranslation can run. Record
+  // spend per chunk (translation can be the single most expensive operation) so
+  // it counts against the daily/monthly budget — model-aware via #14 pricing.
+  gw.translationPipeline.setAI(
+    async (req) => {
+      const resp = await gw.aiRouter.complete(req);
+      try { gw.costs.record(resp.provider, resp.tokensUsed, resp.estimatedCost, undefined, resp.model, resp.promptTokens, resp.completionTokens); } catch { /* non-fatal */ }
+      return resp;
+    },
+    (taskType: string) => gw.aiRouter.selectProvider(taskType),
+  );
+
+  // Revision orchestrator (AuthorAgent #17): unified severity-ranked report over
+  // craft/dialogue/continuity/voice/mechanical detectors (all built by now).
+  gw.revisionOrchestrator = new RevisionOrchestrator({
+    craftCritic: gw.craftCritic,
+    dialogueAuditor: gw.dialogueAuditor,
+    writingJudge: gw.writingJudge,
+    characterVoices: gw.characterVoices,
+  });
 
   gw.websiteBuilder = new WebsiteBuilderService(join(ROOT_DIR, 'workspace'));
   console.log('  ✓ AMS, BookBub, Reader Intel, Translation, Website Builder ready');

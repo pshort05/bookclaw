@@ -29,6 +29,23 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import type { StyleCloneService, StyleProfile } from './style-clone.js';
 import type { CharacterProfanity } from './casting/profanity.js';
+import {
+  splitParagraphs,
+  startsWithQuote,
+  extractSpokenText,
+  matchSpeakerTag,
+  buildNameLookup,
+} from './dialogue-parser.js';
+
+/** This file's original explicit-tag verb list, passed explicitly to
+ *  matchSpeakerTag so migrating to the shared parser doesn't widen matches
+ *  beyond what extractDialogue previously recognized (the shared module's
+ *  DEFAULT_SPEECH_VERBS is a superset used by audiobook-prep.ts too). */
+const CHARACTER_VOICE_SPEECH_VERBS = [
+  'said', 'asked', 'whispered', 'shouted', 'murmured', 'replied', 'added',
+  'continued', 'growled', 'hissed', 'breathed', 'spat', 'snapped', 'laughed',
+  'cried', 'exclaimed', 'gasped', 'muttered', 'sighed', 'stammered',
+];
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -433,54 +450,35 @@ export class CharacterVoicesService {
     aliases: Record<string, string[]>,
   ): DialogueLine[] {
     const lines: DialogueLine[] = [];
-    const charNameLower = new Map<string, string>();
-    for (const n of characterNames) charNameLower.set(n.toLowerCase(), n);
-    for (const [canon, aliasList] of Object.entries(aliases)) {
-      for (const a of aliasList) charNameLower.set(a.toLowerCase(), canon);
-    }
+    const charNameLower = buildNameLookup(characterNames, aliases);
 
     // Split on paragraph boundaries.
-    const paragraphs = chapterText.split(/\n\s*\n+/).filter(p => p.trim());
+    const paragraphs = splitParagraphs(chapterText);
     let lastSpeaker: string | null = null;
-
-    const explicitTagRe = /["”]\s*[,.?!]?\s*([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)\s+(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed|stammered)\b/i;
-    const reverseTagRe = /["”]\s*[,.?!]?\s*(?:said|asked|whispered|shouted|murmured|replied|added|continued|growled|hissed|breathed|spat|snapped|laughed|cried|exclaimed|gasped|muttered|sighed)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)/i;
 
     for (const para of paragraphs) {
       const trimmed = para.trim();
-      const startsWithQuote = /^["“]/.test(trimmed);
-      if (!startsWithQuote) {
+      if (!startsWithQuote(trimmed)) {
         // Pure narration — skip
         continue;
       }
 
       // Extract just the spoken portion(s) — text inside quotes
-      const spokenMatches = trimmed.match(/["“]([^"“”]+)["”]/g) || [];
-      let spoken = spokenMatches
-        .map(m => m.replace(/^["“]/, '').replace(/["”]$/, '').trim())
-        .filter(s => s.length > 0)
-        .join(' ');
+      let spoken = extractSpokenText(trimmed);
       if (!spoken) {
         // No full quote pair (mismatched/unclosed quote, e.g. multi-paragraph
         // speech). Fall back to the text after the leading quote.
-        spoken = trimmed.replace(/^["“]/, '').replace(/["”]$/, '').trim();
+        spoken = trimmed.replace(/^["“”]/, '').replace(/["“”]$/, '').trim();
       }
       if (!spoken) continue;
 
       let speakerName: string | null = null;
       let confidence = 0;
 
-      // Try explicit tag first
-      const explicit = trimmed.match(explicitTagRe);
-      if (explicit?.[1]) {
-        speakerName = explicit[1].trim();
-        confidence = 0.9;
-      } else {
-        const reverse = trimmed.match(reverseTagRe);
-        if (reverse?.[1]) {
-          speakerName = reverse[1].trim();
-          confidence = 0.85;
-        }
+      const tag = matchSpeakerTag(trimmed, { speechVerbs: CHARACTER_VOICE_SPEECH_VERBS, reverseQuoteAnchored: true });
+      if (tag) {
+        speakerName = tag.name;
+        confidence = tag.matchedVia === 'explicit' ? 0.9 : 0.85;
       }
 
       // Validate against known character list
@@ -517,14 +515,7 @@ export class CharacterVoicesService {
     characterNames: string[],
     aliases: Record<string, string[]>,
   ): string | null {
-    const lower = name.toLowerCase();
-    for (const c of characterNames) {
-      if (c.toLowerCase() === lower) return c;
-    }
-    for (const [canonical, aliasList] of Object.entries(aliases)) {
-      if (aliasList.some(a => a.toLowerCase() === lower)) return canonical;
-    }
-    return null;
+    return buildNameLookup(characterNames, aliases).get(name.toLowerCase().trim()) ?? null;
   }
 
   private buildDriftNote(name: string, marker: string, expected: number, actual: number): string {

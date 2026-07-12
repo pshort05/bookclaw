@@ -109,6 +109,64 @@ export function mountWave(app: Application, gateway: any, baseDir: string): void
     }
   });
 
+  // Character motivation critique (AuthorAgent #12): flag chapter lines that
+  // contradict a character's established motivation/arc.
+  app.post('/api/projects/:id/motivation-critique', async (req: Request, res: Response) => {
+    const agent = services.characterMotivation;
+    const ctxEngine = services.contextEngine;
+    if (!agent || !ctxEngine) return res.status(503).json({ error: 'Character motivation check not initialized' });
+    if (!services.aiRouter) return res.status(503).json({ error: 'AI router not available — a provider is required.' });
+    const engine = gateway.getProjectEngine?.();
+    const project = engine?.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const chapterText = typeof req.body?.chapterText === 'string' ? req.body.chapterText : '';
+    if (!chapterText.trim()) return res.status(400).json({ error: 'chapterText (string) required' });
+    const chapterId = typeof req.body?.chapterId === 'string' ? req.body.chapterId : undefined;
+    const characters = Array.isArray(req.body?.characters) ? req.body.characters.filter((c: any) => typeof c === 'string') : undefined;
+    try {
+      const ctx = await ctxEngine.loadContext(req.params.id);
+      const report = await agent.critiqueMotivation(
+        { projectId: req.params.id, chapterText, chapterId, characters },
+        (r: any) => services.aiRouter.complete(r),
+        (t: string) => services.aiRouter.selectProvider(t),
+        ctx.entities ?? [],
+        ctx.summaries ?? [],
+      );
+      res.json(report);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Motivation critique failed' });
+    }
+  });
+
+  // Unified revision report (AuthorAgent #17): aggregate craft/dialogue/continuity/
+  // voice/mechanical findings into one severity-ranked report. No new AI for
+  // continuity (reads persisted per-step flags); voice needs the entity-DB name list.
+  app.post('/api/projects/:id/revision-report', async (req: Request, res: Response) => {
+    const orchestrator = services.revisionOrchestrator;
+    if (!orchestrator) return res.status(503).json({ error: 'Revision orchestrator not initialized' });
+    const engine = gateway.getProjectEngine?.();
+    const project = engine?.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const chapters = await gatherChapters(project);
+    if (chapters.length === 0) return res.status(400).json({ error: 'No completed chapters found.' });
+    // Attach each chapter's already-computed continuity flags from its write step.
+    const flagsByStep = new Map<string, any>((project.steps ?? []).map((s: any) => [s.id, s.continuityFlags]));
+    const enriched = chapters.map((c) => ({ ...c, continuityFlags: flagsByStep.get(c.id) }));
+    // Resolve the character-name allowlist for the voice-drift pass (fail-soft).
+    let characterNames: string[] = [];
+    try {
+      const ctx = await services.contextEngine?.loadContext(req.params.id);
+      characterNames = (ctx?.entities ?? []).filter((e: any) => e.type === 'character').map((e: any) => e.name);
+    } catch { /* voice pass degrades to no attribution */ }
+    const passes = Array.isArray(req.body?.passes) ? req.body.passes.filter((p: any) => typeof p === 'string') : undefined;
+    try {
+      const report = await orchestrator.buildReport({ projectId: project.id, chapters: enriched, passes, characterNames });
+      res.json(report);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Revision report failed' });
+    }
+  });
+
   // ── Audiobook Prep ──
 
   app.post('/api/projects/:id/audiobook/cleanup', async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import path from 'path';
-import { addWaveDisclaimer } from './_shared.js';
+import { addWaveDisclaimer, requireApprovedConfirmation } from './_shared.js';
 import { listForms } from '../../services/story-forms.js';
 import { renderPlotPromisesReport } from '../../services/reports/render-plot-promises.js';
 
@@ -1023,6 +1023,37 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err?.message || 'Proposal failed' });
+    }
+  });
+
+  // Execute an APPROVED translation (AuthorAgent #13). The user must approve the
+  // ConfirmationRequest from /propose first; this runs the gated translation and
+  // records the outcome back on the gate. Mirrors website.routes.ts /deploy/finalize.
+  app.post('/api/translation/execute', async (req: Request, res: Response) => {
+    const tp = services.translationPipeline;
+    if (!tp) return res.status(503).json({ error: 'Translation pipeline not initialized' });
+    const id = typeof req.body?.confirmationId === 'string' ? req.body.confirmationId : '';
+    const gate = requireApprovedConfirmation(services.confirmationGate, { id, expectedService: 'translation-pipeline' });
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+
+    const { manuscript, text, targetLanguage, sourceLanguage, glossary, tier, preferredProvider } = req.body || {};
+    if (!targetLanguage) return res.status(400).json({ error: 'targetLanguage required' });
+    if (!manuscript && !text) return res.status(400).json({ error: 'manuscript (or text) with the full source text required' });
+
+    try {
+      const result = await tp.executeTranslation({ manuscript, text, targetLanguage, sourceLanguage, glossary, tier, preferredProvider });
+      await services.confirmationGate.recordOutcome(id, {
+        success: true,
+        message: `Translated to ${String(result.targetLanguage).toUpperCase()} in ${result.chunkCount} chunk(s) (${result.failedChunks} failed).`,
+        executedAt: new Date().toISOString(),
+      });
+      addWaveDisclaimer(res);
+      res.json(result);
+    } catch (err: any) {
+      await services.confirmationGate.recordOutcome(id, {
+        success: false, message: `Translation failed: ${err?.message || err}`, executedAt: new Date().toISOString(),
+      }).catch(() => {});
+      res.status(500).json({ error: err?.message || 'Translation failed' });
     }
   });
 

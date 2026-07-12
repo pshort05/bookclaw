@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
-import { join, resolve, sep } from 'path';
+import { join } from 'path';
+import { safeResolveWithin } from '../security/paths.js';
 
 /**
  * Generic reports subsystem: each analysis engine emits a human-reviewable,
@@ -118,9 +119,8 @@ export class ReportsService {
     if (!ID_RE.test(id)) return null;
     const dir = this.dir(slug);
     if (!dir) return null;
-    const resolvedBase = resolve(dir);
-    const p = resolve(dir, `${id}.${format}`);
-    if (p !== resolvedBase && !p.startsWith(resolvedBase + sep)) return null;
+    const p = safeResolveWithin(dir, `${id}.${format}`);
+    if (!p) return null;
     return existsSync(p) ? p : null;
   }
 }

@@ -5,6 +5,7 @@
 
 import { resolve, relative, sep, dirname } from 'path';
 import { realpathSync, existsSync } from 'fs';
+import { safeResolveWithin, sanitizeSegment } from './paths.js';
 
 export class SandboxGuard {
   private workspaceRoot: string;
@@ -24,17 +25,13 @@ export class SandboxGuard {
    * Validate that a path is within the workspace
    */
   validatePath(targetPath: string): { valid: boolean; reason?: string; resolved?: string } {
-    const resolved = resolve(this.workspaceRoot, targetPath);
-
-    // Check it's within the workspace. Compare resolved paths directly using
-    // the platform separator. This is a pure-string lexical check and does NOT
-    // catch symlinks — a real symlink-escape defence follows below via realpath.
-    // The old compound check was a tautology that collapsed to
-    // `rel.startsWith('..')`, missing some cases.
-    const rootWithSep = this.workspaceRoot.endsWith(sep)
-      ? this.workspaceRoot
-      : this.workspaceRoot + sep;
-    if (resolved !== this.workspaceRoot && !resolved.startsWith(rootWithSep)) {
+    // Lexical boundary check. Delegates to the shared safeResolveWithin helper,
+    // which resolves the segment against the workspace root and returns null on
+    // any escape (case/separator-normalized compare, null-byte rejection). This
+    // is a pure-string lexical check and does NOT catch symlinks — a real
+    // symlink-escape defence follows below via realpath.
+    const resolved = safeResolveWithin(this.workspaceRoot, targetPath);
+    if (resolved === null) {
       return { valid: false, reason: 'Path escapes workspace boundary' };
     }
 
@@ -110,9 +107,6 @@ export class SandboxGuard {
    * Sanitize a filename
    */
   sanitizeFilename(name: string): string {
-    return name
-      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-      .replace(/\.{2,}/g, '_')
-      .substring(0, 255);
+    return sanitizeSegment(name, 'file');
   }
 }

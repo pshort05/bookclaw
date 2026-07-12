@@ -5,9 +5,9 @@
  * baseDir-factory for gatherChapters — all hoisted out of routes.ts so the
  * per-feature mounters can share them (one-way dep: routes.ts -> mounters).
  */
-import path from 'path';
 import multer from 'multer';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import { safeResolveWithin } from '../../security/paths.js';
 import { castStep } from '../../services/casting/cast-step.js';
 import { loadCastingSheet } from '../../services/casting/casting-sheet.js';
 import { isStepRole } from '../../services/casting/roles.js';
@@ -67,10 +67,66 @@ export function requireApprovedConfirmation(
 
 /** Verify resolved path stays within the allowed base directory. */
 export function safePath(base: string, userInput: string): string | null {
-  const resolved = path.resolve(base, userInput);
-  const resolvedBase = path.resolve(base);
-  if (!resolved.startsWith(resolvedBase + path.sep) && resolved !== resolvedBase) return null;
-  return resolved;
+  return safeResolveWithin(base, userInput);
+}
+
+/** Human-readable label for each vault slot's expected provider. */
+const VAULT_SLOT_LABEL: Record<string, string> = {
+  openai_api_key: 'OpenAI',
+  anthropic_api_key: 'Anthropic',
+  gemini_api_key: 'Gemini',
+  openrouter_api_key: 'OpenRouter',
+};
+
+/** Detect an obviously-mismatched key shape pasted from another provider. */
+function detectCrossProviderKey(value: string): { name: string; withArticle: string } | null {
+  if (/^AIzaSy/.test(value)) return { name: 'Gemini', withArticle: 'a Gemini' };
+  if (/^sk-ant-/.test(value)) return { name: 'Anthropic', withArticle: 'an Anthropic' };
+  return null;
+}
+
+/**
+ * Non-blocking sanity check for a credential's shape against its vault slot.
+ * Never throws and never blocks the save — callers surface `warning` as an
+ * advisory only, e.g. a pasted Gemini key ending up in the OpenAI slot.
+ */
+export function validateKeyFormat(keyName: string, value: string): { ok: boolean; warning?: string } {
+  const slotLabel = VAULT_SLOT_LABEL[keyName];
+  const preview = `${String(value ?? '').slice(0, 8)}…`;
+
+  switch (keyName) {
+    case 'openai_api_key': {
+      if (/^sk-(?!ant-)/.test(value)) return { ok: true };
+      const cross = detectCrossProviderKey(value);
+      if (cross) return { ok: false, warning: `Looks like ${cross.withArticle} key (${preview}) but this is the ${slotLabel} slot.` };
+      return { ok: false, warning: `Does not look like an ${slotLabel} key (expected to start with "sk-").` };
+    }
+    case 'anthropic_api_key': {
+      if (/^sk-ant-/.test(value)) return { ok: true };
+      const cross = detectCrossProviderKey(value);
+      if (cross) return { ok: false, warning: `Looks like ${cross.withArticle} key (${preview}) but this is the ${slotLabel} slot.` };
+      return { ok: false, warning: `Does not look like an ${slotLabel} key (expected to start with "sk-ant-").` };
+    }
+    case 'gemini_api_key': {
+      if (/^AIzaSy/.test(value)) return { ok: true };
+      const cross = detectCrossProviderKey(value);
+      if (cross) return { ok: false, warning: `Looks like ${cross.withArticle} key (${preview}) but this is the ${slotLabel} slot.` };
+      return { ok: false, warning: `Does not look like a ${slotLabel} key (expected to start with "AIzaSy").` };
+    }
+    case 'openrouter_api_key': {
+      // OpenRouter proxies many providers, so only flag unmistakable
+      // cross-provider pastes — anything else is plausibly valid.
+      const cross = detectCrossProviderKey(value);
+      if (cross) return { ok: false, warning: `Looks like ${cross.withArticle} key (${preview}) but this is the ${slotLabel} slot.` };
+      return { ok: true };
+    }
+    case 'telegram_bot_token': {
+      if (/^\d+:[A-Za-z0-9_-]+$/.test(value)) return { ok: true };
+      return { ok: false, warning: 'Does not look like a Telegram bot token (expected "<digits>:<token>").' };
+    }
+    default:
+      return { ok: true };
+  }
 }
 
 /**
@@ -394,7 +450,7 @@ export async function resolveEnsemblePremise(opts: {
   // services.costs so an ensemble run's spend is attributed to this book.
   const complete = async (req: any) => {
     const resp = await services.aiRouter.complete(req);
-    try { services.costs?.record(resp.provider ?? req.provider, resp.tokensUsed, resp.estimatedCost, project.bookSlug); } catch { /* best-effort */ }
+    try { services.costs?.record(resp.provider ?? req.provider, resp.tokensUsed, resp.estimatedCost, project.bookSlug, resp.model, resp.promptTokens, resp.completionTokens); } catch { /* best-effort */ }
     return resp;
   };
 
@@ -511,7 +567,7 @@ export async function runBetaReaderGate(opts: {
     // consistencyAudit cost-recording wrapper (index.ts).
     const aiCompleteFn = async (r: any) => {
       const resp = await services.aiRouter.complete(r);
-      try { services.costs?.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, prodProject.bookSlug); } catch { /* best-effort */ }
+      try { services.costs?.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, prodProject.bookSlug, resp.model, resp.promptTokens, resp.completionTokens); } catch { /* best-effort */ }
       return resp;
     };
     const aiSelectFn = (t: string) => services.aiRouter.selectProvider(t);

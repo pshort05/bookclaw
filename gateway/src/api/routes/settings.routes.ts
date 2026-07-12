@@ -1,4 +1,5 @@
 import { Application, Request, Response } from 'express';
+import { validateKeyFormat } from './_shared.js';
 
 /**
  * Dashboard management endpoints: memory reset, encrypted-vault key CRUD +
@@ -36,6 +37,8 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
     if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
       return res.status(400).json({ error: 'Invalid key name. Use only letters, numbers, underscores, and hyphens.' });
     }
+    const fmt = validateKeyFormat(key, value);
+    if (fmt.warning) console.warn(`  [vault] ${key}: ${fmt.warning}`);
     try {
       await services.vault.set(key, value);
       await services.audit.log('vault', 'key_stored', { key });
@@ -47,7 +50,7 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
         refreshedProviders = await services.aiRouter.reinitialize();
       }
 
-      res.json({ success: true, key, refreshedProviders });
+      res.json({ success: true, key, refreshedProviders, warning: fmt.warning });
     } catch (error) {
       res.status(500).json({ error: 'Failed to store key' });
     }

@@ -10,6 +10,7 @@ import { VideoResearchService } from '../services/video-research.js';
 import { StoryStructureService } from '../services/story-structures.js';
 import { PlotPromisesService } from '../services/plot-promises.js';
 import { CharacterVoicesService } from '../services/character-voices.js';
+import { CharacterMotivationService } from '../services/character-motivation.js';
 import { ProseEvolverService } from '../services/prose-evolver.js';
 import { ReaderPanelService } from '../services/reader-panel.js';
 import { LearningService } from '../services/learning.js';
@@ -126,5 +127,9 @@ export async function initKnowledgeServices(gw: BookClawGateway): Promise<void> 
   // styleClone is wired in Phase 6j (initExportAndWaves), once it exists.
   gw.characterVoices = new CharacterVoicesService(join(ROOT_DIR, 'workspace'));
   await gw.characterVoices.initialize();
+
+  // Character motivation critique (AuthorAgent #12): AI check for lines that
+  // contradict a character's established motivation/arc. Stateless; deps per call.
+  gw.characterMotivation = new CharacterMotivationService();
   console.log(`  ✓ Character voices: per-character voice drift tracker ready`);
 }

@@ -73,6 +73,8 @@ import { ProseEvolverService } from './services/prose-evolver.js';
 import { ReaderPanelService } from './services/reader-panel.js';
 import { LearningService } from './services/learning.js';
 import { buildArchivalBlock } from './services/archival-recall.js';
+import { CharacterMotivationService } from './services/character-motivation.js';
+import { RevisionOrchestrator } from './services/revision-orchestrator.js';
 import { ResearchLookupService } from './services/research-lookup.js';
 import { VideoResearchService } from './services/video-research.js';
 import { StoryStructureService } from './services/story-structures.js';
@@ -266,6 +268,8 @@ class BookClawGateway {
   public storyStructures!: StoryStructureService;
   public plotPromises!: PlotPromisesService;
   public characterVoices!: CharacterVoicesService;
+  public characterMotivation!: CharacterMotivationService;
+  public revisionOrchestrator!: RevisionOrchestrator;
   public websiteSites!: WebsiteSiteService;
   public blogPostDrafter!: BlogPostDrafterService;
   public websiteDeploy!: WebsiteDeployService;
@@ -910,7 +914,7 @@ class BookClawGateway {
         // Trigger consolidation if threshold reached. Fire-and-forget.
         this.userModel?.maybeConsolidate().catch(() => {});
       } catch { /* observation failures should never block messaging */ }
-      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost, costSlug);
+      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost, costSlug, response.model, response.promptTokens, response.completionTokens);
       this.heartbeat.recordActivity('message', { channel });
 
       // Log to activity
@@ -983,7 +987,7 @@ class BookClawGateway {
           } catch { /* observation failures should never block messaging */ }
           // Record fallback spend too — otherwise a run that fails over to a paid
           // provider records zero cost and the budget gate is silently defeated.
-          this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost, costSlug);
+          this.costs.record(fallback.id, response.tokensUsed, response.estimatedCost, costSlug, response.model, response.promptTokens, response.completionTokens);
           this.heartbeat.recordActivity('message', { channel });
           this.activityLog.log({
             type: 'chat_message',
@@ -1180,7 +1184,7 @@ class BookClawGateway {
         ...(typeof editorCfg.temperature === 'number' ? { temperature: editorCfg.temperature } : {}),
       });
       const text = (response.text || '').trim() || fallback;
-      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost);
+      this.costs.record(provider.id, response.tokensUsed, response.estimatedCost, undefined, response.model, response.promptTokens, response.completionTokens);
       this.getHistory(channel).push({ role: 'assistant', content: text, timestamp: new Date() });
       return text;
     } catch {
@@ -1459,6 +1463,8 @@ class BookClawGateway {
       storyStructures: this.storyStructures,
       plotPromises: this.plotPromises,
       characterVoices: this.characterVoices,
+      characterMotivation: this.characterMotivation,
+      revisionOrchestrator: this.revisionOrchestrator,
       websiteSites: this.websiteSites,
       blogPostDrafter: this.blogPostDrafter,
       websiteDeploy: this.websiteDeploy,
@@ -1519,7 +1525,7 @@ class BookClawGateway {
                   complete: async (r) => {
                     const resp = await aiRouter.complete(r);
                     try {
-                      this.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug);
+                      this.costs.record(resp.provider ?? r.provider, resp.tokensUsed, resp.estimatedCost, slug, resp.model, resp.promptTokens, resp.completionTokens);
                     } catch { /* cost recording is best-effort */ }
                     auditCost += resp.estimatedCost || 0;
                     return resp;
