@@ -119,6 +119,17 @@ export class ConfirmationGateService {
     this.auditFn = fn;
   }
 
+  /**
+   * Resolve once every queued persist has settled. Lazy expiry (reached through
+   * the synchronous get()/list() sweep) schedules a fire-and-forget persist, so
+   * a caller about to delete the workspace directory awaits this first — that
+   * lets the atomic write-then-rename finish while its target dir still exists,
+   * instead of racing the teardown and logging a spurious ENOENT.
+   */
+  async whenIdle(): Promise<void> {
+    await this.persistChain;
+  }
+
   async initialize(): Promise<void> {
     await mkdir(join(this.filePath, '..'), { recursive: true });
     if (existsSync(this.filePath)) {

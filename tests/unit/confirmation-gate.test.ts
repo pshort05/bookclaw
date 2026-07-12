@@ -32,7 +32,9 @@ describe('ConfirmationGateService', () => {
     svc = new ConfirmationGateService(ws);
     await svc.initialize();
   });
-  afterEach(() => { rmSync(ws, { recursive: true, force: true }); });
+  // Drain any fire-and-forget persist (scheduled by lazy expiry in get()/list())
+  // before removing the temp dir, so the atomic rename can't race the teardown.
+  afterEach(async () => { await svc.whenIdle(); rmSync(ws, { recursive: true, force: true }); });
 
   test('createRequest returns a pending request with an id and copied fields', async () => {
     const req = await svc.createRequest(baseInput());
@@ -191,6 +193,7 @@ describe('ConfirmationGateService', () => {
     // checkDecision surfaces the expiry via the lazy sweep in get()
     assert.equal(fast.checkDecision(req.id).status, 'expired');
     await assert.rejects(() => fast.approve(req.id), /expired/);
+    await fast.whenIdle();
   });
 
   test('list filters by status and service; get returns the stored request', async () => {
@@ -214,5 +217,6 @@ describe('ConfirmationGateService', () => {
     await new Promise(r => setTimeout(r, 40));
     assert.equal(fast.list({ status: 'pending' }).length, 0);
     assert.equal(fast.list({ status: 'expired' }).length, 1);
+    await fast.whenIdle();
   });
 });

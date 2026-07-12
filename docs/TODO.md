@@ -4,13 +4,6 @@ Tracking list of items surfaced while writing CLAUDE.md. Grouped by effort.
 
 Anything currently being worked on must appear in this list. When an item is finished, move it to [COMPLETED.md](COMPLETED.md) with a `YYYY-MM-DD` completion date — don't just check the box and leave it here.
 
-## Next up (2026-07-12)
-
-- [ ] **Unit suite is flaky under parallel `node --test`** — the same tree passes or fails run to run, and the failing file *moves*. Observed on three consecutive full runs: run 1 `book-phase-hook.test.ts` failed, run 2 `ConfirmationGateService` failed, run 3 passed 2138/2138. Every failure so far surfaces as `ENOENT: no such file or directory, rename '/tmp/bc-cg-XXXXXX/confirmations.json.tmp' -> '.../confirmations.json'`, i.e. a test's temp dir is gone while that test is still writing. Each file passes 17/17 in isolation, so it is cross-file interference, not test logic.
-  - **Repro:** `node --import tsx --test $(ls tests/unit/*.test.ts | grep -vE 'studio-build|chat-build')` — run it several times; roughly 2 in 3 runs fail somewhere.
-  - **Likely cause:** tests share a temp-dir root or `rmSync` cleanup races against another file's still-open service (the atomic write-then-rename in the persist path is the victim, not the culprit). Suspect a shared `/tmp` prefix, an unawaited async persist in a service that outlives its test, or an `afterEach` cleaning a dir another test still holds.
-  - **Why it matters:** an intermittently-red suite trains everyone to ignore it, and it is the only automated gate on ~2,138 assertions. Not a product bug — pre-existing, unrelated to the premise-intake fix that surfaced it.
-
 ## Targeted feature roadmap (product, consolidated 2026-06-21)
 
 A single ranked, deduplicated list of the **differentiating product features** distilled from [STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](STRATEGY-LEADING-AI-WRITING-ASSISTANT.md) + the six tool reviews ([NARRATIVE-ENGINE](NARRATIVE-ENGINE-INTEGRATION.md), [STORYTHREAD](STORYTHREAD-STUDIO-INTEGRATION.md), [MIRRORSHARD](MIRRORSHARD-INTEGRATION.md), [NOVELMINT-TOOLS](NOVELMINT-TOOLS-REVIEW.md), [CLAUDE-CODE-METHODS](CLAUDE-CODE-WRITING-METHODS-REVIEW.md), [LONEWRITER](LONEWRITER-REVIEW.md)). **Detailed scoping for each item lives in the linked doc** — this is the canonical index; the scattered strategy/review bullets that fed it were removed from "Larger items" below so each feature appears once. The **multi-author/multi-book studio** (North Star, below) is the umbrella platform these build on; it is not re-listed here.
