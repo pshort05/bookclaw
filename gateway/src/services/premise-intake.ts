@@ -17,6 +17,7 @@ const PARSE_SYSTEM = `You convert a free-form romance premise document into a st
 Rules:
 - Preserve everything the author wrote; never invent plot the premise does not imply.
 - Map sections: logline/theme -> storyArc; characters -> characters; setting -> setting (verbatim place notes); structure/POV/ending -> blueprint.
+- storyArc, characters, setting and blueprint MUST each be a single markdown STRING (use headings/bullets inside it) — never an array or object.
 - Infer heat ('sweet' | 'spicy'), chapterCount, wordsPerChapter as suggestions.
 - gaps[]: one per open choice the file flags PLUS implicit missing pieces needed to draft. Each has a proposedAnswer and a targetField (storyArc|characters|setting|blueprint|heat|chapterCount|wordsPerChapter).
 - realPlace: is the setting a real, mappable location? If so give its canonicalName.
@@ -28,8 +29,32 @@ function extractJson(text: string): any {
   const raw = fenced ? fenced[1] : text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
   try { return JSON.parse(raw); } catch { throw new Error('PREMISE_INTAKE_PARSE_FAILED'); }
 }
-const str = (v: unknown) => (typeof v === 'string' ? v : '');
+/**
+ * Coerce a model-returned value into markdown text. The prompt asks for strings,
+ * but a premise with several character sections or an act-by-act structure map
+ * comes back with `characters`/`blueprint` as arrays or objects. The previous
+ * `typeof v === 'string' ? v : ''` silently discarded those, so the two richest
+ * fields in the document arrived empty. Flatten instead of drop.
+ */
+function str(v: unknown): string {
+  if (typeof v === 'string') return v.trim();
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)) return v.map(str).filter(Boolean).join('\n\n');
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    const headKey = ['name', 'title', 'label'].find((k) => typeof o[k] === 'string' && (o[k] as string).trim());
+    const head = headKey ? `### ${(o[headKey] as string).trim()}` : '';
+    const body = Object.entries(o)
+      .filter(([k]) => k !== headKey)
+      .map(([k, val]) => { const t = str(val); return t ? `**${k}**: ${t}` : ''; })
+      .filter(Boolean)
+      .join('\n');
+    return [head, body].filter(Boolean).join('\n\n');
+  }
+  return '';
+}
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+const SEED_TEXT_FIELDS = ['storyArc', 'characters', 'setting', 'blueprint'] as const;
 
 export class PremiseIntakeService {
   constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider, private researchLookup?: ResearchLookup) {}
@@ -43,11 +68,17 @@ export class PremiseIntakeService {
       storyArc: str(s.storyArc), characters: str(s.characters), setting: str(s.setting), blueprint: str(s.blueprint),
       heat: s.heat === 'spicy' ? 'spicy' : 'sweet', chapterCount: num(s.chapterCount, 40), wordsPerChapter: num(s.wordsPerChapter, 2500),
     };
-    const gaps: IntakeGap[] = Array.isArray(j?.gaps) ? j.gaps.filter((g: any) => g && typeof g.id === 'string').map((g: any) => ({
-      id: str(g.id), question: str(g.question), proposedAnswer: str(g.proposedAnswer),
-      ...(Array.isArray(g.alternatives) ? { alternatives: g.alternatives.map(str) } : {}),
+    // A premise that parsed to nothing is a failure, not a success — surface it
+    // instead of handing back a confident-looking payload with the content gone.
+    const empty = SEED_TEXT_FIELDS.filter((k) => !seeds[k]);
+    if (empty.length) throw new Error(`PREMISE_INTAKE_EMPTY_FIELDS:${empty.join(',')}`);
+
+    // Gaps carry a model-assigned id; a numeric one used to drop the whole gap.
+    const gaps: IntakeGap[] = Array.isArray(j?.gaps) ? j.gaps.filter((g: any) => g && typeof g === 'object').map((g: any, i: number) => ({
+      id: str(g.id) || `gap-${i + 1}`, question: str(g.question), proposedAnswer: str(g.proposedAnswer),
+      ...(Array.isArray(g.alternatives) ? { alternatives: g.alternatives.map(str).filter(Boolean) } : {}),
       targetField: (['storyArc','characters','setting','blueprint','heat','chapterCount','wordsPerChapter'].includes(g.targetField) ? g.targetField : 'blueprint') as SeedField,
-    })) : [];
+    })).filter((g: IntakeGap) => g.question) : [];
     const realPlace: RealPlace = j?.realPlace?.isReal ? { isReal: true, canonicalName: str(j.realPlace.canonicalName) || undefined } : { isReal: false };
     return { seeds, gaps, realPlace };
   }
@@ -72,8 +103,8 @@ Audit ONLY real-world facts the PREMISE asserts (street names, town placement, g
     const { text } = await this.aiComplete({ provider, system, messages: [{ role: 'user', content: `RESEARCH:\n${researchText || '(none available)'}\n\nPREMISE:\n${premiseText}` }], maxTokens: 8000, thinking: 'medium' });
 
     let j: any; try { j = extractJson(text); } catch { j = { dossier: researchText || setting, discrepancies: [] }; }
-    const discrepancies: Discrepancy[] = Array.isArray(j?.discrepancies) ? j.discrepancies.filter((d: any) => d && typeof d.id === 'string').map((d: any) => ({
-      id: str(d.id), premiseClaim: str(d.premiseClaim), finding: str(d.finding), status: d.status === 'fail' ? 'fail' : 'pass',
+    const discrepancies: Discrepancy[] = Array.isArray(j?.discrepancies) ? j.discrepancies.filter((d: any) => d && typeof d === 'object').map((d: any, i: number) => ({
+      id: str(d.id) || `disc-${i + 1}`, premiseClaim: str(d.premiseClaim), finding: str(d.finding), status: d.status === 'fail' ? 'fail' : 'pass',
       ...(d.suggestion ? { suggestion: str(d.suggestion) } : {}),
       targetField: (['setting','blueprint','characters'].includes(d.targetField) ? d.targetField : 'setting') as Discrepancy['targetField'],
     })) : [];

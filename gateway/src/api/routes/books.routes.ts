@@ -88,7 +88,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       const seeds = { ...intake.seeds, setting: grounding.dossier };
       res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, realPlace: intake.realPlace, groundingStatus: grounding.status });
     } catch (err: any) {
-      if (String(err?.message).includes('PREMISE_INTAKE_PARSE_FAILED')) {
+      const msg = String(err?.message ?? '');
+      if (msg.startsWith('PREMISE_INTAKE_EMPTY_FIELDS:')) {
+        const fields = msg.slice('PREMISE_INTAKE_EMPTY_FIELDS:'.length).split(',').filter(Boolean);
+        return res.status(422).json({ error: `The premise parsed, but these fields came back empty: ${fields.join(', ')}. Nothing was created. Re-run the analysis, or give those sections clearer headings in the document.`, fields });
+      }
+      if (msg.includes('PREMISE_INTAKE_PARSE_FAILED')) {
         return res.status(500).json({ error: 'Could not parse the premise into structured seeds. Try a clearer document or create the book manually.' });
       }
       console.log(`  ⚠ premise intake failed: ${err?.message ?? err}`);
