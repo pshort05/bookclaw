@@ -22,6 +22,23 @@ Generate a coordinated set of book covers in the standard sizes an author
 needs to ship across every retail platform — all from one visual brief, so
 the ebook, print, audiobook, and social-banner versions look cohesive.
 
+## Genre clarity comes first (the cover's #1 job)
+
+Before any decision about beauty or how the author pictures the characters,
+the cover must tell a browsing reader the **genre in half a second or less**.
+This is the single biggest driver of whether the book sells. A cover that
+looks good but reads as the wrong genre — or no clear genre — moves almost
+no copies; the same book with a genre-true cover can hit a bestseller list.
+
+- Build the brief from genre conventions first: the palette, imagery, and
+  typography that this genre's readers already recognize on the shelf.
+- Signal the **subgenre**, not just the category — readers buy within lanes
+  (cozy mystery vs. thriller, space opera vs. hard sci-fi, romantasy vs.
+  epic fantasy). Use the `subgenre` field below to steer this.
+- Sanity test every draft: show it to someone unfamiliar and ask "what genre
+  and subgenre is this?" If they hesitate or guess wrong, the cover fails its
+  primary job — fix the genre signal before polishing anything else.
+
 ## Sizes produced
 
 | Variant | Dimensions | What it's for |

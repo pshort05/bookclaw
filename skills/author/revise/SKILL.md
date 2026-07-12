@@ -58,6 +58,25 @@ Provide multi-layer editing support. Each pass serves a different purpose.
 - Formatting
 - Style guide compliance
 
+### Pass 5: Pre-Publication Read-Through
+The final pass before publishing, catching what earlier passes miss.
+- **Read it out loud** (or have text-to-speech read it back) — the highest-yield
+  check there is. The ear catches dropped/skipped words, wonky rhythm,
+  accidental rhyme ("he tried to hide the pride he felt inside"), and
+  noun/verb garden-paths ("The complex houses married and single soldiers").
+  Where you *stumble* = phrasing to fix; where you get *bored* = a pacing cut.
+- **Chapter-length audit** — list every chapter with its word count. A single
+  wildly out-of-pattern chapter jars readers unless it is deliberate; split
+  an accidental outlier. (`pacing_heatmap` gives a visual overview.)
+- **First chapter delivers the genre** — the cover promises a genre; chapter
+  one must pay it off *immediately* (a crime in a crime novel's chapter one,
+  not chapter five), and signal the subgenre lane, not just the category.
+- **The chapter-two check** — chapter one is the "gimme" readers almost always
+  read; chapter two is where they decide whether to continue and is usually
+  neglected. Confirm chapter two builds on, accelerates, and escalates chapter
+  one, keeps advancing the plot, opens with a bang, and ends on a question or
+  mystery that pulls the reader forward.
+
 ## Feedback Format
 
 For each issue found:
