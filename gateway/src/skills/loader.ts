@@ -70,6 +70,23 @@ export interface SkillCatalogEntry {
 
 export const SKILL_CATEGORIES = ['core', 'author', 'marketing', 'premium', 'ops', 'toolkit'] as const;
 
+// Skill-match token cap: matchSkills() used to inject the FULL body of every
+// trigger-matched skill with no limit — some skill files run 15-23KB, so a
+// message matching several of them could push tens of thousands of untracked
+// chars into the system prompt. Rank matches by trigger-match quality, keep
+// only the top MAX_MATCHED_SKILLS, and bound total injected content at
+// CONTENT_BUDGET_CHARS (truncating/omitting as the budget runs out).
+const MAX_MATCHED_SKILLS = 3;
+const CONTENT_BUDGET_CHARS = 8000;
+const TRUNCATION_MARKER = '\n[truncated]';
+// Below this much remaining budget, omit the skill entirely rather than emit
+// a near-empty truncated fragment.
+const MIN_TRUNCATION_REMAINING = 50;
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export class SkillLoader {
   private skillsDir: string;
   private workspaceSkillsDir: string | null;
@@ -226,42 +243,100 @@ export class SkillLoader {
     return { name, description, category, triggers, permissions, content, source };
   }
 
-  matchSkills(input: string): string[] {
-    const matched: string[] = [];
+  /**
+   * Score every skill against the input by trigger-match quality, sort
+   * descending, and return the top MAX_MATCHED_SKILLS. Shared by matchSkills
+   * and matchSkillNames so the two can never disagree on which skills (or
+   * what order) were selected.
+   *
+   * Scoring: each trigger the input contains adds a base weight — a
+   * word-bounded match (trigger surrounded by non-alphanumeric chars or
+   * string edges) scores higher than a bare substring — plus a length bonus
+   * for longer (more specific) triggers. A skill with multiple trigger hits
+   * gets an additional bonus. Only skills with >=1 hit are candidates.
+   */
+  private selectTopSkills(input: string): Skill[] {
     const lower = input.toLowerCase();
+    const scored: Array<{ skill: Skill; score: number }> = [];
 
     for (const [, skill] of this.skills) {
+      let score = 0;
+      let hits = 0;
       for (const trigger of skill.triggers) {
-        if (lower.includes(trigger.toLowerCase())) {
-          matched.push(skill.content);
-          break;
-        }
+        const t = trigger.toLowerCase().trim();
+        if (!t || !lower.includes(t)) continue;
+        hits++;
+        const wordBounded = new RegExp(`(^|[^a-z0-9])${escapeRegExp(t)}([^a-z0-9]|$)`).test(lower);
+        score += (wordBounded ? 10 : 4) + Math.min(t.length, 30) / 3;
+      }
+      if (hits > 0) {
+        score += (hits - 1) * 5; // multiple trigger hits are a stronger signal
+        scored.push({ skill, score });
       }
     }
 
-    return matched;
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, MAX_MATCHED_SKILLS).map((s) => s.skill);
+  }
+
+  /**
+   * Match skills against user input, ranked by match quality and capped at
+   * MAX_MATCHED_SKILLS, with total injected content bounded by
+   * CONTENT_BUDGET_CHARS so skill bodies can't bloat the system prompt
+   * unbounded. Returns each selected skill's raw content (frontmatter +
+   * body), truncated with a `[truncated]` marker if it would overflow the
+   * remaining budget, or omitted once the budget is exhausted.
+   */
+  /**
+   * The single ranked selection + budget walk shared by matchSkills and
+   * matchSkillNames. Returns ONLY the skills actually emitted into the prompt
+   * (whole or truncated), name paired with body — a skill omitted because the
+   * budget was exhausted appears in neither, so the two public methods can never
+   * report a skill whose content was not injected.
+   */
+  private assembleSkills(input: string): Array<{ name: string; body: string }> {
+    const selected = this.selectTopSkills(input);
+    const emitted: Array<{ name: string; body: string }> = [];
+    let used = 0;
+
+    for (const skill of selected) {
+      const remaining = CONTENT_BUDGET_CHARS - used;
+      if (remaining <= 0) {
+        console.log(`  ⚠ Skill "${skill.name}" omitted — ${CONTENT_BUDGET_CHARS}-char prompt content budget exhausted`);
+        continue;
+      }
+
+      if (skill.content.length <= remaining) {
+        emitted.push({ name: skill.name, body: skill.content });
+        used += skill.content.length;
+      } else if (remaining > MIN_TRUNCATION_REMAINING) {
+        const sliceLen = remaining - TRUNCATION_MARKER.length;
+        emitted.push({ name: skill.name, body: skill.content.slice(0, sliceLen) + TRUNCATION_MARKER });
+        used = CONTENT_BUDGET_CHARS;
+        console.log(`  ⚠ Skill "${skill.name}" body truncated to fit ${CONTENT_BUDGET_CHARS}-char prompt budget`);
+      } else {
+        used = CONTENT_BUDGET_CHARS;
+        console.log(`  ⚠ Skill "${skill.name}" omitted — ${CONTENT_BUDGET_CHARS}-char prompt content budget exhausted`);
+      }
+    }
+
+    return emitted;
+  }
+
+  matchSkills(input: string): string[] {
+    return this.assembleSkills(input).map((e) => e.body);
   }
 
   /**
    * Like matchSkills but returns the matched skills' NAMES, for activity logging
    * and UI display. matchSkills returns each skill's full markdown, whose first
    * line is the `---` YAML frontmatter delimiter — logging that yields "---"
-   * instead of a name. Same trigger-substring matching as matchSkills.
+   * instead of a name. Derives from the same emitted set as matchSkills (post
+   * budget walk), so the two always agree on which skills were actually injected
+   * — a budget-omitted skill is reported by neither.
    */
   matchSkillNames(input: string): string[] {
-    const matched: string[] = [];
-    const lower = input.toLowerCase();
-
-    for (const [, skill] of this.skills) {
-      for (const trigger of skill.triggers) {
-        if (lower.includes(trigger.toLowerCase())) {
-          matched.push(skill.name);
-          break;
-        }
-      }
-    }
-
-    return matched;
+    return this.assembleSkills(input).map((e) => e.name);
   }
 
   getLoadedCount(): number {

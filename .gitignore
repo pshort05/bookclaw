@@ -15,29 +15,16 @@ build_now
 # Transient commit message consumed + removed by ./push.sh (not tracked)
 commit_message
 
-# Workspace runtime data (user-generated, not code)
-workspace/projects/
-workspace/research/
-workspace/exports/
-workspace/.memory/
-workspace/.audit/
-workspace/.agent/
-workspace/.audio/
-workspace/audio/
-workspace/documents/
-workspace/memory/
-workspace/context/
-workspace/.config/
-workspace/.activity/
-workspace/test-upload.txt
-workspace/.vault/
-workspace/.bookclaw/
-workspace/skills/
-workspace/library/
-workspace/books/
-workspace/series/
-workspace/costs.json
-workspace/*.json
+# Deny-by-default: ignore everything under workspace/, then re-include ONLY the
+# product-default files meant to ship with the repo. Prevents a stray `git add .`
+# (push.sh) from ever committing the author's private manuscripts, memory,
+# staged imports, generated covers, or voice fingerprints.
+workspace/*
+!workspace/soul/
+!workspace/SKILLS.txt
+!workspace/projects/
+workspace/projects/*
+!workspace/projects/.template/
 *.log
 .DS_Store
 nul

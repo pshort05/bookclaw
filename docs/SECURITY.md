@@ -85,7 +85,7 @@ should be suspicious of any future version or fork that claims otherwise:
 | Credential storage | AES-256-GCM in `config/.vault/vault.enc`. Atomic writes. `chmod 0600` on POSIX. |
 | Master key | Auto-generated on first run, stored in `.env` (see note below). |
 | Path traversal | Validated via `SandboxGuard` + per-endpoint sanitization. |
-| Prompt injection | Scanned on every incoming message via `InjectionDetector`. |
+| Prompt injection | Scanned on every incoming message via `InjectionDetector`. Per-pattern severity: real threats (exfil/RCE/override/etc.) hard-block; narrative-prose-prone patterns (role_hijack/mode_switch/instruction_inject) downgrade to an advisory warn (audit-logged, not blocked) so manuscript prose isn't false-positived. |
 | Budget cap | Persisted daily + monthly spend; fallback provider respects cap. |
 | Audit log | Every action written to daily JSONL files under `workspace/.audit/`. Secrets redacted. |
 | Confirmation gate | Universal — all Wave 3 writes go through `ConfirmationGateService`. 24h expiry. |
@@ -174,7 +174,7 @@ When in doubt, BookClaw is designed to **fail closed**:
 - Rate limit hit → exponential backoff, never a silent retry loop.
 - Over budget → paid providers skipped, free providers tried first,
   error surfaced if none available.
-- Prompt-injection pattern detected → message blocked, audit-logged.
+- Prompt-injection pattern detected → `block`-severity (real threats) message blocked, audit-logged; `warn`-severity (narrative-prose patterns) advisory-logged and allowed through.
 
 ## 7. What to do if something goes wrong
 

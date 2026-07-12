@@ -8,7 +8,11 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import type { InjectionDetector } from '../security/injection.js';
 
-export interface ImportFinding { path: string; type: string; confidence: number; pattern: string; }
+// severity mirrors InjectionDetector's ('block' hard-gates the import; 'warn' is
+// advisory-only, e.g. narrative prose). The HTML/event-handler payload check
+// below is a separate, always-'block' guard (not part of the injection severity
+// model).
+export interface ImportFinding { path: string; type: string; confidence: number; pattern: string; severity: 'block' | 'warn'; }
 
 /**
  * Extensions whose content is scanned for injection + HTML payloads (text only).
@@ -121,11 +125,11 @@ export function scanStagedText(baseDir: string, files: readonly string[], inject
     try { text = readFileSync(join(baseDir, rel), 'utf-8'); } catch { continue; }
     const r = injection.scan(text);
     if (r.detected) {
-      findings.push({ path: rel, type: r.type || 'unknown', confidence: r.confidence || 0, pattern: r.pattern || '' });
+      findings.push({ path: rel, type: r.type || 'unknown', confidence: r.confidence || 0, pattern: r.pattern || '', severity: r.severity || 'block' });
       continue; // already flagged — no need for the HTML check
     }
     if (HTML_RE.test(text) || EVENT_RE.test(text)) {
-      findings.push({ path: rel, type: 'html_payload', confidence: 0.9, pattern: 'html/event-handler tag' });
+      findings.push({ path: rel, type: 'html_payload', confidence: 0.9, pattern: 'html/event-handler tag', severity: 'block' });
     }
   }
   return findings;

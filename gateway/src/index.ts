@@ -622,7 +622,7 @@ class BookClawGateway {
   ): Promise<void> {
     // ── Security Check 1: Injection Detection ──
     const injectionResult = this.injectionDetector.scan(content);
-    if (injectionResult.detected) {
+    if (injectionResult.detected && injectionResult.severity !== 'warn') {
       this.audit.log('security', 'injection_detected', {
         channel,
         type: injectionResult.type,
@@ -632,6 +632,16 @@ class BookClawGateway {
         'For security, I\'ve blocked this input. If this is a false positive, ' +
         'try rephrasing your request.');
       return;
+    }
+    if (injectionResult.detected && injectionResult.severity === 'warn') {
+      // Narrative-prose-prone pattern (role_hijack/mode_switch/instruction_inject) —
+      // advisory only. Log + audit, then fall through and process the message.
+      console.log(`  ⚠ Advisory injection pattern (${injectionResult.type}) on channel ${channel} — not blocked`);
+      this.audit.log('security', 'injection_warned', {
+        channel,
+        type: injectionResult.type,
+        confidence: injectionResult.confidence,
+      });
     }
 
     // ── Security Check 2: Rate Limiting ──

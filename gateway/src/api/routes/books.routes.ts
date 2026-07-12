@@ -770,22 +770,26 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       const staged = services.bookTransfer.validateAndStage(file.buffer);
       if (staged.structuralError) return res.status(400).json({ error: staged.structuralError });
       try {
-        if (staged.findings.length === 0 && staged.versionStatus === 'ok') {
+        // Only 'block'-severity findings hard-gate the import behind the
+        // ConfirmationGate; 'warn' findings (e.g. narrative-prose patterns) are
+        // advisory-only and still land in the response for visibility.
+        const blocking = staged.findings.filter((f: ImportFinding) => f.severity === 'block');
+        if (blocking.length === 0 && staged.versionStatus === 'ok') {
           const mf = await services.bookTransfer.finalizeImport(staged.stagingId);
-          return res.json({ imported: mf.slug });
+          return res.json({ imported: mf.slug, findings: staged.findings });
         }
         const reasons: string[] = [];
-        if (staged.findings.length) reasons.push(`${staged.findings.length} injection finding(s)`);
+        if (blocking.length) reasons.push(`${blocking.length} injection finding(s)`);
         if (staged.versionStatus !== 'ok') reasons.push(`version ${staged.versionStatus}`);
         const conf = await services.confirmationGate.createRequest({
           service: 'book-transfer',
           action: 'import',
           platform: 'api',
           description: `Import a book — ${reasons.join(', ')}`,
-          payload: { stagingId: staged.stagingId, versionStatus: staged.versionStatus, findingCount: staged.findings.length },
+          payload: { stagingId: staged.stagingId, versionStatus: staged.versionStatus, findingCount: blocking.length },
           riskLevel: 'high',
           isReversible: true,
-          disclosures: staged.findings.map((f: ImportFinding) => `${f.path}: ${f.type} (${f.confidence})`),
+          disclosures: blocking.map((f: ImportFinding) => `${f.path}: ${f.type} (${f.confidence})`),
         });
         return res.json({ gated: true, confirmationId: conf.id, findings: staged.findings, versionStatus: staged.versionStatus });
       } catch (err) {

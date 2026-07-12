@@ -82,9 +82,13 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
       if (staged.structuralError) return res.status(400).json({ error: staged.structuralError });
       const { kind, name } = staged.manifest;
       try {
-        if (staged.findings.length === 0) {
+        // Only 'block'-severity findings hard-gate the import behind the
+        // ConfirmationGate; 'warn' findings (e.g. narrative-prose patterns) are
+        // advisory-only and still land in the response for visibility.
+        const blocking = staged.findings.filter((f: ImportFinding) => f.severity === 'block');
+        if (blocking.length === 0) {
           const entry = await services.libraryTransfer.finalizeImport(staged.stagingId);
-          return res.json({ ok: true, entry });
+          return res.json({ ok: true, entry, findings: staged.findings });
         }
         // The gate runs payloadClaimsPreAuth over description+payload, so keep
         // attacker-controlled strings (entry name, finding pattern text) OUT of
@@ -96,11 +100,11 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
           platform: 'library',
           riskLevel: 'high',
           isReversible: true,
-          description: `${kind} import with ${staged.findings.length} finding(s)`,
+          description: `${kind} import with ${blocking.length} finding(s)`,
           payload: {
             stagingId: staged.stagingId,
             kind,
-            findings: staged.findings.map((f: ImportFinding) => ({ path: f.path, type: f.type, confidence: f.confidence })),
+            findings: blocking.map((f: ImportFinding) => ({ path: f.path, type: f.type, confidence: f.confidence })),
           },
         });
         return res.status(202).json({ pendingConfirmation: conf.id, findings: staged.findings });
