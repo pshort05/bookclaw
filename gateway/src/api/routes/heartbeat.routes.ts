@@ -222,13 +222,39 @@ export function mountHeartbeat(app: Application, gateway: any, baseDir: string):
   app.get('/api/agent/status', (_req: Request, res: Response) => {
     const autonomousStatus = services.heartbeat.getAutonomousStatus();
     const stats = services.heartbeat.getStats();
+    const activeProjects = gateway.getProjectEngine().listProjects('active').length;
     res.json({
       ...autonomousStatus,
       todayWords: stats.todayWords,
       dailyWordGoal: stats.dailyWordGoal,
       streak: stats.streak,
       goalPercent: stats.goalPercent,
+      writingStats: services.heartbeat.getWritingStats(activeProjects),
     });
+  });
+
+  // ── Writing Stats (persisted streak/week/total, backed by WritingStatsStore) ──
+
+  app.get('/api/writing/stats', (_req: Request, res: Response) => {
+    const activeProjects = gateway.getProjectEngine().listProjects('active').length;
+    const stats = services.heartbeat.getWritingStats(activeProjects);
+    if (!stats) {
+      return res.status(503).json({ error: 'Writing stats not available' });
+    }
+    res.json(stats);
+  });
+
+  app.post('/api/writing/log-words', (req: Request, res: Response) => {
+    const words = Number(req.body?.words);
+    if (!Number.isFinite(words) || words <= 0) {
+      return res.status(400).json({ error: 'words must be a positive number' });
+    }
+    if (words > 200_000) {
+      return res.status(400).json({ error: 'words exceeds the 200,000 per-entry cap' });
+    }
+    services.heartbeat.addWords(words);
+    const activeProjects = gateway.getProjectEngine().listProjects('active').length;
+    res.json({ success: true, stats: services.heartbeat.getWritingStats(activeProjects) });
   });
 
   // ── Author OS tools status ──

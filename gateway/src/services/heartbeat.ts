@@ -8,6 +8,7 @@
  */
 
 import { MemoryService } from './memory.js';
+import { WritingStatsStore, WritingStatsSnapshot } from './writing-stats.js';
 
 interface WritingSession {
   startTime: Date;
@@ -86,6 +87,10 @@ export class HeartbeatService {
   private streak = 0;
   private lastWritingDate: string | null = null;
 
+  // Persisted writing stats (streak/week/total). Null when no workspaceDir
+  // is supplied — degrades to today's in-memory-only behaviour.
+  private stats: WritingStatsStore | null = null;
+
   // Autonomous mode
   private autonomousRunStep: AutonomousRunFunc | null = null;
   private autonomousListProjects: AutonomousProjectListFunc | null = null;
@@ -105,7 +110,7 @@ export class HeartbeatService {
   private reminderMilestones: Set<number> = new Set(); // word goal % milestones already sent today
   private lastReminderDate: string | null = null; // for resetting milestones on new day
 
-  constructor(config: Partial<HeartbeatConfig>, memory: MemoryService) {
+  constructor(config: Partial<HeartbeatConfig>, memory: MemoryService, workspaceDir?: string) {
     this.config = {
       intervalMinutes: config.intervalMinutes ?? 15,
       dailyWordGoal: config.dailyWordGoal ?? 1000,
@@ -117,6 +122,10 @@ export class HeartbeatService {
       maxAutonomousStepsPerWake: config.maxAutonomousStepsPerWake ?? 5,
     };
     this.memory = memory;
+    if (workspaceDir) {
+      this.stats = new WritingStatsStore(workspaceDir);
+      void this.stats.initialize();
+    }
   }
 
   /**
@@ -700,7 +709,15 @@ export class HeartbeatService {
     if (count > 0) {
       this.todayWords += count;
       this.lastWritingDate = new Date().toISOString().split('T')[0];
+      if (this.stats) {
+        void this.stats.recordWords(count).catch(() => { /* never break the writing path */ });
+      }
     }
+  }
+
+  /** Persisted writing-stats snapshot (streak/week/total). Null when no workspaceDir was supplied. */
+  getWritingStats(activeProjects: number): WritingStatsSnapshot | null {
+    return this.stats ? this.stats.getSnapshot(activeProjects) : null;
   }
 
   /** Structured stats for dashboard Morning Briefing */

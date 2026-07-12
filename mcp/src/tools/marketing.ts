@@ -166,6 +166,21 @@ export function registerMarketingTools(server: McpServer, client: BookClawClient
     async (args) => toToolResult('analyze_reader_intel', await client.request('POST', '/api/reader-intel/analyze', args)),
   );
 
+  // ── Reader panel ──
+  server.registerTool('run_reader_panel',
+    {
+      title: 'Run reader panel',
+      description: 'Rank candidate marketing copy (blurb/hook/title/opening) against a panel of reader personas, with anti-slop guards.',
+      inputSchema: {
+        kind: z.enum(['blurb', 'hook', 'title', 'opening']),
+        candidates: z.array(z.string()).describe('Candidate texts to rank (2+ recommended)'),
+        personas: z.array(z.object({ id: z.string(), label: z.string(), lens: z.string() })).optional()
+          .describe('Optional custom reader personas; defaults to a built-in panel'),
+      },
+    },
+    async (args) => toToolResult('run_reader_panel', await client.request('POST', '/api/reader-panel/run', args)),
+  );
+
   // ── Translation ──
   server.registerTool('plan_translation',
     {

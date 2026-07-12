@@ -134,6 +134,28 @@ export async function initContentServices(gw: BookClawGateway): Promise<void> {
         }
       }
     }
+
+    // Learn-from-experience loop (AuthorAgent #7): after a writing/revision
+    // project completes, distil the recurring craft/dialogue/continuity flags
+    // across its chapters into durable, deduped lessons. Zero extra AI cost for
+    // aggregation (re-runs the free heuristics); at most one cheap phrasing call.
+    // Background, fail-soft, same guard as the consistency audit.
+    if (gw.learning && (project.type === 'book-production' || project.type === 'deep-revision')) {
+      void gw.learning.learnFromProject(
+        project,
+        gatherChapters,
+        gw.craftCritic,
+        gw.dialogueAuditor,
+        (req: any) => gw.aiRouter.complete(req),
+        (t: string) => gw.aiRouter.selectProvider(t),
+      )
+        .then((outcome: any) => {
+          if (outcome?.lessonsAdded?.length) {
+            console.log(`  ✓ Learning cycle for "${project.id}": +${outcome.lessonsAdded.length} lesson(s)`);
+          }
+        })
+        .catch((err: any) => console.log(`  ℹ Learning cycle skipped for "${project.id}": ${err?.message || err}`));
+    }
   });
 
   // ── Phase 6f: Context Engine ──

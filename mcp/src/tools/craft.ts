@@ -49,6 +49,21 @@ export function registerCraftTools(server: McpServer, client: BookClawClient): v
     async ({ id }) => toToolResult('craft_critique', await client.request('POST', `/api/projects/${encodeURIComponent(id)}/craft-critique`)),
   );
 
+  // ── Prose evolver (GEPA-style score→reflect→revise loop) ──
+  server.registerTool('evolve_prose',
+    {
+      title: 'Evolve prose',
+      description: 'Iteratively improve a prose passage against the writing judge via a score→reflect→revise loop. Keeps only non-regressing revisions (Pareto floor); stops early on a plateau.',
+      inputSchema: {
+        text: z.string().describe('The prose passage to evolve'),
+        brief: z.string().optional().describe('What the passage is trying to do — steers reflection'),
+        rounds: z.number().optional().describe('Number of evolution rounds (default 3, clamped to 1-5)'),
+        bookSlug: z.string().optional().describe('Book slug, for author-voice grounding'),
+      },
+    },
+    async (args) => toToolResult('evolve_prose', await client.request('POST', '/api/prose/evolve', args)),
+  );
+
   // ── Continuity ──
   server.registerTool('continuity_check',
     {

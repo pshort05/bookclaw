@@ -88,6 +88,27 @@ export function mountWave(app: Application, gateway: any, baseDir: string): void
     }
   });
 
+  // Learn-from-experience (AuthorAgent #7): manually trigger the lesson-distil
+  // cycle for a project (the same cycle the completion hook runs automatically).
+  app.post('/api/projects/:id/learn', async (req: Request, res: Response) => {
+    const learning = services.learning;
+    if (!learning) return res.status(503).json({ error: 'Learning service not initialized' });
+    const engine = gateway.getProjectEngine?.();
+    const project = engine?.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+
+    const aiComplete = services.aiRouter ? (r: any) => services.aiRouter.complete(r) : null;
+    const aiSelectProvider = services.aiRouter ? (t: string) => services.aiRouter.selectProvider(t) : null;
+    try {
+      const outcome = await learning.learnFromProject(
+        project, gatherChapters, services.craftCritic, services.dialogueAuditor, aiComplete, aiSelectProvider,
+      );
+      res.json(outcome);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Learning cycle failed' });
+    }
+  });
+
   // ── Audiobook Prep ──
 
   app.post('/api/projects/:id/audiobook/cleanup', async (req: Request, res: Response) => {

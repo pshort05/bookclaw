@@ -34,6 +34,7 @@ import { maybeRunCouncilStep } from './services/council-gate.js';
 import { buildCouncilService } from './services/council.js';
 import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
 import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
+import { runConductor, clampConcurrency } from './services/pipeline/conductor.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { isProseStep } from './services/casting/roles.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
@@ -68,6 +69,10 @@ import { runExecutableSkillStep, passiveSkillBlock } from './services/skill-runn
 import { CronSchedulerService } from './services/cron-scheduler.js';
 import { AutoSkillService } from './services/auto-skill.js';
 import { WritingJudgeService } from './services/writing-judge.js';
+import { ProseEvolverService } from './services/prose-evolver.js';
+import { ReaderPanelService } from './services/reader-panel.js';
+import { LearningService } from './services/learning.js';
+import { buildArchivalBlock } from './services/archival-recall.js';
 import { ResearchLookupService } from './services/research-lookup.js';
 import { VideoResearchService } from './services/video-research.js';
 import { StoryStructureService } from './services/story-structures.js';
@@ -253,6 +258,9 @@ class BookClawGateway {
   public cronScheduler!: CronSchedulerService;
   public autoSkill!: AutoSkillService;
   public writingJudge!: WritingJudgeService;
+  public proseEvolver!: ProseEvolverService;
+  public readerPanel!: ReaderPanelService;
+  public learning!: LearningService;
   public researchLookup!: ResearchLookupService;
   public videoResearch!: VideoResearchService;
   public storyStructures!: StoryStructureService;
@@ -820,6 +828,7 @@ class BookClawGateway {
       skills,
       heartbeatContext,
       channel,
+      userMessage: content,
       ...(editorCfg ? { editorPrompt: editorCfg.systemPrompt, editorMode: activeEditor!.mode, manuscript: editorManuscript, worldContext: editorWorldContext } : {}),
     });
 
@@ -1193,6 +1202,8 @@ class BookClawGateway {
     editorMode?: EditorMode;
     manuscript?: string;
     worldContext?: string;
+    /** The inbound chat message — drives archival recall (AuthorAgent #9). */
+    userMessage?: string;
   }): string {
     // Editor mode: the developmental-editor persona REPLACES the author voice —
     // no soul/genre/world/sections, just the editor prompt + a session-mode
@@ -1259,6 +1270,39 @@ class BookClawGateway {
     if (context.memories) {
       prompt += '# Relevant Memory\n\n';
       prompt += context.memories + '\n\n';
+    }
+
+    // Archival recall (AuthorAgent #9): splice full-text-search hits from the
+    // author's past work into the chat system prompt so prior material informs
+    // replies. CHAT-ONLY: handleMessage is also the entry point for autonomous
+    // project/goal steps (channel 'goal-engine'/'project-engine'/…), so we gate
+    // on !isEphemeralChannel to keep the live generation path byte-identical for
+    // the 23 books — never splice recall into a writing/bible/revision step.
+    // Synchronous (memory-search is sync), persona-scoped, fail-soft (no index → skip).
+    if (
+      context.userMessage &&
+      !isEphemeralChannel(context.channel ?? '') &&
+      this.memorySearch?.isAvailable()
+    ) {
+      try {
+        // KNOWN LIMITATION (flagged for review): with an active persona this
+        // exact-matches persona_id, so it recalls same-persona chat turns but NOT
+        // NULL-persona manuscript/project-step rows; with no active persona it is
+        // unfiltered (could surface another pen-name's material). The conservative
+        // persona scope is chosen to avoid cross-pen-name leakage — widen to an
+        // OR (this-persona + unscoped work) only if manuscript recall is wanted.
+        const hits = this.memorySearch.search(context.userMessage.trim(), {
+          limit: 4,
+          personaId: this.memory.getActivePersonaId() ?? undefined,
+        });
+        const block = buildArchivalBlock(hits);
+        if (block) {
+          prompt += block + '\n\n';
+          console.log(`  ℹ Archival recall: injected ${hits.length} past-work hit(s)`);
+        }
+      } catch (err) {
+        console.log(`  ℹ Archival recall skipped: ${(err as Error)?.message || err}`);
+      }
     }
 
     if (context.skills.length > 0) {
@@ -1407,6 +1451,9 @@ class BookClawGateway {
       cronScheduler: this.cronScheduler,
       autoSkill: this.autoSkill,
       writingJudge: this.writingJudge,
+      proseEvolver: this.proseEvolver,
+      readerPanel: this.readerPanel,
+      learning: this.learning,
       researchLookup: this.researchLookup,
       videoResearch: this.videoResearch,
       storyStructures: this.storyStructures,
@@ -2241,9 +2288,13 @@ class BookClawGateway {
        * the first active step (or starts the project if no step is active).
        * Returns a short summary for Telegram + accurate word count.
        */
-      async startAndRunProject(projectId: string, stepId?: string): Promise<
+      async startAndRunProject(projectId: string, stepId?: string, opts: { advance?: boolean } = {}): Promise<
         { completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }
       > {
+        // Conductor (feature #6): advance:false runs exactly one step and returns
+        // WITHOUT cascading — the conductor owns advancement (completeStepBare +
+        // its own re-dispatch). Default true = today's legacy auto-advance.
+        const advance = opts.advance !== false;
         const project = gateway.projectEngine.getProject(projectId);
         if (!project) return { error: 'Project not found' };
 
@@ -2593,8 +2644,12 @@ class BookClawGateway {
           if (cadenceGate.gated) return { error: 'awaiting human review' };
         }
 
-        // Complete the step and advance
-        const nextStep = gateway.projectEngine.completeStep(projectId, activeStep.id, aiResponse);
+        // Complete the step and advance. Conductor path (advance:false) uses
+        // completeStepBare so the frontier does NOT auto-cascade — the conductor
+        // re-dispatches the next runnable steps itself.
+        const nextStep = advance
+          ? gateway.projectEngine.completeStep(projectId, activeStep.id, aiResponse)
+          : (gateway.projectEngine.completeStepBare(project, activeStep, aiResponse), undefined);
 
         // After completeStep — generate context for writing and bible steps
         try {
@@ -2720,6 +2775,47 @@ class BookClawGateway {
       },
 
       /**
+       * CONDUCTOR DRIVE (feature #6): bounded DAG supervisor for a conductor
+       * pipeline (steps carry `dependsOn`). Runs INSIDE the caller's existing
+       * DriveScheduler slot (autoRunProject already holds it) — no new global
+       * concurrency. Concurrency from BOOKCLAW_CONDUCTOR_CONCURRENCY (default 2,
+       * clamped [1,3]). Each step runs via startAndRunProject(.., {advance:false})
+       * so completion is completeStepBare and the conductor owns re-dispatch:
+       * runnable = pending steps whose deps are all complete, fired up to the cap,
+       * refilled as each settles. A failed step blocks only its dependents; other
+       * branches keep running. Returns one StepResult per dispatched step.
+       */
+      async conductorDrive(projectId: string): Promise<
+        Array<{ completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }>
+      > {
+        const project0 = gateway.projectEngine.getProject(projectId);
+        if (!project0) return [];
+        // Resume safety: reset any stuck/orphaned active frontier; the conductor
+        // re-dispatches by dependency order from a clean pending set.
+        gateway.projectEngine.normalizeActiveToPending(project0);
+
+        const concurrency = clampConcurrency(process.env.BOOKCLAW_CONDUCTOR_CONCURRENCY);
+        const results: Array<{ completed: string; response: string; wordCount: number; nextStep?: string } | { error: string }> = [];
+
+        await runConductor({
+          concurrency,
+          getProject: () => gateway.projectEngine.getProject(projectId),
+          isPaused: (p) => p.status === 'paused' || p.status === 'completed',
+          runStep: async (stepId) => {
+            // Activate first: startAndRunProject only runs a step it finds
+            // 'active'. activateStep flips status synchronously (before the AI
+            // await), so the scheduler's same-tick scan won't re-pick it.
+            const p = gateway.projectEngine.getProject(projectId);
+            const step = p?.steps.find(s => s.id === stepId);
+            if (p && step) gateway.projectEngine.activateStep(p, step);
+            results.push(await this.startAndRunProject(projectId, stepId, { advance: false }));
+          },
+        });
+
+        return results;
+      },
+
+      /**
        * AUTONOMOUS AUTO-RUN: Execute ALL remaining steps of a project in sequence.
        * Sends Telegram status updates via the callback after each step.
        * Now includes accurate word counts in status messages.
@@ -2760,6 +2856,37 @@ class BookClawGateway {
             if (channel) gateway.telegram?.pauseRequested.set(channel, false);
             if (currentProject?.status !== 'paused') gateway.projectEngine.pauseProject(projectId);
             await statusCallback(`⏸ Paused at step ${stepNumber}/${totalSteps}. Say "continue" to resume.`);
+            return;
+          }
+
+          // ── Conductor gate (feature #6) ──────────────────────────────────
+          // A pipeline that opted into the bounded DAG scheduler carries
+          // `dependsOn` on its steps (deriveDependencies at materialization).
+          // Drive it through the race-supervisor and return; the WHOLE legacy
+          // frontier fan-out below is left byte-identical. Legacy projects (no
+          // `dependsOn` — all 23 books) fail this gate and fall straight through.
+          if (currentProject?.steps.some(s => Array.isArray(s.dependsOn))) {
+            const cResults = await this.conductorDrive(projectId);
+
+            const cAfter = gateway.projectEngine.getProject(projectId);
+            const cChannelPaused = !!(channel && gateway.telegram?.pauseRequested.get(channel));
+            if (cChannelPaused || cAfter?.status === 'paused') {
+              if (channel) gateway.telegram?.pauseRequested.set(channel, false);
+              if (cAfter?.status !== 'paused') gateway.projectEngine.pauseProject(projectId);
+              await statusCallback(`⏸ Paused at step ${stepNumber}/${totalSteps}. Say "continue" to resume.`);
+              return;
+            }
+
+            const cFailed = cResults.filter(r => 'error' in r);
+            if (cFailed.length > 0) {
+              await statusCallback(
+                `⚠️ ${cFailed.length} step(s) failed; independent branches finished. First: ${(cFailed[0] as any).error}`
+              );
+              return;
+            }
+
+            const cWords = (cResults as { wordCount: number }[]).reduce((acc, r) => acc + (r.wordCount || 0), 0);
+            await statusCallback(`🎉 All ${totalSteps} steps complete! (~${cWords.toLocaleString()} words)`);
             return;
           }
 

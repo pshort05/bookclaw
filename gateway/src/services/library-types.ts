@@ -31,6 +31,7 @@ export interface LibraryPipeline {
   label: string;
   description: string;
   dynamic?: boolean;       // true = steps are generated at create-time (novel-pipeline)
+  conductor?: boolean;     // Tier 2/3 feature #6: opt this pipeline into the bounded DAG scheduler (deriveDependencies at materialization). Absent/false = legacy frontier fan-out.
   steps: LibraryPipelineStep[];
 }
 

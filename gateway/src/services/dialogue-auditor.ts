@@ -280,6 +280,11 @@ export class DialogueAuditor {
           paragraphIndex: line.paragraphIndex,
           speaker: line.speaker,
           line: line.text,
+          // WARNING: learning.ts:classifyDialogueReason (AuthorAgent #7) pattern-
+          // matches the literal phrases "unusually casual"/"unusually formal" in
+          // this reason string to bucket the flag. Changing the wording here
+          // degrades that classification to the 'voice-mismatch' fallback — keep
+          // the phrases or update classifyDialogueReason in lockstep.
           reason: lineContractionRate > fp.contractionRate
             ? `${line.speaker} is unusually casual here (contractions ${(lineContractionRate * 100).toFixed(0)}% vs their baseline ${(fp.contractionRate * 100).toFixed(0)}%)`
             : `${line.speaker} is unusually formal here (no contractions despite their baseline ${(fp.contractionRate * 100).toFixed(0)}%)`,
@@ -297,6 +302,8 @@ export class DialogueAuditor {
             paragraphIndex: line.paragraphIndex,
             speaker: line.speaker,
             line: line.text,
+            // WARNING: learning.ts:classifyDialogueReason (#7) matches "much longer"/
+            // "much shorter than usual" here to bucket as 'line-length'. Keep in sync.
             reason: `${line.speaker}'s line is ${ratio > 1 ? 'much longer' : 'much shorter'} than usual (${words.length} words vs ${fp.avgLineLength} avg)`,
             severity: 'info',
           });
@@ -338,6 +345,8 @@ export class DialogueAuditor {
         speaker,
         paragraphIndex: speakerLines[0].paragraphIndex,
         line: speakerLines[0].text,
+        // WARNING: learning.ts:classifyDialogueReason (#7) matches "possible
+        // sanitization" here to bucket as 'profanity-sanitization'. Keep in sync.
         reason: `${speaker} is marked high-profanity (level ${level}/10) but none of their ${speakerLines.length} line(s) contain profanity — possible sanitization; consider a targeted re-gen.`,
         severity: 'warning',
       });

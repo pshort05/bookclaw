@@ -10,6 +10,9 @@ import { VideoResearchService } from '../services/video-research.js';
 import { StoryStructureService } from '../services/story-structures.js';
 import { PlotPromisesService } from '../services/plot-promises.js';
 import { CharacterVoicesService } from '../services/character-voices.js';
+import { ProseEvolverService } from '../services/prose-evolver.js';
+import { ReaderPanelService } from '../services/reader-panel.js';
+import { LearningService } from '../services/learning.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -28,6 +31,11 @@ export async function initKnowledgeServices(gw: BookClawGateway): Promise<void> 
   gw.lessons = new LessonStore(join(ROOT_DIR, 'workspace', 'memory'));
   await gw.lessons.initialize();
   console.log(`  ✓ Lessons: ${gw.lessons.getAll().length} learned`);
+
+  // Learn-from-experience loop (AuthorAgent #7): turns recurring quality-report
+  // flags into durable, deduped lessons. Aggregation is free; at most one cheap
+  // AI phrasing call per cycle. Fired from the project-completion hook (phase-06).
+  gw.learning = new LearningService(gw.lessons);
 
   gw.preferences = new PreferenceStore(join(ROOT_DIR, 'workspace', 'memory'));
   await gw.preferences.initialize();
@@ -83,6 +91,14 @@ export async function initKnowledgeServices(gw: BookClawGateway): Promise<void> 
   // ── Phase 6g5: Writing Judge (AutoNovel-inspired evaluate-retry loop) ──
   gw.writingJudge = new WritingJudgeService();
   console.log('  ✓ Writing judge: mechanical screen + LLM judge ready');
+
+  // Prose-evolver (AuthorAgent #4): GEPA score→reflect→revise loop over the
+  // writing judge, keeping only non-regressing revisions. Stateless; deps per call.
+  gw.proseEvolver = new ProseEvolverService();
+  // Reader-panel (AuthorAgent #5): ranks candidate marketing copy against reader
+  // personas with anti-slop guards. Stateless; AI functions passed per call.
+  gw.readerPanel = new ReaderPanelService();
+  console.log('  ✓ Prose evolver + reader panel ready');
 
   // ── Phase 6g6: Research services (sourced lookup + video extraction) ──
   gw.researchLookup = new ResearchLookupService();

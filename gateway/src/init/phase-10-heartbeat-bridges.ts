@@ -16,7 +16,7 @@ import type { BookClawGateway } from '../index.js';
  */
 export async function initHeartbeatAndBridges(gw: BookClawGateway): Promise<void> {
   // ── Phase 7: Heartbeat ──
-  gw.heartbeat = new HeartbeatService(gw.config.get('heartbeat'), gw.memory);
+  gw.heartbeat = new HeartbeatService(gw.config.get('heartbeat'), gw.memory, join(ROOT_DIR, 'workspace'));
 
   // Wire autonomous mode — heartbeat can now trigger project steps on a schedule
   const commandHandlers = gw.buildTelegramCommandHandlers();

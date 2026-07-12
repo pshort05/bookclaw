@@ -1066,4 +1066,42 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     }
   });
 
+  // Prose-evolver (AuthorAgent #4): GEPA score→reflect→revise loop over the
+  // writing judge; returns the evolved passage + an auditable round trace.
+  // `bookSlug` is informational — the passage is scored against the current
+  // (global) author voice; per-book voice repointing is a future enhancement.
+  app.post('/api/prose/evolve', async (req: Request, res: Response) => {
+    const svc = services.proseEvolver;
+    if (!svc) return res.status(503).json({ error: 'Prose evolver not initialized' });
+    if (!services.writingJudge) return res.status(503).json({ error: 'Writing judge not available' });
+    if (!services.soul) return res.status(503).json({ error: 'Soul service not available' });
+    if (!services.aiRouter) return res.status(503).json({ error: 'AI router not available — a provider is required to evolve prose.' });
+
+    const { text, brief, rounds, bookSlug } = req.body || {};
+    if (typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'text (non-empty string) required' });
+    }
+    // Trust-boundary cap: the passage is re-sent every round (score + revise),
+    // so bound its length to keep input tokens finite on untrusted input.
+    if (text.length > 20000) {
+      return res.status(400).json({ error: 'text too long (max 20000 chars) — evolve a scene/passage, not a whole manuscript.' });
+    }
+
+    const aiComplete = (request: any) => services.aiRouter.complete(request);
+    const aiSelectProvider = (taskType: string) => services.aiRouter.selectProvider(taskType);
+
+    try {
+      const result = await svc.evolve(
+        { text, brief, rounds, bookSlug },
+        services.writingJudge,
+        services.soul,
+        aiComplete,
+        aiSelectProvider,
+      );
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || 'Prose evolution failed' });
+    }
+  });
+
 }

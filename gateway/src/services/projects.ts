@@ -22,6 +22,7 @@ import { expandSteps } from './pipeline-expand.js';
 import { applyStructureRail } from './format-guide.js';
 import { isStepRole, inferRole, type StepRole } from './casting/roles.js';
 import { buildRollingSummary } from './pipeline/rolling-summary.js';
+import { deriveDependencies } from './pipeline/derive-deps.js';
 import { readFile } from 'fs/promises';
 import { existsSync, readFileSync, renameSync } from 'fs';
 import { join } from 'path';
@@ -139,6 +140,13 @@ export interface ProjectStep {
   // Human note attached by a 'regenerate' gate action (Flagship Plan 5, Task 3):
   // injected into this step's prompt on its next run, then cleared.
   regenerateNote?: string;
+  // Conductor (Tier 2/3 feature #6): step ids this step must wait on before it
+  // becomes runnable. Set ONLY when a pipeline opts into the conductor
+  // (`pipeline.conductor === true` with no `parallelGroup`), via
+  // deriveDependencies at materialization. Absent on every legacy project (all
+  // 23 books) — its presence is the gate that routes a project onto the bounded
+  // DAG supervisor; absent → today's exact frontier fan-out, byte-identical.
+  dependsOn?: string[];
 }
 
 export interface NovelPipelineConfig {
@@ -854,6 +862,20 @@ Description: ${description}`;
    * The pipeline `name` becomes the project `type` so downstream phase/assembly
    * logic (which keys off type === 'novel-pipeline' etc.) keeps working.
    */
+  /**
+   * Conductor opt-in gate (Tier 2/3 feature #6): stamp `dependsOn` on the steps
+   * ONLY when the pipeline opted in (`pipeline.conductor === true`) AND no step
+   * carries a `parallelGroup` (the two parallel schemes are mutually exclusive —
+   * dependsOn drives the DAG scheduler, parallelGroup drives the group-barrier
+   * fan-out). Otherwise `dependsOn` stays undefined and the project takes today's
+   * exact legacy path — this is what keeps the 23 legacy books byte-identical.
+   */
+  private maybeDeriveConductorDeps(pipeline: LibraryPipeline, steps: ProjectStep[]): void {
+    if (pipeline.conductor === true && !steps.some(s => s.parallelGroup)) {
+      deriveDependencies(steps);
+    }
+  }
+
   createProjectFromPipeline(
     pipeline: LibraryPipeline,
     title: string,
@@ -893,6 +915,7 @@ Description: ${description}`;
       if (typeof context?.structureRail === 'string' && context.structureRail) {
         applyStructureRail(novel.steps as Array<{ prompt: string; phase?: string; skill?: string }>, context.structureRail);
       }
+      this.maybeDeriveConductorDeps(pipeline, novel.steps);
       return novel;
     }
 
@@ -925,6 +948,8 @@ Description: ${description}`;
     if (typeof context?.structureRail === 'string' && context.structureRail) {
       applyStructureRail(steps as Array<{ prompt: string; phase?: string; skill?: string }>, context.structureRail);
     }
+
+    this.maybeDeriveConductorDeps(pipeline, steps);
 
     const project: Project = {
       id,
@@ -1393,6 +1418,77 @@ Description: ${description}`;
     }
     this.persistState();
     return null;
+  }
+
+  /**
+   * Conductor (feature #6): move a pending step to active + enrich its prompt,
+   * exactly as completeStep's auto-advance block does per step — but the
+   * conductor decides WHICH step, and when. Used only on the opt-in DAG path.
+   */
+  activateStep(project: Project, step: ProjectStep): void {
+    step.status = 'active';
+    step.prompt = this.enrichWithPriorResults(step.prompt, project);
+    project.updatedAt = new Date().toISOString();
+  }
+
+  /**
+   * Conductor (feature #6): complete a step WITHOUT auto-advancing the frontier
+   * — the conductor owns advancement. This is `completeStep` MINUS its
+   * auto-advance block (the `if (next) { activate runnable … return next }`):
+   * step is marked completed, progress recomputed, the per-step hook fires
+   * (fire-and-forget), and the project flips to 'completed' by the SAME
+   * remaining===0 && !hasFailed rule — so completion detection and hooks stay
+   * byte-identical to the legacy path. Never activates a next step.
+   */
+  completeStepBare(project: Project, step: ProjectStep, output: string): void {
+    step.status = 'completed';
+    step.result = output;
+
+    const done = project.steps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
+    project.progress = Math.round((done / project.steps.length) * 100);
+    project.updatedAt = new Date().toISOString();
+
+    // Same `next` computation the legacy completeStep passes to the per-step
+    // hook — informational only here (we never activate it; the conductor does).
+    const runnable = this.runnableSteps(project);
+    const next = runnable[0]
+              || project.steps.find(s => s.status === 'active' && s.id !== step.id);
+    try {
+      for (const fn of this.stepCompletionHooks) {
+        Promise.resolve(fn(project, step, next ?? null)).catch(err => console.error('[step-completion-hook] error:', err));
+      }
+    } catch { /* hook crashes never block completeStepBare */ }
+
+    // Completion detection — identical to completeStep's tail.
+    const remaining = project.steps.filter(s => s.status === 'pending' || s.status === 'active');
+    const hasFailed = project.steps.some(s => s.status === 'failed');
+    if (remaining.length === 0 && !hasFailed) {
+      project.status = 'completed';
+      project.completedAt = new Date().toISOString();
+      try {
+        for (const fn of this.completionHooks) {
+          Promise.resolve(fn(project)).catch(err => console.error('[project-completion-hook] error:', err));
+        }
+      } catch { /* hook crashes never block completeStepBare */ }
+    }
+    this.persistState();
+  }
+
+  /**
+   * Conductor (feature #6): reset a stuck active frontier back to pending so the
+   * conductor can re-dispatch by dependency order on resume (also repairs steps
+   * orphaned 'active' by an interrupted run). No-op on a project with no active
+   * steps. Only used on the opt-in DAG path.
+   */
+  normalizeActiveToPending(project: Project): void {
+    let changed = false;
+    for (const s of project.steps) {
+      if (s.status === 'active') { s.status = 'pending'; changed = true; }
+    }
+    if (changed) {
+      project.updatedAt = new Date().toISOString();
+      this.persistState();
+    }
   }
 
   /** Callbacks invoked when a project transitions to 'completed' status. */

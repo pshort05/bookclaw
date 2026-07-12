@@ -35,6 +35,7 @@ import { mountTryFail } from './routes/try-fail.routes.js';
 import { mountFormatReview } from './routes/format-review.routes.js';
 import { mountReports } from './routes/reports.routes.js';
 import { mountModels } from './routes/models.routes.js';
+import { mountReaderPanel } from './routes/reader-panel.routes.js';
 
 /**
  * Mounts all REST API routes. This is a thin composition root: each feature
@@ -90,6 +91,8 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
   mountReports(app, gateway, baseDir);
   // OpenRouter model catalog (cached) for the Prompt Runner exact-model picker
   mountModels(app, gateway, baseDir);
+  // Reader-panel — marketing-copy A/B ranking with anti-slop guards (AuthorAgent #5)
+  mountReaderPanel(app, gateway, baseDir);
   // Format Finisher — KDP DOCX last-mile finishing (Pro publishing last mile)
   mountFormatFinisher(app, gateway, baseDir);
 }
