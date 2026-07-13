@@ -197,7 +197,7 @@ export function PremiseIntake() {
         </div>
 
         {result.groundingStatus === 'fallback-llm' && (
-          <div className={styles.banner}>Research unavailable — geography could not be verified; check carefully.</div>
+          <div className={styles.banner}>Geography grounded from model knowledge, not live web sources — double-check local specifics (street names, businesses) before publishing.</div>
         )}
 
         {/* Book identity */}

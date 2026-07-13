@@ -62,6 +62,68 @@ Rules:
 6. Keep the answer to 200-500 words unless the author asks for more.
 7. The author is using this for fiction/nonfiction writing — facts must be accurate, not just plausible-sounding.`;
 
+// Grounding fallback: when no live-web (Perplexity) source is available, run the
+// research summary on a capable general model rather than whatever mid-tier model
+// the host defaults to. Pinned via OpenRouter (the only non-local provider
+// configured on these deployments); if OpenRouter isn't configured, normal
+// 'research' tier routing applies and the provider uses its own model.
+const RESEARCH_FALLBACK_PROVIDER = 'openrouter';
+const RESEARCH_FALLBACK_MODEL = 'google/gemini-2.5-pro';
+
+// Anti-hallucination + output-format contract for the no-live-web fallback. The
+// base prompt already forbids fabricated citations; this adds the no-web reality,
+// tightens the invent-nothing rule for place facts, and — because Gemini in
+// particular will sometimes answer with a JSON object when prose was asked for —
+// pins the response to Markdown prose.
+const RESEARCH_FALLBACK_SYSTEM = RESEARCH_SYSTEM_PROMPT + `
+
+IMPORTANT — you do NOT have live web access; answer only from reliable general knowledge:
+- NEVER fabricate citations, URLs, statistics, street names, or specific local businesses. If you are not confident a fact is real, omit it or explicitly label it "unverified".
+- Prefer well-established, stable facts (regional geography, orientation to water, general seasonal economy) over specific-but-uncertain detail. When unsure, write "I cannot verify this reliably" rather than guessing.
+- Clearly separate what is well-established from your own inference.
+
+FORMAT: respond in Markdown PROSE. Do NOT return a JSON object, a code fence, or a key/value structure — write Markdown paragraphs with inline [N] citations and a final "Sources:" list.`;
+
+/**
+ * Gemini (and occasionally other models) will sometimes answer with a JSON object
+ * or a ```json code fence even when Markdown prose was requested. Pull the
+ * human-readable text back out so downstream consumers (the setting-dossier step,
+ * the citation extractor) receive Markdown, not a serialized object. Plain
+ * Markdown passes through untouched.
+ */
+export function coerceResearchToMarkdown(text: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return t;
+  // Unwrap a single fenced block that wraps the whole response.
+  const fence = t.match(/^```(?:json|markdown)?\s*([\s\S]*?)\s*```$/i);
+  const inner = (fence ? fence[1] : t).trim();
+  if (/^[[{]/.test(inner)) {
+    try {
+      const prose = proseFromJson(JSON.parse(inner));
+      if (prose) return prose;
+    } catch { /* not valid JSON — fall through and return the text as-is */ }
+  }
+  return inner;
+}
+
+function proseFromJson(obj: any): string {
+  if (typeof obj === 'string') return obj.trim();
+  if (!obj || typeof obj !== 'object') return '';
+  const key = ['answer', 'summary', 'content', 'text', 'research', 'markdown', 'dossier']
+    .find((k) => typeof obj[k] === 'string' && obj[k].trim());
+  let out = key ? String(obj[key]).trim() : '';
+  const srcs = obj.sources ?? obj.citations;
+  if (Array.isArray(srcs) && srcs.length && !/\n\s*sources\b/i.test(out)) {
+    const lines = srcs.map((s: any, i: number) => {
+      if (typeof s === 'string') return `[${i + 1}] ${s}`;
+      const url = s?.url ?? ''; const title = s?.title ?? url;
+      return `[${i + 1}] ${title}${url && title !== url ? ` — ${url}` : ''}`;
+    });
+    out = (out ? out + '\n\n' : '') + 'Sources:\n' + lines.join('\n');
+  }
+  return out;
+}
+
 export class ResearchLookupService {
   private vault: Vault | null = null;
   private aiRouter: AIRouter | null = null;
@@ -84,14 +146,19 @@ export class ResearchLookupService {
       throw new Error('Query is required');
     }
 
-    // Try direct Perplexity first.
+    // Try live-web Perplexity first (direct, then via OpenRouter). Only ACCEPT a
+    // Perplexity result that actually returned verified sources — an empty/uncited
+    // response falls through to the capable Gemini-Pro grounding model below,
+    // rather than surfacing to the author as "research unavailable".
     if (this.vault) {
       const perplexityKey = await this.vault.get('perplexity_api_key');
       if (perplexityKey) {
         try {
-          return await this.queryPerplexityDirect(cleanQuery, perplexityKey, maxWords);
+          const r = await this.queryPerplexityDirect(cleanQuery, perplexityKey, maxWords);
+          if (r.hasVerifiedSources) return r;
+          console.warn('  [research-lookup] Direct Perplexity returned no verified sources; falling back to Gemini Pro.');
         } catch (err) {
-          console.warn('  [research-lookup] Direct Perplexity failed; falling back:', (err as Error)?.message);
+          console.warn('  [research-lookup] Direct Perplexity failed; falling back to Gemini Pro:', (err as Error)?.message);
         }
       }
 
@@ -99,15 +166,17 @@ export class ResearchLookupService {
       const openrouterKey = await this.vault.get('openrouter_api_key');
       if (openrouterKey) {
         try {
-          return await this.queryViaOpenRouter(cleanQuery, openrouterKey, maxWords);
+          const r = await this.queryViaOpenRouter(cleanQuery, openrouterKey, maxWords);
+          if (r.hasVerifiedSources) return r;
+          console.warn('  [research-lookup] OpenRouter Perplexity returned no verified sources; falling back to Gemini Pro.');
         } catch (err) {
-          console.warn('  [research-lookup] OpenRouter Perplexity routing failed; falling back to general LLM:', (err as Error)?.message);
+          console.warn('  [research-lookup] OpenRouter Perplexity routing failed; falling back to Gemini Pro:', (err as Error)?.message);
         }
       }
     }
 
-    // Fallback: just ask the active LLM. Less reliable — model knowledge is
-    // frozen at training and citations may be hallucinated. We tell the author.
+    // Fallback: ask a capable general model (Gemini Pro). No live web, so the
+    // result is flagged unverified and the prompt is hardened against fabrication.
     return this.fallbackLLMQuery(cleanQuery, maxWords);
   }
 
@@ -178,26 +247,30 @@ export class ResearchLookupService {
         estimatedCost: 0,
       };
     }
-    const provider = this.aiRouter.selectProvider('research');
-    const fallbackPrompt = RESEARCH_SYSTEM_PROMPT +
-      '\n\nIMPORTANT: You do NOT have live web access. Only cite sources you can verify from training data, ' +
-      'and clearly mark any uncertainty. Prefer "I cannot verify reliable sources on this" over fabricated citations.';
+    // Pin a capable grounding model (Gemini Pro) when OpenRouter is available;
+    // otherwise let normal 'research' tier routing choose and use its own model.
+    const sel = this.aiRouter.selectProvider('research', RESEARCH_FALLBACK_PROVIDER);
+    const pin = sel.id === RESEARCH_FALLBACK_PROVIDER
+      ? { provider: sel.id, model: RESEARCH_FALLBACK_MODEL }
+      : { provider: sel.id };
     const response = await this.aiRouter.complete({
-      provider: provider.id,
-      system: fallbackPrompt,
+      ...pin,
+      system: RESEARCH_FALLBACK_SYSTEM,
       messages: [{ role: 'user', content: this.buildUserPrompt(query, maxWords) }],
       maxTokens: Math.max(800, Math.ceil(maxWords * 2)),
       temperature: 0.2,
     });
+    // Gemini sometimes returns JSON where Markdown was asked for — coerce it back.
+    const answer = coerceResearchToMarkdown(response.text);
     return {
       query,
-      answer: response.text +
-        '\n\n_⚠️ This answer was generated without live web access (no Perplexity / OpenRouter key configured). ' +
-        'Treat citations with extra skepticism and cross-check before using in published work._',
-      citations: this.extractCitations(response.text),
+      answer: answer +
+        '\n\n_⚠️ Generated from model knowledge without live web access. ' +
+        'Treat citations with extra skepticism and cross-check geography/specifics before using in published work._',
+      citations: this.extractCitations(answer),
       provider: 'fallback-llm',
       hasVerifiedSources: false,
-      estimatedCost: 0,
+      estimatedCost: response.estimatedCost ?? 0,
     };
   }
 

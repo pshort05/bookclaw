@@ -8,8 +8,8 @@ export interface Discrepancy { id: string; premiseClaim: string; finding: string
 export type GroundingStatus = 'grounded' | 'fallback-llm' | 'skipped';
 export interface GroundingResult { dossier: string; discrepancies: Discrepancy[]; status: GroundingStatus; citations: Array<{ title: string; url?: string }>; }
 
-export type AiComplete = (req: { provider: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number; thinking?: 'low' | 'medium' | 'high' }) => Promise<{ text: string }>;
-export type AiSelectProvider = (taskType: string) => { id: string };
+export type AiComplete = (req: { provider: string; model?: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number; thinking?: 'low' | 'medium' | 'high' }) => Promise<{ text: string }>;
+export type AiSelectProvider = (taskType: string, preferredId?: string) => { id: string };
 
 export interface ResearchLookup { lookup(query: string, opts?: { maxWords?: number }): Promise<{ answer: string; citations: Array<{ title: string; url?: string }>; hasVerifiedSources: boolean }>; }
 
@@ -56,12 +56,33 @@ function str(v: unknown): string {
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const SEED_TEXT_FIELDS = ['storyArc', 'characters', 'setting', 'blueprint'] as const;
 
+// Premise-intake routing (see intakeRoute() for the rationale). 16384 is
+// OpenRouter's per-call output ceiling in this codebase (router.ts) — double the
+// previous 8000, which truncated the JSON for long, character-rich premises and
+// surfaced to the user as PREMISE_INTAKE_PARSE_FAILED.
+const INTAKE_PROVIDER = 'openrouter';
+const INTAKE_MODEL = 'anthropic/claude-haiku-4.5';
+const INTAKE_MAX_TOKENS = 16384;
+
 export class PremiseIntakeService {
   constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider, private researchLookup?: ResearchLookup) {}
 
+  /**
+   * Premise intake emits a large strict-JSON payload — the whole premise
+   * re-expressed as seeds. The host's default mid-tier model is unreliable here
+   * (on these deployments OpenRouter's configured model is gpt-4o-mini or a 4B
+   * local model, both flaky at strict JSON), so pin a fast, cheap, JSON-solid
+   * model via OpenRouter when it is available. If OpenRouter is not configured,
+   * fall back to normal tier routing and let that provider use its own model —
+   * pinning an OpenRouter-only slug onto a different provider would be wrong.
+   */
+  private intakeRoute(): { provider: string; model?: string } {
+    const p = this.aiSelectProvider('book_bible', INTAKE_PROVIDER);
+    return p.id === INTAKE_PROVIDER ? { provider: p.id, model: INTAKE_MODEL } : { provider: p.id };
+  }
+
   async parse(premiseText: string): Promise<IntakeResult> {
-    const provider = this.aiSelectProvider('book_bible').id;
-    const { text } = await this.aiComplete({ provider, system: PARSE_SYSTEM, messages: [{ role: 'user', content: premiseText }], maxTokens: 8000, thinking: 'medium' });
+    const { text } = await this.aiComplete({ ...this.intakeRoute(), system: PARSE_SYSTEM, messages: [{ role: 'user', content: premiseText }], maxTokens: INTAKE_MAX_TOKENS, thinking: 'medium' });
     const j = extractJson(text);
     const s = j?.seeds ?? {};
     const seeds: IntakeSeeds = {
@@ -99,8 +120,7 @@ Given RESEARCH (may be empty) and the PREMISE, output ONE JSON object:
 {"dossier": "<markdown place bible: real towns, roads, geography, seasonal texture; place FICTIONAL businesses on real streets; never assert a real private business as a story location>",
  "discrepancies": [{"id","premiseClaim","finding","status":"pass|fail","suggestion"?,"targetField":"setting|blueprint|characters"}]}
 Audit ONLY real-world facts the PREMISE asserts (street names, town placement, geography). Record verified facts as status "pass" and errors as status "fail" with a suggestion. A fictional business is NOT a discrepancy; a wrong real street/town IS. Never rewrite the premise.`;
-    const provider = this.aiSelectProvider('book_bible').id;
-    const { text } = await this.aiComplete({ provider, system, messages: [{ role: 'user', content: `RESEARCH:\n${researchText || '(none available)'}\n\nPREMISE:\n${premiseText}` }], maxTokens: 8000, thinking: 'medium' });
+    const { text } = await this.aiComplete({ ...this.intakeRoute(), system, messages: [{ role: 'user', content: `RESEARCH:\n${researchText || '(none available)'}\n\nPREMISE:\n${premiseText}` }], maxTokens: INTAKE_MAX_TOKENS, thinking: 'medium' });
 
     let j: any; try { j = extractJson(text); } catch { j = { dossier: researchText || setting, discrepancies: [] }; }
     const discrepancies: Discrepancy[] = Array.isArray(j?.discrepancies) ? j.discrepancies.filter((d: any) => d && typeof d === 'object').map((d: any, i: number) => ({

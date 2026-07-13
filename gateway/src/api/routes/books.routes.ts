@@ -80,7 +80,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     try {
       const svc = new PremiseIntakeService(
         (r) => services.aiRouter.complete(r as any),
-        (t) => services.aiRouter.selectProvider(t),
+        (t, pref) => services.aiRouter.selectProvider(t, pref),
         services.researchLookup ? { lookup: (q, o) => services.researchLookup!.lookup(q, o) } : undefined,
       );
       const intake = await svc.parse(premise);

@@ -85,3 +85,33 @@ test('parse throws a typed error on unparseable output', async () => {
   const svc = new PremiseIntakeService(async () => ({ text: 'no json here' }), () => ({ id: 'gemini' }));
   await assert.rejects(() => svc.parse('x'), /PREMISE_INTAKE_PARSE_FAILED/);
 });
+
+// The mid-tier model the host defaults to (gpt-4o-mini / a 4B local model on
+// these deployments) is flaky at strict JSON and the old 8000-token cap truncated
+// long premises — both surfaced as PREMISE_INTAKE_PARSE_FAILED. Intake now pins a
+// fast, JSON-reliable model via OpenRouter with a much larger output budget.
+test('parse pins the fast JSON model via OpenRouter with a large output budget', async () => {
+  let captured: any = null;
+  const svc = new PremiseIntakeService(
+    async (req) => { captured = req; return { text: CANNED }; },
+    (_t, preferredId) => ({ id: preferredId === 'openrouter' ? 'openrouter' : 'gemini' }),
+  );
+  await svc.parse('# FERRARO\'S ...');
+  assert.equal(captured.provider, 'openrouter');
+  assert.equal(captured.model, 'anthropic/claude-haiku-4.5');
+  assert.ok(captured.maxTokens >= 16384, `expected a >=16384 budget, got ${captured.maxTokens}`);
+});
+
+// When OpenRouter is not configured the router falls back to tier routing. Pinning
+// an OpenRouter-only model slug onto that other provider would be wrong, so the
+// pin is dropped and the fallback provider uses its own configured model.
+test('parse does not pin the OpenRouter model when it falls back to another provider', async () => {
+  let captured: any = null;
+  const svc = new PremiseIntakeService(
+    async (req) => { captured = req; return { text: CANNED }; },
+    () => ({ id: 'gemini' }),
+  );
+  await svc.parse('# FERRARO\'S ...');
+  assert.equal(captured.provider, 'gemini');
+  assert.equal(captured.model, undefined);
+});
