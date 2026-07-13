@@ -14,6 +14,35 @@ test('untagged step keeps today behavior: manual pin then project preference', (
   );
 });
 
+test('stageModels[taskType] pins an untagged step, below an explicit modelOverride, above project default', () => {
+  const project = {
+    preferredProvider: 'openrouter', preferredModel: 'auto:newest-sonnet',
+    stageModels: { creative_writing: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' } },
+  };
+  // Stage pin wins over the project default for a creative_writing step.
+  assert.deepEqual(
+    stepRouting(project, { taskType: 'creative_writing' }),
+    { provider: 'openrouter', model: 'anthropic/claude-opus-4.8', temperature: undefined },
+  );
+  // A step whose taskType has no stage entry falls back to the project default.
+  assert.deepEqual(
+    stepRouting(project, { taskType: 'outline' }),
+    { provider: 'openrouter', model: 'auto:newest-sonnet', temperature: undefined },
+  );
+  // An explicit per-step modelOverride still wins over the stage pin.
+  assert.equal(
+    stepRouting(project, { taskType: 'creative_writing', modelOverride: { provider: 'openai', model: 'gpt-4o' } }).model,
+    'gpt-4o',
+  );
+});
+
+test('stageModels also pins a tagged (role) step via the manual-pin slot', () => {
+  const project = { context: { genre: '__no_sheet__' }, stageModels: { creative_writing: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' } } };
+  const r = stepRouting(project, { role: 'draft', taskType: 'creative_writing' });
+  assert.equal(r.provider, 'openrouter');
+  assert.equal(r.model, 'anthropic/claude-opus-4.8');
+});
+
 test('a tagged prose step uses the project prose pick only on prose roles', () => {
   const project = { preferredProvider: 'deepseek', preferredModel: 'deepseek-chat', context: { genre: '__no_sheet__' } };
   // With no sheet on disk for this genre, a draft role still gets the prose pick.

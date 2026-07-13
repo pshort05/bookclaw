@@ -34,6 +34,7 @@ import { maybeRunCouncilStep } from './services/council-gate.js';
 import { buildCouncilService } from './services/council.js';
 import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
 import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
+import { applyBookModelConfig } from './api/routes/_shared.js';
 import { runConductor, clampConcurrency } from './services/pipeline/conductor.js';
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { isProseStep } from './services/casting/roles.js';
@@ -2401,6 +2402,7 @@ class BookClawGateway {
         if (project.bookSlug && gateway.books) {
           const ob = await gateway.books.open(project.bookSlug).catch(() => null);
           bookManifest = ob?.manifest ?? null;
+          applyBookModelConfig(project, bookManifest); // per-stage models on the headless drive path too
           const canonBlock = buildBookCanonBlock(gateway.books.dataDirOf?.(project.bookSlug), ob?.manifest);
           if (canonBlock) projectContext += `\n\n${canonBlock}`;
 
@@ -2462,8 +2464,10 @@ class BookClawGateway {
         // Per-step model override wins over the project-level provider; the
         // pinned model id (if any) is passed as the 7th handleMessage arg.
         const stepOverride = (activeStep as any).modelOverride;
-        const projectProvider = stepOverride?.provider || (project as any).preferredProvider || undefined;
-        const stepModel = stepOverride?.model || (project as any).preferredModel || undefined;
+        // Precedence mirrors stepRouting: step override → per-stage pin → project default.
+        const stagePin = (project as any).stageModels?.[(activeStep as any).taskType];
+        const projectProvider = stepOverride?.provider || stagePin?.provider || (project as any).preferredProvider || undefined;
+        const stepModel = stepOverride?.model || stagePin?.model || (project as any).preferredModel || undefined;
         const stepTemp = typeof stepOverride?.temperature === 'number' ? stepOverride.temperature : undefined;
         let wasExecutable = false;
         try {

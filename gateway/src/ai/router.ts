@@ -8,6 +8,7 @@ import { createHash } from 'crypto';
 import { Vault } from '../security/vault.js';
 import { CostTracker } from '../services/costs.js';
 import { ProviderThrottle } from '../services/pipeline/provider-throttle.js';
+import { pickNewestSonnet, NEWEST_SONNET_SENTINEL, SONNET_FLOOR } from './newest-sonnet.js';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -186,6 +187,9 @@ export class AIRouter {
   // tokens"/savings stat here unless the router is wired to real provider-side
   // caching — see bug #35a.
   private promptCache: Map<string, { hash: string; timestamp: number }> = new Map();
+  // Cache for the resolved "newest Sonnet" slug (the auto:newest-sonnet sentinel).
+  // The OpenRouter catalog changes ~weekly, so a 24h TTL is plenty.
+  private sonnetCache: { slug: string; ts: number } | null = null;
   private cacheHits = 0;
   private cacheMisses = 0;
 
@@ -462,7 +466,37 @@ export class AIRouter {
    * Send completion request to the selected provider.
    * Tracks system prompt cache hits to estimate token savings.
    */
+  /**
+   * Resolve the `auto:newest-sonnet` sentinel to a concrete OpenRouter slug —
+   * the highest Sonnet in the live catalog, cached 24h, fail-soft to SONNET_FLOOR.
+   * Never pins a version, so the default tracks new Sonnets with no redeploy.
+   */
+  async resolveNewestSonnet(): Promise<string> {
+    const now = Date.now();
+    if (this.sonnetCache && now - this.sonnetCache.ts < 24 * 60 * 60 * 1000) return this.sonnetCache.slug;
+    try {
+      const key = await this.vault.get('openrouter_api_key');
+      const res = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: key ? { Authorization: `Bearer ${key}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json() as any;
+        const ids = Array.isArray(data?.data) ? data.data.map((m: any) => m?.id).filter((s: any): s is string => typeof s === 'string') : [];
+        const slug = pickNewestSonnet(ids);
+        if (slug) { this.sonnetCache = { slug, ts: now }; return slug; }
+      }
+    } catch (err) {
+      console.warn(`  ⚠ newest-sonnet resolve failed; using floor ${SONNET_FLOOR}: ${(err as Error)?.message}`);
+    }
+    this.sonnetCache = { slug: SONNET_FLOOR, ts: now };
+    return SONNET_FLOOR;
+  }
+
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
+    // Resolve the newest-Sonnet sentinel to a concrete OpenRouter slug up front.
+    if (request.model === NEWEST_SONNET_SENTINEL) {
+      request = { ...request, provider: 'openrouter', model: await this.resolveNewestSonnet() };
+    }
     const baseProvider = this.providers.get(request.provider);
     if (!baseProvider) {
       throw new Error(`Provider ${request.provider} not found`);

@@ -191,6 +191,22 @@ export const uploadZip = multer({
  * Returns undefined fields when nothing is pinned (→ tier routing, today's
  * default behavior).
  */
+/**
+ * Apply the bound book's model config (default provider/model + per-stage map)
+ * onto a live project before stepRouting. The manifest is the source of truth, so
+ * changing models on the book takes effect on the next step and pre-feature
+ * projects are covered. Fail-soft on nulls.
+ */
+export function applyBookModelConfig(project: any, manifest: any): void {
+  if (!project || !manifest) return;
+  // Full sync (assign, not merge): the manifest is the source of truth, so
+  // CLEARING a default/stage on the book takes effect on the next step rather
+  // than leaving a stale pin on the live project.
+  project.preferredProvider = manifest.preferredProvider;
+  project.preferredModel = manifest.preferredModel;
+  project.stageModels = manifest.stageModels;
+}
+
 export function stepRouting(
   project: any,
   step: any,
@@ -198,14 +214,26 @@ export function stepRouting(
 ): { provider: string | undefined; model: string | undefined; temperature: number | undefined } {
   const role = isStepRole(step?.role) ? step.role : undefined;
 
+  // Per-stage model map (keyed by taskType) acts as a step-level pin: it beats
+  // the project default / casting sheet, but an explicit per-step modelOverride
+  // still wins. Merge it into an effective override used by both paths below.
+  const stagePin = project?.stageModels?.[step?.taskType];
+  const effectiveOverride = (step?.modelOverride || stagePin)
+    ? {
+        provider: step?.modelOverride?.provider || stagePin?.provider,
+        model: step?.modelOverride?.model || stagePin?.model,
+        temperature: step?.modelOverride?.temperature,
+      }
+    : undefined;
+
   // Backward compatibility: an untagged step keeps today's behavior exactly —
   // manual pin, then the project-level preference applied to the whole step.
   // spiceRoute only applies to tagged (role-aware) steps.
   if (!role) {
     return {
-      provider: step?.modelOverride?.provider || project?.preferredProvider || undefined,
-      model: step?.modelOverride?.model || project?.preferredModel || undefined,
-      temperature: typeof step?.modelOverride?.temperature === 'number' ? step.modelOverride.temperature : undefined,
+      provider: effectiveOverride?.provider || project?.preferredProvider || undefined,
+      model: effectiveOverride?.model || project?.preferredModel || undefined,
+      temperature: typeof effectiveOverride?.temperature === 'number' ? effectiveOverride.temperature : undefined,
     };
   }
 
@@ -216,7 +244,7 @@ export function stepRouting(
   const proseModel = project?.preferredProvider
     ? { provider: project.preferredProvider, model: project.preferredModel }
     : undefined;
-  const r = castStep({ step: { role, modelOverride: step?.modelOverride }, sheet, proseModel, spiceRoute: spiceRoute ?? null });
+  const r = castStep({ step: { role, modelOverride: effectiveOverride }, sheet, proseModel, spiceRoute: spiceRoute ?? null });
   return { provider: r.provider, model: r.model, temperature: r.temperature };
 }
 

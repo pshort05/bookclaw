@@ -2,7 +2,8 @@ import { Application, Request, Response } from 'express';
 import multer from 'multer';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { uploadZip, requireApprovedConfirmation, safePath, serveFile } from './_shared.js';
+import { uploadZip, requireApprovedConfirmation, safePath, serveFile, applyBookModelConfig } from './_shared.js';
+import { NEWEST_SONNET_SENTINEL } from '../../ai/newest-sonnet.js';
 import { type ImportFinding } from '../../services/book-transfer.js';
 import { SLUG_RE } from '../../services/book-types.js';
 import { buildBookCards } from '../../services/book-card.js';
@@ -248,6 +249,50 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // projects.routes) so the Write-screen PipelineRail — which polls THIS route,
     // not /api/projects/* — can surface a parked LLM-Council base-story gate.
     res.json({ project: project ? { ...project, awaitingSelection: !!project.selection } : null });
+  });
+
+  // Per-stage model config: read the book's default model + per-stage (taskType) map.
+  app.get('/api/books/:slug/models', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const opened = await services.books.open(slug).catch(() => null);
+    if (!opened) return res.status(404).json({ error: 'Book not found' });
+    const m = opened.manifest;
+    res.json({
+      default: { provider: m.preferredProvider ?? '', model: m.preferredModel ?? '' },
+      stageModels: m.stageModels ?? {},
+    });
+  });
+
+  // Set the book's default model and/or per-stage (taskType) model map. Also
+  // pushes the change onto the live frontier project so a running book picks it
+  // up on its next step (no restart / recreate needed).
+  app.post('/api/books/:slug/models', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const body = req.body ?? {};
+    const validSel = (s: any) => !s || (typeof s === 'object'
+      && (s.provider === undefined || (typeof s.provider === 'string' && (s.provider === '' || AI_PROVIDER_IDS.includes(s.provider))))
+      && (s.model === undefined || (typeof s.model === 'string' && (s.model === '' || /^[A-Za-z0-9._\-/:]{1,200}$/.test(s.model)))));
+    if (!validSel(body.default)) return res.status(400).json({ error: 'invalid default { provider, model }' });
+    const stageModels = body.stageModels && typeof body.stageModels === 'object' ? body.stageModels : undefined;
+    if (stageModels) {
+      for (const [k, v] of Object.entries(stageModels)) {
+        if (!/^[a-z_]{1,40}$/.test(k)) return res.status(400).json({ error: `invalid stage key: ${k}` });
+        if (!validSel(v)) return res.status(400).json({ error: `invalid model for stage ${k}` });
+      }
+    }
+    try {
+      const manifest = await services.books.setModelConfig(slug, { default: body.default, stageModels });
+      const project = gateway.getProjectEngine?.()?.frontierProjectForBook(slug) ?? null;
+      if (project) applyBookModelConfig(project, manifest);
+      res.json({ success: true, default: { provider: manifest.preferredProvider ?? '', model: manifest.preferredModel ?? '' }, stageModels: manifest.stageModels ?? {} });
+    } catch (err: any) {
+      const msg = (err as Error)?.message || String(err);
+      res.status(/not found/i.test(msg) ? 404 : /read-only|quarantine/i.test(msg) ? 409 : 500).json({ error: msg });
+    }
   });
 
   // Book Format & Structure: set/update the declared format on an existing book
@@ -612,10 +657,15 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     }
     // Optional specific model id for the chosen provider (e.g. an OpenRouter slug).
     // Same format guard the config endpoint applies to ai.<provider>.model.
-    const preferredModel = (typeof body.preferredModel === 'string' && body.preferredModel) ? body.preferredModel : '';
+    let preferredModel = (typeof body.preferredModel === 'string' && body.preferredModel) ? body.preferredModel : '';
     if (preferredModel && !/^[A-Za-z0-9._\-/:]{1,200}$/.test(preferredModel)) {
       return res.status(400).json({ error: 'invalid model id' });
     }
+    // Default new books to the newest Sonnet via OpenRouter (resolved at run time
+    // from the catalog — never a stale pin) when the request pins no model, so the
+    // pipeline never silently falls back to a weak tier-default model.
+    let seededProvider = preferredProvider;
+    if (!seededProvider && !preferredModel) { seededProvider = 'openrouter'; preferredModel = NEWEST_SONNET_SENTINEL; }
 
     // Content axes (Flagship Plan 2): an explicit per-book ceiling overrides the
     // bound author's contentBrand at create time. Absent → fade-to-black default.
@@ -679,7 +729,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const hasSeeds = seeds.storyArc || seeds.characters || seeds.setting || seeds.blueprint || councilSelection;
 
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(preferredProvider ? { preferredProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(seededProvider ? { preferredProvider: seededProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });
       if (costBudget !== undefined) services.costs?.setBookBudget(manifest.slug, costBudget);
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;

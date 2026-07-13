@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import { generateDocxBuffer } from '../../services/docx-export.js';
-import { stepRouting, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, resolveEnsemblePremise, runBetaReaderGate, makeGatherChapters } from './_shared.js';
+import { stepRouting, applyBookModelConfig, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, resolveEnsemblePremise, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
 import { maybeRunCouncilStep } from '../../services/council-gate.js';
@@ -584,14 +584,15 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // stepRouting's `project?.genre ?? project?.context?.genre` lookup was
       // always undefined and the per-role casting sheet never loaded. Stamp
       // it from the bound book's manifest before stepRouting runs.
-      if (project.bookSlug && services.books && !project.genre && !project.context?.genre) {
+      if (project.bookSlug && services.books) {
         try {
           const ob = await services.books.open(project.bookSlug);
           const genreName = ob?.manifest?.pulledFrom?.genre?.name;
-          if (genreName) {
+          if (genreName && !project.genre && !project.context?.genre) {
             project.context = project.context || {};
             project.context.genre = genreName;
           }
+          applyBookModelConfig(project, ob?.manifest);
         } catch { /* fail-soft: casting sheet stays tier-default */ }
       }
 
@@ -1023,6 +1024,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             currentProject.context = currentProject.context || {};
             currentProject.context.genre = genreName;
           }
+          applyBookModelConfig(currentProject, bookManifest);
 
           // Pre-draft continuity-ledger injection: established facts up to this
           // chapter + Character Knowledge Matrix + forbidden (not-yet-revealed)

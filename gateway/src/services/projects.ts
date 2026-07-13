@@ -75,6 +75,7 @@ export interface Project {
   personaId?: string;     // Author persona assigned to this project
   preferredProvider?: string; // Override AI provider: 'gemini' | 'claude' | 'openai' | 'deepseek' | 'ollama' | null (auto)
   preferredModel?: string;    // Override model id for the chosen provider (e.g. an OpenRouter slug); applied when no per-step modelOverride.model
+  stageModels?: Record<string, { provider?: string; model?: string }>; // Per-taskType model pin (below step.modelOverride, above preferredModel). Copied from the book manifest at drive time.
   pipelineId?: string;    // Parent pipeline ID (if part of a pipeline)
   pipelinePhase?: number; // Phase order within pipeline (1-6)
   bookSlug?: string;      // the book this project writes into; captured at creation, immutable

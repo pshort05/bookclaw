@@ -47,6 +47,7 @@ export interface BookSelection {
   format?: BookFormat;   // Book Format & Structure — declared at creation, persisted on the manifest
   preferredProvider?: string;  // default AI provider for this book, persisted on the manifest
   preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
+  stageModels?: Record<string, { provider?: string; model?: string }>; // per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format), persisted on the manifest
   contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
@@ -429,6 +430,41 @@ export class BookService {
       if (provider) manifest.consistency = model ? { provider, model } : { provider };
       else delete manifest.consistency;
       manifest.history.push({ at: new Date().toISOString(), event: 'consistency-model-set', detail: provider ? (model ? `${provider}/${model}` : provider) : 'auto' });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
+  }
+
+  /**
+   * Set the book's pipeline model config: the default provider/model and/or the
+   * per-stage (taskType-keyed) map. A blank provider on `default` clears it; a
+   * `stageModels` entry with a falsy provider clears that stage. Persisted atomically.
+   */
+  async setModelConfig(
+    slug: string,
+    cfg: { default?: { provider?: string; model?: string }; stageModels?: Record<string, { provider?: string; model?: string }> },
+  ): Promise<BookManifest> {
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      if (cfg.default) {
+        const provider = cfg.default.provider?.trim();
+        const model = cfg.default.model?.trim();
+        if (provider) { manifest.preferredProvider = provider; if (model) manifest.preferredModel = model; else delete manifest.preferredModel; }
+        else { delete manifest.preferredProvider; delete manifest.preferredModel; }
+      }
+      if (cfg.stageModels) {
+        const next = { ...(manifest.stageModels ?? {}) };
+        for (const [taskType, sel] of Object.entries(cfg.stageModels)) {
+          const provider = sel?.provider?.trim();
+          if (provider) next[taskType] = sel.model?.trim() ? { provider, model: sel.model.trim() } : { provider };
+          else delete next[taskType]; // falsy provider clears the stage
+        }
+        if (Object.keys(next).length) manifest.stageModels = next; else delete manifest.stageModels;
+      }
+      manifest.history.push({ at: new Date().toISOString(), event: 'model-config-set', detail: `default=${manifest.preferredModel ?? manifest.preferredProvider ?? 'auto'} stages=${Object.keys(manifest.stageModels ?? {}).length}` });
       await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
       return manifest;
     });

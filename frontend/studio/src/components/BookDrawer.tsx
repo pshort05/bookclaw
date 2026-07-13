@@ -5,6 +5,7 @@ import { Button } from '@bookclaw/shared';
 import { BuildBiblePanel } from './book/BuildBiblePanel.js';
 import { AppendixPanel } from './book/AppendixPanel.js';
 import { WorldBindControl } from './book/WorldBindControl.js';
+import { BookModelsPanel } from './book/BookModelsPanel.js';
 import styles from './BookDrawer.module.css';
 
 export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
@@ -148,6 +149,10 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
                   )}
                 </>
               )}
+
+              {/* Per-stage model selection — change models before the step runs */}
+              <div className={styles.sec}>Models</div>
+              <BookModelsPanel slug={slug} />
 
               {/* Suggested next step */}
               {next && (
