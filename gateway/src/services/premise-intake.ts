@@ -8,10 +8,15 @@ export interface Discrepancy { id: string; premiseClaim: string; finding: string
 export type GroundingStatus = 'grounded' | 'fallback-llm' | 'skipped';
 export interface GroundingResult { dossier: string; discrepancies: Discrepancy[]; status: GroundingStatus; citations: Array<{ title: string; url?: string }>; }
 
-export type AiComplete = (req: { provider: string; model?: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number; thinking?: 'low' | 'medium' | 'high' }) => Promise<{ text: string }>;
+export type AiComplete = (req: { provider: string; model?: string; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }>; maxTokens?: number; thinking?: 'low' | 'medium' | 'high' }) => Promise<{ text: string; provider?: string; model?: string; estimatedCost?: number }>;
 export type AiSelectProvider = (taskType: string, preferredId?: string) => { id: string };
 
-export interface ResearchLookup { lookup(query: string, opts?: { maxWords?: number }): Promise<{ answer: string; citations: Array<{ title: string; url?: string }>; hasVerifiedSources: boolean }>; }
+export interface ResearchLookup { lookup(query: string, opts?: { maxWords?: number }): Promise<{ answer: string; citations: Array<{ title: string; url?: string }>; hasVerifiedSources: boolean; provider?: string; model?: string; estimatedCost?: number }>; }
+
+// Reported once per intake AI step so the caller can log model + cost to the
+// activity feed (the service itself stays UI-agnostic).
+export interface IntakeStepInfo { step: 'parse' | 'research' | 'grounding'; provider?: string; model?: string; cost?: number; }
+export type OnIntakeStep = (info: IntakeStepInfo) => void;
 
 const PARSE_SYSTEM = `You convert a free-form romance premise document into a strict JSON seed set for a novel pipeline.
 Rules:
@@ -65,7 +70,7 @@ const INTAKE_MODEL = 'anthropic/claude-haiku-4.5';
 const INTAKE_MAX_TOKENS = 16384;
 
 export class PremiseIntakeService {
-  constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider, private researchLookup?: ResearchLookup) {}
+  constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider, private researchLookup?: ResearchLookup, private onStep?: OnIntakeStep) {}
 
   /**
    * Premise intake emits a large strict-JSON payload — the whole premise
@@ -82,7 +87,10 @@ export class PremiseIntakeService {
   }
 
   async parse(premiseText: string): Promise<IntakeResult> {
-    const { text } = await this.aiComplete({ ...this.intakeRoute(), system: PARSE_SYSTEM, messages: [{ role: 'user', content: premiseText }], maxTokens: INTAKE_MAX_TOKENS, thinking: 'medium' });
+    const route = this.intakeRoute();
+    const res = await this.aiComplete({ ...route, system: PARSE_SYSTEM, messages: [{ role: 'user', content: premiseText }], maxTokens: INTAKE_MAX_TOKENS });
+    this.onStep?.({ step: 'parse', provider: res.provider ?? route.provider, model: res.model ?? route.model, cost: res.estimatedCost });
+    const { text } = res;
     const j = extractJson(text);
     const s = j?.seeds ?? {};
     const seeds: IntakeSeeds = {
@@ -112,22 +120,45 @@ export class PremiseIntakeService {
       try {
         const r = await this.researchLookup.lookup(`Real geography of ${realPlace.canonicalName}: towns, main roads, orientation to water, notable public landmarks, seasonal economy.`, { maxWords: 500 });
         researchText = r.answer; citations = r.citations ?? []; status = r.hasVerifiedSources ? 'grounded' : 'fallback-llm';
+        this.onStep?.({ step: 'research', provider: r.provider, model: r.model, cost: r.estimatedCost });
       } catch { status = 'fallback-llm'; }
     }
 
-    const system = `You build a factual SETTING DOSSIER for a novelist and audit the premise's real-world claims.
-Given RESEARCH (may be empty) and the PREMISE, output ONE JSON object:
-{"dossier": "<markdown place bible: real towns, roads, geography, seasonal texture; place FICTIONAL businesses on real streets; never assert a real private business as a story location>",
+    const system = `You GROUND a novelist's setting against real-world facts. You are given RESEARCH (may be empty) and the author's PREMISE (which mixes fictional businesses with real places).
+Output ONE JSON object:
+{"dossier": "<a 'Verified Real-World Geography' section in markdown that GROUNDS the author's setting: confirm the real towns, roads, orientation to water, and seasonal economy the premise references; add real geographic detail a novelist would find useful; note where the author has placed fictional businesses on real streets. CRITICAL: do NOT restate, summarize, rewrite, or replace the author's own setting/locations — that text is preserved verbatim elsewhere and must not be lost. Add ONLY real-world grounding that isn't already in the premise. Never assert a real private business as a story location.>",
  "discrepancies": [{"id","premiseClaim","finding","status":"pass|fail","suggestion"?,"targetField":"setting|blueprint|characters"}]}
-Audit ONLY real-world facts the PREMISE asserts (street names, town placement, geography). Record verified facts as status "pass" and errors as status "fail" with a suggestion. A fictional business is NOT a discrepancy; a wrong real street/town IS. Never rewrite the premise.`;
-    const { text } = await this.aiComplete({ ...this.intakeRoute(), system, messages: [{ role: 'user', content: `RESEARCH:\n${researchText || '(none available)'}\n\nPREMISE:\n${premiseText}` }], maxTokens: INTAKE_MAX_TOKENS, thinking: 'medium' });
+Audit ONLY real-world facts the PREMISE asserts (street names, town placement, geography). Record verified facts as status "pass" and errors as status "fail" with a suggestion. A fictional business is NOT a discrepancy; a wrong real street/town IS. Never rewrite the author's setting.`;
+    const route = this.intakeRoute();
+    const res = await this.aiComplete({ ...route, system, messages: [{ role: 'user', content: `RESEARCH:\n${researchText || '(none available)'}\n\nPREMISE:\n${premiseText}` }], maxTokens: INTAKE_MAX_TOKENS });
+    this.onStep?.({ step: 'grounding', provider: res.provider ?? route.provider, model: res.model ?? route.model, cost: res.estimatedCost });
+    const { text } = res;
 
-    let j: any; try { j = extractJson(text); } catch { j = { dossier: researchText || setting, discrepancies: [] }; }
+    // On a parse failure fall back to the raw research text (never to `setting` —
+    // that is the author's own setting and is preserved by the caller; echoing it
+    // here would duplicate it, and an empty addendum is composed away).
+    let j: any; try { j = extractJson(text); } catch { j = { dossier: researchText || '', discrepancies: [] }; }
     const discrepancies: Discrepancy[] = Array.isArray(j?.discrepancies) ? j.discrepancies.filter((d: any) => d && typeof d === 'object').map((d: any, i: number) => ({
       id: str(d.id) || `disc-${i + 1}`, premiseClaim: str(d.premiseClaim), finding: str(d.finding), status: d.status === 'fail' ? 'fail' : 'pass',
       ...(d.suggestion ? { suggestion: str(d.suggestion) } : {}),
       targetField: (['setting','blueprint','characters'].includes(d.targetField) ? d.targetField : 'setting') as Discrepancy['targetField'],
     })) : [];
-    return { dossier: str(j?.dossier) || researchText || setting, discrepancies, status, citations };
+    return { dossier: str(j?.dossier) || researchText || '', discrepancies, status, citations };
   }
+}
+
+/**
+ * Compose the final setting seed from the author's own setting plus the grounding
+ * geography addendum. The author's setting is PRESERVED VERBATIM — grounding adds
+ * a clearly separated "Verified Real-World Geography" section, it never replaces
+ * the author's locations (Bug: grounding used to overwrite the whole setting,
+ * losing the author's own places on the island). Skipped/empty grounding, or a
+ * geography that merely echoes the author's setting, composes to the author text
+ * unchanged.
+ */
+export function composeGroundedSetting(authorSetting: string, geography: string, status: GroundingStatus): string {
+  const base = (authorSetting ?? '').trim();
+  const geo = (geography ?? '').trim();
+  if (status === 'skipped' || !geo || geo === base) return base;
+  return `${base}\n\n---\n\n## Verified Real-World Geography\n\n${geo}`;
 }

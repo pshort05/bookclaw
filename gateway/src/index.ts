@@ -135,6 +135,13 @@ import { initExportAndWaves } from './init/phase-09-export-wave.js';
 import { initHeartbeatAndBridges } from './init/phase-10-heartbeat-bridges.js';
 import { initHttp } from './init/phase-11-http.js';
 import { initChatHttp } from './init/phase-12-chat-http.js';
+import { logBuffer } from './services/log-buffer.js';
+
+// Capture the gateway's own console output into an in-memory ring buffer so the
+// Settings "View Logs" panel can show it in-app (GET /api/logs). Installed before
+// any startup logging so it captures every phase; mirror-then-forward leaves
+// `docker logs` unchanged.
+logBuffer.installLogCapture();
 
 // Matches an /api/* path CASE-INSENSITIVELY. Express routes case-insensitively
 // by default, so `/API/status` still reaches the lowercase route handler — the

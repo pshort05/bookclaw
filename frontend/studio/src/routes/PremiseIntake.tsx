@@ -27,6 +27,15 @@ interface IntakeResult {
 const TEXT_FIELDS: TextSeedField[] = ['storyArc', 'characters', 'setting', 'blueprint'];
 const isTextField = (f: SeedField): f is TextSeedField => (TEXT_FIELDS as SeedField[]).includes(f);
 
+// Real backend stages of POST /api/books/intake (parse → research → grounding).
+// Time-based advance (the request is a single blocking call), capped at the last.
+const ANALYZE_STAGES = [
+  'Parsing the premise into structured seeds…',
+  'Researching the real-world location…',
+  'Building the setting dossier & fact-checking…',
+];
+const stageForElapsed = (s: number) => (s < 45 ? 0 : s < 100 ? 1 : 2);
+
 export function PremiseIntake() {
   const navigate = useNavigate();
   const loadBooks = useStore((s) => s.loadBooks);
@@ -35,6 +44,16 @@ export function PremiseIntake() {
   const [premise, setPremise] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  // While the (long, single-request) analysis runs, tick an elapsed timer and
+  // advance through the real backend stages so the user sees progress.
+  useEffect(() => {
+    if (!analyzing) { setElapsed(0); return; }
+    const start = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [analyzing]);
 
   // Review stage.
   const [result, setResult] = useState<IntakeResult | null>(null);
@@ -173,6 +192,15 @@ export function PremiseIntake() {
           <button className={styles.primary} onClick={analyze} disabled={analyzing || !premise.trim()}>
             {analyzing ? 'Analyzing…' : 'Analyze'}
           </button>
+          {analyzing && (
+            <div className={styles.progress}>
+              <span className={styles.spinner} aria-hidden />
+              <div className={styles.progText}>
+                <div className={styles.progStage}>{ANALYZE_STAGES[stageForElapsed(elapsed)]}</div>
+                <div className={styles.progMeta}>{elapsed}s elapsed · this usually takes 1–3 minutes</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

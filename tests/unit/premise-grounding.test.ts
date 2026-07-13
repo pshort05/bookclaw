@@ -1,6 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PremiseIntakeService } from '../../gateway/src/services/premise-intake.js';
+import { PremiseIntakeService, composeGroundedSetting } from '../../gateway/src/services/premise-intake.js';
+
+// Regression: grounding used to REPLACE the author's setting with the geography
+// dossier, losing the author's own locations (Ferraro's Bakery, Salt & Crumb, the
+// pop-up). composeGroundedSetting must always preserve the author's setting.
+const AUTHOR = '## Setting\nFerraro\'s Bakery — Surf City, Long Beach Boulevard.\nSalt & Crumb — two blocks north.\n"Gianni\'s Morning Joint" pop-up.';
+
+test('composeGroundedSetting preserves the author setting and appends geography', () => {
+  const out = composeGroundedSetting(AUTHOR, '# LBI\nBarrier island; ocean east, bay west.', 'grounded');
+  assert.match(out, /Ferraro's Bakery/);
+  assert.match(out, /Salt & Crumb/);
+  assert.match(out, /Gianni's Morning Joint/);        // author locations intact
+  assert.match(out, /Verified Real-World Geography/);  // geography appended
+  assert.match(out, /ocean east, bay west/);
+  assert.ok(out.startsWith(AUTHOR), 'author setting stays at the top, verbatim');
+});
+
+test('composeGroundedSetting returns the author setting unchanged when grounding is skipped or empty', () => {
+  assert.equal(composeGroundedSetting(AUTHOR, 'x', 'skipped'), AUTHOR);
+  assert.equal(composeGroundedSetting(AUTHOR, '', 'grounded'), AUTHOR);
+  assert.equal(composeGroundedSetting(AUTHOR, AUTHOR, 'grounded'), AUTHOR); // echo → no dup
+});
 
 const research = { lookup: async () => ({ answer: 'LBI towns: Surf City, Ship Bottom, Beach Haven. Main road: Long Beach Boulevard. Ocean east, bay west.', citations: [{ title: 'LBI', url: 'https://example.org/lbi' }], hasVerifiedSources: true }) };
 const groundingJson = JSON.stringify({

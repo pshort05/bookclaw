@@ -374,3 +374,79 @@
 .pending a {
   color: var(--ember);
 }
+
+/* ── Logs section (server/operational log viewer) ── */
+.logBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.logSelect {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  color: var(--dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.logAuto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.logCount {
+  font-size: 11px;
+  color: var(--faint);
+  margin-left: auto;
+}
+
+.logPane {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.logEmpty {
+  color: var(--faint);
+  padding: 8px 0;
+}
+
+.logLine {
+  display: flex;
+  gap: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--dim);
+}
+
+.logTs {
+  color: var(--faint);
+  flex: 0 0 auto;
+  user-select: none;
+}
+
+.logMsg {
+  flex: 1 1 auto;
+}
+
+.log_warn {
+  color: var(--ember);
+}
+
+.log_error {
+  color: var(--ember-hot);
+}

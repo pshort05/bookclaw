@@ -174,6 +174,15 @@ export function mountCore(app: Application, gateway: any, baseDir: string): void
     res.json({ entries });
   }));
 
+  // ── Server/operational log (in-memory ring buffer; Settings "View Logs") ──
+  app.get('/api/logs', asyncHandler(async (_req: Request, res: Response) => {
+    const { logBuffer } = await import('../../services/log-buffer.js');
+    const limitRaw = Number(_req.query.limit);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 2000) : 500;
+    const level = _req.query.level === 'warn' ? 'warn' : 'all';
+    res.json({ lines: logBuffer.getLogs({ limit, level }) });
+  }));
+
   // ═══════════════════════════════════════════════════════════
   // Activity Log (universal agent action feed)
   // ═══════════════════════════════════════════════════════════

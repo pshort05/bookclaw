@@ -38,6 +38,8 @@ export interface ResearchResult {
   citations: ResearchCitation[];
   /** Where the actual lookup ran. */
   provider: 'perplexity-direct' | 'perplexity-via-openrouter' | 'fallback-llm';
+  /** The concrete model that produced the answer, when known (for activity/cost logs). */
+  model?: string;
   /** Confidence flag for the author. False = treat with extra skepticism. */
   hasVerifiedSources: boolean;
   /** Token / cost estimate. */
@@ -257,7 +259,10 @@ export class ResearchLookupService {
       ...pin,
       system: RESEARCH_FALLBACK_SYSTEM,
       messages: [{ role: 'user', content: this.buildUserPrompt(query, maxWords) }],
-      maxTokens: Math.max(800, Math.ceil(maxWords * 2)),
+      // Floor of 4000: Gemini Pro is a reasoning model that spends output tokens
+      // on thinking, so the old ~1000-token cap truncated the visible answer
+      // (finish_reason: length). Give it room.
+      maxTokens: Math.max(4000, Math.ceil(maxWords * 2)),
       temperature: 0.2,
     });
     // Gemini sometimes returns JSON where Markdown was asked for — coerce it back.
@@ -269,6 +274,7 @@ export class ResearchLookupService {
         'Treat citations with extra skepticism and cross-check geography/specifics before using in published work._',
       citations: this.extractCitations(answer),
       provider: 'fallback-llm',
+      model: response.model ?? (pin as any).model,
       hasVerifiedSources: false,
       estimatedCost: response.estimatedCost ?? 0,
     };
@@ -287,11 +293,11 @@ export class ResearchLookupService {
     provider: ResearchResult['provider'],
     usage: any,
   ): ResearchResult {
-    const text = data?.choices?.[0]?.message?.content || '';
+    const msg = data?.choices?.[0]?.message ?? {};
+    const text = msg.content || '';
     const citations: ResearchCitation[] = [];
 
-    // Perplexity returns a top-level `citations` array on the response when
-    // available — prefer those over our text parser.
+    // Perplexity's DIRECT API returns a top-level `citations` array.
     if (Array.isArray(data?.citations)) {
       for (const c of data.citations) {
         if (typeof c === 'string') citations.push({ title: this.titleFromUrl(c), url: c });
@@ -299,9 +305,23 @@ export class ResearchLookupService {
       }
     }
 
+    // Perplexity VIA OPENROUTER surfaces citations in choices[0].message.annotations
+    // as url_citation objects (the OpenAI-compatible wrapper drops the top-level
+    // `citations` field) — read those too, or verified sources are silently lost.
+    if (Array.isArray(msg.annotations)) {
+      for (const a of msg.annotations) {
+        const u = a?.url_citation ?? (a?.type === 'url_citation' ? a : null);
+        if (u?.url) citations.push({ title: u.title || this.titleFromUrl(u.url), url: u.url });
+      }
+    }
+
+    // Dedupe by URL (a source can appear in both lists).
+    const seen = new Set<string>();
+    let unique = citations.filter((c) => { const k = c.url ?? c.title; if (seen.has(k)) return false; seen.add(k); return true; });
+
     // Fall back to extracting from the response text if no API-provided list.
-    if (citations.length === 0) {
-      citations.push(...this.extractCitations(text));
+    if (unique.length === 0) {
+      unique = this.extractCitations(text);
     }
 
     const inputTokens = usage?.prompt_tokens || usage?.input_tokens || 0;
@@ -312,9 +332,10 @@ export class ResearchLookupService {
     return {
       query,
       answer: text,
-      citations,
+      citations: unique,
       provider,
-      hasVerifiedSources: citations.length > 0,
+      model: typeof data?.model === 'string' ? data.model : undefined,
+      hasVerifiedSources: unique.length > 0,
       estimatedCost: Math.round(estimatedCost * 1000) / 1000,
     };
   }

@@ -47,6 +47,9 @@ export function Settings() {
   const [preferred, setPreferred] = useState<string>(''); // '' = Auto (smart routing)
   const [showDelete, setShowDelete] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [logs, setLogs] = useState<Array<{ ts: number; level: string; text: string }>>([]);
+  const [logLevel, setLogLevel] = useState<'all' | 'warn'>('all');
+  const [logAuto, setLogAuto] = useState(false);
   const { confirm } = useDialog();
 
   const loadKeys = () =>
@@ -66,6 +69,21 @@ export function Settings() {
         setPreferred(r.ai?.preferredProvider ?? '');
       })
       .catch(() => {});
+
+  const loadLogs = () =>
+    api<{ lines: Array<{ ts: number; level: string; text: string }> }>(`/api/logs?limit=500&level=${logLevel}`)
+      .then((r) => setLogs(r.lines ?? []))
+      .catch(() => {});
+
+  // Reload on mount and whenever the level filter changes.
+  useEffect(() => { loadLogs(); }, [logLevel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll every 5s while auto-refresh is on.
+  useEffect(() => {
+    if (!logAuto) return;
+    const id = setInterval(loadLogs, 5000);
+    return () => clearInterval(id);
+  }, [logAuto, logLevel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadKeys();
@@ -216,6 +234,36 @@ export function Settings() {
           </p>
         </div>
         <Button variant="secondary" onClick={() => setShowReset(true)}>Reset total spend…</Button>
+      </div>
+
+      <div className={styles.sec}>Logs</div>
+      <p className={styles.dim}>The server&apos;s own console output (startup, warnings, errors). In-memory — cleared on restart.</p>
+      <div className={styles.logBar}>
+        <select
+          className={styles.logSelect}
+          value={logLevel}
+          onChange={(e) => setLogLevel(e.target.value as 'all' | 'warn')}
+        >
+          <option value="all">All</option>
+          <option value="warn">Warnings &amp; errors</option>
+        </select>
+        <Button variant="secondary" onClick={loadLogs}>Refresh</Button>
+        <label className={styles.logAuto}>
+          <input type="checkbox" checked={logAuto} onChange={(e) => setLogAuto(e.target.checked)} /> Auto-refresh (5s)
+        </label>
+        <span className={styles.logCount}>{logs.length} lines</span>
+      </div>
+      <div className={styles.logPane}>
+        {logs.length === 0 ? (
+          <div className={styles.logEmpty}>No log lines captured yet.</div>
+        ) : (
+          logs.map((l, i) => (
+            <div key={i} className={`${styles.logLine} ${styles['log_' + l.level] ?? ''}`}>
+              <span className={styles.logTs}>{new Date(l.ts).toLocaleTimeString()}</span>
+              <span className={styles.logMsg}>{l.text}</span>
+            </div>
+          ))
+        )}
       </div>
 
       {showDelete && <DeleteBooksModal onClose={() => setShowDelete(false)} />}

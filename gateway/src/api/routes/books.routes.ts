@@ -14,7 +14,7 @@ import { AI_PROVIDER_IDS } from '../../ai/router.js';
 import { assembleManuscript, validateAssembly } from '../../services/manuscript-assembly.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
-import { PremiseIntakeService } from '../../services/premise-intake.js';
+import { PremiseIntakeService, composeGroundedSetting } from '../../services/premise-intake.js';
 import { RomanceInterviewService } from '../../services/romance-interview.js';
 
 /**
@@ -78,14 +78,27 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (!premise) return res.status(400).json({ error: 'premise text is required' });
     if (premise.length > 200_000) return res.status(400).json({ error: 'premise is too large (200k char limit)' });
     try {
+      const activityLog = gateway.getActivityLog?.();
       const svc = new PremiseIntakeService(
         (r) => services.aiRouter.complete(r as any),
         (t, pref) => services.aiRouter.selectProvider(t, pref),
         services.researchLookup ? { lookup: (q, o) => services.researchLookup!.lookup(q, o) } : undefined,
+        (info) => {
+          // One activity entry per intake AI step, carrying the model + cost.
+          activityLog?.log({
+            type: 'step_completed',
+            source: 'dashboard',
+            stepLabel: `Premise ${info.step}`,
+            message: `Premise intake — ${info.step}: ${info.model ?? info.provider ?? 'ai'}${info.cost != null ? ` · $${info.cost.toFixed(4)}` : ''}`,
+            metadata: { provider: info.provider, model: info.model, cost: info.cost },
+          }).catch(() => {});
+        },
       );
       const intake = await svc.parse(premise);
       const grounding = await svc.ground(intake.seeds.setting, intake.realPlace, premise);
-      const seeds = { ...intake.seeds, setting: grounding.dossier };
+      // Preserve the author's own setting verbatim; grounding only APPENDS verified
+      // real-world geography — it must never overwrite the author's locations.
+      const seeds = { ...intake.seeds, setting: composeGroundedSetting(intake.seeds.setting, grounding.dossier, grounding.status) };
       res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, realPlace: intake.realPlace, groundingStatus: grounding.status });
     } catch (err: any) {
       const msg = String(err?.message ?? '');

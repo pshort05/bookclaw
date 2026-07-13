@@ -55,6 +55,36 @@ test('fallback research pins Gemini Pro via OpenRouter with an anti-hallucinatio
   assert.match(r.answer, /factual geography summary/);
 });
 
+test('OpenRouter-Perplexity citations in message.annotations are read (no fall-through to Gemini)', async () => {
+  const capture: { req?: any } = {};
+  const svc = new ResearchLookupService();
+  svc.setDependencies({ get: async (k: string) => (k === 'openrouter_api_key' ? 'or-key' : null) } as any, fakeRouter(capture) as any);
+
+  const realFetch = globalThis.fetch;
+  // OpenRouter puts Perplexity citations in choices[0].message.annotations, NOT data.citations.
+  globalThis.fetch = (async () => ({
+    ok: true,
+    json: async () => ({
+      model: 'perplexity/sonar-pro',
+      choices: [{ message: { content: 'LBI is an 18-mile barrier island. [1]', annotations: [
+        { type: 'url_citation', url_citation: { url: 'https://en.wikipedia.org/wiki/Long_Beach_Island', title: 'Long Beach Island - Wikipedia' } },
+      ] } }],
+      usage: { prompt_tokens: 50, completion_tokens: 80 },
+    }),
+  })) as any;
+  let r: any;
+  try {
+    r = await svc.lookup('Real geography of Long Beach Island, New Jersey');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.equal(r.provider, 'perplexity-via-openrouter');
+  assert.equal(r.hasVerifiedSources, true);          // citations read from annotations
+  assert.equal(r.model, 'perplexity/sonar-pro');
+  assert.ok(r.citations.some((c: any) => c.url.includes('Long_Beach_Island')));
+  assert.equal(capture.req, undefined, 'must NOT fall through to the Gemini fallback');
+});
+
 test('an OpenRouter-Perplexity result with no verified sources falls through to Gemini Pro', async () => {
   const capture: { req?: any } = {};
   const svc = new ResearchLookupService();

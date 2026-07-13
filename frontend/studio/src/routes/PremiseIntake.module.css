@@ -209,3 +209,40 @@
 @media (max-width: 720px) {
   .row { flex-direction: column; gap: 0; }
 }
+
+/* ── Analyze progress (staged timer while intake runs) ── */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 2px solid var(--line-2);
+  border-top-color: var(--ember);
+  border-radius: 50%;
+  animation: premise-spin 0.8s linear infinite;
+}
+
+@keyframes premise-spin {
+  to { transform: rotate(360deg); }
+}
+
+.progStage {
+  color: var(--ink, #e8dfce);
+  font-size: 14px;
+}
+
+.progMeta {
+  color: var(--faint);
+  font-size: 12px;
+  margin-top: 2px;
+}
