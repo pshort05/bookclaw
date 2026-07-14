@@ -9,10 +9,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type Project, type ProjectStep, type BookDetail, type LibraryPipeline } from '@bookclaw/shared';
+import { ModelPicker, type ModelValue } from '../asset/ModelPicker.js';
 import styles from '../../routes/Write.module.css';
-
-const PROVIDERS = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'] as const;
-type Provider = typeof PROVIDERS[number];
 
 interface Props {
   slug: string;
@@ -30,6 +28,7 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [seqTotal, setSeqTotal] = useState<number | null>(null); // F1: total phases in a book sequence
+  const [editingStepId, setEditingStepId] = useState<string | null>(null); // which step's model picker is open
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyRef = useRef(false);
   const kickedRef = useRef<string | null>(null); // guard: fire /auto-execute once per active phase
@@ -197,12 +196,15 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, detail, activeProject, autoStartPremise, slug]);
 
-  const setStepModel = async (stepId: string, provider: Provider | '') => {
+  // Persist a per-step model override (provider + optional exact model). A blank
+  // provider clears it. Mirrors BookModelsPanel: POST provider+model, then refresh
+  // the project so the rail reflects the new pin. The endpoint validates both.
+  const setStepModel = async (stepId: string, value: ModelValue) => {
     if (!activeProject) return;
     try {
       await api(`/api/projects/${encodeURIComponent(activeProject.id)}/steps/${encodeURIComponent(stepId)}/model`, {
         method: 'POST',
-        body: JSON.stringify(provider ? { provider } : {}),
+        body: JSON.stringify(value.provider ? { provider: value.provider, model: value.model } : {}),
       });
       const r = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(activeProject.id)}`).catch(() => null);
       if (r?.project) onProjectChange(r.project);
@@ -250,6 +252,41 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
 
   const currentStep = projectSteps.find((s) => s.status === 'active');
 
+  // Per-step model control. Completed steps show a read-only chip of what ran;
+  // not-yet-completed steps (active + queued) are editable: click the chip to open
+  // the shared ModelPicker for that step. When the provider is OpenRouter the picker
+  // surfaces the secondary catalog dropdown of specific models. One editor open at a
+  // time. Requires a live project step (only those carry a stable id to pin against).
+  const stepModelControl = (step: ProjectStep | undefined, status: 'done' | 'cur' | 'queued') => {
+    const ov = step?.modelOverride;
+    const label = ov?.provider ? `${ov.provider}${ov.model ? ` · ${ov.model}` : ''}` : null;
+    if (!step || status === 'done') {
+      return label ? <div className={styles.smeta}><span className={styles.model}>{label}</span></div> : null;
+    }
+    if (editingStepId !== step.id) {
+      return (
+        <button
+          type="button"
+          className={styles.modelChip}
+          onClick={() => setEditingStepId(step.id)}
+          title="Set the AI provider / model for this step"
+        >
+          {label ?? '+ set model'}
+        </button>
+      );
+    }
+    return (
+      <div className={styles.modelEdit}>
+        <ModelPicker
+          value={{ provider: ov?.provider, model: ov?.model }}
+          onChange={(v) => setStepModel(step.id, v)}
+          hideTemperature
+        />
+        <button type="button" className={styles.modelDone} onClick={() => setEditingStepId(null)}>done</button>
+      </div>
+    );
+  };
+
   return (
     <div className={`${styles.wcol} ${styles.wright}`}>
       {/* Book context */}
@@ -292,24 +329,13 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
                 </div>
                 <div className={styles.sbody}>
                   <div className={styles.sname}>{ps.label}</div>
-                  <div className={styles.smeta}>
-                    {projStep?.modelOverride?.provider && (
-                      <span className={styles.model}>{projStep.modelOverride.provider}</span>
-                    )}
-                    {ps.skill && <span className={styles.skill}>{ps.skill}</span>}
-                    {ps.phase && <span>{ps.phase}</span>}
-                  </div>
-                  {st === 'cur' && projStep && (
-                    <select
-                      className={styles.modelSelect}
-                      value={projStep.modelOverride?.provider ?? ''}
-                      onChange={(e) => setStepModel(projStep.id, e.target.value as Provider | '')}
-                      title="Override AI provider for this step"
-                    >
-                      <option value="">default provider</option>
-                      {PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
+                  {(ps.skill || ps.phase) && (
+                    <div className={styles.smeta}>
+                      {ps.skill && <span className={styles.skill}>{ps.skill}</span>}
+                      {ps.phase && <span>{ps.phase}</span>}
+                    </div>
                   )}
+                  {stepModelControl(projStep, st)}
                 </div>
               </div>
             );
@@ -328,24 +354,13 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
                 </div>
                 <div className={styles.sbody}>
                   <div className={styles.sname}>{ps.label}</div>
-                  <div className={styles.smeta}>
-                    {ps.modelOverride?.provider && (
-                      <span className={styles.model}>{ps.modelOverride.provider}</span>
-                    )}
-                    {ps.skill && <span className={styles.skill}>{ps.skill}</span>}
-                    {ps.phase && <span>{ps.phase}</span>}
-                  </div>
-                  {st === 'cur' && (
-                    <select
-                      className={styles.modelSelect}
-                      value={ps.modelOverride?.provider ?? ''}
-                      onChange={(e) => setStepModel(ps.id, e.target.value as Provider | '')}
-                      title="Override AI provider for this step"
-                    >
-                      <option value="">default provider</option>
-                      {PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
+                  {(ps.skill || ps.phase) && (
+                    <div className={styles.smeta}>
+                      {ps.skill && <span className={styles.skill}>{ps.skill}</span>}
+                      {ps.phase && <span>{ps.phase}</span>}
+                    </div>
                   )}
+                  {stepModelControl(ps, st)}
                 </div>
               </div>
             );

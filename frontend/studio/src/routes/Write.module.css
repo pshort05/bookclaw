@@ -429,16 +429,61 @@
   opacity: .9;
 }
 
-/* model override select */
-.modelSelect {
+/* per-step model override: click-to-edit chip + inline picker row */
+.modelChip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: transparent;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-s);
+  color: var(--gold);
+  padding: 2px 7px;
+  margin-top: 4px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.modelChip:hover {
+  border-color: var(--ember);
+  border-style: solid;
+  color: var(--text);
+}
+
+.modelEdit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+.modelEdit select,
+.modelEdit input {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   background: var(--panel-2);
   border: 1px solid var(--line-2);
   border-radius: var(--r-s);
   color: var(--gold);
-  padding: 4px 8px;
+  padding: 3px 6px;
+  max-width: 180px;
+}
+
+.modelDone {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  color: var(--dim);
+  padding: 2px 8px;
   cursor: pointer;
+}
+
+.modelDone:hover {
+  border-color: var(--ember);
+  color: var(--text);
 }
 
 /* empty / error states */
