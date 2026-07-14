@@ -1577,6 +1577,21 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     res.json({ nextStep, project: engine.getProject(req.params.id) });
   });
 
+  // Remove a not-yet-run (pending or skipped) step from a project entirely — vs.
+  // /skip, which marks it skipped and advances the frontier. Inert to sequencing,
+  // so it is safe on a project paused at a review gate (e.g. dropping the remaining
+  // per-chapter intimacy steps of a sweet romance mid-run). Refuses to remove an
+  // active, completed or failed step (409) so a live gate or real output is never lost.
+  app.delete('/api/projects/:id/steps/:stepId', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    if (engine.isDriving(req.params.id)) return res.status(409).json({ error: 'Project is currently running' });
+    const r = engine.removeStep(req.params.id, req.params.stepId);
+    if (r.status === 'not_found') return res.status(404).json({ error: 'Project or step not found' });
+    if (r.status === 'not_removable') return res.status(409).json({ error: `cannot remove a ${r.state} step (only a pending or skipped step can be removed)` });
+    res.json({ success: true, removed: r.step.id, project: engine.getProject(req.params.id) });
+  });
+
   app.post('/api/projects/:id/pause', (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();
     if (!engine) {

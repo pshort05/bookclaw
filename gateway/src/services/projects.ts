@@ -1667,6 +1667,56 @@ Description: ${description}`;
   }
 
   /**
+   * Remove a not-yet-run step from a project entirely (vs. skipStep, which marks
+   * it 'skipped' AND advances the frontier). Only a 'pending' or 'skipped' step
+   * can be removed — never an 'active' step (it may anchor a live review gate) or
+   * a 'completed'/'failed' step (that would discard real work/output). Unlike
+   * skipStep this is INERT to sequencing: it never activates or demotes any other
+   * step, so it is safe to call on a project paused at a gate (used to drop the
+   * remaining per-chapter intimacy steps from a sweet romance mid-run). Progress
+   * is recomputed; the frontier and any open review gate are left untouched.
+   */
+  removeStep(projectId: string, stepId: string):
+    | { status: 'removed'; step: ProjectStep }
+    | { status: 'not_found' }
+    | { status: 'not_removable'; state: string } {
+    const project = this.projects.get(projectId);
+    if (!project) return { status: 'not_found' };
+    const idx = project.steps.findIndex(s => s.id === stepId);
+    if (idx === -1) return { status: 'not_found' };
+    const step = project.steps[idx];
+    if (step.status !== 'pending' && step.status !== 'skipped') {
+      return { status: 'not_removable', state: step.status };
+    }
+    project.steps.splice(idx, 1);
+    // Conductor (DAG) pipelines carry hard step-id references in `dependsOn`
+    // (derive-deps). depsSatisfied treats an ABSENT dep id as permanently
+    // unsatisfiable, so a removed upstream would stall every dependent (and the
+    // terminal compile step, which depends on all). Drop the removed id from
+    // every dependent — matching depsSatisfied's "a skipped/absent upstream is
+    // fine" intent — so removal never strands the graph. (No-op on the common
+    // sequential path, where no step carries dependsOn.)
+    for (const s of project.steps) {
+      if (s.dependsOn?.includes(stepId)) s.dependsOn = s.dependsOn.filter(id => id !== stepId);
+    }
+    const done = project.steps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
+    project.progress = project.steps.length ? Math.round((done / project.steps.length) * 100) : 0;
+    // Terminal detection ONLY (this never activates/demotes a step): if removal
+    // emptied the runnable frontier with no active/failed work left, the project
+    // is done — mirror skipStep's completion tail so removing the last pending
+    // step doesn't strand a project at progress 100 / non-terminal.
+    const remaining = project.steps.filter(s => s.status === 'pending' || s.status === 'active');
+    const hasFailed = project.steps.some(s => s.status === 'failed');
+    if (remaining.length === 0 && !hasFailed && project.status !== 'completed') {
+      project.status = 'completed';
+      project.completedAt = new Date().toISOString();
+    }
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+    return { status: 'removed', step };
+  }
+
+  /**
    * Pause a project
    */
   pauseProject(id: string): void {
