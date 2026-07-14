@@ -471,6 +471,28 @@ export class BookService {
   }
 
   /**
+   * Set the book's human-review gate cadence (Flagship Plan 5). Fills the
+   * create-only gap for review.cadence — mirrors setModelConfig (atomic +
+   * locked). resolveCadence reads manifest.review.cadence FRESH per boundary
+   * (books.open() has no cache), so a change takes effect on a running
+   * project's NEXT chapter/act gate — no restart. A blank cadence clears the
+   * override, reverting to the per_act default.
+   */
+  async setReviewCadence(slug: string, cadence: Cadence | ''): Promise<BookManifest> {
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      if (cadence) manifest.review = { cadence };
+      else delete manifest.review;
+      manifest.history.push({ at: new Date().toISOString(), event: 'review-cadence-set', detail: cadence || 'default (per_act)' });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
+  }
+
+  /**
    * Derive generation inputs from the declared format: per-chapter target, chapter
    * count, and a structure "rail" instruction (beats + expected positions) for the
    * outline prompt. Returns null when the book has no declared format (fail-soft —

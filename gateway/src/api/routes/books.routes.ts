@@ -262,6 +262,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({
       default: { provider: m.preferredProvider ?? '', model: m.preferredModel ?? '' },
       stageModels: m.stageModels ?? {},
+      reviewCadence: m.review?.cadence ?? '',
     });
   });
 
@@ -284,11 +285,30 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
         if (!validSel(v)) return res.status(400).json({ error: `invalid model for stage ${k}` });
       }
     }
+    // Optional human-review gate cadence (update-after-create; a running project
+    // picks it up on its next chapter/act boundary since resolveCadence reads the
+    // manifest fresh). '' clears the override back to the per_act default.
+    const reviewCadence = body.reviewCadence;
+    if (reviewCadence !== undefined && reviewCadence !== '' && !['per_act', 'per_chapter', 'outline_only', 'autonomous'].includes(reviewCadence)) {
+      return res.status(400).json({ error: `invalid reviewCadence: ${reviewCadence}` });
+    }
     try {
-      const manifest = await services.books.setModelConfig(slug, { default: body.default, stageModels });
+      // Only touch the model config when model fields were sent, so a cadence-only
+      // save doesn't push a spurious model-config history entry (and vice-versa).
+      let manifest;
+      if (body.default !== undefined || stageModels !== undefined) {
+        manifest = await services.books.setModelConfig(slug, { default: body.default, stageModels });
+      }
+      if (reviewCadence !== undefined) {
+        manifest = await services.books.setReviewCadence(slug, reviewCadence);
+      }
+      // Neither field sent: report current config (open() can still miss if the
+      // file was removed/corrupted since the exists() check → 404, not a 500).
+      if (!manifest) manifest = (await services.books.open(slug))?.manifest;
+      if (!manifest) return res.status(404).json({ error: 'Book not found' });
       const project = gateway.getProjectEngine?.()?.frontierProjectForBook(slug) ?? null;
       if (project) applyBookModelConfig(project, manifest);
-      res.json({ success: true, default: { provider: manifest.preferredProvider ?? '', model: manifest.preferredModel ?? '' }, stageModels: manifest.stageModels ?? {} });
+      res.json({ success: true, default: { provider: manifest.preferredProvider ?? '', model: manifest.preferredModel ?? '' }, stageModels: manifest.stageModels ?? {}, reviewCadence: manifest.review?.cadence ?? '' });
     } catch (err: any) {
       const msg = (err as Error)?.message || String(err);
       res.status(/not found/i.test(msg) ? 404 : /read-only|quarantine/i.test(msg) ? 409 : 500).json({ error: msg });
