@@ -42,7 +42,8 @@ export function ModelPicker({ value, onChange, disabled, hideTemperature }: { va
           <select value={value.model ?? ''} disabled={disabled} onChange={(e) => emit({ model: e.target.value })}>
             <option value="">{PROVIDER_DEFAULT_MODEL[provider] ? `default (${PROVIDER_DEFAULT_MODEL[provider]})` : '(provider default)'}</option>
             {provider === 'openrouter' && <option value="auto:newest-sonnet">★ Newest Sonnet (auto)</option>}
-            {value.model && value.model !== 'auto:newest-sonnet' && !models.some((m) => m.id === value.model) && (
+            {provider === 'openrouter' && <option value="auto:newest-haiku">★ Newest Haiku (auto)</option>}
+            {value.model && value.model !== 'auto:newest-sonnet' && value.model !== 'auto:newest-haiku' && !models.some((m) => m.id === value.model) && (
               <option value={value.model}>{value.model} (custom)</option>
             )}
             {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}

@@ -1717,6 +1717,73 @@ Description: ${description}`;
   }
 
   /**
+   * Insert a new not-yet-run step immediately BEFORE an existing pending step
+   * (companion to removeStep — used to add the per-chapter de-AI audit step
+   * ahead of each humanize step). INERT to sequencing: the new step is 'pending'
+   * and nothing is activated/demoted, so it is safe on a project paused at a
+   * gate. The target must be pending — you can only insert into the not-yet-run
+   * portion, never before an active/gated or completed step. Returns the new
+   * step, or a typed failure the route maps to 404/409/400.
+   */
+  insertStep(
+    projectId: string,
+    beforeStepId: string,
+    spec: {
+      label: string; prompt: string; taskType?: string; skill?: string; role?: string;
+      phase?: string; chapterNumber?: number; wordCountTarget?: number;
+      modelOverride?: { provider?: string; model?: string; temperature?: number };
+    },
+  ):
+    | { status: 'inserted'; step: ProjectStep }
+    | { status: 'not_found' }
+    | { status: 'target_not_pending'; state: string }
+    | { status: 'conductor_unsupported' }
+    | { status: 'invalid'; reason: string } {
+    const project = this.projects.get(projectId);
+    if (!project) return { status: 'not_found' };
+    // A conductor (DAG) project keys ordering on hard step-id `dependsOn` refs; an
+    // inserted step with no deps would be immediately runnable regardless of its
+    // position (out-of-order). Deriving correct deps is out of scope here, so
+    // refuse — this primitive targets sequential pipelines. (removeStep instead
+    // strips the removed id from dependents, which is well-defined; inserting is not.)
+    if (project.steps.some(s => s.dependsOn && s.dependsOn.length)) return { status: 'conductor_unsupported' };
+    const idx = project.steps.findIndex(s => s.id === beforeStepId);
+    if (idx === -1) return { status: 'not_found' };
+    if (project.steps[idx].status !== 'pending') return { status: 'target_not_pending', state: project.steps[idx].status };
+    const label = typeof spec.label === 'string' ? spec.label.trim() : '';
+    const prompt = typeof spec.prompt === 'string' ? spec.prompt.trim() : '';
+    if (!label || !prompt) return { status: 'invalid', reason: 'label and prompt are required' };
+    // Fresh unique id: one past the highest numeric `<projectId>-step-<N>` suffix.
+    let maxN = 0;
+    const prefix = `${projectId}-step-`;
+    for (const s of project.steps) {
+      if (s.id.startsWith(prefix)) {
+        const n = parseInt(s.id.slice(prefix.length), 10);
+        if (Number.isFinite(n)) maxN = Math.max(maxN, n);
+      }
+    }
+    const step: ProjectStep = {
+      id: `${prefix}${maxN + 1}`,
+      label,
+      prompt,
+      taskType: (typeof spec.taskType === 'string' && spec.taskType) ? spec.taskType : 'general',
+      status: 'pending',
+      ...(spec.skill ? { skill: spec.skill } : {}),
+      ...(isStepRole(spec.role) ? { role: spec.role } : {}),
+      ...(spec.phase ? { phase: spec.phase } : {}),
+      ...(typeof spec.chapterNumber === 'number' ? { chapterNumber: spec.chapterNumber } : {}),
+      ...(typeof spec.wordCountTarget === 'number' ? { wordCountTarget: spec.wordCountTarget } : {}),
+      ...(spec.modelOverride ? { modelOverride: spec.modelOverride } : {}),
+    };
+    project.steps.splice(idx, 0, step);
+    const done = project.steps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
+    project.progress = project.steps.length ? Math.round((done / project.steps.length) * 100) : 0;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+    return { status: 'inserted', step };
+  }
+
+  /**
    * Pause a project
    */
   pauseProject(id: string): void {

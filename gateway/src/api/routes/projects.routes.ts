@@ -1592,6 +1592,35 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     res.json({ success: true, removed: r.step.id, project: engine.getProject(req.params.id) });
   });
 
+  // Insert a new not-yet-run step immediately before an existing PENDING step
+  // (companion to the DELETE above — used to add the per-chapter de-AI audit step
+  // ahead of each humanize step). Inert to sequencing, so it is safe on a project
+  // paused at a gate. Body: { beforeStepId, step: { label, prompt, taskType?,
+  // skill?, role?, phase?, chapterNumber?, wordCountTarget?, modelOverride? } }.
+  app.post('/api/projects/:id/steps', (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    if (engine.isDriving(req.params.id)) return res.status(409).json({ error: 'Project is currently running' });
+    const { beforeStepId, step } = req.body || {};
+    if (typeof beforeStepId !== 'string' || !beforeStepId) return res.status(400).json({ error: 'beforeStepId (string) is required' });
+    if (!step || typeof step !== 'object') return res.status(400).json({ error: 'step (object) is required' });
+    // Validate the optional model override (sent verbatim to a provider). Same
+    // guards as POST /steps/:stepId/model.
+    const mo = step.modelOverride;
+    if (mo !== undefined && mo !== null) {
+      if (typeof mo !== 'object') return res.status(400).json({ error: 'invalid modelOverride' });
+      const validProviders = ['gemini', 'deepseek', 'claude', 'openai', 'ollama', 'openrouter'];
+      if (mo.provider !== undefined && !validProviders.includes(mo.provider)) return res.status(400).json({ error: 'invalid modelOverride.provider' });
+      if (mo.model !== undefined && mo.model !== '' && !isValidModelId(mo.model)) return res.status(400).json({ error: 'invalid modelOverride.model' });
+    }
+    const r = engine.insertStep(req.params.id, beforeStepId, step);
+    if (r.status === 'not_found') return res.status(404).json({ error: 'Project or target step not found' });
+    if (r.status === 'target_not_pending') return res.status(409).json({ error: `can only insert before a pending step (target is ${r.state})` });
+    if (r.status === 'conductor_unsupported') return res.status(409).json({ error: 'cannot insert into a conductor (dependency-graph) pipeline' });
+    if (r.status === 'invalid') return res.status(400).json({ error: r.reason });
+    res.json({ success: true, inserted: r.step.id, project: engine.getProject(req.params.id) });
+  });
+
   app.post('/api/projects/:id/pause', (req: Request, res: Response) => {
     const engine = gateway.getProjectEngine?.();
     if (!engine) {

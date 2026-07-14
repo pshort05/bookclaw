@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickNewestSonnet, NEWEST_SONNET_SENTINEL, SONNET_FLOOR } from '../../gateway/src/ai/newest-sonnet.js';
+import { pickNewestSonnet, NEWEST_SONNET_SENTINEL, SONNET_FLOOR, pickNewestHaiku, NEWEST_HAIKU_SENTINEL, HAIKU_FLOOR } from '../../gateway/src/ai/newest-sonnet.js';
 
 test('pickNewestSonnet chooses the highest version (5 > 4.6 > 4.5 > 4)', () => {
   const ids = ['anthropic/claude-sonnet-4', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-5', 'anthropic/claude-sonnet-4.5', 'anthropic/claude-opus-4.8', 'openai/gpt-4o'];
@@ -24,4 +24,23 @@ test('pickNewestSonnet returns null when there is no sonnet', () => {
 test('sentinel + floor constants are exported', () => {
   assert.equal(NEWEST_SONNET_SENTINEL, 'auto:newest-sonnet');
   assert.match(SONNET_FLOOR, /claude-sonnet/);
+});
+
+test('pickNewestHaiku chooses the highest version (4.5 > 3.5 > 3) and ignores non-Haiku', () => {
+  const ids = ['anthropic/claude-3-haiku', 'anthropic/claude-haiku-4.5', 'anthropic/claude-3.5-haiku', 'anthropic/claude-sonnet-5', 'openai/gpt-4o'];
+  assert.equal(pickNewestHaiku(ids), 'anthropic/claude-haiku-4.5');
+});
+
+test('pickNewestHaiku ignores date suffixes and prefers the stable (shorter) slug on ties', () => {
+  const ids = ['anthropic/claude-haiku-4.5-20251001', 'anthropic/claude-haiku-4.5'];
+  assert.equal(pickNewestHaiku(ids), 'anthropic/claude-haiku-4.5');
+});
+
+test('pickNewestHaiku returns null when there is no haiku, and does not match sonnet', () => {
+  assert.equal(pickNewestHaiku(['anthropic/claude-sonnet-5', 'openai/gpt-4o']), null);
+});
+
+test('newest-haiku sentinel + floor constants are exported', () => {
+  assert.equal(NEWEST_HAIKU_SENTINEL, 'auto:newest-haiku');
+  assert.match(HAIKU_FLOOR, /claude-haiku/);
 });

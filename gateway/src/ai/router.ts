@@ -8,7 +8,7 @@ import { createHash } from 'crypto';
 import { Vault } from '../security/vault.js';
 import { CostTracker } from '../services/costs.js';
 import { ProviderThrottle } from '../services/pipeline/provider-throttle.js';
-import { pickNewestSonnet, NEWEST_SONNET_SENTINEL, SONNET_FLOOR } from './newest-sonnet.js';
+import { pickNewestSonnet, NEWEST_SONNET_SENTINEL, SONNET_FLOOR, pickNewestHaiku, NEWEST_HAIKU_SENTINEL, HAIKU_FLOOR } from './newest-sonnet.js';
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -190,6 +190,8 @@ export class AIRouter {
   // Cache for the resolved "newest Sonnet" slug (the auto:newest-sonnet sentinel).
   // The OpenRouter catalog changes ~weekly, so a 24h TTL is plenty.
   private sonnetCache: { slug: string; ts: number } | null = null;
+  // Same, for the auto:newest-haiku sentinel (cheap-model steps like the de-AI audit).
+  private haikuCache: { slug: string; ts: number } | null = null;
   private cacheHits = 0;
   private cacheMisses = 0;
 
@@ -492,10 +494,38 @@ export class AIRouter {
     return SONNET_FLOOR;
   }
 
+  /**
+   * Resolve the `auto:newest-haiku` sentinel to a concrete OpenRouter slug — the
+   * highest Haiku in the live catalog, cached 24h, fail-soft to HAIKU_FLOOR.
+   * Mirrors resolveNewestSonnet; used by cheap-model steps (e.g. the de-AI audit).
+   */
+  async resolveNewestHaiku(): Promise<string> {
+    const now = Date.now();
+    if (this.haikuCache && now - this.haikuCache.ts < 24 * 60 * 60 * 1000) return this.haikuCache.slug;
+    try {
+      const key = await this.vault.get('openrouter_api_key');
+      const res = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: key ? { Authorization: `Bearer ${key}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json() as any;
+        const ids = Array.isArray(data?.data) ? data.data.map((m: any) => m?.id).filter((s: any): s is string => typeof s === 'string') : [];
+        const slug = pickNewestHaiku(ids);
+        if (slug) { this.haikuCache = { slug, ts: now }; return slug; }
+      }
+    } catch (err) {
+      console.warn(`  ⚠ newest-haiku resolve failed; using floor ${HAIKU_FLOOR}: ${(err as Error)?.message}`);
+    }
+    this.haikuCache = { slug: HAIKU_FLOOR, ts: now };
+    return HAIKU_FLOOR;
+  }
+
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
-    // Resolve the newest-Sonnet sentinel to a concrete OpenRouter slug up front.
+    // Resolve the newest-Sonnet / newest-Haiku sentinel to a concrete OpenRouter slug up front.
     if (request.model === NEWEST_SONNET_SENTINEL) {
       request = { ...request, provider: 'openrouter', model: await this.resolveNewestSonnet() };
+    } else if (request.model === NEWEST_HAIKU_SENTINEL) {
+      request = { ...request, provider: 'openrouter', model: await this.resolveNewestHaiku() };
     }
     const baseProvider = this.providers.get(request.provider);
     if (!baseProvider) {
