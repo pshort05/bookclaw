@@ -16,11 +16,17 @@ export const NEWEST_SONNET_SENTINEL = 'auto:newest-sonnet';
 /** Default model value that resolves to the newest Haiku at completion time. */
 export const NEWEST_HAIKU_SENTINEL = 'auto:newest-haiku';
 
+/** Default model value that resolves to the newest Opus at completion time. */
+export const NEWEST_OPUS_SENTINEL = 'auto:newest-opus';
+
 /** Conservative fallback when the catalog can't be reached (fail-soft). */
 export const SONNET_FLOOR = 'anthropic/claude-sonnet-4.5';
 
 /** Conservative Haiku fallback when the catalog can't be reached (fail-soft). */
 export const HAIKU_FLOOR = 'anthropic/claude-haiku-4.5';
+
+/** Conservative Opus fallback when the catalog can't be reached (fail-soft). */
+export const OPUS_FLOOR = 'anthropic/claude-opus-4.8';
 
 /** Extract a comparable version from a Sonnet slug, or null if it isn't one. */
 function sonnetVersion(id: string): number | null {
@@ -63,6 +69,29 @@ function haikuVersion(id: string): number | null {
 export function pickNewestHaiku(ids: string[]): string | null {
   const candidates = ids
     .map((id) => ({ id, v: haikuVersion(id) }))
+    .filter((x): x is { id: string; v: number } => x.v !== null);
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.v - a.v || a.id.length - b.id.length);
+  return candidates[0].id;
+}
+
+/** Extract a comparable version from an Opus slug, or null if it isn't one. */
+function opusVersion(id: string): number | null {
+  const lower = id.toLowerCase();
+  if (!lower.includes('opus') || !lower.includes('claude')) return null;
+  // New naming `claude-opus-<ver>`, or the older `claude-<ver>-opus`.
+  const m = lower.match(/claude-opus-(\d+(?:\.\d+)?)/) || lower.match(/claude-(\d+(?:\.\d+)?)-opus/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+/**
+ * Pick the newest Opus id from a catalog. Highest version wins; among equal
+ * versions the shorter id wins (prefers the stable `...-4.8` over a dated
+ * variant). Returns null when the list has no Opus.
+ */
+export function pickNewestOpus(ids: string[]): string | null {
+  const candidates = ids
+    .map((id) => ({ id, v: opusVersion(id) }))
     .filter((x): x is { id: string; v: number } => x.v !== null);
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => b.v - a.v || a.id.length - b.id.length);

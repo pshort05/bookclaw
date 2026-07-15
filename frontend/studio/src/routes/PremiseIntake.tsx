@@ -58,6 +58,10 @@ export function PremiseIntake() {
   // Review stage.
   const [result, setResult] = useState<IntakeResult | null>(null);
   const [seeds, setSeeds] = useState<Seeds | null>(null);
+  // Heat is only ever an LLM *guess* (the premise rarely declares it) and the guess
+  // flips run-to-run, so it must not silently pick the pipeline. Require an explicit
+  // Sweet/Spicy confirmation before the book can be created.
+  const [heatConfirmed, setHeatConfirmed] = useState(false);
   const [gapAnswers, setGapAnswers] = useState<Record<string, string>>({});
   // Only failed discrepancies need a decision: 'applied' (take the suggestion) or 'kept' (intentional).
   const [discResolution, setDiscResolution] = useState<Record<string, 'applied' | 'kept'>>({});
@@ -98,6 +102,7 @@ export function PremiseIntake() {
       const r = await api<IntakeResult>('/api/books/intake', { method: 'POST', body: JSON.stringify({ premise: text }) });
       setResult(r);
       setSeeds(r.seeds);
+      setHeatConfirmed(false); // force an explicit re-confirm of the LLM's heat guess
       setGapAnswers(Object.fromEntries(r.gaps.map((g) => [g.id, g.proposedAnswer ?? ''])));
       setDiscResolution({});
     } catch (e) {
@@ -121,7 +126,7 @@ export function PremiseIntake() {
 
   const gapsResolved = gaps.every((g) => (gapAnswers[g.id] ?? '').trim().length > 0);
   const discsResolved = failDiscs.every((d) => !!discResolution[d.id]);
-  const canCreate = !!(seeds && title.trim() && author && voice && gapsResolved && discsResolved && !creating);
+  const canCreate = !!(seeds && title.trim() && author && voice && gapsResolved && discsResolved && heatConfirmed && !creating);
 
   const startBook = async () => {
     if (!seeds || !result) return;
@@ -275,11 +280,17 @@ export function PremiseIntake() {
           <div className={styles.idblock}>
             <div className={styles.fl}>Heat</div>
             <div className={styles.toggle}>
-              <button type="button" className={seeds.heat === 'sweet' ? styles.togSel : styles.togBtn}
-                onClick={() => editSeed('heat', 'sweet')}>Sweet</button>
-              <button type="button" className={seeds.heat === 'spicy' ? styles.togSel : styles.togBtn}
-                onClick={() => editSeed('heat', 'spicy')}>Spicy</button>
+              <button type="button" className={heatConfirmed && seeds.heat === 'sweet' ? styles.togSel : styles.togBtn}
+                onClick={() => { editSeed('heat', 'sweet'); setHeatConfirmed(true); }}>Sweet</button>
+              <button type="button" className={heatConfirmed && seeds.heat === 'spicy' ? styles.togSel : styles.togBtn}
+                onClick={() => { editSeed('heat', 'spicy'); setHeatConfirmed(true); }}>Spicy</button>
             </div>
+            {!heatConfirmed && (
+              <div className={styles.progMeta}>
+                Confirm the heat level — this picks the pipeline (Sweet = fade-to-black, Spicy = open-door).
+                Suggested from your premise: <strong>{seeds.heat}</strong>.
+              </div>
+            )}
           </div>
         </div>
 
