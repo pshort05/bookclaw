@@ -239,9 +239,11 @@ export function mountSettings(app: Application, gateway: any, baseDir: string): 
           services.config.get('costs.monthlyLimit'),
         );
       }
-      // Rebuild providers so a changed per-provider default model takes effect
-      // without a restart (the router reads config.<provider>.model at build time).
-      if (/^ai\.(claude|gemini|openrouter|ollama)\.model$/.test(path)) {
+      // Rebuild providers so a changed per-provider default model — or a changed
+      // Ollama endpoint/enabled flag — takes effect without a restart (the router
+      // reads config.<provider>.model and config.ollama.endpoint at build time).
+      if (/^ai\.(claude|gemini|openrouter|ollama)\.model$/.test(path)
+        || path === 'ai.ollama.endpoint' || path === 'ai.ollama.enabled') {
         await services.aiRouter.reinitialize();
       }
       // Flagship Plan 6: push a changed concurrency cap into the live

@@ -45,6 +45,7 @@ export function Settings() {
   const [msg, setMsg] = useState<string | null>(null);
   const [costs, setCosts] = useState<{ dailyLimit?: number; monthlyLimit?: number }>({});
   const [preferred, setPreferred] = useState<string>(''); // '' = Auto (smart routing)
+  const [ollamaEndpoint, setOllamaEndpoint] = useState<string>(''); // Ollama base URL (blank = default localhost:11434)
   const [showDelete, setShowDelete] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [logs, setLogs] = useState<Array<{ ts: number; level: string; text: string }>>([]);
@@ -63,10 +64,11 @@ export function Settings() {
       .catch(() => {});
 
   const loadConfig = () =>
-    api<{ costs?: { dailyLimit?: number; monthlyLimit?: number }; ai?: { preferredProvider?: string } }>('/api/config')
+    api<{ costs?: { dailyLimit?: number; monthlyLimit?: number }; ai?: { preferredProvider?: string; ollama?: { endpoint?: string } } }>('/api/config')
       .then((r) => {
         setCosts(r.costs ?? {});
         setPreferred(r.ai?.preferredProvider ?? '');
+        setOllamaEndpoint(r.ai?.ollama?.endpoint ?? '');
       })
       .catch(() => {});
 
@@ -133,6 +135,18 @@ export function Settings() {
     await loadConfig();
   };
 
+  // Set the Ollama base URL (ai.ollama.endpoint). Blank resets to the default
+  // (localhost:11434). The server reinitializes the router so a change takes
+  // effect live (no restart). Reload status so the provider list reflects it.
+  const saveOllamaEndpoint = async () => {
+    await api('/api/config/update', {
+      method: 'POST',
+      body: JSON.stringify({ path: 'ai.ollama.endpoint', value: ollamaEndpoint.trim() }),
+    }).catch(() => {});
+    await loadStatus();
+    await loadConfig();
+  };
+
   return (
     <div className={styles.scroll}>
       <h1 className={styles.h1}>Settings</h1>
@@ -151,6 +165,17 @@ export function Settings() {
         {(!providers || providers.length === 0) && (
           <p className={styles.dim}>No active providers — add an API key below.</p>
         )}
+      </div>
+      <div className={styles.limit}>
+        <label>Ollama endpoint</label>
+        <input
+          type="text"
+          value={ollamaEndpoint}
+          placeholder="http://localhost:11434"
+          onChange={(e) => setOllamaEndpoint(e.target.value)}
+          onBlur={saveOllamaEndpoint}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+        />
       </div>
       <div className={styles.limit}>
         <label>Default provider</label>
