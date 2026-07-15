@@ -219,4 +219,30 @@ describe('ConfirmationGateService', () => {
     assert.equal(fast.list({ status: 'expired' }).length, 1);
     await fast.whenIdle();
   });
+
+  test('reapPending rejects a deleted project\'s pending gates by projectId, leaving others', async () => {
+    const gate = await svc.createRequest(baseInput({ service: 'human-review', action: 'cadence-gate', payload: { projectId: 'project-74', stepId: 'project-74-step-158', bookSlug: 'two-months-of-summer' } }));
+    const other = await svc.createRequest(baseInput({ service: 'human-review', action: 'cadence-gate', payload: { projectId: 'project-99', bookSlug: 'other-book' } }));
+
+    const n = await svc.reapPending({ projectId: 'project-74' }, 'project deleted');
+    assert.equal(n, 1);
+    assert.equal(svc.get(gate.id)?.status, 'rejected');
+    assert.match(svc.get(gate.id)?.outcome?.message ?? '', /project deleted/);
+    assert.equal(svc.get(other.id)?.status, 'pending'); // untouched
+  });
+
+  test('reapPending matches by bookSlug (covers every project of a deleted book) and only pending', async () => {
+    const g1 = await svc.createRequest(baseInput({ service: 'human-review', action: 'cadence-gate', payload: { projectId: 'project-1', bookSlug: 'doomed' } }));
+    const g2 = await svc.createRequest(baseInput({ service: 'human-review', action: 'pipeline-error', payload: { projectId: 'project-2', bookSlug: 'doomed' } }));
+    const already = await svc.createRequest(baseInput({ service: 'human-review', action: 'cadence-gate', payload: { projectId: 'project-3', bookSlug: 'doomed' } }));
+    await svc.reject(already.id); // pre-decided → must be skipped
+
+    const n = await svc.reapPending({ bookSlug: 'doomed' }, 'book deleted');
+    assert.equal(n, 2);
+    assert.equal(svc.get(g1.id)?.status, 'rejected');
+    assert.equal(svc.get(g2.id)?.status, 'rejected');
+    assert.equal(svc.get(already.id)?.status, 'rejected'); // stayed as it was
+
+    assert.equal(await svc.reapPending({}, 'noop'), 0); // no match keys → no-op
+  });
 });

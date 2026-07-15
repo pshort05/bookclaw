@@ -1927,6 +1927,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
     const deleted = engine.deleteProject(req.params.id);
 
+    // Reap any pending human-review gates for this project so they don't orphan
+    // (a pending gate whose project is gone breaks the Confirmations panel).
+    if (deleted) {
+      await services.confirmationGate?.reapPending?.({ projectId: req.params.id }, 'project deleted');
+    }
+
     // Optionally delete workspace files too
     let filesDeleted = 0;
     if (deleted && deleteFiles && project) {

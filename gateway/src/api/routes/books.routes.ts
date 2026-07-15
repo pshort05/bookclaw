@@ -153,6 +153,10 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       // still 'active') are orphaned in projects-state.json — the "ghost" that
       // survives the delete and reloads on the next boot.
       const removedProjects = gateway.getProjectEngine?.()?.deleteProjectsByBook(slug) ?? 0;
+      // Reap the book's pending human-review gates (keyed by bookSlug, so it covers
+      // every removed project) so a deleted book can't orphan a gate — which would
+      // break the Confirmations panel with a "Project not found" chapter load.
+      await services.confirmationGate?.reapPending?.({ bookSlug: slug }, 'book deleted');
       // #10: only touch the soul when the ACTIVE book actually changed.
       if (wasActive && gateway.soul) {
         if (active) {

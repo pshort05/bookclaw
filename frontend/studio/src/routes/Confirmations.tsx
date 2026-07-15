@@ -141,7 +141,15 @@ function DetailPane({
     setLoadErr(null);
     api<{ project: Project }>(`/api/projects/${encodeURIComponent(chapter.projectId)}`)
       .then((r) => setContent(r.project?.review?.pendingResult ?? ''))
-      .catch((e) => setLoadErr(`Couldn't load the chapter — ${String(e)}`))
+      .catch((e) => {
+        const msg = String(e);
+        // A deleted project leaves a stale gate: degrade gracefully (Reject to
+        // clear it) instead of showing a scary error. Backend reaps these on
+        // delete now; this covers any other orphaning path (e.g. expiry).
+        setLoadErr(/not found/i.test(msg)
+          ? 'The project for this chapter was deleted — this review gate is stale. Reject it to clear it from your queue.'
+          : `Couldn't load the chapter — ${msg}`);
+      })
       .finally(() => setLoading(false));
   }, [chapter?.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -247,6 +247,36 @@ export class ConfirmationGateService {
   }
 
   /**
+   * Reject every PENDING request tied to a deleted project or book (matched on
+   * payload.projectId / payload.bookSlug). Called when a project/book is deleted
+   * so its human-review gates don't orphan: a pending gate whose project is gone
+   * fails the Confirmations panel's chapter load ("Project not found"), and
+   * resolveReviewGates only walks LIVE projects so it can never reap it. Returns
+   * the number rejected. Persists once.
+   */
+  async reapPending(match: { projectId?: string; bookSlug?: string }, reason = 'deleted'): Promise<number> {
+    const { projectId, bookSlug } = match;
+    if (!projectId && !bookSlug) return 0;
+    const now = new Date().toISOString();
+    let count = 0;
+    for (const req of this.requests.values()) {
+      if (req.status !== 'pending') continue;
+      const p = req.payload || {};
+      if (!((projectId && p.projectId === projectId) || (bookSlug && p.bookSlug === bookSlug))) continue;
+      req.status = 'rejected';
+      req.decidedAt = now;
+      req.decidedBy = 'system';
+      req.outcome = { success: false, message: `Rejected: ${reason}`, executedAt: now };
+      count++;
+    }
+    if (count > 0) {
+      await this.persist();
+      await this.audit('confirmation', 'reaped', { ...match, count, reason });
+    }
+    return count;
+  }
+
+  /**
    * Called by the worker after executing an approved request.
    * Transitions the request to 'completed' or 'failed'.
    */
