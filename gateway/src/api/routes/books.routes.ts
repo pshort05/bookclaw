@@ -19,6 +19,37 @@ import { PremiseIntakeService, composeGroundedSetting } from '../../services/pre
 import { RomanceInterviewService } from '../../services/romance-interview.js';
 
 /**
+ * Canon Drift Gate (Risk R2 bridge): shape-check the grounding payload the client
+ * forwards from POST /api/books/intake into POST /api/books, returning a
+ * BookSelection['verifiedCanon'] or undefined. Fail-soft — absent/garbage grounding
+ * yields undefined (both gates then no-op, backward compatible); a bad targetField
+ * is coerced to 'setting' rather than throwing.
+ */
+export function parseVerifiedCanonBody(body: any): {
+  status: 'grounded' | 'fallback-llm' | 'skipped';
+  citations: Array<{ title: string; url?: string }>;
+  discrepancies: Array<{ id: string; premiseClaim: string; finding: string; status: 'pass' | 'fail'; suggestion?: string; targetField: 'setting' | 'blueprint' | 'characters' }>;
+  dossier?: string;
+} | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const status = body.groundingStatus;
+  if (status !== 'grounded' && status !== 'fallback-llm' && status !== 'skipped') return undefined;
+  const s = (v: unknown) => (typeof v === 'string' ? v : '');
+  const citations = Array.isArray(body.citations)
+    ? body.citations.filter((c: any) => c && typeof c === 'object' && s(c.title)).map((c: any) => ({ title: s(c.title), ...(s(c.url) ? { url: s(c.url) } : {}) }))
+    : [];
+  const discrepancies = Array.isArray(body.discrepancies)
+    ? body.discrepancies.filter((d: any) => d && typeof d === 'object').map((d: any, i: number) => ({
+        id: s(d.id) || `disc-${i + 1}`, premiseClaim: s(d.premiseClaim), finding: s(d.finding),
+        status: d.status === 'fail' ? 'fail' as const : 'pass' as const,
+        ...(s(d.suggestion) ? { suggestion: s(d.suggestion) } : {}),
+        targetField: (['setting', 'blueprint', 'characters'].includes(d.targetField) ? d.targetField : 'setting') as 'setting' | 'blueprint' | 'characters',
+      }))
+    : [];
+  return { status, citations, discrepancies, ...(s(body.settingDossier) ? { dossier: s(body.settingDossier) } : {}) };
+}
+
+/**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
  * Behind the same bearer-auth + IP allowlist as the rest of /api/*.
  */
@@ -100,7 +131,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       // Preserve the author's own setting verbatim; grounding only APPENDS verified
       // real-world geography — it must never overwrite the author's locations.
       const seeds = { ...intake.seeds, setting: composeGroundedSetting(intake.seeds.setting, grounding.dossier, grounding.status) };
-      res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, realPlace: intake.realPlace, groundingStatus: grounding.status });
+      res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, citations: grounding.citations, realPlace: intake.realPlace, groundingStatus: grounding.status });
     } catch (err: any) {
       const msg = String(err?.message ?? '');
       if (msg.startsWith('PREMISE_INTAKE_EMPTY_FIELDS:')) {
@@ -285,7 +316,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     const stageModels = body.stageModels && typeof body.stageModels === 'object' ? body.stageModels : undefined;
     if (stageModels) {
       for (const [k, v] of Object.entries(stageModels)) {
-        if (!/^[a-z_]{1,40}$/.test(k)) return res.status(400).json({ error: `invalid stage key: ${k}` });
+        if (!/^[a-z0-9_]{1,40}$/.test(k)) return res.status(400).json({ error: `invalid stage key: ${k}` });
         if (!validSel(v)) return res.status(400).json({ error: `invalid model for stage ${k}` });
       }
     }
@@ -751,9 +782,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     }
     const seeds = { storyArc: seedStr(body.storyArc), characters: seedStr(body.characters), setting: seedStr(body.setting), blueprint: seedStr(body.blueprint), ...(councilSelection ? { councilSelection: councilSelection as 'auto' | 'propose' } : {}) };
     const hasSeeds = seeds.storyArc || seeds.characters || seeds.setting || seeds.blueprint || councilSelection;
+    // Canon Drift Gate (R2 bridge): the client forwards the intake's grounding
+    // result; persist it as the durable per-book anchor. Absent → both gates no-op.
+    const verifiedCanon = parseVerifiedCanonBody(body);
 
     try {
-      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(seededProvider ? { preferredProvider: seededProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}) });
+      const manifest = await services.books.create({ title, author, voice, genre, pipeline, pipelines, sections, ...(seriesProvenance ? { series: seriesProvenance } : {}), ...(seriesWorldbuilding ? { worldbuilding: seriesWorldbuilding } : {}), ...(fmt.format ? { format: fmt.format } : {}), ...(seededProvider ? { preferredProvider: seededProvider } : {}), ...(preferredModel ? { preferredModel } : {}), ...(contentCeiling ? { contentCeiling } : {}), ...(uncensoredProvider ? { uncensoredProvider: uncensoredProvider as 'grok' | 'venice' | 'auto' } : {}), ...(reviewCadence ? { reviewCadence: reviewCadence as 'per_act' | 'per_chapter' | 'outline_only' | 'autonomous' } : {}), ...(costBudget !== undefined ? { costBudget } : {}), ...(ensemble ? { ensemble } : {}), ...(hasSeeds ? { seeds } : {}), ...(verifiedCanon ? { verifiedCanon } : {}) });
       if (costBudget !== undefined) services.costs?.setBookBudget(manifest.slug, costBudget);
       if (seriesProvenance) await services.seriesBible?.addBook?.(seriesProvenance.id, manifest.slug);
       const worldName = (typeof body.world === 'string' && body.world) ? body.world : seriesWorldName;

@@ -63,11 +63,16 @@ export interface BookManifest {
   consistency?: { provider?: string; model?: string }; // Consistency audit model selection (additive-optional, no schema bump)
   preferredProvider?: string; // Default AI provider for this book's generation; inherited by projects created against it (additive-optional, no schema bump)
   preferredModel?: string; // Default model id for the chosen provider (e.g. an OpenRouter slug); inherited by projects (additive-optional, no schema bump)
-  stageModels?: Record<string, { provider?: string; model?: string }>; // Per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format); applied by stepRouting below step.modelOverride, above preferredModel (additive-optional, no schema bump)
+  stageModels?: Record<string, { provider?: string; model?: string }>; // Per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format); applied by stepRouting below step.modelOverride, above preferredModel (additive-optional, no schema bump). Also holds the two de-AI sweep per-pass slots `deai_pass1`/`deai_pass2` (resolved by explicit key inside the sweep, NOT via stepRouting — both audits share taskType 'revision'; defaults Gemini→Haiku).
   contentCeiling?: { spice: number; violence: number }; // Author-branded content axes (0-10) driving the heat_check intimacy branch; absent = fade-to-black, untouched by Plan 2 routing (additive-optional, no schema bump)
   costBudget?: number; // Flagship Plan 6, Task 3 — per-book spend cap in dollars; wired into CostTracker.setBookBudget at create time and on boot; absent = unbounded (additive-optional, no schema bump)
   uncensoredProvider?: 'grok' | 'venice' | 'auto'; // Preferred provider for a spice-flagged scene re-route; 'auto' defers to the casting sheet's heatLadder (additive-optional, no schema bump)
   grounding?: { enabled?: boolean }; // Flagship Plan 4 — front-of-pipeline grounding research toggle; absent/true = on (additive-optional, no schema bump)
+  verifiedCanon?: {
+    status: 'grounded' | 'fallback-llm' | 'skipped';
+    citations: Array<{ title: string; url?: string }>;
+    discrepancies: Array<{ id: string; premiseClaim: string; finding: string; status: 'pass' | 'fail'; suggestion?: string; targetField: 'setting' | 'blueprint' | 'characters' }>;
+  }; // Canon Drift Gate — human-verified intake anchor (dossier lives in data/verified-canon.md) (additive-optional, no schema bump)
   review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)
   ensemble?: { enabled?: boolean; panel?: string[] }; // Flagship Plan 8 — opt-in multi-model ideation ensemble on the premise phase; absent/enabled!==true = off (most expensive front-end, additive-optional, no schema bump)
   seeds?: { storyArc?: string; characters?: string; setting?: string; blueprint?: string; councilSelection?: 'auto' | 'propose' }; // Romance Workflow Foundation — author-provided seeds developed by the pipeline's front half; blueprint (act/POV/ending scaffold) honored by the outline step; councilSelection reserved for sub-project 2 (inert here) (additive-optional, no schema bump)

@@ -14,6 +14,9 @@ import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } from '../../util/generation-step.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
 import { runDeterministicApply, makeScopedRewriteFn } from '../../services/deterministic-apply.js';
+import { runCanonDriftGate, canonAuditAnchorBlock } from '../../services/canon-drift.js';
+import { runDeaiSweepStep } from '../../services/deai/run-step.js';
+import { loadBannedTermsForBook } from '../../services/deai/banned-terms.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
@@ -600,7 +603,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // F2: inject passive step-skill content (snapshot → global), same as the
       // bridge path — buildProjectContext alone never added it on the studio path.
       const projectContext = (await engine.buildProjectContext(project, activeStep))
-        + passiveSkillBlock(services, (activeStep as any).skill, project.bookSlug);
+        + passiveSkillBlock(services, (activeStep as any).skill, project.bookSlug)
+        // Canon Drift Gate #5: a *-canon-audit step must actually SEE the verified
+        // anchor it is told to check against (fail-soft '' otherwise).
+        + (await canonAuditAnchorBlock((activeStep as any).skill, project.bookSlug, (s: string) => services.books?.dataDirOf?.(s) ?? null));
       const userMessage = await buildStepUserMessage(project, activeStep);
 
       // Flagship Plan 2: heat_check + intimacy-branch routing for a draft/intimacy
@@ -631,6 +637,78 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         );
         response = text;
         console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
+      } else if ((activeStep as any).skill === 'romance-deai-audit') {
+        // Chunked two-pass de-AI sweep: banned-terms replace -> pass 1 (chunked)
+        // -> apply -> pass 2 (second-reader, chunked) -> apply, all inside this
+        // step. Reads the consistency-applied chapter (else the raw draft) and
+        // returns the FINAL humanized chapter; deterministic-apply stays
+        // consistency-only. Fail-soft: a window audit error skips that window.
+        const { join: j } = await import('path');
+        const slug = project.bookSlug as string | undefined;
+        const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
+          || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
+        const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
+        const sweep = await runDeaiSweepStep({
+          steps: project.steps as any,
+          chapterNumber: (activeStep as any).chapterNumber,
+          skillContent,
+          stageModels: (project as any).stageModels,
+          banned,
+          aiComplete: (r) => services.aiRouter.complete(r),
+        });
+        response = sweep.text;
+        const bt = Object.entries(sweep.bannedCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
+        console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
+      } else if ((activeStep as any).skill === 'canon-drift-apply') {
+        // Canon Drift Gate: reconcile the freshly generated canon doc to the verified
+        // anchor + setting bible via the deterministic entity gate + the LLM
+        // canon-audit's edits, applied by code — the doc is never regenerated.
+        const { readFile: rf } = await import('fs/promises');
+        const { existsSync: ex } = await import('fs');
+        const { join: j } = await import('path');
+        const slug = project.bookSlug as string | undefined;
+        const loadAnchors = async (): Promise<string[]> => {
+          const out: string[] = [];
+          try {
+            const dir = slug ? services.books?.dataDirOf?.(slug) : null;
+            if (dir) { const vc = j(dir, 'verified-canon.md'); if (ex(vc)) out.push(await rf(vc, 'utf-8')); }
+          } catch { /* fail-soft */ }
+          try {
+            const opened = slug ? await services.books?.open?.(slug) : null;
+            const settingSeed = opened?.manifest?.seeds?.setting;
+            if (settingSeed) out.push(settingSeed);
+          } catch { /* fail-soft */ }
+          const setting = project.steps.find((s: any) => (s.label || '').toLowerCase() === 'setting' && s.status === 'completed' && s.result);
+          if (setting?.result) out.push(setting.result);
+          return out;
+        };
+        const { text, stats } = await runCanonDriftGate({
+          steps: project.steps as any,
+          step: activeStep as any,
+          loadAnchors,
+          rewriteFn: makeScopedRewriteFn((r) => services.aiRouter.complete(r)),
+          onAmbiguous: async (conflicts, docLabel) => {
+            if (!services.confirmationGate) return;
+            await services.confirmationGate.createRequest({
+              service: 'canon-drift-gate', action: 'reconcile-canon', platform: 'internal',
+              description: `Ambiguous canon drift in "${docLabel}": ${conflicts.map(c => c.phrase).join(', ')} — no single canonical place to swap to. Human decision needed.`,
+              payload: { bookSlug: slug ?? null, docLabel, conflicts },
+              riskLevel: 'low', isReversible: true,
+            });
+          },
+          // #6: canonicalize the base bible's archival file so the drifted text is
+          // gone from disk too (in-memory result is already rewritten in place).
+          persistCanonical: async (canonStep, canonText) => {
+            const { writeFile: wf2, mkdir: mkd2 } = await import('fs/promises');
+            const projectSlug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const dir = services.books?.dataDirOf?.(project.bookSlug) ?? services.books?.activeDataDir?.() ?? j(baseDir, 'workspace', 'projects', projectSlug);
+            await mkd2(dir, { recursive: true });
+            const file = `${canonStep.id}-${String(canonStep.label ?? 'canon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+            await wf2(j(dir, file), `# ${canonStep.label}\n\n${canonText}`, 'utf-8');
+          },
+        });
+        response = text;
+        console.log(`  ✓ canon-drift-apply (${(activeStep as any).label}): swaps=${stats.swaps} rewrites=${stats.rewrites} skipped=${stats.skipped} ambiguous=${stats.ambiguous} changed=${stats.changed}${stats.noAnchor ? ' (no anchor — no-op)' : ''}`);
       } else if (execOut !== null) {
         response = execOut;
       } else {
@@ -1093,6 +1171,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           + (continuityBlock ? `\n\n${continuityBlock}` : '')
           + (groundingBlock ? `\n\n${groundingBlock}` : '')
           + (analyzeApplyBlock ? `\n\n${analyzeApplyBlock}` : '')
+          // Canon Drift Gate #5: give a *-canon-audit step the verified anchor.
+          + (await canonAuditAnchorBlock((activeStep as any).skill, currentProject.bookSlug, (s: string) => services.books?.dataDirOf?.(s) ?? null))
           + intimacy.promptAddition;
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
@@ -1121,6 +1201,77 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           );
           response = text;
           console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
+        } else if ((activeStep as any).skill === 'romance-deai-audit') {
+          // Chunked two-pass de-AI sweep (see studio path): banned-terms replace
+          // -> pass 1 -> apply -> pass 2 (second-reader) -> apply, all internal.
+          // Reads the consistency-applied chapter (else raw draft); the final
+          // humanized chapter is this step's output.
+          const { join: j } = await import('path');
+          const slug = currentProject.bookSlug as string | undefined;
+          const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
+            || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
+          const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
+          const sweep = await runDeaiSweepStep({
+            steps: currentProject.steps as any,
+            chapterNumber: (activeStep as any).chapterNumber,
+            skillContent,
+            stageModels: (currentProject as any).stageModels,
+            banned,
+            aiComplete: (r) => services.aiRouter.complete(r),
+          });
+          response = sweep.text;
+          const bt = Object.entries(sweep.bannedCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
+          console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
+        } else if ((activeStep as any).skill === 'canon-drift-apply') {
+          // Canon Drift Gate: reconcile the freshly generated canon doc to the verified
+          // anchor + setting bible via the deterministic entity gate + the LLM
+          // canon-audit's edits, applied by code — the doc is never regenerated.
+          const { readFile: rf } = await import('fs/promises');
+          const { existsSync: ex } = await import('fs');
+          const { join: j } = await import('path');
+          const slug = currentProject.bookSlug as string | undefined;
+          const loadAnchors = async (): Promise<string[]> => {
+            const out: string[] = [];
+            try {
+              const dir = slug ? services.books?.dataDirOf?.(slug) : null;
+              if (dir) { const vc = j(dir, 'verified-canon.md'); if (ex(vc)) out.push(await rf(vc, 'utf-8')); }
+            } catch { /* fail-soft */ }
+            try {
+              const opened = slug ? await services.books?.open?.(slug) : null;
+              const settingSeed = opened?.manifest?.seeds?.setting;
+              if (settingSeed) out.push(settingSeed);
+            } catch { /* fail-soft */ }
+            const setting = currentProject.steps.find((s: any) => (s.label || '').toLowerCase() === 'setting' && s.status === 'completed' && s.result);
+            if (setting?.result) out.push(setting.result);
+            return out;
+          };
+          const { text, stats } = await runCanonDriftGate({
+            steps: currentProject.steps as any,
+            step: activeStep as any,
+            loadAnchors,
+            rewriteFn: makeScopedRewriteFn((r) => services.aiRouter.complete(r)),
+            onAmbiguous: async (conflicts, docLabel) => {
+              if (!services.confirmationGate) return;
+              await services.confirmationGate.createRequest({
+                service: 'canon-drift-gate', action: 'reconcile-canon', platform: 'internal',
+                description: `Ambiguous canon drift in "${docLabel}": ${conflicts.map(c => c.phrase).join(', ')} — no single canonical place to swap to. Human decision needed.`,
+                payload: { bookSlug: slug ?? null, docLabel, conflicts },
+                riskLevel: 'low', isReversible: true,
+              });
+            },
+            // #6: canonicalize the base bible's archival file so the drifted text is
+            // gone from disk too (in-memory result is already rewritten in place).
+            persistCanonical: async (canonStep, canonText) => {
+              const { writeFile: wf2, mkdir: mkd2 } = await import('fs/promises');
+              const projectSlug = currentProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+              const dir = services.books?.dataDirOf?.(slug) ?? services.books?.activeDataDir?.() ?? j(baseDir, 'workspace', 'projects', projectSlug);
+              await mkd2(dir, { recursive: true });
+              const file = `${canonStep.id}-${String(canonStep.label ?? 'canon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+              await wf2(j(dir, file), `# ${canonStep.label}\n\n${canonText}`, 'utf-8');
+            },
+          });
+          response = text;
+          console.log(`  ✓ canon-drift-apply (${(activeStep as any).label}): swaps=${stats.swaps} rewrites=${stats.rewrites} skipped=${stats.skipped} ambiguous=${stats.ambiguous} changed=${stats.changed}${stats.noAnchor ? ' (no anchor — no-op)' : ''}`);
         } else if (execOut !== null) {
           response = execOut;
         } else {

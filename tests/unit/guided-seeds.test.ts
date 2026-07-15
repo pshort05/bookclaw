@@ -9,9 +9,9 @@ import {
   pipelineForHeat, guidedCanCreate, buildGuidedCreatePayload, EMPTY_GUIDED_SEEDS,
 } from '../../frontend/studio/src/lib/guidedSeeds.js';
 
-test('pipelineForHeat selects the sweet/spicy full pipeline', () => {
-  assert.equal(pipelineForHeat('sweet'), 'romance-sweet-full');
-  assert.equal(pipelineForHeat('spicy'), 'romance-spicy-full');
+test('pipelineForHeat selects the sweet/spicy deterministic pipeline', () => {
+  assert.equal(pipelineForHeat('sweet'), 'romance-sweet-deterministic');
+  assert.equal(pipelineForHeat('spicy'), 'romance-spicy-deterministic');
 });
 
 test('guidedCanCreate requires title, author, voice, and a fully-fit format', () => {
@@ -32,7 +32,7 @@ test('buildGuidedCreatePayload assembles the /api/books body for a sweet book', 
   });
   assert.deepEqual(payload, {
     title: 'My Book', author: 'default', voice: 'default', genre: 'romance',
-    pipelineSequence: ['romance-sweet-full'],
+    pipelineSequence: ['romance-sweet-deterministic'],
     storyArc: 'ARC', characters: 'CHARS', setting: 'SET', councilSelection: 'propose',
     structure: 'three-act', form: 'novel', chapterCount: 30, wordsPerChapter: 2500,
   });
@@ -44,7 +44,7 @@ test('buildGuidedCreatePayload selects the spicy pipeline, nulls an empty genre,
     seeds: { ...EMPTY_GUIDED_SEEDS, heat: 'spicy' },
     format: { structure: 'custom', customStructure: { id: 'custom', beats: [] }, form: 'novella', chapterCount: 12, wordsPerChapter: 3000 },
   });
-  assert.deepEqual(payload.pipelineSequence, ['romance-spicy-full']);
+  assert.deepEqual(payload.pipelineSequence, ['romance-spicy-deterministic']);
   assert.equal(payload.genre, null);
   assert.deepEqual(payload.customStructure, { id: 'custom', beats: [] });
 });

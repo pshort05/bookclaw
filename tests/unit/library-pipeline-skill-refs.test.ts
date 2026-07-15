@@ -34,6 +34,11 @@ function installedSkillNames(): Set<string> {
   return names;
 }
 
+/** Engine-only step "skills" — dispatched by the ProjectEngine runner (a code
+ *  apply step), NOT resolved through the SkillLoader, so they have no SKILL.md and
+ *  must not be treated as dangling references. */
+const ENGINE_ONLY = new Set(['deterministic-apply', 'canon-drift-apply']);
+
 test('every shipped library pipeline references only installed skills', () => {
   const installed = installedSkillNames();
   assert.ok(installed.has('cover-designer'), 'sanity: cover-designer skill is installed');
@@ -44,7 +49,7 @@ test('every shipped library pipeline references only installed skills', () => {
     if (!f.endsWith('.json')) continue;
     const pipeline = JSON.parse(readFileSync(join(pipelinesDir, f), 'utf8'));
     for (const step of pipeline.steps ?? []) {
-      if (typeof step.skill === 'string' && step.skill.length > 0 && !installed.has(step.skill)) {
+      if (typeof step.skill === 'string' && step.skill.length > 0 && !installed.has(step.skill) && !ENGINE_ONLY.has(step.skill)) {
         missing.push(`${f}: step "${step.label}" → skill "${step.skill}"`);
       }
     }

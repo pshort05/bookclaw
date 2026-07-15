@@ -19,18 +19,48 @@
       "promptTemplate": "Write the PREMISE for the sweet romance novel \"{{title}}\". Define the central couple, the core romantic conflict that keeps them apart, the primary tropes, and the HEA/HFN promise. This is a fade-to-black sweet romance (spice level 2) — emotional intimacy over explicit heat. Follow your premise methodology and the genre guide in your context. Output the premise document only — no preamble, commentary, or questions.\n\nAuthor-provided story arc — develop and expand this, preserving everything given and filling gaps; never discard or contradict it. If the section below is blank, originate the arc from scratch.\nStory arc:\n{{storyArc}}"
     },
     {
-      "label": "Character Bible",
-      "skill": "book-bible",
-      "taskType": "book_bible",
-      "phase": "bible",
-      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
-    },
-    {
       "label": "Setting",
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise and character bible in your context. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
+      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise in your context and honor the author's setting notes and any verified real-world geography exactly. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
+    },
+    {
+      "label": "Canon Audit — Setting",
+      "skill": "romance-canon-audit",
+      "taskType": "revision",
+      "phase": "bible",
+      "promptTemplate": "Audit the SETTING guide for \"{{title}}\" in your context against the verified real-world geography anchor in your context. Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the setting guide. Do NOT rewrite or reproduce the guide; output nothing but the JSON array.",
+      "modelOverride": { "provider": "openrouter", "model": "auto:newest-haiku", "temperature": 0.2 }
+    },
+    {
+      "label": "Canon Gate — Setting",
+      "skill": "canon-drift-apply",
+      "taskType": "general",
+      "phase": "bible",
+      "promptTemplate": "Deterministic apply: the Canon Audit edit list plus the free proper-noun/place entity gate are applied to the setting guide by code (literal find-and-replace). No model rewrites the guide."
+    },
+    {
+      "label": "Character Bible",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise AND the setting guide in your context — every place, town, road, and business a character references MUST come from the setting guide; never invent geography. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
+    },
+    {
+      "label": "Canon Audit — Characters",
+      "skill": "romance-canon-audit",
+      "taskType": "revision",
+      "phase": "bible",
+      "promptTemplate": "Audit the CHARACTER BIBLE for \"{{title}}\" in your context against the anchors in your context (the setting guide and the verified real-world geography). Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the character bible. Do NOT rewrite or reproduce the bible; output nothing but the JSON array.",
+      "modelOverride": { "provider": "openrouter", "model": "auto:newest-haiku", "temperature": 0.2 }
+    },
+    {
+      "label": "Canon Gate — Characters",
+      "skill": "canon-drift-apply",
+      "taskType": "general",
+      "phase": "bible",
+      "promptTemplate": "Deterministic apply: the Canon Audit edit list plus the free proper-noun/place entity gate are applied to the character bible by code (literal find-and-replace). This is the gate that catches an invented town like \"Bay Haven.\" No model rewrites the bible."
     },
     {
       "label": "Chapter Outline",
@@ -85,26 +115,21 @@
           }
         },
         {
-          "label": "De-AI Audit — Chapter {{n}}",
-          "skill": "romance-deai-audit",
-          "taskType": "revision",
-          "phase": "humanize",
-          "chapterNumber": "{{n}}",
-          "promptTemplate": "Audit the Chapter {{n}} draft of \"{{title}}\" in your context for AI-writing tells. Follow your de-AI audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
-          "modelOverride": {
-            "provider": "openrouter",
-            "model": "auto:newest-sonnet",
-            "temperature": 0.3
-          }
-        },
-        {
-          "label": "Humanize (deterministic) — Chapter {{n}}",
+          "label": "Consistency Apply — Chapter {{n}}",
           "skill": "deterministic-apply",
           "taskType": "general",
           "phase": "humanize",
           "chapterNumber": "{{n}}",
+          "promptTemplate": "Deterministic apply: the Consistency Audit edit list is applied to the Chapter {{n}} draft by code (literal find-and-replace plus scoped per-span rewrites). No model runs over the whole chapter. Runs before the de-AI sweep so the sweep humanizes the consistency-corrected chapter."
+        },
+        {
+          "label": "Humanize — De-AI Sweep — Chapter {{n}}",
+          "skill": "romance-deai-audit",
+          "taskType": "general",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
           "role": "humanize",
-          "promptTemplate": "Deterministic apply: the De-AI Audit edit list is applied to the Chapter {{n}} draft by code (literal find-and-replace plus scoped per-span rewrites). No model runs over the whole chapter."
+          "promptTemplate": "Chunked two-pass de-AI sweep applied by code: a deterministic banned-terms replace, then a broad de-AI pass and a second-reader pass (each chunked into ~1,000-word windows and spliced by the drift-proof applier). Reads the consistency-applied chapter and emits the final humanized chapter — no model rewrites the whole chapter. Per-pass models come from the book's deai_pass1/deai_pass2 stage slots (defaults Gemini then Haiku)."
         }
       ]
     },

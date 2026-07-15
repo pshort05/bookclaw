@@ -16,10 +16,12 @@ interface Discrepancy {
   id: string; premiseClaim: string; finding: string; status: 'pass' | 'fail';
   suggestion?: string; targetField: 'setting' | 'blueprint' | 'characters';
 }
+interface Citation { title: string; url?: string; }
 interface IntakeResult {
   seeds: Seeds;
   gaps: Gap[];
   discrepancies: Discrepancy[];
+  citations: Citation[];
   realPlace: { isReal: boolean; canonicalName?: string };
   groundingStatus: 'grounded' | 'fallback-llm' | 'skipped';
 }
@@ -81,8 +83,8 @@ export function PremiseIntake() {
   useEffect(() => {
     const load = (kind: string) =>
       api<{ entries: LibraryEntry[] }>(`/api/library/${kind}`).then((r) => r.entries ?? []).catch(() => []);
-    load('author').then((e) => { setAuthors(e); setAuthor((a) => a || (e[0]?.name ?? '')); });
-    load('voice').then((e) => { setVoices(e); setVoice((v) => v || (e[0]?.name ?? '')); });
+    load('author').then((e) => setAuthors(e));
+    load('voice').then((e) => setVoices(e));
     load('genre').then((e) => {
       setGenres(e);
       setGenre((g) => g || (e.find((x) => x.name === 'romance')?.name ?? ''));
@@ -163,6 +165,13 @@ export function PremiseIntake() {
         characters: final.characters,
         setting: final.setting,
         blueprint: final.blueprint,
+        // Canon Drift Gate: forward the verified intake grounding so it persists as
+        // the durable per-book anchor. The verified setting (author-reviewed, with
+        // fact-check splices) is the dossier written to data/verified-canon.md.
+        groundingStatus: result.groundingStatus,
+        discrepancies: result.discrepancies,
+        citations: result.citations,
+        settingDossier: final.setting,
       }) });
       await loadBooks();
       navigate('/');
@@ -242,12 +251,14 @@ export function PremiseIntake() {
           <div className={styles.idblock}>
             <div className={styles.fl}>Author</div>
             <select className={styles.tin} value={author} onChange={(e) => setAuthor(e.target.value)}>
+              <option value="" disabled>Choose an author…</option>
               {authors.map((a) => <option key={a.name} value={a.name}>{a.name}</option>)}
             </select>
           </div>
           <div className={styles.idblock}>
             <div className={styles.fl}>Voice</div>
             <select className={styles.tin} value={voice} onChange={(e) => setVoice(e.target.value)}>
+              <option value="" disabled>Choose a voice…</option>
               {voices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
             </select>
           </div>

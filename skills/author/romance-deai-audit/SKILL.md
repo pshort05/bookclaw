@@ -79,6 +79,13 @@ Use a `rewrite` ONLY when there is no clean literal replacement:
   physical detail, similar length.
 - **echo-line** — two consecutive same-structure sentences restating one idea →
   instruction: collapse or vary, similar length.
+- **aphoristic-button / sententious one-liner** — a short declarative that buttons
+  a paragraph or scene with a "profound" generalization ("That's the thing about
+  Fran." / "That's as close to praying as I get.") → instruction: ground it in the
+  concrete beat, similar length, or cut.
+- **generalizing-second-person** — a "you"-addressed general truth used as interior
+  narration ("You don't stand around listening to bad news. You pull dough.") →
+  instruction: return to the narrator's specific first person, similar length.
 
 ## Rules
 

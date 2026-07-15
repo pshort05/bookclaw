@@ -1,5 +1,5 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 54 skills loaded
+Auto-generated on startup — 55 skills loaded
 ════════════════════════════════════════════════════════════
 
 ── Core Skills (8) ──
@@ -36,7 +36,7 @@ Auto-generated on startup — 54 skills loaded
     Research topics and create new skills for BookClaw to learn
     Keywords: learn how to, add a skill for, find a tool for, go learn, research and create a skill, teach yourself, acquire skill, learn about
 
-── Author Skills (32) ──
+── Author Skills (33) ──
 
   beta-reader
     Simulate beta reader feedback from different reader perspectives
@@ -101,6 +101,10 @@ Auto-generated on startup — 54 skills loaded
   revise
     Multi-pass revision - developmental editing, line editing, copy editing
     Keywords: revise, edit, improve, rewrite, feedback, critique, review, developmental edit, line edit, copy edit
+
+  romance-canon-audit
+    Canon-drift audit for the deterministic pipeline — checks a freshly generated canon document (setting bible or character bible) against the verified anchors (verified real-world geography + the setting bible) and emits a strict JSON edit list of surgical fixes for contradictions. Never rewrites the document.
+    Keywords: canon drift audit, canon audit, canon edit list, bible consistency
 
   romance-consistency-audit
     Consistency audit for the deterministic pipeline — checks a chapter draft against the story canon (bible, name registry, prior chapters) and emits a strict JSON edit list of surgical fixes. Never rewrites the chapter.

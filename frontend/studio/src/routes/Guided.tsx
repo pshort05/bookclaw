@@ -28,8 +28,8 @@ export function Guided() {
   useEffect(() => {
     const load = (kind: string) =>
       api<{ entries: LibraryEntry[] }>(`/api/library/${kind}`).then((r) => r.entries ?? []).catch(() => []);
-    load('author').then((e) => { setAuthors(e); setAuthor((a) => a || (e[0]?.name ?? '')); });
-    load('voice').then((e) => { setVoices(e); setVoice((v) => v || (e[0]?.name ?? '')); });
+    load('author').then((e) => setAuthors(e));
+    load('voice').then((e) => setVoices(e));
     load('genre').then((e) => {
       setGenres(e);
       setGenre((g) => g || (e.find((x) => x.name === 'romance')?.name ?? ''));
@@ -83,12 +83,14 @@ export function Guided() {
           <div className={styles.idblock}>
             <div className={styles.fl}>Author</div>
             <select className={styles.tin} value={author} onChange={(e) => setAuthor(e.target.value)}>
+              <option value="" disabled>Choose an author…</option>
               {authors.map((a) => <option key={a.name} value={a.name}>{a.name}</option>)}
             </select>
           </div>
           <div className={styles.idblock}>
             <div className={styles.fl}>Voice</div>
             <select className={styles.tin} value={voice} onChange={(e) => setVoice(e.target.value)}>
+              <option value="" disabled>Choose a voice…</option>
               {voices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
             </select>
           </div>

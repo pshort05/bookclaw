@@ -47,13 +47,19 @@ export interface BookSelection {
   format?: BookFormat;   // Book Format & Structure — declared at creation, persisted on the manifest
   preferredProvider?: string;  // default AI provider for this book, persisted on the manifest
   preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
-  stageModels?: Record<string, { provider?: string; model?: string }>; // per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format), persisted on the manifest
+  stageModels?: Record<string, { provider?: string; model?: string }>; // per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format), persisted on the manifest. Also holds the de-AI sweep per-pass slots `deai_pass1`/`deai_pass2` (resolved by explicit key inside runChunkedDeAiSweep, not stepRouting; defaults Gemini→Haiku).
   contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
   costBudget?: number;      // per-book spend cap in dollars (Flagship Plan 6, Task 3); persisted on the manifest
   ensemble?: { enabled?: boolean; panel?: string[] };  // opt-in ideation-ensemble override (Flagship Plan 8, Task 3); persisted on the manifest
   seeds?: { storyArc?: string; characters?: string; setting?: string; blueprint?: string; councilSelection?: 'auto' | 'propose' };  // Romance Workflow — developed by the pipeline front half; `blueprint` honored by the outline step
+  verifiedCanon?: {  // Canon Drift Gate — human-verified intake anchor; {status,citations,discrepancies} persisted to the manifest, `dossier` written to data/verified-canon.md (never stored in the manifest)
+    status: 'grounded' | 'fallback-llm' | 'skipped';
+    citations: Array<{ title: string; url?: string }>;
+    discrepancies: Array<{ id: string; premiseClaim: string; finding: string; status: 'pass' | 'fail'; suggestion?: string; targetField: 'setting' | 'blueprint' | 'characters' }>;
+    dossier?: string;
+  };
 }
 
 export type RepullStatus =
@@ -343,6 +349,24 @@ export class BookService {
       }
       await mkdir(join(dir, 'data'), { recursive: true });
 
+      // Canon Drift Gate: persist the human-verified intake anchor as a durable
+      // per-book artifact (the discrepancy ledger is where the human verification
+      // lives). Fail-soft — absent verifiedCanon leaves the book unchanged.
+      if (sel.verifiedCanon) {
+        const vc = sel.verifiedCanon;
+        const body = (vc.dossier && vc.dossier.trim())
+          ? vc.dossier.trim()
+          : (sel.seeds?.setting ?? '').trim(); // fall back to the composed setting seed
+        const ledger = vc.discrepancies.length
+          ? '\n\n## Verified Discrepancy Ledger\n\n' + vc.discrepancies.map(d =>
+              `- **[${d.status}]** ${d.premiseClaim} → ${d.finding}${d.suggestion ? ` (suggest: ${d.suggestion})` : ''} _(field: ${d.targetField})_`).join('\n')
+          : '';
+        const cites = vc.citations.length
+          ? '\n\n## Sources\n\n' + vc.citations.map(c => `- ${c.title}${c.url ? ` — ${c.url}` : ''}`).join('\n')
+          : '';
+        await writeFile(join(dir, 'data', 'verified-canon.md'), `# Verified Canon\n\n${body}${ledger}${cites}\n`, 'utf-8');
+      }
+
       // Phase 4: capture a pristine baseline mirror of the snapshot so re-pull can
       // 3-way-merge (baseline vs the book's edited copy vs the current library).
       // Never edited by the editor — only create() and a successful re-pull write it.
@@ -392,6 +416,7 @@ export class BookService {
         ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),
         ...(sel.ensemble ? { ensemble: sel.ensemble } : {}),
         ...(sel.seeds ? { seeds: sel.seeds } : {}),
+        ...(sel.verifiedCanon ? { verifiedCanon: { status: sel.verifiedCanon.status, citations: sel.verifiedCanon.citations, discrepancies: sel.verifiedCanon.discrepancies } } : {}),
         history: [{ at: now, event: 'created' }],
       };
       await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
