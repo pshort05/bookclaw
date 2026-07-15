@@ -39,6 +39,7 @@ import { runConductor, clampConcurrency } from './services/pipeline/conductor.js
 import { stripMetaCommentary } from './services/strip-meta.js';
 import { isProseStep } from './services/casting/roles.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
+import { runDeterministicApply, makeScopedRewriteFn } from './services/deterministic-apply.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
 import { buildContinuityInjection, detectPostDraftContinuity } from './services/consistency/spine-inject.js';
 import { AIRouter } from './ai/router.js';
@@ -2461,6 +2462,9 @@ class BookClawGateway {
         }
 
         let aiResponse = '';
+        // Audit steps emit a short JSON edit list ("[]" = 2 chars is valid) — exempt
+        // them from the short-response retry/fail guard (see /auto-execute).
+        const isAuditStep = /-audit$/i.test((activeStep as any).skill ?? '');
         // Per-step model override wins over the project-level provider; the
         // pinned model id (if any) is passed as the 7th handleMessage arg.
         const stepOverride = (activeStep as any).modelOverride;
@@ -2480,7 +2484,16 @@ class BookClawGateway {
             (project as any).bookSlug,
           );
           wasExecutable = execOut !== null;
-          if (execOut !== null) {
+          if ((activeStep as any).skill === 'deterministic-apply') {
+            // Drift-proof de-AI: apply the audit's edit list to the draft with code.
+            const { text, stats } = await runDeterministicApply(
+              project.steps as any, activeStep as any,
+              makeScopedRewriteFn((r) => gateway.aiRouter.complete(r)),
+            );
+            aiResponse = text;
+            wasExecutable = true; // skip the short-response retry / normal call
+            console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
+          } else if (execOut !== null) {
             aiResponse = execOut;
           } else {
             await new Promise<void>((resolve, reject) => {
@@ -2501,7 +2514,7 @@ class BookClawGateway {
             });
 
             // Retry once with 'general' routing if response is too short
-            if (!aiResponse || aiResponse.length < 50) {
+            if ((!aiResponse || aiResponse.length < 50) && !isAuditStep) {
               console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
               aiResponse = '';
               await new Promise<void>((resolve, reject) => {
@@ -2536,7 +2549,7 @@ class BookClawGateway {
         // primary and fallback errored. Fail the step with the real reason rather
         // than writing the error string into the chapter file and advancing
         // (mirrors the dashboard auto-execute guard).
-        const bridgeClass = classifyStepResponse(aiResponse);
+        const bridgeClass = classifyStepResponse(aiResponse, isAuditStep ? { minChars: 2 } : undefined);
         if (bridgeClass.providerFailure) {
           const detail = bridgeClass.detail!;
           gateway.projectEngine.failStep(projectId, activeStep.id, detail);

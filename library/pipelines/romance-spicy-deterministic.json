@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "name": "romance-spicy-deterministic",
+  "label": "Spicy Romance — Deterministic De-AI (Seeded)",
+  "description": "End-to-end spicy romance (Heat Level 4, explicit on-page intimacy) with a DRIFT-PROOF de-AI pass: seed-woven premise, character bible, setting and chapter outline, then per chapter Scene Brief -> First Draft (writes the on-page intimacy per the brief) -> Consistency Audit + De-AI Audit (emits an edit list) -> Apply (code applies the edits to the draft; no model rewrites the chapter, so it cannot drift). Developmental improve/rewrite and the regenerating humanize/intimacy steps are intentionally removed — the explicit heat lives in the draft and the audits only patch flagged spans.",
+  "steps": [
+    {
+      "label": "Council — Base Story Origination",
+      "phase": "premise",
+      "skill": "council-origination",
+      "taskType": "general",
+      "promptTemplate": "The LLM Council originates the base story (premise + relationship arc) for \"{{title}}\" from the author's seeds. Handled by the council engine; no direct generation."
+    },
+    {
+      "label": "Premise",
+      "skill": "premise",
+      "taskType": "book_bible",
+      "phase": "premise",
+      "promptTemplate": "Write the PREMISE for the spicy romance novel \"{{title}}\". Define the central couple, the core romantic conflict that keeps them apart, the primary tropes, and the HEA/HFN promise. This is an open-door spicy romance — on-page intimacy is expected. Follow your premise methodology and the genre guide in your context. Output the premise document only — no preamble, commentary, or questions.\n\nAuthor-provided story arc — develop and expand this, preserving everything given and filling gaps; never discard or contradict it. If the section below is blank, originate the arc from scratch.\nStory arc:\n{{storyArc}}"
+    },
+    {
+      "label": "Character Bible",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise in your context. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
+    },
+    {
+      "label": "Setting",
+      "skill": "book-bible",
+      "taskType": "book_bible",
+      "phase": "bible",
+      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise and character bible in your context. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
+    },
+    {
+      "label": "Chapter Outline",
+      "skill": "outline",
+      "taskType": "outline",
+      "phase": "outline",
+      "promptTemplate": "Write the CHAPTER-BY-CHAPTER OUTLINE for \"{{title}}\" across {{chapterCount}} chapters. Use the premise, character bible and setting guide in your context. Map the romance beats onto the structure: meet-cute by Chapter {{setupEnd}}, inciting connection by Chapter {{incitingEnd}}, midpoint shift at Chapter {{midpoint}}, the black moment near Chapter {{twist75}}, and the grovel / reunion / HEA across Chapters {{climaxStart}}-{{climaxEnd}}. Follow your outline methodology. Output the outline only — one entry per chapter, no preamble or commentary.\n\nAuthor-provided structural blueprint — treat this as canon: reproduce its act breakdown, POV strategy, black-moment mechanic and ending faithfully, and generate only the beats it leaves unspecified. If the section below is blank, map the beats onto the structure yourself as described above.\nBlueprint:\n{{blueprint}}"
+    },
+    {
+      "expand": "chapters",
+      "steps": [
+        {
+          "label": "Scene Brief — Chapter {{n}}",
+          "skill": "romance-spicy-scene-brief",
+          "taskType": "outline",
+          "phase": "brief",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Create the SCENE BRIEF for Chapter {{n}} of \"{{title}}\". Follow your spicy-romance scene-brief methodology (in your context). Use the chapter outline, character bible, world guide, and the previous chapter's text in your context. This is a Heat Level 4 spicy romance: mark any on-page intimate scene per your methodology. Output the scene brief only — a blueprint, not the prose.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-opus-4.8",
+            "temperature": 1
+          },
+          "role": "scene_brief"
+        },
+        {
+          "label": "First Draft — Chapter {{n}}",
+          "skill": "romance-spicy-first-draft",
+          "taskType": "creative_writing",
+          "phase": "draft",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Write the COMPLETE Chapter {{n}} of \"{{title}}\" based exclusively on the scene brief in your context. Follow your spicy-romance first-draft methodology, the style guide, and the genre guide in your context. Target about {{wordsPerChapter}} words of prose. Honor the brief's heat handling for any on-page intimate scene — write the intimacy explicitly on-page (Heat Level 4) here in the draft. Output the chapter prose only, in Markdown.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "anthropic/claude-opus-4.8",
+            "temperature": 1
+          },
+          "role": "draft"
+        },
+        {
+          "label": "Consistency Audit — Chapter {{n}}",
+          "skill": "romance-consistency-audit",
+          "taskType": "revision",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Check the Chapter {{n}} draft of \"{{title}}\" in your context against the story canon (character bible, name registry, setting, and previous chapters). Follow your consistency-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "auto:newest-sonnet",
+            "temperature": 0.2
+          }
+        },
+        {
+          "label": "De-AI Audit — Chapter {{n}}",
+          "skill": "romance-deai-audit",
+          "taskType": "revision",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
+          "promptTemplate": "Audit the Chapter {{n}} draft of \"{{title}}\" in your context for AI-writing tells. Follow your de-AI audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "auto:newest-sonnet",
+            "temperature": 0.3
+          }
+        },
+        {
+          "label": "Humanize (deterministic) — Chapter {{n}}",
+          "skill": "deterministic-apply",
+          "taskType": "general",
+          "phase": "humanize",
+          "chapterNumber": "{{n}}",
+          "role": "humanize",
+          "promptTemplate": "Deterministic apply: the De-AI Audit edit list is applied to the Chapter {{n}} draft by code (literal find-and-replace plus scoped per-span rewrites). No model runs over the whole chapter."
+        }
+      ]
+    },
+    {
+      "label": "Continuity & Arc Review",
+      "taskType": "revision",
+      "phase": "revision",
+      "promptTemplate": "Review the completed {{chapterCount}}-chapter spicy romance manuscript \"{{title}}\" in your context for cross-chapter continuity and romance-arc integrity: does the relationship escalate coherently (attraction -> tension -> midpoint -> black moment -> HEA), are there timeline/character/detail contradictions, and are the open-door heat boundaries consistent? Output a prioritized issue list with chapter references and concrete fixes. Do not rewrite the manuscript."
+    },
+    {
+      "label": "Compile manuscript report",
+      "taskType": "general",
+      "phase": "assembly",
+      "promptTemplate": "Generate a completion report for the spicy romance manuscript \"{{title}}\". Total chapters: {{chapterCount}}, target ~{{wordsPerChapter}} words each. Assess the romance arc's progression, voice consistency, the Heat Level 4 (open-door) intimacy balance across the book, continuity, and any chapters that warrant a human editing pass. End with concrete next steps (beta readers, professional edit, formatting)."
+    }
+  ]
+}

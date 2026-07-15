@@ -1,5 +1,5 @@
 BOOKCLAW SKILLS REFERENCE
-Auto-generated on startup — 50 skills loaded
+Auto-generated on startup — 54 skills loaded
 ════════════════════════════════════════════════════════════
 
 ── Core Skills (8) ──
@@ -36,7 +36,7 @@ Auto-generated on startup — 50 skills loaded
     Research topics and create new skills for BookClaw to learn
     Keywords: learn how to, add a skill for, find a tool for, go learn, research and create a skill, teach yourself, acquire skill, learn about
 
-── Author Skills (29) ──
+── Author Skills (32) ──
 
   beta-reader
     Simulate beta reader feedback from different reader perspectives
@@ -102,9 +102,21 @@ Auto-generated on startup — 50 skills loaded
     Multi-pass revision - developmental editing, line editing, copy editing
     Keywords: revise, edit, improve, rewrite, feedback, critique, review, developmental edit, line edit, copy edit
 
+  romance-consistency-audit
+    Consistency audit for the deterministic pipeline — checks a chapter draft against the story canon (bible, name registry, prior chapters) and emits a strict JSON edit list of surgical fixes. Never rewrites the chapter.
+    Keywords: consistency audit, continuity audit, consistency edit list, canon check
+
+  romance-deai-audit
+    De-AI audit for the deterministic pipeline — reads a chapter draft and emits a strict JSON edit list (verbatim find + replace/instruction) that a deterministic applier splices in. Never rewrites the chapter.
+    Keywords: deai audit, de-ai edit list, humanize edit list, audit edits
+
   romance-humanize
-    Single-pass de-AI / anti-AI-detection final polish for a romance chapter — strips AI tells, varies rhythm, and humanizes prose while preserving dialogue and Markdown exactly
-    Keywords: humanize, de-ai, anti-ai-detection, final polish, humanize chapter, remove ai tells
+    Pass 2 of the two-pass de-AI humanizer — surgically applies the de-AI audit's findings to a romance chapter, changing only the flagged spans and reproducing everything else verbatim (preserves dialogue, Markdown, and length)
+    Keywords: humanize, de-ai, anti-ai-detection, apply humanize audit, humanize chapter, surgical humanize
+
+  romance-humanize-audit
+    Pass 1 of the two-pass de-AI humanizer — detects AI-writing tells in a romance chapter and outputs an anchored findings list only, never rewriting or shortening the prose
+    Keywords: de-ai audit, humanize audit, find ai tells, ai-detection audit, humanize violations
 
   romance-spicy-first-draft
     Write a full first-draft chapter of a spicy (Heat Level 4) contemporary beach-read romance from a scene brief, with strict anti-AI prose laws
@@ -154,7 +166,7 @@ Auto-generated on startup — 50 skills loaded
     Draft scenes, chapters, and passages matching the author's voice and style
     Keywords: write, draft, write a scene, write chapter, continue writing, write the
 
-── Marketing Skills (4) ──
+── Marketing Skills (5) ──
 
   ad-copy
     Write ad copy for Amazon AMS, BookBub, Facebook, and other book advertising platforms
@@ -167,6 +179,10 @@ Auto-generated on startup — 50 skills loaded
   marketing-research
     Research literary agents, podcasts, book bloggers, reviewers, and newsletters in your genre with verified citations
     Keywords: find literary agents, find a literary agent, find an agent for, research agents, find podcasts for authors, find author podcasts, book podcast research, find book bloggers, find book reviewers, find newsletters, find book reviewers, booktok research, bookstagram research, find indie reviewers, marketing research, promo research, find promo opportunities
+
+  prepublication-checklist
+    Audit a finished manuscript against the seven make-or-break checks before publication - genre clarity, title searchability, comp titles, one-line pitch, chapter lengths, read-aloud, and the chapter-two hook
+    Keywords: pre-publication checklist, prepublication checklist, pre-pub audit, ready to publish, before I publish, launch readiness, is my book ready, publish checklist, publication checklist, final check before publishing
 
   website-publisher
     Manage your author website — auto-publish books on completion, draft blog posts from your projects, render and deploy with one command

@@ -114,7 +114,7 @@ export function AdaptiveInterview() {
         author,
         voice,
         genre: genre || null,
-        pipelineSequence: [seeds.heat === 'spicy' ? 'romance-spicy-full' : 'romance-sweet-full'],
+        pipelineSequence: [seeds.heat === 'spicy' ? 'romance-spicy-deterministic' : 'romance-sweet-deterministic'],
         storyArc: seeds.storyArc,
         characters: seeds.characters,
         setting: seeds.setting,

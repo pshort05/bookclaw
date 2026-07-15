@@ -153,7 +153,7 @@ export function PremiseIntake() {
         author,
         voice,
         genre: genre || null,
-        pipelineSequence: [seeds.heat === 'spicy' ? 'romance-spicy-full' : 'romance-sweet-full'],
+        pipelineSequence: [seeds.heat === 'spicy' ? 'romance-spicy-deterministic' : 'romance-sweet-deterministic'],
         storyArc: final.storyArc,
         characters: final.characters,
         setting: final.setting,

@@ -24,7 +24,7 @@ export interface GuidedFormat {
 /** Heat selects the pipeline id — the manifest's seeds block carries no `heat`
  *  key (gateway/src/services/book.ts:55); this is the only place heat is used. */
 export function pipelineForHeat(heat: Heat): string {
-  return heat === 'spicy' ? 'romance-spicy-full' : 'romance-sweet-full';
+  return heat === 'spicy' ? 'romance-spicy-deterministic' : 'romance-sweet-deterministic';
 }
 
 /** Gate: title/author/voice set, plus a fully-specified, in-band format.

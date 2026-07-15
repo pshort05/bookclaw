@@ -13,6 +13,7 @@ import { applyStructureRail } from '../../services/format-guide.js';
 import { countWords } from '../../util/wordcount.js';
 import { classifyStepResponse, runWordTargetContinuation, continuationAnchor } from '../../util/generation-step.js';
 import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-runner.js';
+import { runDeterministicApply, makeScopedRewriteFn } from '../../services/deterministic-apply.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
@@ -609,6 +610,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const intimacyContext = projectContext + intimacy.promptAddition;
       const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(project, activeStep, intimacy.spiceRoute);
       let response = '';
+      // Audit steps emit a short JSON edit list ("[]" = 2 chars is valid) — exempt
+      // them from the short-response retry/fail guard (see /auto-execute).
+      const isAuditStep = /-audit$/i.test((activeStep as any).skill ?? '');
 
       // Flagship Plan 8: opt-in ideation ensemble on the first premise-phase
       // step. A no-op unless the bound book has ensemble.enabled === true.
@@ -619,6 +623,14 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const execOut = ensemble.active ? null : await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, project.bookSlug);
       if (ensemble.active) {
         response = ensemble.premiseText!;
+      } else if ((activeStep as any).skill === 'deterministic-apply') {
+        // Drift-proof de-AI: apply the audit's edit list to the draft with code.
+        const { text, stats } = await runDeterministicApply(
+          project.steps as any, activeStep as any,
+          makeScopedRewriteFn((r) => services.aiRouter.complete(r)),
+        );
+        response = text;
+        console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
       } else if (execOut !== null) {
         response = execOut;
       } else {
@@ -635,7 +647,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         );
 
         // Retry once with 'general' routing if the response is too short
-        if (!response || response.length < 50) {
+        if ((!response || response.length < 50) && !isAuditStep) {
           console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
           response = '';
           await gateway.handleMessage(
@@ -678,7 +690,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       // Detect the [AI provider failure] sentinel from handleMessage when both
       // primary and fallback errored. Treat as failure with the real reason
       // instead of writing the error message into the manuscript file.
-      const execClass = classifyStepResponse(response);
+      const execClass = classifyStepResponse(response, isAuditStep ? { minChars: 2 } : undefined);
       if (execClass.providerFailure) {
         const detail = execClass.detail!;
         engine.failStep(project.id, activeStep.id, detail);
@@ -1084,6 +1096,11 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           + intimacy.promptAddition;
         const { provider: stepProvider, model: stepModel, temperature: stepTemp } = stepRouting(currentProject, activeStep, intimacy.spiceRoute);
         let response = '';
+        // Audit steps (romance-*-audit) emit a short JSON edit list, and "[]" (no
+        // findings) is only 2 chars — a valid result, not a failure. Exempt them
+        // from the short-response retry/fail guard (a real provider error is still
+        // caught by classifyStepResponse's providerFailure branch).
+        const isAuditStep = /-audit$/i.test((activeStep as any).skill ?? '');
 
         // Flagship Plan 8: opt-in ideation ensemble on the first premise-phase
         // step. A no-op unless the bound book has ensemble.enabled === true.
@@ -1094,6 +1111,16 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const execOut = ensemble.active ? null : await runExecutableSkillStep(services, (activeStep as any).skill, userMessage, currentProject.bookSlug);
         if (ensemble.active) {
           response = ensemble.premiseText!;
+        } else if ((activeStep as any).skill === 'deterministic-apply') {
+          // Drift-proof de-AI: apply the audit's edit list to the draft with code
+          // (literal find-and-replace + scoped per-span rewrites). NO whole-chapter
+          // LLM call — the chapter can't be regenerated, so it can't drift.
+          const { text, stats } = await runDeterministicApply(
+            currentProject.steps as any, activeStep as any,
+            makeScopedRewriteFn((r) => services.aiRouter.complete(r)),
+          );
+          response = text;
+          console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
         } else if (execOut !== null) {
           response = execOut;
         } else {
@@ -1111,7 +1138,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
 
           // Retry once with 'general' routing if the response is too short
           // This catches cases where a premium/mid provider fails but free providers work fine
-          if (!response || response.length < 50) {
+          if ((!response || response.length < 50) && !isAuditStep) {
             console.log(`  ↻ Step "${activeStep.label}" got short response — retrying with general routing...`);
             response = '';
             await gateway.handleMessage(
@@ -1151,7 +1178,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           }
         }
 
-        const stepClass = classifyStepResponse(response);
+        const stepClass = classifyStepResponse(response, isAuditStep ? { minChars: 2 } : undefined);
         if (stepClass.providerFailure) {
           const detail = stepClass.detail!;
           engine.failStep(currentProject.id, activeStep.id, detail);
@@ -1177,7 +1204,11 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const isRevisionApply = stepNeedsFullManuscript(activeStep);
           const wcTarget = (activeStep as any).wordCountTarget ||
             (isRevisionApply ? Math.floor((currentProject.context?.documentWordCount || 0) * 0.9) : 0);
-          if (wcTarget && wcTarget > 0 && execOut === null) {   // executable skills own their full output — no continuation
+          // The deterministic-apply step returns the draft with surgical edits — it
+          // MUST NOT be word-target-continued, or fresh LLM prose gets appended and
+          // the whole drift-proof guarantee is lost (it's usually under target after
+          // de-AI swaps net-reduce length). Excluded here like executable skills.
+          if (wcTarget && wcTarget > 0 && execOut === null && (activeStep as any).skill !== 'deterministic-apply') {   // executable skills own their full output — no continuation
             const label = isRevisionApply ? 'revision-apply' : 'writing';
             const cont = await runWordTargetContinuation({
               initialText: response,
