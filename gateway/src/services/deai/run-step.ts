@@ -5,8 +5,9 @@
  * place. Depends on the router only through an injected `aiComplete`.
  */
 
-import { runChunkedDeAiSweep, resolveDeaiPassModel, secondReaderFraming, type SweepResult } from './sweep.js';
+import { runChunkedDeAiSweep, secondReaderFraming, type SweepResult } from './sweep.js';
 import type { BannedTerms } from './banned-terms.js';
+import type { AiNameMap } from './ai-names.js';
 import { applyDeAiEdits, parseAuditEdits, makeScopedRewriteFn, type DeAiEdit } from '../deterministic-apply.js';
 
 interface StepLike { skill?: string; role?: string; chapterNumber?: number; status: string; result?: string }
@@ -31,6 +32,8 @@ export async function runDeaiSweepStep(args: {
   skillContent: string;
   stageModels?: Record<string, { provider?: string; model?: string }>;
   banned: BannedTerms;
+  aiNames?: AiNameMap;
+  availableProviders: string[];
   aiComplete: (req: any) => Promise<{ text?: string }>;
   targetWords?: number;
 }): Promise<SweepResult> {
@@ -39,8 +42,7 @@ export async function runDeaiSweepStep(args: {
 
   const rewriteFn = makeScopedRewriteFn(args.aiComplete);
 
-  const auditWindow = async (w: { windowText: string; seam: string; pass: 1 | 2; forbiddenBlock: string }): Promise<DeAiEdit[]> => {
-    const model = resolveDeaiPassModel(args.stageModels, w.pass);
+  const auditWindow = async (w: { windowText: string; seam: string; pass: 1 | 2; forbiddenBlock: string; provider: string; model: string }): Promise<DeAiEdit[]> => {
     const system = args.skillContent
       + (w.pass === 2 ? `\n\n${secondReaderFraming()}` : '')
       + w.forbiddenBlock;
@@ -48,8 +50,8 @@ export async function runDeaiSweepStep(args: {
       ? `\n\n## Read-only preceding context (do NOT emit edits for this — it is here only so you can spot cross-seam tells):\n${w.seam}\n`
       : '';
     const res = await args.aiComplete({
-      provider: model.provider,
-      model: model.model,
+      provider: w.provider,
+      model: w.model,
       system,
       messages: [{ role: 'user', content: `Chapter window to audit:\n${w.windowText}${seamNote}` }],
       maxTokens: 4000,
@@ -61,7 +63,8 @@ export async function runDeaiSweepStep(args: {
   const applyEdits = (base: string, edits: DeAiEdit[]) => applyDeAiEdits(base, edits, rewriteFn);
 
   return runChunkedDeAiSweep({
-    draft, banned: args.banned, stageModels: args.stageModels,
+    draft, banned: args.banned, aiNames: args.aiNames, availableProviders: args.availableProviders,
+    stageModels: args.stageModels,
     deps: { auditWindow, applyEdits }, targetWords: args.targetWords,
   });
 }

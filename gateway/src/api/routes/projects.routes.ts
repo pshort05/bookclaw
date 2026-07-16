@@ -17,6 +17,7 @@ import { runDeterministicApply, makeScopedRewriteFn } from '../../services/deter
 import { runCanonDriftGate, canonAuditAnchorBlock } from '../../services/canon-drift.js';
 import { runDeaiSweepStep } from '../../services/deai/run-step.js';
 import { loadBannedTermsForBook } from '../../services/deai/banned-terms.js';
+import { loadAiNamesForBook } from '../../services/deai/ai-names.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
@@ -648,17 +649,21 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
           || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
         const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
+        const aiNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
         const sweep = await runDeaiSweepStep({
           steps: project.steps as any,
           chapterNumber: (activeStep as any).chapterNumber,
           skillContent,
           stageModels: (project as any).stageModels,
           banned,
+          aiNames,
+          availableProviders: services.aiRouter.getActiveProviders().map((p: any) => p.id),
           aiComplete: (r) => services.aiRouter.complete(r),
         });
         response = sweep.text;
         const bt = Object.entries(sweep.bannedCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
-        console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
+        const nm = Object.entries(sweep.aiNameCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
+        console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] names=[${nm}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
       } else if ((activeStep as any).skill === 'canon-drift-apply') {
         // Canon Drift Gate: reconcile the freshly generated canon doc to the verified
         // anchor + setting bible via the deterministic entity gate + the LLM
@@ -1211,17 +1216,21 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
             || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
           const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
+          const aiNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
           const sweep = await runDeaiSweepStep({
             steps: currentProject.steps as any,
             chapterNumber: (activeStep as any).chapterNumber,
             skillContent,
             stageModels: (currentProject as any).stageModels,
             banned,
+            aiNames,
+            availableProviders: services.aiRouter.getActiveProviders().map((p: any) => p.id),
             aiComplete: (r) => services.aiRouter.complete(r),
           });
           response = sweep.text;
           const bt = Object.entries(sweep.bannedCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
-          console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
+          const nm = Object.entries(sweep.aiNameCounts).filter(([, n]) => n > 0).map(([k, n]) => `${k}=${n}`).join(', ');
+          console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] names=[${nm}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
         } else if ((activeStep as any).skill === 'canon-drift-apply') {
           // Canon Drift Gate: reconcile the freshly generated canon doc to the verified
           // anchor + setting bible via the deterministic entity gate + the LLM

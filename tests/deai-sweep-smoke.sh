@@ -26,10 +26,12 @@
 # Additional ON-DISK checks (LOCAL mode only — skipped when targeting a remote
 # BASE_URL, since the remote box's on-disk tree isn't ours to read): the same
 # substep-ordering assertions run directly against the versioned
-# library/pipelines/*-deterministic.json files, and the seed
+# library/pipelines/*-deterministic.json files; the seed
 # library/banned-terms.csv is verified to exist and parse (header + the
 # "phone buzzed,phone vibrated" fixed-substitution row + at least one ban-only
-# row with a blank replace).
+# row with a blank replace); and the seed library/ai-names.csv is verified to
+# exist and parse (find,replace header + the seeded Sarah / Marcus Chen / Patel
+# rows, each with a non-empty replacement).
 #
 # NOTE: the per-book stage-key regex path (deai_pass1/deai_pass2 stage slots) is
 # NOT exercised here — checking it would require creating a book (auto-pipeline
@@ -251,6 +253,35 @@ else
       pass "on-disk banned-terms.csv: header + phone-buzzed→phone-vibrated row + a ban-only (blank replace) row"
     else
       fail "on-disk banned-terms.csv: parse/content check failed (flags=$CSV_OUT, expected hpb)"
+    fi
+  fi
+
+  # Seed AI-names registry: exists + parses (find,replace header + the seeded
+  # Sarah / Marcus Chen / Patel rows, each with a non-empty replacement).
+  NAMES="$ROOT/library/ai-names.csv"
+  if [[ ! -f "$NAMES" ]]; then
+    fail "on-disk: $NAMES missing"
+  else
+    NAMES_OUT=$(node -e '(()=>{
+      const fs=require("fs");
+      const lines=fs.readFileSync(process.argv[1],"utf-8").split(/\r?\n/).filter(l=>l.length>0);
+      if(lines.length<2){ console.log("ERR tooShort"); return }
+      const header=lines[0].split(",").map(s=>s.trim());
+      const hasHeader = header.includes("find") && header.includes("replace");
+      const rows=lines.slice(1).map(l=>l.split(","));
+      const seeded=(name)=> rows.some(r=> (r[0]||"").trim()===name && (r[1]||"").trim().length>0);
+      const flags=[
+        hasHeader?"h":"-",
+        seeded("Sarah")?"s":"-",
+        seeded("Marcus Chen")?"m":"-",
+        seeded("Patel")?"p":"-",
+      ].join("");
+      console.log(flags);
+    })()' "$NAMES")
+    if [[ "$NAMES_OUT" == "hsmp" ]]; then
+      pass "on-disk ai-names.csv: find,replace header + seeded Sarah/Marcus Chen/Patel rows (non-empty replacements)"
+    else
+      fail "on-disk ai-names.csv: parse/content check failed (flags=$NAMES_OUT, expected hsmp)"
     fi
   fi
 fi

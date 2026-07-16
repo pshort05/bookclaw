@@ -31,7 +31,7 @@ test('runDeaiSweepStep wires banned-terms + router audit into the sweep and retu
   const res = await runDeaiSweepStep({
     steps, chapterNumber: 1,
     skillContent: '# De-AI Audit skill body',
-    banned, aiComplete,
+    banned, availableProviders: ['openrouter'], aiComplete,
   });
   assert.equal(res.text, 'The phone vibrated. She used the oven.');
   assert.equal(res.bannedCounts['phone buzzed'], 1);

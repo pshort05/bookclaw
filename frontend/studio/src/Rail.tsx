@@ -3,7 +3,7 @@ import { useStore, useCosts, usePendingConfirmations, useBooks, useStatus, money
 import { useEffect } from 'react';
 import styles from './Rail.module.css';
 
-export function Rail() {
+export function Rail({ open, onClose }: { open: boolean; onClose: () => void }) {
   // The Chat app runs on BOOKCLAW_CHAT_PORT, injected into the studio HTML at
   // serve time. Empty means chat is disabled — hide the link rather than point
   // at a dead port.
@@ -33,7 +33,7 @@ export function Rail() {
   }, [loadCosts, loadConfirmations, loadStatus]);
 
   return (
-    <aside className={styles.rail}>
+    <aside className={open ? `${styles.rail} ${styles.railOpen}` : styles.rail}>
       {/* Brand */}
       <div className={styles.brand}>
         <span className={styles.mark} title="BookClaw">
@@ -48,7 +48,7 @@ export function Rail() {
       </div>
 
       {/* Nav */}
-      <nav className={styles.nav}>
+      <nav className={styles.nav} onClick={onClose}>
         <div className={styles.lbl}>Studio</div>
 
         {/* Book Board — the only live route in 6a */}

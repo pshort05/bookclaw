@@ -13,3 +13,87 @@
   min-width: 0;
   overflow: hidden;
 }
+
+/* --- mobile top bar + scrim: hidden on desktop, no layout impact --- */
+.topbar { display: none; }
+.hamburger { display: none; }
+.scrim { display: none; }
+
+/* --- Mobile Phase 1: collapse the desktop two-column shell -----------
+   Below 768px the Rail leaves the grid (it becomes position:fixed in
+   Rail.module.css), so the single 1fr column is entirely the content pane
+   and prose reflows normally instead of wrapping to one word per line. */
+@media (max-width: 768px) {
+  .app {
+    grid-template-columns: 1fr;
+    /* Reserve the top bar's height as the first grid row so content starts
+       below it; the bar itself is position:fixed so it never scrolls away. */
+    grid-template-rows: 52px 1fr;
+  }
+
+  .main {
+    /* Explicitly occupy the second grid row. The top bar / rail / scrim are all
+       position:fixed (out of grid flow), so .main is the only in-flow child and
+       would otherwise auto-place into row 1 (the reserved 52px bar row),
+       collapsing the content pane to 52px. */
+    grid-row: 2;
+    /* content pane owns vertical scroll; never allow horizontal overflow */
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    z-index: 30;
+    padding: 0 14px;
+    background: linear-gradient(180deg, var(--bg-2), var(--bg));
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbarTitle {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -.02em;
+  }
+
+  .topbarTitle b { color: var(--ember); font-weight: 600; }
+
+  .hamburger {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--r-s);
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .hamburger svg { width: 20px; height: 20px; }
+
+  /* backdrop behind the open drawer — mirrors BookDrawer .scrim */
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(8,5,2,.55);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .3s;
+  }
+
+  .scrim.scrimOn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

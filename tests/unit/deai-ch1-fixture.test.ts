@@ -46,7 +46,7 @@ test('two passes drive rule-of-three lists and leak-#2 buttons to 0 in the fixtu
   const rewriteFn = async (span: string) => span.replace(/^That's.*/, 'She wiped her hands.').replace(/^You pull dough\.$/, 'I pull dough.');
   const applyEdits = (base: string, edits: DeAiEdit[]) => applyDeAiEdits(base, edits, rewriteFn);
 
-  const res = await runChunkedDeAiSweep({ draft: ch1, banned: parseBannedCsv('find,replace'), deps: { auditWindow, applyEdits } });
+  const res = await runChunkedDeAiSweep({ draft: ch1, banned: parseBannedCsv('find,replace'), availableProviders: ['openrouter'], deps: { auditWindow, applyEdits } });
   assert.equal((res.text.match(RULE_OF_THREE) || []).length, 0, 'no rule-of-three survives 2 passes');
   assert.ok(!res.text.includes("That's the thing about Fran."), 'aphoristic button removed');
   assert.equal(res.passes, 2);

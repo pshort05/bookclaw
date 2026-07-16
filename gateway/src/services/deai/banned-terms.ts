@@ -101,8 +101,9 @@ function termRegex(find: string): RegExp {
 export function applyBannedTerms(
   text: string,
   fixed: Array<{ find: string; replace: string }>,
-  opts?: { dryRun?: boolean },
+  opts?: { dryRun?: boolean; scope?: 'narration' | 'global' },
 ): BannedApplyResult {
+  const global = opts?.scope === 'global';
   let out = String(text ?? '');
   const counts: Record<string, number> = {};
   let total = 0;
@@ -110,10 +111,11 @@ export function applyBannedTerms(
     if (!find) continue;
     const re = termRegex(find);
     // Recompute protected ranges each iteration — earlier replacements shift indices.
-    const ranges = protectedRanges(out);
+    // In 'global' scope nothing is protected (AI-name checker rewrites dialogue too).
+    const ranges = global ? [] : protectedRanges(out);
     let result = '', last = 0, n = 0;
     for (let m; (m = re.exec(out)); ) {
-      if (isProtected(ranges, m.index)) continue;      // skip dialogue/markdown
+      if (!global && isProtected(ranges, m.index)) continue;  // skip dialogue/markdown
       result += out.slice(last, m.index) + preserveCase(m[0], replace);
       last = m.index + m[0].length;
       n++;
