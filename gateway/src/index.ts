@@ -44,6 +44,11 @@ import { runCanonDriftGate, canonAuditAnchorBlock } from './services/canon-drift
 import { runDeaiSweepStep } from './services/deai/run-step.js';
 import { loadBannedTermsForBook } from './services/deai/banned-terms.js';
 import { loadAiNamesForBook } from './services/deai/ai-names.js';
+import { loadRegistry } from './services/registry/store.js';
+import { registryToAiNameMap, mergeAiNameMaps } from './services/registry/enforce.js';
+import { processDraftManifest } from './services/registry/pipeline.js';
+import { buildRoster } from './services/registry/roster.js';
+import { injectRoster } from './services/projects.js';
 import { chapterSummaryTarget } from './util/chapter-summary.js';
 import { buildContinuityInjection, detectPostDraftContinuity } from './services/consistency/spine-inject.js';
 import { AIRouter } from './ai/router.js';
@@ -2471,6 +2476,20 @@ class BookClawGateway {
           stepUserMessage = `## Manuscript to Work With\n\nUploaded files: ${fileList}\n\n${uploaded}\n\n---\n\n## Your Task\n\n${stepUserMessage}`;
         }
 
+        // Character Name Registry: inject the compact recurring-cast roster into a
+        // DRAFT step's prompt so the writer reuses established minors instead of
+        // inventing new names (prevention). Mirrors the studio buildStepUserMessage
+        // seam so the headless pipeline gets the same prevention. No-op on an empty
+        // roster. Fail-soft — a registry read must never block a chapter.
+        if (project.bookSlug && (activeStep as any).role === 'draft' && gateway.books) {
+          try {
+            const rosterBookDir = gateway.books.bookDir?.(project.bookSlug) ?? null;
+            if (rosterBookDir) stepUserMessage = injectRoster(stepUserMessage, buildRoster(loadRegistry(rosterBookDir)));
+          } catch (e) {
+            console.log(`  ⚠ Registry: roster injection skipped: ${(e as Error).message}`);
+          }
+        }
+
         let aiResponse = '';
         // Audit steps emit a short JSON edit list ("[]" = 2 chars is valid) — exempt
         // them from the short-response retry/fail guard (see /auto-execute).
@@ -2512,7 +2531,9 @@ class BookClawGateway {
             const skillContent = (slug ? gateway.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
               || gateway.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
             const banned = loadBannedTermsForBook(workspaceDir, slug ?? '', join(ROOT_DIR, 'library', 'banned-terms.csv'));
-            const aiNames = loadAiNamesForBook(workspaceDir, slug ?? '', join(ROOT_DIR, 'library', 'ai-names.csv'));
+            const baseNames = loadAiNamesForBook(workspaceDir, slug ?? '', join(ROOT_DIR, 'library', 'ai-names.csv'));
+            const sweepBookDir = gateway.books?.bookDir?.(slug ?? '') ?? null;
+            const aiNames = sweepBookDir ? mergeAiNameMaps(baseNames, registryToAiNameMap(loadRegistry(sweepBookDir))) : baseNames;
             const sweep = await runDeaiSweepStep({
               steps: project.steps as any,
               chapterNumber: (activeStep as any).chapterNumber,
@@ -2685,6 +2706,21 @@ class BookClawGateway {
         // Strip leaked chatbot framing before saving/completing the step. Prose
         // steps get the aggressive prose-mode strip (drops a "Next Steps:" epilogue).
         aiResponse = stripMetaCommentary(aiResponse, { prose: isProseStep(activeStep) });
+        // Character Name Registry: strip the machine-read manifest off a DRAFT
+        // step BEFORE it is written to the chapter file and before continuity
+        // detection — a manifest must NEVER survive into chapter prose. Fail-soft.
+        if (project.bookSlug && (activeStep as any).role === 'draft' && gateway.books) {
+          const draftBookDir = gateway.books.bookDir?.(project.bookSlug) ?? null;
+          if (draftBookDir) {
+            const res = await processDraftManifest({
+              chapter: aiResponse,
+              registry: loadRegistry(draftBookDir),
+              aiComplete: (r: any) => gateway.aiRouter.complete(r),
+            });
+            aiResponse = res.chapter;
+            if (res.candidates.length) (activeStep as any).nameCandidates = res.candidates;
+          }
+        }
         // Calculate word count from FULL response (not truncated)
         const wordCount = countWords(aiResponse);
 

@@ -17,6 +17,7 @@ import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
 import { PremiseIntakeService, composeGroundedSetting } from '../../services/premise-intake.js';
 import { RomanceInterviewService } from '../../services/romance-interview.js';
+import { loadRegistry } from '../../services/registry/store.js';
 
 /**
  * Canon Drift Gate (Risk R2 bridge): shape-check the grounding payload the client
@@ -299,6 +300,41 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       stageModels: m.stageModels ?? {},
       reviewCadence: m.review?.cadence ?? '',
     });
+  });
+
+  // Character Name Registry (per-book). GET returns the current registry so the
+  // review gate / curation surface can render candidates against canon.
+  app.get('/api/books/:slug/registry', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const dir = services.books.bookDir(slug);
+    if (!dir) return res.status(404).json({ error: 'Book not found' });
+    res.json(loadRegistry(dir));
+  });
+
+  // Record a human-blessed registry decision (add / map-as-drift / ignore). The
+  // registry mutates ONLY through this endpoint — determinism never auto-merges.
+  app.post('/api/books/:slug/registry/decide', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const body = req.body ?? {};
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!name) return res.status(400).json({ error: 'name is required' });
+    if (!['add', 'map', 'ignore'].includes(body.action)) return res.status(400).json({ error: 'action must be add|map|ignore' });
+    if (body.action === 'add' && !['primary', 'secondary', 'tertiary', 'transient'].includes(body.tier)) {
+      return res.status(400).json({ error: 'add requires a valid tier' });
+    }
+    if (body.action === 'map' && (typeof body.toCanonical !== 'string' || !body.toCanonical.trim())) {
+      return res.status(400).json({ error: 'map requires toCanonical' });
+    }
+    try {
+      const registry = await services.books.recordRegistryDecision(slug, body);
+      res.json({ success: true, registry });
+    } catch (e) {
+      res.status(500).json({ error: (e as Error).message });
+    }
   });
 
   // Set the book's default model and/or per-stage (taskType) model map. Also

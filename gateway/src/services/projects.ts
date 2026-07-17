@@ -209,7 +209,21 @@ export function writeChapterPrompt(ch: number, title: string, words: number, des
     // #7 no reused epithet/phrase
     `- Avoid reusing a distinctive epithet, nickname, or signature phrase for a person or place across chapters; vary how you refer to recurring people and things\n` +
     `- Output the chapter prose only. No commentary, no preamble, no "next steps", no list of options, and no questions to the reader` +
+    // Character Name Registry manifest contract (machine-read, stripped before
+    // the chapter is saved — see services/registry). MANDATORY and always present.
+    `\n\nAFTER the chapter prose, append EXACTLY this block (a machine-read manifest, never shown to readers). It is MANDATORY and MUST always be present even when nothing new was introduced (use "none"):\n` +
+    `<!--BOOKCLAW:MANIFEST\nCHARACTERS:\n- Name | new|mentioned|transient | one-line role | possibly-same-as: <existing canonical>? (only if you suspect a match)\nLOCATIONS:\n- Name | new|mentioned | one-line role\n/MANIFEST-->\n` +
+    `List every NAMED character/location the chapter introduces or references by name. If none, write "CHARACTERS: none" / "LOCATIONS: none". Do not omit the block.` +
     (description ? `\n\n${description}` : '');
+}
+
+/**
+ * Append a per-book recurring-cast roster to a draft prompt at execution time.
+ * The roster is runtime/per-book data (not baked into the static template), so
+ * this is the injection seam. A no-op when the roster is empty (no prompt change).
+ */
+export function injectRoster(prompt: string, roster: string): string {
+  return roster ? `${prompt}\n\n${roster}` : prompt;
 }
 
 /**

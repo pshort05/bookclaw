@@ -18,6 +18,11 @@ import { runCanonDriftGate, canonAuditAnchorBlock } from '../../services/canon-d
 import { runDeaiSweepStep } from '../../services/deai/run-step.js';
 import { loadBannedTermsForBook } from '../../services/deai/banned-terms.js';
 import { loadAiNamesForBook } from '../../services/deai/ai-names.js';
+import { loadRegistry } from '../../services/registry/store.js';
+import { registryToAiNameMap, mergeAiNameMaps } from '../../services/registry/enforce.js';
+import { processDraftManifest } from '../../services/registry/pipeline.js';
+import { buildRoster } from '../../services/registry/roster.js';
+import { injectRoster } from '../../services/projects.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
 import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
@@ -494,6 +499,18 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       message = `## Manuscript to Work With\n\nUploaded files: ${fileList}${headerNote}\n\n${uploaded}\n\n---\n\n## Your Task\n\n${message}`;
     }
 
+    // Character Name Registry: inject the compact recurring-cast roster into a
+    // DRAFT step's prompt so the writer reuses established minors instead of
+    // inventing new names (prevention). No-op when the roster is empty. Fail-soft.
+    if (project?.bookSlug && step?.role === 'draft' && services.books) {
+      try {
+        const bookDir = services.books.bookDir?.(project.bookSlug) ?? null;
+        if (bookDir) message = injectRoster(message, buildRoster(loadRegistry(bookDir)));
+      } catch (e) {
+        console.log(`  ⚠ Registry: roster injection skipped: ${(e as Error).message}`);
+      }
+    }
+
     return message;
   }
 
@@ -649,7 +666,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
           || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
         const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
-        const aiNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
+        const baseNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
+        const sweepBookDir = services.books?.bookDir?.(slug ?? '') ?? null;
+        const aiNames = sweepBookDir ? mergeAiNameMaps(baseNames, registryToAiNameMap(loadRegistry(sweepBookDir))) : baseNames;
         const sweep = await runDeaiSweepStep({
           steps: project.steps as any,
           chapterNumber: (activeStep as any).chapterNumber,
@@ -806,6 +825,24 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       const prose = isProseStep(activeStep);
       response = stripMetaCommentary(response, { prose });
 
+      // Character Name Registry: strip the machine-read manifest off a DRAFT
+      // step BEFORE the chapter file is written — a manifest must NEVER survive
+      // into chapter prose. Fail-soft; candidates surface on the response payload.
+      let nameCandidates: any[] = [];
+      if (project.bookSlug && (activeStep as any).role === 'draft' && services.books) {
+        const draftBookDir = services.books.bookDir?.(project.bookSlug) ?? null;
+        if (draftBookDir) {
+          const rres = await processDraftManifest({
+            chapter: response,
+            registry: loadRegistry(draftBookDir),
+            aiComplete: (r: any) => services.aiRouter.complete(r),
+          });
+          response = rres.chapter;
+          nameCandidates = rres.candidates;
+          if (nameCandidates.length) (activeStep as any).nameCandidates = nameCandidates;
+        }
+      }
+
       // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on every
       // draft/intimacy step regardless of the book's contentCeiling (H1 fix).
       let reviewFlags: string[] = [];
@@ -884,6 +921,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         nextStep,
         project: engine.getProject(project.id),
         ...(reviewFlags.length ? { reviewFlags } : {}),
+        ...(nameCandidates.length ? { nameCandidates } : {}),
       });
     } catch (error) {
       engine.failStep(project.id, activeStep.id, String(error));
@@ -1216,7 +1254,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const skillContent = (slug ? services.books?.skillContentOf?.(slug, 'romance-deai-audit') : null)
             || services.skills?.getSkillByName?.('romance-deai-audit')?.content || '';
           const banned = loadBannedTermsForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'banned-terms.csv'));
-          const aiNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
+          const baseNames = loadAiNamesForBook(j(baseDir, 'workspace'), slug ?? '', j(baseDir, 'library', 'ai-names.csv'));
+          const sweepBookDir = services.books?.bookDir?.(slug ?? '') ?? null;
+          const aiNames = sweepBookDir ? mergeAiNameMaps(baseNames, registryToAiNameMap(loadRegistry(sweepBookDir))) : baseNames;
           const sweep = await runDeaiSweepStep({
             steps: currentProject.steps as any,
             chapterNumber: (activeStep as any).chapterNumber,
@@ -1487,6 +1527,22 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         // aggressive prose-mode strip (drops a leaked "Next Steps:" epilogue).
         const prose = isProseStep(activeStep);
         response = stripMetaCommentary(response, { prose });
+
+        // Character Name Registry: strip the machine-read manifest off a DRAFT
+        // step BEFORE the chapter file is written — a manifest must NEVER survive
+        // into chapter prose. Fail-soft; candidates attach to the step.
+        if (currentProject.bookSlug && (activeStep as any).role === 'draft' && services.books) {
+          const draftBookDir = services.books.bookDir?.(currentProject.bookSlug) ?? null;
+          if (draftBookDir) {
+            const rres = await processDraftManifest({
+              chapter: response,
+              registry: loadRegistry(draftBookDir),
+              aiComplete: (r: any) => services.aiRouter.complete(r),
+            });
+            response = rres.chapter;
+            if (rres.candidates.length) (activeStep as any).nameCandidates = rres.candidates;
+          }
+        }
 
         // Safety floor (Flagship Plan 2, Task 4/7): non-negotiable — runs on
         // every draft/intimacy step regardless of the book's contentCeiling

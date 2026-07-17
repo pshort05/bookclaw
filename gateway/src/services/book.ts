@@ -26,6 +26,10 @@ import { pipelinePhases, type LibraryPipeline } from './library-types.js';
 import { listRunnerFiles as listRunnerFilesAt } from './runner-files.js';
 import type { WorldService } from './world.js';
 import { parseWorldDoc, serializeWorldDoc } from './world-parse.js';
+import { seedRegistryCharacters } from './registry/seed.js';
+import { loadRegistry, saveRegistry } from './registry/store.js';
+import { applyRegistryDecision, type RegistryDecision } from './registry/decide.js';
+import type { NameRegistry } from './registry/types.js';
 
 export interface BookSelection {
   title: string;
@@ -420,6 +424,14 @@ export class BookService {
         history: [{ at: now, event: 'created' }],
       };
       await writeFileAtomic(join(dir, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      // Seed the per-book name registry so the file exists from create. The
+      // bible characters are produced later by intake, so seed empty here (the
+      // registry grows from the review gate); fail-soft — never block create.
+      try {
+        saveRegistry(dir, { characters: seedRegistryCharacters([]), locations: [] });
+      } catch (e) {
+        console.log(`  ⚠ Registry: seed skipped for ${slug}: ${(e as Error).message}`);
+      }
       return manifest;
     } catch (err) {
       // Bug #36f: a failure after claimSlug must not permanently burn the
@@ -492,6 +504,21 @@ export class BookService {
       manifest.history.push({ at: new Date().toISOString(), event: 'model-config-set', detail: `default=${manifest.preferredModel ?? manifest.preferredProvider ?? 'auto'} stages=${Object.keys(manifest.stageModels ?? {}).length}` });
       await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
       return manifest;
+    });
+  }
+
+  /**
+   * Record a human-blessed name-registry decision (Character Name Registry).
+   * Lock + atomic, mirroring setModelConfig. The registry mutates ONLY through
+   * this path — a driftMap is written only on an explicit `map` decision.
+   */
+  async recordRegistryDecision(slug: string, decision: RegistryDecision): Promise<NameRegistry> {
+    return this.withBookLock(slug, async () => {
+      const dir = this.bookDir(slug);
+      if (!dir || !existsSync(join(dir, 'book.json'))) throw new Error(`book not found: ${slug}`);
+      const next = applyRegistryDecision(loadRegistry(dir), decision);
+      saveRegistry(dir, next);
+      return next;
     });
   }
 
