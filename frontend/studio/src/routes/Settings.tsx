@@ -596,13 +596,20 @@ function ProviderModelField({ provider, onSaved }: { provider: Provider; onSaved
   const listId = useId();
   const [val, setVal] = useState('');
 
-  const commit = async () => {
-    const next = val.trim();
+  // Read the LIVE input value (raw) rather than the `val` state closure: a native
+  // <datalist> selection sets the DOM value and can fire blur before React
+  // re-renders, so the closure's `val` is stale/empty and the save is silently
+  // skipped — the field then reverts to the placeholder (the old model). Reading
+  // e.currentTarget.value at blur captures the actual selection every time.
+  const commit = async (raw?: string) => {
+    const next = (raw ?? val).trim();
     if (!next || next === provider.model) { setVal(''); return; }
+    let ok = true;
     await api('/api/config/update', {
       method: 'POST',
       body: JSON.stringify({ path: `ai.${provider.id}.model`, value: next }),
-    }).catch(() => {});
+    }).catch(() => { ok = false; });
+    if (!ok) { setVal(next); return; } // keep the entered value visible for retry, don't silently revert
     setVal('');
     await onSaved();
   };
@@ -616,7 +623,7 @@ function ProviderModelField({ provider, onSaved }: { provider: Provider; onSaved
         value={val}
         placeholder={provider.model}
         onChange={(e) => setVal(e.target.value)}
-        onBlur={commit}
+        onBlur={(e) => commit(e.currentTarget.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
       />
       <datalist id={listId}>
