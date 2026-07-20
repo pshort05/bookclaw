@@ -150,8 +150,12 @@ export function getRecommendedThinking(taskType: string): 'low' | 'medium' | 'hi
  * steps downstream.
  */
 const TASK_OUTPUT_BUDGET: Record<string, number> = {
-  outline:          16384,  // 20-30 chapter outlines + beats per chapter
-  book_bible:       16384,  // Multi-character profiles + worldbuilding
+  // 32K so the VISIBLE answer survives a reasoning model's hidden-CoT overhead:
+  // auto:newest-sonnet spends thinking tokens against the same cap, and these two
+  // tasks have NO continuation fallback, so a 16K cap truncated the outline
+  // mid-answer on Neptune (2026-07-19). 32K leaves ~19K for the answer after ~13K CoT.
+  outline:          32768,  // 20-30 chapter outlines + beats per chapter
+  book_bible:       32768,  // Multi-character profiles + worldbuilding
   creative_writing: 16384,  // Chapter prose; continuation logic handles overflow
   revision:         16384,  // Pass notes can be long
   consistency:      8192,   // Cross-chapter check report
@@ -338,7 +342,12 @@ export class AIRouter {
         tier: 'cheap',
         available: true,
         endpoint: 'https://openrouter.ai/api/v1',
-        maxTokens: 16384,
+        // 32K: OpenRouter is a meta-provider fronting 32-64K-output models (Sonnet/
+        // Opus); this is both the fallback budget (studio step path passes no explicit
+        // maxTokens) AND the clamp ceiling, so it must be high enough that a reasoning
+        // model's hidden CoT doesn't truncate the visible answer. OpenRouter clamps
+        // smaller models' max_tokens internally, so a high value is safe.
+        maxTokens: 32768,
         // Cost varies wildly by model. These are placeholder estimates that
         // assume Claude Sonnet pricing — actual cost is reported by the
         // OpenRouter usage endpoint. Don't budget against this number.

@@ -18,7 +18,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AIRouter, effectiveMaxOutputTokens } from '../../gateway/src/ai/router.js';
+import { AIRouter, effectiveMaxOutputTokens, getOutputBudget } from '../../gateway/src/ai/router.js';
 
 async function makeRouter(opts: { keys?: string[] } = {}): Promise<AIRouter> {
   const ALL_KEYS = ['gemini_api_key', 'deepseek_api_key', 'anthropic_api_key', 'openai_api_key', 'openrouter_api_key'];
@@ -186,6 +186,40 @@ test('OpenAI-compatible response with finish_reason stop leaves truncated falsy'
   } finally {
     globalThis.fetch = orig;
   }
+});
+
+// ── Outline/bible headroom (2026-07-19): reasoning-model CoT truncated them ──
+
+test('outline + book_bible carry 32K headroom so hidden CoT does not truncate the visible answer', () => {
+  assert.equal(getOutputBudget('outline'), 32768);
+  assert.equal(getOutputBudget('book_bible'), 32768);
+});
+
+/** Run `fn` with fetch stubbed to an OpenAI/OpenRouter-shaped response, capturing the body. */
+async function withOpenRouterCapture(fn: (getBody: () => any) => Promise<void>): Promise<void> {
+  let sentBody: any = null;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init: any) => ({
+    ok: true, status: 200, headers: { get: () => null }, text: async () => '',
+    json: async () => { sentBody = JSON.parse(init.body); return { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }], usage: { prompt_tokens: 1, completion_tokens: 1 } }; },
+  })) as never;
+  try { await fn(() => sentBody); } finally { globalThis.fetch = orig; }
+}
+
+test('OpenRouter sends the full 32768 max_tokens without clamping (raised provider ceiling)', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  await withOpenRouterCapture(async (getBody) => {
+    await router.complete({ provider: 'openrouter', system: 's', messages: [{ role: 'user', content: 'hi' }], maxTokens: 32768 });
+    assert.equal(getBody().max_tokens, 32768);
+  });
+});
+
+test('OpenRouter with no explicit maxTokens falls back to the 32768 provider budget (studio step path)', async () => {
+  const router = await makeRouter({ keys: ['openrouter_api_key'] });
+  await withOpenRouterCapture(async (getBody) => {
+    await router.complete({ provider: 'openrouter', system: 's', messages: [{ role: 'user', content: 'hi' }] });
+    assert.equal(getBody().max_tokens, 32768);
+  });
 });
 
 // ── #10: DeepSeek clamp is observable ───────────────────────────────────────

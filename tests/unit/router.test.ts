@@ -33,9 +33,9 @@ async function makeRouter(opts: { keys?: string[]; overBudget?: boolean; config?
 // ── Pure helpers ──────────────────────────────────────────────────────────
 
 test('getOutputBudget returns the per-task budget, 4096 for unknown tasks', () => {
-  assert.equal(getOutputBudget('outline'), 16384);
+  assert.equal(getOutputBudget('outline'), 32768);
   assert.equal(getOutputBudget('creative_writing'), 16384);
-  assert.equal(getOutputBudget('book_bible'), 16384);
+  assert.equal(getOutputBudget('book_bible'), 32768);
   assert.equal(getOutputBudget('general'), 4096);
   assert.equal(getOutputBudget('totally-unknown-task'), 4096);
 });

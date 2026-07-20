@@ -228,7 +228,7 @@ test('selectProvider throws a budget-exhausted message (not "configure") when pr
 
 // ── #35f: book_bible budget aligned with CLAUDE.md's documented 16K ────────
 
-test('TASK_OUTPUT_BUDGET.book_bible is 16384, matching outline/creative_writing (bug #35f)', () => {
-  assert.equal(getOutputBudget('book_bible'), 16384);
+test('TASK_OUTPUT_BUDGET.book_bible is 32768, matching outline (reasoning-CoT headroom, 2026-07-19)', () => {
+  assert.equal(getOutputBudget('book_bible'), 32768);
   assert.equal(getOutputBudget('book_bible'), getOutputBudget('outline'));
 });
