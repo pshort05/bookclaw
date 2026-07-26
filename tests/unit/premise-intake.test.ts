@@ -87,10 +87,11 @@ test('parse throws a typed error on unparseable output', async () => {
 });
 
 // The mid-tier model the host defaults to (gpt-4o-mini / a 4B local model on
-// these deployments) is flaky at strict JSON and the old 8000-token cap truncated
-// long premises — both surfaced as PREMISE_INTAKE_PARSE_FAILED. Intake now pins a
-// fast, JSON-reliable model via OpenRouter with a much larger output budget.
-test('parse pins the fast JSON model via OpenRouter with a large output budget', async () => {
+// these deployments) is flaky at strict JSON and a too-small cap truncated long
+// premises — both surfaced as PREMISE_INTAKE_PARSE_FAILED. Intake now pins a
+// fast, JSON-reliable model via OpenRouter with a 32K output budget (raised from
+// 16384, which still truncated the ~7k-word "Fireflies" premise).
+test('parse pins the fast JSON model via OpenRouter with a 32K output budget', async () => {
   let captured: any = null;
   const svc = new PremiseIntakeService(
     async (req) => { captured = req; return { text: CANNED }; },
@@ -99,7 +100,7 @@ test('parse pins the fast JSON model via OpenRouter with a large output budget',
   await svc.parse('# FERRARO\'S ...');
   assert.equal(captured.provider, 'openrouter');
   assert.equal(captured.model, 'anthropic/claude-haiku-4.5');
-  assert.ok(captured.maxTokens >= 16384, `expected a >=16384 budget, got ${captured.maxTokens}`);
+  assert.equal(captured.maxTokens, 32768);
 });
 
 // When OpenRouter is not configured the router falls back to tier routing. Pinning

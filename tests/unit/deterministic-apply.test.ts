@@ -113,6 +113,60 @@ test('applyDeAiEdits: a ballooned SWAP replace is guarded — original kept (dri
   assert.equal(r.skipped, 1);
 });
 
+// ── Seam guard: an edit that INTRODUCES orphaned punctuation / an empty quote is
+// rejected (fail closed to the pre-edit span). Root cause of the project-79 ch3
+// corruption: the apply committed audit swaps blindly, so `replace:""` deleted a
+// line of dialogue and left `","`, and a mis-scoped swap left `right., and`. ──
+
+test('applyDeAiEdits: a swap that empties a quote is rejected (dialogue-loss guard)', async () => {
+  const base = 'He nodded. "Different world," Tommy said, taking his rolls.';
+  const edits: DeAiEdit[] = [{ op: 'swap', find: 'Different world', replace: '' }];
+  const r = await applyDeAiEdits(base, edits);
+  assert.equal(r.text, base);                 // dialogue preserved, not nulled to '","'
+  assert.ok(!r.text.includes('","'));
+  assert.equal(r.appliedSwaps, 0);
+  assert.equal(r.skipped, 1);
+  assert.equal(r.malformed, 1);
+});
+
+test('applyDeAiEdits: a swap that orphans a period against a following comma is rejected', async () => {
+  const base = 'She laughed and got it right the second time, and while she waited it rang.';
+  const edits: DeAiEdit[] = [{ op: 'swap', find: ' the second time', replace: '.' }];
+  const r = await applyDeAiEdits(base, edits);
+  assert.equal(r.text, base);                 // no 'right., and' splice
+  assert.ok(!/\.\s*,/.test(r.text));
+  assert.equal(r.appliedSwaps, 0);
+  assert.equal(r.malformed, 1);
+});
+
+test('applyDeAiEdits: a legit deletion of a non-quoted filler word still applies (no false positive)', async () => {
+  const base = 'She was very tired.';
+  const edits: DeAiEdit[] = [{ op: 'swap', find: 'very ', replace: '' }];
+  const r = await applyDeAiEdits(base, edits);
+  assert.equal(r.text, 'She was tired.');     // clean tightening allowed
+  assert.equal(r.appliedSwaps, 1);
+  assert.equal(r.malformed, 0);
+});
+
+test('applyDeAiEdits: a swap that ends a sentence cleanly (no trailing punctuation) still applies', async () => {
+  const base = 'He ran and he hid from the storm.';
+  const edits: DeAiEdit[] = [{ op: 'swap', find: ' and he hid from the storm', replace: '' }];
+  const r = await applyDeAiEdits(base, edits);
+  assert.equal(r.text, 'He ran.');
+  assert.equal(r.appliedSwaps, 1);
+  assert.equal(r.malformed, 0);
+});
+
+test('applyDeAiEdits: a rewrite whose result orphans a quote is rejected (original span kept)', async () => {
+  const base = 'He nodded. "Different world," Tommy said.';
+  const rewriteFn = async () => '';   // scoped rewrite returns empty → would leave '","'
+  const edits: DeAiEdit[] = [{ op: 'rewrite', find: 'Different world', instruction: 'cut it' }];
+  const r = await applyDeAiEdits(base, edits, rewriteFn);
+  // empty rewrite is already guarded as a bad result; assert the quote survives either way.
+  assert.equal(r.text, base);
+  assert.ok(!r.text.includes('","'));
+});
+
 test('parseAuditEdits: balanced extraction survives trailing prose with a bracket', () => {
   const raw = '[{"op":"swap","find":"utilized","replace":"used"}]\n\nNote: also see chapter [3] for context.';
   const edits = parseAuditEdits(raw);

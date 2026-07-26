@@ -61,13 +61,14 @@ function str(v: unknown): string {
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const SEED_TEXT_FIELDS = ['storyArc', 'characters', 'setting', 'blueprint'] as const;
 
-// Premise-intake routing (see intakeRoute() for the rationale). 16384 is
-// OpenRouter's per-call output ceiling in this codebase (router.ts) — double the
-// previous 8000, which truncated the JSON for long, character-rich premises and
-// surfaced to the user as PREMISE_INTAKE_PARSE_FAILED.
+// Premise-intake routing (see intakeRoute() for the rationale). 32768 matches
+// OpenRouter's per-call output ceiling in this codebase (router.ts) and is well
+// within Haiku 4.5's 64K output limit. Raised from 16384: a large, detail-dense
+// premise (~7k words, e.g. the "Fireflies" doc) re-expressed as JSON still
+// truncated at finish_reason:length and surfaced as PREMISE_INTAKE_PARSE_FAILED.
 const INTAKE_PROVIDER = 'openrouter';
 const INTAKE_MODEL = 'anthropic/claude-haiku-4.5';
-const INTAKE_MAX_TOKENS = 16384;
+const INTAKE_MAX_TOKENS = 32768;
 
 export class PremiseIntakeService {
   constructor(private aiComplete: AiComplete, private aiSelectProvider: AiSelectProvider, private researchLookup?: ResearchLookup, private onStep?: OnIntakeStep) {}

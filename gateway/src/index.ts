@@ -2521,7 +2521,7 @@ class BookClawGateway {
             );
             aiResponse = text;
             wasExecutable = true; // skip the short-response retry / normal call
-            console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped}`);
+            console.log(`  ✓ deterministic-apply ch${(activeStep as any).chapterNumber}: audits=${stats.auditSteps} swaps=${stats.appliedSwaps} rewrites=${stats.appliedRewrites} skipped=${stats.skipped} malformed=${stats.malformed}`);
           } else if ((activeStep as any).skill === 'romance-deai-audit') {
             // Chunked two-pass de-AI sweep (see projects.routes.ts): banned-terms
             // replace -> pass 1 -> apply -> pass 2 (second-reader) -> apply, all
@@ -2548,7 +2548,7 @@ class BookClawGateway {
             wasExecutable = true;
             const bt = Object.entries(sweep.bannedCounts).filter(([, n]) => (n as number) > 0).map(([k, n]) => `${k}=${n}`).join(', ');
             const nm = Object.entries(sweep.aiNameCounts).filter(([, n]) => (n as number) > 0).map(([k, n]) => `${k}=${n}`).join(', ');
-            console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] names=[${nm}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x`).join(' ')}`);
+            console.log(`  ✓ romance-deai-audit ch${(activeStep as any).chapterNumber}: passes=${sweep.passes} banned=[${bt}] names=[${nm}] applies=${sweep.passStats.map(s => `${s.appliedSwaps}s/${s.appliedRewrites}r/${s.skipped}x/${s.malformed}m`).join(' ')}`);
           } else if ((activeStep as any).skill === 'canon-drift-apply') {
             // Canon Drift Gate: reconcile the freshly generated canon doc to the
             // verified anchor + setting bible. Deterministic entity gate + the LLM
