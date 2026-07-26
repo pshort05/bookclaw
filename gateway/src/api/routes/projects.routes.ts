@@ -5,6 +5,29 @@ import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
 import { maybeRunCouncilStep } from '../../services/council-gate.js';
 import { buildCouncilService } from '../../services/council.js';
+import { maybeRunTakesStep } from '../../services/takes-gate.js';
+import { makeGenerateTakes } from '../../sampling/generate-takes.js';
+
+/**
+ * Build the Alternate Takes generator for the drive loop: VS runs on the step's
+ * resolved production routing (falling back to tier selection when the step's role
+ * — e.g. the new `approach` role — has no casting entry) and with the SAME per-step
+ * context the normal executor assembles, so candidates are canon-aware.
+ */
+function buildGenerateTakes(services: any, engine: any, buildStepUserMessage: (project: any, step: any) => Promise<string>) {
+  return makeGenerateTakes({
+    complete: (r) => services.aiRouter.complete(r).then((x: any) => ({ text: x.text })),
+    resolveRouting: (project: any, step: any) => {
+      const r = stepRouting(project, step);
+      const provider = r.provider || services.aiRouter.selectProvider(step?.taskType ?? 'creative_writing')?.id || 'openrouter';
+      return { provider, model: r.model, temperature: r.temperature };
+    },
+    buildContext: async (project: any, step: any) => ({
+      system: await engine.buildProjectContext(project, step),
+      user: await buildStepUserMessage(project, step),
+    }),
+  });
+}
 import { checkBudgetPause, applyBudgetPause } from '../../services/pipeline/budget-gate.js';
 import { acquireDrive, releaseDrive, tryAcquireDriveNow } from '../../services/pipeline/scheduler.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
@@ -222,7 +245,9 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           // council-gate can tone the prompt (spicy vs. sweet).
           const heat = pipelineSequence.some((n) => /spicy/i.test(n)) ? 'spicy' : 'sweet';
           const manifestSeeds = { storyArc: s.storyArc ?? '', characters: s.characters ?? '', setting: s.setting ?? '', blueprint: s.blueprint ?? '', councilSelection: s.councilSelection ?? 'auto', heat };
-          const seqContext = { ...manifestSeeds, ...(context || {}), ...resolvedConfig, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
+          // Alternate Takes (Verbalized Sampling) per-book opt-in → injectTakesSteps at expand.
+          const alternateTakes = opened?.manifest?.alternateTakes ?? {};
+          const seqContext = { ...manifestSeeds, ...(context || {}), ...resolvedConfig, alternateTakes, ...(fmtGuide?.structureRail ? { structureRail: fmtGuide.structureRail } : {}) };
           const { pipelineId, projects } = engine.createBookSequence(
             { slug: activeBook, pipelineSequence },
             title,
@@ -593,6 +618,17 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       }
       if (councilOutcome.handled) {
         return res.json({ council: true, project: engine.getProject(req.params.id) });
+      }
+
+      // Alternate Takes gate: a vs-enabled decision step generates k candidate takes
+      // and parks for a human pick (resolved via POST /takes/select). Degraded → the
+      // step completed directly; non-VS steps fall straight through.
+      const takesOutcome = await maybeRunTakesStep({ engine, generateTakes: buildGenerateTakes(services, engine, buildStepUserMessage) }, project, activeStep);
+      if (takesOutcome.gated) {
+        return res.status(409).json({ error: 'Awaiting Alternate Takes selection', awaitingTakes: true, projectId: project.id, project: engine.getProject(req.params.id) });
+      }
+      if (takesOutcome.handled) {
+        return res.json({ takes: true, project: engine.getProject(req.params.id) });
       }
 
       // Human Review gate: a human-review step pauses the pipeline and raises a
@@ -1100,6 +1136,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       );
       if (councilOutcome.gated) { results.push({ step: activeStep.label, success: false, error: 'awaiting council selection' }); break; }
       if (councilOutcome.handled) { continue; } // auto: step completed, advance to the next frontier
+
+      // Alternate Takes gate: park for a human pick (gated) or complete directly
+      // when degraded; non-VS steps fall straight through.
+      const takesOutcome = await maybeRunTakesStep({ engine, generateTakes: buildGenerateTakes(services, engine, buildStepUserMessage) }, currentProject, activeStep);
+      if (takesOutcome.gated) { results.push({ step: activeStep.label, success: false, error: 'awaiting Alternate Takes selection' }); break; }
+      if (takesOutcome.handled) { continue; } // degraded: step completed, advance
 
       // Human Review gate: a human-review step pauses the pipeline and raises a
       // Confirmations request instead of generating; the resolver resumes on approval.
@@ -1945,6 +1987,29 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     // get a silent substitution reported as success.
     if (!engine.applyCouncilSelection(project.id, candidateId)) {
       return res.status(400).json({ error: 'unknown candidateId' });
+    }
+    void driveResumedProject(project.id).catch(() => {});
+    res.json({ ok: true, project: engine.getProject(req.params.id) });
+  });
+
+  // Resolve a paused Alternate Takes gate: complete the gated step with the chosen
+  // take (or human-edited text) and resume the drive. Mirrors /council/select.
+  app.post('/api/projects/:id/takes/select', async (req: Request, res: Response) => {
+    const engine = gateway.getProjectEngine?.();
+    if (!engine) return res.status(503).json({ error: 'Project engine not initialized' });
+    const project = engine.getProject(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (!project.takes) return res.status(409).json({ error: 'No Alternate Takes selection pending' });
+    const edited = req.body?.edited === true;
+    if (edited) {
+      if (typeof req.body?.editedText !== 'string') return res.status(400).json({ error: 'editedText (string) required when edited=true' });
+      if (!engine.applyTakeSelection(project.id, -1, { edited: true, editedText: req.body.editedText })) {
+        return res.status(400).json({ error: 'could not apply edited take' });
+      }
+    } else {
+      const index = Number(req.body?.index);
+      if (!Number.isInteger(index)) return res.status(400).json({ error: 'index (integer) required' });
+      if (!engine.applyTakeSelection(project.id, index)) return res.status(400).json({ error: 'unknown take index' });
     }
     void driveResumedProject(project.id).catch(() => {});
     res.json({ ok: true, project: engine.getProject(req.params.id) });

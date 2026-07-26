@@ -19,6 +19,8 @@ import type { SkillCatalogEntry } from '../skills/loader.js';
 import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
 import { expandSteps } from './pipeline-expand.js';
+import { injectTakesSteps } from '../sampling/inject-takes-steps.js';
+import { appendTakesLog } from '../sampling/takes-log.js';
 import { applyStructureRail } from './format-guide.js';
 import { isStepRole, inferRole, type StepRole } from './casting/roles.js';
 import { buildRollingSummary } from './pipeline/rolling-summary.js';
@@ -98,6 +100,12 @@ export interface Project {
     rationale: string;
     createdAt: string;
   };
+  // Alternate Takes (Verbalized Sampling) pause-resume gate: set when a
+  // vs-enabled step generated candidate takes and the pipeline is parked awaiting
+  // a human pick; cleared by applyTakeSelection (choice applied) or
+  // clearTakesSelection (abandoned). Additive-optional, no schema bump — mirrors
+  // `selection` (council) above.
+  takes?: { stepId: string; role: string; candidates: Array<{ index: number; text: string }>; config: { k: number; variant: string; threshold: number }; provider?: string; model?: string; createdAt: string };
   // Graceful cost-boundary pause (Flagship Plan 6, Task 3): set when a drive
   // loop pauses at a chapter boundary because the book's own budget or the
   // global daily/monthly cap was reached; cleared by resuming the project
@@ -128,6 +136,10 @@ export interface ProjectStep {
   // selection via the casting sheet + castStep resolver. Optional: an untagged
   // step falls back to today's provider/model routing.
   role?: StepRole;
+  // Alternate Takes (Verbalized Sampling) opt-in for this decision step. When
+  // enabled AND the role is allowlisted, the engine generates k candidate takes
+  // and parks for a human pick instead of completing directly. See sampling/vs-roles.ts.
+  vs?: { enabled: true; k?: number; threshold?: number; variant?: 'standard' | 'cot' | 'multi' };
   // Membership marker for a `{ parallel: [...] }` pipeline group (parallel-step
   // execution). Set to a stable group id ('g'+entryIndex) on each member; absent
   // on ordinary steps. The next ordinary step after a group is the implicit join —
@@ -940,7 +952,7 @@ Description: ${description}`;
     // flattens any { expand:'chapters', steps:[...] } group into interleaved
     // per-chapter steps. Plain steps pass through (single emission).
     const vars = buildPipelineVars({ title, description, ...context });
-    const resolved = expandSteps(pipeline.steps as any[], vars);
+    const resolved = injectTakesSteps(expandSteps(pipeline.steps as any[], vars), context?.alternateTakes ?? {});
     let steps: ProjectStep[] = resolved.map((s, i) => ({
       id: `${id}-step-${i + 1}`,
       label: s.label,
@@ -955,6 +967,7 @@ Description: ${description}`;
       ...(s.modelOverride ? { modelOverride: s.modelOverride } : {}),
       role: readStepRole(s),
       ...(s.parallelGroup ? { parallelGroup: s.parallelGroup } : {}),
+      ...((s as any).vs ? { vs: (s as any).vs } : {}),
     }));
 
     if (this.authorOS) steps = this.enhanceWithAuthorOS(steps);
@@ -1182,6 +1195,51 @@ Description: ${description}`;
     project.updatedAt = new Date().toISOString();
     this.persistState();
     return true;
+  }
+
+  /**
+   * Alternate Takes resume: complete the gated step with the chosen take, append
+   * a preference-log record, clear the marker, reactivate. Mirrors
+   * applyCouncilSelection. Returns true iff a candidate at `index` was applied.
+   */
+  applyTakeSelection(projectId: string, index: number, opts?: { edited?: boolean; editedText?: string }): boolean {
+    const project = this.projects.get(projectId);
+    if (!project?.takes) return false;
+    const takes = project.takes;
+    const chosen = takes.candidates.find(c => c.index === index);
+    if (!chosen && !opts?.edited) { console.log(`  ⚠ Takes selection: no candidate at index ${index} (project ${projectId})`); return false; }
+    const finalText = opts?.edited ? (opts.editedText ?? '') : (chosen?.text ?? '');
+    // Preference-dataset log (fail-soft; skipped when no book data dir resolves).
+    try {
+      let dataDir: string | null = null;
+      try { dataDir = this.dataDirResolver?.(project) ?? null; } catch { dataDir = null; }
+      if (dataDir && project.bookSlug) {
+        appendTakesLog(dataDir, {
+          id: `${projectId}-${takes.stepId}-${new Date().toISOString()}`,
+          at: new Date().toISOString(), bookSlug: project.bookSlug, projectId, stepId: takes.stepId, role: takes.role,
+          variant: takes.config.variant, k: takes.config.k, threshold: takes.config.threshold,
+          provider: takes.provider ?? '', model: takes.model ?? '', contextRef: takes.stepId,
+          candidates: takes.candidates, chosenIndex: opts?.edited ? -1 : index, edited: !!opts?.edited,
+          diversityScore: null, degraded: false,
+        });
+      }
+    } catch { /* fail-soft: logging never blocks the pick */ }
+    this.completeStep(projectId, takes.stepId, finalText);
+    void this.persistStepResultFile(projectId, takes.stepId, finalText);
+    if (project.status !== 'completed') project.status = 'active';
+    delete project.takes;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
+    return true;
+  }
+
+  /** Clear a project's Alternate Takes marker (abandoned — project stays paused). */
+  clearTakesSelection(projectId: string): void {
+    const project = this.projects.get(projectId);
+    if (!project) return;
+    delete project.takes;
+    project.updatedAt = new Date().toISOString();
+    this.persistState();
   }
 
   /** Clear a project's Council selection marker (abandoned — project stays paused). */

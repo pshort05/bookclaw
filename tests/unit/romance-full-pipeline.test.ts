@@ -32,13 +32,16 @@ for (const [name, prodSkill, heatWord] of [
     assert.ok(allPrompts.includes('SETTING_MARKER'), 'setting woven');
   });
 
-  test(`${name}: production block carries romance skills + modelOverrides`, () => {
+  test(`${name}: production block carries romance skills; draft steps defer model to the author/casting layer`, () => {
     const p = load(name);
     const steps = expandSteps(p.steps, buildPipelineVars(SEEDS));
     // 4 chapters × 6 per-chapter production steps present:
     const draftSteps = steps.filter((s) => s.skill === prodSkill);
     assert.equal(draftSteps.length, 4, 'one first-draft step per chapter');
-    assert.ok(draftSteps.every((s) => s.modelOverride?.model), 'draft steps keep modelOverride');
+    // Per the per-author draft-model change: draft steps no longer pin a model —
+    // the model resolves from the book manifest's draftModel (author-seeded) or the
+    // genre casting sheet, so the author's model choice is honored.
+    assert.ok(draftSteps.every((s) => s.modelOverride === undefined), 'draft steps carry no baked modelOverride');
   });
 
   test(`${name}: empty seeds collapse cleanly (no dangling markers, front half still generates)`, () => {

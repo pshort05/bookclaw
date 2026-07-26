@@ -31,6 +31,10 @@ import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './services/human-review.js';
 import { maybeRunCouncilStep } from './services/council-gate.js';
+import { maybeRunTakesStep } from './services/takes-gate.js';
+import { makeGenerateTakes } from './sampling/generate-takes.js';
+import { stepRouting } from './api/routes/_shared.js';
+import { resolveBucketTemperature } from './services/casting/temperature.js';
 import { buildCouncilService } from './services/council.js';
 import { checkBudgetPause, applyBudgetPause } from './services/pipeline/budget-gate.js';
 import { DriveScheduler, acquireDrive, releaseDrive } from './services/pipeline/scheduler.js';
@@ -2356,6 +2360,32 @@ class BookClawGateway {
           };
         }
 
+        // Alternate Takes gate (headless drive): park for a human pick, or complete
+        // directly when degraded. Non-VS steps fall straight through.
+        const takesGenerate = makeGenerateTakes({
+          complete: (r) => gateway.aiRouter.complete(r).then((x: any) => ({ text: x.text })),
+          resolveRouting: (p: any, s: any) => {
+            const rr = stepRouting(p, s);
+            const provider = rr.provider || gateway.aiRouter.selectProvider(s?.taskType ?? 'creative_writing')?.id || 'openrouter';
+            return { provider, model: rr.model, temperature: rr.temperature };
+          },
+          // buildProjectContext carries the story context (prior chapters, the
+          // preceding scene brief); the injected VS step's craft prompt is the user
+          // message. (The route path additionally folds in uploads/registry via
+          // buildStepUserMessage; the headless path uses the step prompt directly.)
+          buildContext: async (p: any, s: any) => ({ system: await gateway.projectEngine.buildProjectContext(p, s), user: s.prompt ?? '' }),
+        });
+        const takesOutcome = await maybeRunTakesStep({ engine: gateway.projectEngine, generateTakes: takesGenerate }, project, activeStep);
+        if (takesOutcome.gated) return { error: 'awaiting Alternate Takes selection' };
+        if (takesOutcome.handled) {
+          return {
+            completed: activeStep.label,
+            response: '[Alternate Takes: degraded — completed directly]',
+            wordCount: 0,
+            nextStep: gateway.projectEngine.getProject(projectId)?.steps.find((s: any) => s.status === 'active')?.label,
+          };
+        }
+
         // Human Review gate: a human-review step pauses the pipeline and raises a
         // Confirmations request instead of generating; the resolver resumes on approval.
         if (isHumanReviewStep(activeStep) && gateway.confirmationGate) {
@@ -2501,7 +2531,14 @@ class BookClawGateway {
         const stagePin = (project as any).stageModels?.[(activeStep as any).taskType];
         const projectProvider = stepOverride?.provider || stagePin?.provider || (project as any).preferredProvider || undefined;
         const stepModel = stepOverride?.model || stagePin?.model || (project as any).preferredModel || undefined;
-        const stepTemp = typeof stepOverride?.temperature === 'number' ? stepOverride.temperature : undefined;
+        // Temperature: explicit per-step pin wins, else the book's Creative/Surgical
+        // bucket temperature (this headless path hand-rolls routing and does NOT go
+        // through castStep, so apply the bucket here too — otherwise the feature would
+        // be inert for autonomously-generated books). Casting-sheet role temps still
+        // don't apply on this path (pre-existing; unchanged here).
+        const stepTemp = typeof stepOverride?.temperature === 'number'
+          ? stepOverride.temperature
+          : resolveBucketTemperature((project as any).temperatures, (activeStep as any).role, (activeStep as any).taskType);
         let wasExecutable = false;
         try {
           // Multi-step skills: an executable skill's OpenRouter phase chain IS the

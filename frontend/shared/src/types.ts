@@ -165,6 +165,9 @@ export interface Project {
   // LLM Council pause-resume gate (mirrors gateway projects.ts `selection`):
   // true while parked awaiting a base-story pick (see /api/projects/:id/council).
   awaitingSelection?: boolean;
+  // Alternate Takes gate (mirrors gateway projects.ts `takes`): present while parked
+  // awaiting a human pick among candidate takes (POST /api/projects/:id/takes/select).
+  takes?: { stepId: string; role: string; candidates: Array<{ index: number; text: string }>; config?: { k: number; variant: string; threshold: number } };
   [k: string]: unknown;
 }
 
@@ -276,6 +279,8 @@ export interface LibraryEntryFull extends LibraryEntry {
   editor?: LibraryEditor;
   prompt?: LibraryPrompt;
   world?: LibraryWorld;
+  sceneBriefModel?: { provider: string; model?: string }; // author: per-author scene-brief model default
+  draftModel?: { provider: string; model?: string };      // author: per-author first-draft model default
 }
 export type RepullStatus = 'in-sync'|'library-updated'|'locally-edited'|'diverged'|'library-removed'|'no-baseline';
 export interface RepullAsset { kind: LibraryKind; name: string; status: RepullStatus; libraryPresent: boolean; hasBaseline: boolean; wired: boolean; }

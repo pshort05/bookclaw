@@ -31,7 +31,11 @@
       "taskType": "revision",
       "phase": "bible",
       "promptTemplate": "Audit the SETTING guide for \"{{title}}\" in your context against the verified real-world geography anchor in your context. Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the setting guide. Do NOT rewrite or reproduce the guide; output nothing but the JSON array.",
-      "modelOverride": { "provider": "openrouter", "model": "auto:newest-haiku", "temperature": 0.2 }
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "auto:newest-haiku",
+        "temperature": 0.2
+      }
     },
     {
       "label": "Canon Gate — Setting",
@@ -53,7 +57,11 @@
       "taskType": "revision",
       "phase": "bible",
       "promptTemplate": "Audit the CHARACTER BIBLE for \"{{title}}\" in your context against the anchors in your context (the setting guide and the verified real-world geography). Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the character bible. Do NOT rewrite or reproduce the bible; output nothing but the JSON array.",
-      "modelOverride": { "provider": "openrouter", "model": "auto:newest-haiku", "temperature": 0.2 }
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "auto:newest-haiku",
+        "temperature": 0.2
+      }
     },
     {
       "label": "Canon Gate — Characters",
@@ -79,11 +87,6 @@
           "phase": "brief",
           "chapterNumber": "{{n}}",
           "promptTemplate": "Create the SCENE BRIEF for Chapter {{n}} of \"{{title}}\". Follow your sweet-romance scene-brief methodology (in your context). Use the chapter outline, character bible, world guide, and the previous chapter's text in your context. This is a Fade-to-Black sweet romance (spice level 2): heat cues stay at longing, tension and emotional intimacy. Output the scene brief only — a blueprint, not the prose.",
-          "modelOverride": {
-            "provider": "openrouter",
-            "model": "anthropic/claude-sonnet-4.6",
-            "temperature": 1
-          },
           "role": "scene_brief"
         },
         {
@@ -94,11 +97,6 @@
           "wordCountTarget": "{{wordsPerChapter}}",
           "chapterNumber": "{{n}}",
           "promptTemplate": "Write the COMPLETE Chapter {{n}} of \"{{title}}\" based exclusively on the scene brief in your context. Follow your sweet-romance first-draft methodology, the style guide, and the genre guide in your context. Target about {{wordsPerChapter}} words of prose. This is a Fade-to-Black sweet romance: build emotional and physical tension but keep all intimacy closed-door. Output the chapter prose only, in Markdown.",
-          "modelOverride": {
-            "provider": "openrouter",
-            "model": "anthropic/claude-opus-4.8",
-            "temperature": 1
-          },
           "role": "draft"
         },
         {

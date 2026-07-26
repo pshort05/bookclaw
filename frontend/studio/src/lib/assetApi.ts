@@ -30,7 +30,7 @@ export async function readEntry(scope: Scope, kind: LibraryKind, name: string): 
   return { kind, name, source: 'workspace', files, content, description, pipeline: content ? safeParse(content) : undefined };
 }
 
-export async function writeEntry(scope: Scope, kind: LibraryKind, name: string, body: { files?: Record<string,string>; content?: string; description?: string }): Promise<void> {
+export async function writeEntry(scope: Scope, kind: LibraryKind, name: string, body: { files?: Record<string,string>; content?: string; description?: string; sceneBriefModel?: { provider?: string; model?: string }; draftModel?: { provider?: string; model?: string } }): Promise<void> {
   if (scope === 'library') { await api(`/api/library/${kind}/${encodeURIComponent(name)}`, { method: 'PUT', body: JSON.stringify(body) }); return; }
   const seg = kind === 'section' || kind === 'skill' ? `/${encodeURIComponent(name)}` : '';
   await api(`/api/books/active/templates/${kind}${seg}`, { method: 'PUT', body: JSON.stringify(body) });

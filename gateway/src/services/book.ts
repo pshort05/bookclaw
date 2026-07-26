@@ -53,6 +53,8 @@ export interface BookSelection {
   preferredModel?: string;     // default model id for the chosen provider, persisted on the manifest
   stageModels?: Record<string, { provider?: string; model?: string }>; // per-taskType model pins (Outline/Book Bible/Chapter drafting/Revision/Consistency/Format), persisted on the manifest. Also holds the de-AI sweep per-pass slots `deai_pass1`/`deai_pass2` (resolved by explicit key inside runChunkedDeAiSweep, not stepRouting; defaults Gemini→Haiku).
   contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
+  sceneBriefModel?: { provider: string; model?: string }; // explicit per-book scene-brief model; overrides the bound author's sceneBriefModel at create
+  draftModel?: { provider: string; model?: string };      // explicit per-book draft model; overrides the bound author's draftModel at create
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
   costBudget?: number;      // per-book spend cap in dollars (Flagship Plan 6, Task 3); persisted on the manifest
@@ -392,6 +394,13 @@ export class BookService {
       // manifest → resolveCadence falls back to 'per_act' (today's behavior).
       const reviewCadence = sel.reviewCadence ?? author.reviewCadence;
 
+      // Author-identity role models (per-author draft-model plan): an explicit
+      // per-book value wins; otherwise inherit the bound author's
+      // sceneBriefModel/draftModel. Absent either way → field omitted → castStep
+      // falls to the genre casting sheet for that role.
+      const sceneBriefModel = sel.sceneBriefModel ?? author.sceneBriefModel;
+      const draftModel = sel.draftModel ?? author.draftModel;
+
       const manifest: BookManifest = {
         id: slug,
         slug,
@@ -415,6 +424,8 @@ export class BookService {
         ...(sel.preferredProvider ? { preferredProvider: sel.preferredProvider } : {}),
         ...(sel.preferredModel ? { preferredModel: sel.preferredModel } : {}),
         ...(contentCeiling ? { contentCeiling } : {}),
+        ...(sceneBriefModel ? { sceneBriefModel } : {}),
+        ...(draftModel ? { draftModel } : {}),
         ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
         ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
         ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),
@@ -479,7 +490,12 @@ export class BookService {
    */
   async setModelConfig(
     slug: string,
-    cfg: { default?: { provider?: string; model?: string }; stageModels?: Record<string, { provider?: string; model?: string }> },
+    cfg: {
+      default?: { provider?: string; model?: string };
+      stageModels?: Record<string, { provider?: string; model?: string }>;
+      sceneBriefModel?: { provider?: string; model?: string };
+      draftModel?: { provider?: string; model?: string };
+    },
   ): Promise<BookManifest> {
     return this.withBookLock(slug, async () => {
       const opened = await this.open(slug);
@@ -500,6 +516,15 @@ export class BookService {
           else delete next[taskType]; // falsy provider clears the stage
         }
         if (Object.keys(next).length) manifest.stageModels = next; else delete manifest.stageModels;
+      }
+      // Author-identity role models (per-author draft-model plan): a truthy
+      // provider sets the field; an empty provider clears it. Undefined = not sent.
+      for (const key of ['sceneBriefModel', 'draftModel'] as const) {
+        const sel = cfg[key];
+        if (sel === undefined) continue;
+        const provider = sel.provider?.trim();
+        if (provider) manifest[key] = sel.model?.trim() ? { provider, model: sel.model.trim() } : { provider };
+        else delete manifest[key];
       }
       manifest.history.push({ at: new Date().toISOString(), event: 'model-config-set', detail: `default=${manifest.preferredModel ?? manifest.preferredProvider ?? 'auto'} stages=${Object.keys(manifest.stageModels ?? {}).length}` });
       await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
@@ -530,6 +555,40 @@ export class BookService {
    * project's NEXT chapter/act gate — no restart. A blank cadence clears the
    * override, reverting to the per_act default.
    */
+  /** Set the book's Creative/Surgical temperature buckets. Empty/non-numeric clears the field. */
+  async setTemperatures(slug: string, temps: { creative?: number; surgical?: number }): Promise<BookManifest> {
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      const next: { creative?: number; surgical?: number } = {};
+      if (typeof temps?.creative === 'number' && Number.isFinite(temps.creative)) next.creative = temps.creative;
+      if (typeof temps?.surgical === 'number' && Number.isFinite(temps.surgical)) next.surgical = temps.surgical;
+      if (next.creative !== undefined || next.surgical !== undefined) manifest.temperatures = next;
+      else delete manifest.temperatures;
+      manifest.history.push({ at: new Date().toISOString(), event: 'temperatures-set', detail: `creative=${next.creative ?? '-'} surgical=${next.surgical ?? '-'}` });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
+  }
+
+  /** Set the book's Alternate Takes opt-in flags (per-book; injected at expand time). */
+  async setAlternateTakes(slug: string, flags: { sceneTakes?: boolean; draftOpening?: boolean }): Promise<BookManifest> {
+    return this.withBookLock(slug, async () => {
+      const opened = await this.open(slug);
+      if (!opened) throw new Error(`book not found: ${slug}`);
+      const { manifest } = opened;
+      await this.assertWritable(slug);
+      const next = { sceneTakes: !!flags?.sceneTakes, draftOpening: !!flags?.draftOpening };
+      if (next.sceneTakes || next.draftOpening) manifest.alternateTakes = next;
+      else delete manifest.alternateTakes;
+      manifest.history.push({ at: new Date().toISOString(), event: 'alternate-takes-set', detail: `scene=${next.sceneTakes} opening=${next.draftOpening}` });
+      await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
+      return manifest;
+    });
+  }
+
   async setReviewCadence(slug: string, cadence: Cadence | ''): Promise<BookManifest> {
     return this.withBookLock(slug, async () => {
       const opened = await this.open(slug);

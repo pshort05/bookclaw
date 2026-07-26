@@ -2,7 +2,25 @@ import { Application, Request, Response } from 'express';
 import { uploadZip, requireApprovedConfirmation } from './_shared.js';
 import { LIBRARY_KINDS, type LibraryKind } from '../../services/library-types.js';
 import { ENTRY_NAME_RE, FILE_KINDS, type FileKind } from '../../services/library.js';
+import { AI_PROVIDER_IDS } from '../../ai/router.js';
 import type { ImportFinding } from '../../services/transfer-security.js';
+
+/**
+ * Validate an incoming author role-model pin at the trust boundary. Accepts
+ * undefined (not sent), or an object whose provider is a known id or '' (clear)
+ * and whose optional model is a plausible id. Returns undefined when not sent,
+ * the sanitized pin otherwise; throws on a malformed shape.
+ */
+function validateRoleModelBody(v: unknown, label: string): { provider: string; model?: string } | undefined {
+  if (v === undefined) return undefined;
+  if (!v || typeof v !== 'object') throw new Error(`invalid ${label} { provider, model }`);
+  const o = v as { provider?: unknown; model?: unknown };
+  const provider = typeof o.provider === 'string' ? o.provider : '';
+  if (provider !== '' && !(AI_PROVIDER_IDS as readonly string[]).includes(provider)) throw new Error(`invalid ${label} provider`);
+  const model = typeof o.model === 'string' ? o.model : '';
+  if (model && !/^[A-Za-z0-9._\-/:]{1,200}$/.test(model)) throw new Error(`invalid ${label} model`);
+  return model ? { provider, model } : { provider };
+}
 
 /**
  * Library API (book-container). Read: lists/serves the resolved built-in +
@@ -163,7 +181,9 @@ export function mountLibrary(app: Application, gateway: any, _baseDir: string): 
     const kind = String(req.params.kind);
     if (!isWritable(kind)) return res.status(400).json({ error: `Cannot edit kind "${kind}" here (skills use /api/skills)` });
     try {
-      await services.library.writeEntry(kind, String(req.params.name), { files: req.body?.files, content: req.body?.content, description: req.body?.description });
+      const sceneBriefModel = validateRoleModelBody(req.body?.sceneBriefModel, 'sceneBriefModel');
+      const draftModel = validateRoleModelBody(req.body?.draftModel, 'draftModel');
+      await services.library.writeEntry(kind, String(req.params.name), { files: req.body?.files, content: req.body?.content, description: req.body?.description, sceneBriefModel, draftModel });
       await services.library.reload();
       res.json({ success: true, kind, name: String(req.params.name), source: 'workspace' });
     } catch (err) {

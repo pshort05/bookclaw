@@ -9,8 +9,9 @@ import multer from 'multer';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { safeResolveWithin } from '../../security/paths.js';
 import { castStep } from '../../services/casting/cast-step.js';
-import { loadCastingSheet } from '../../services/casting/casting-sheet.js';
-import { isStepRole } from '../../services/casting/roles.js';
+import { loadCastingSheet, type RoleModel } from '../../services/casting/casting-sheet.js';
+import { isStepRole, type StepRole } from '../../services/casting/roles.js';
+import { resolveBucketTemperature } from '../../services/casting/temperature.js';
 import { intimacyDecision, resolveUncensoredProvider, type IntimacyDecision } from '../../services/casting/heat.js';
 import { classifyScene } from '../../services/casting/heat-classify.js';
 import { profanityInjection } from '../../services/casting/profanity.js';
@@ -205,6 +206,9 @@ export function applyBookModelConfig(project: any, manifest: any): void {
   project.preferredProvider = manifest.preferredProvider;
   project.preferredModel = manifest.preferredModel;
   project.stageModels = manifest.stageModels;
+  project.sceneBriefModel = manifest.sceneBriefModel;
+  project.draftModel = manifest.draftModel;
+  project.temperatures = manifest.temperatures;
 }
 
 export function stepRouting(
@@ -217,7 +221,13 @@ export function stepRouting(
   // Per-stage model map (keyed by taskType) acts as a step-level pin: it beats
   // the project default / casting sheet, but an explicit per-step modelOverride
   // still wins. Merge it into an effective override used by both paths below.
-  const stagePin = project?.stageModels?.[step?.taskType];
+  // EXCEPTION: the scene_brief/draft roles are governed by the author/book role
+  // layer (sceneBriefModel/draftModel) + write-screen per-step pins, NOT by a
+  // taskType stage pin — critical because scene_brief shares taskType 'outline'
+  // with the real outline step, so an "Outline" stage pin would otherwise leak
+  // onto every scene brief (and 'creative_writing' onto every draft).
+  const roleModeled = role === 'scene_brief' || role === 'draft';
+  const stagePin = roleModeled ? undefined : project?.stageModels?.[step?.taskType];
   const effectiveOverride = (step?.modelOverride || stagePin)
     ? {
         provider: step?.modelOverride?.provider || stagePin?.provider,
@@ -230,10 +240,11 @@ export function stepRouting(
   // manual pin, then the project-level preference applied to the whole step.
   // spiceRoute only applies to tagged (role-aware) steps.
   if (!role) {
+    const bucketTemp = resolveBucketTemperature(project?.temperatures, undefined, step?.taskType);
     return {
       provider: effectiveOverride?.provider || project?.preferredProvider || undefined,
       model: effectiveOverride?.model || project?.preferredModel || undefined,
-      temperature: typeof effectiveOverride?.temperature === 'number' ? effectiveOverride.temperature : undefined,
+      temperature: typeof effectiveOverride?.temperature === 'number' ? effectiveOverride.temperature : bucketTemp,
     };
   }
 
@@ -244,7 +255,15 @@ export function stepRouting(
   const proseModel = project?.preferredProvider
     ? { provider: project.preferredProvider, model: project.preferredModel }
     : undefined;
-  const r = castStep({ step: { role, modelOverride: effectiveOverride }, sheet, proseModel, spiceRoute: spiceRoute ?? null });
+  // Author/book per-role model defaults (manifest sceneBriefModel/draftModel),
+  // synced onto the project by applyBookModelConfig. castStep applies each to its
+  // exact role, above the prose-pick and genre sheet.
+  const authorModels: Partial<Record<StepRole, RoleModel>> = {};
+  if (project?.sceneBriefModel?.provider) authorModels.scene_brief = project.sceneBriefModel;
+  if (project?.draftModel?.provider) authorModels.draft = project.draftModel;
+  // Book Creative/Surgical bucket temperature (below an explicit pin, above the sheet).
+  const bucketTemperature = resolveBucketTemperature(project?.temperatures, role, step?.taskType);
+  const r = castStep({ step: { role, modelOverride: effectiveOverride }, sheet, proseModel, authorModels, bucketTemperature, spiceRoute: spiceRoute ?? null });
   return { provider: r.provider, model: r.model, temperature: r.temperature };
 }
 

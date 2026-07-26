@@ -1,18 +1,20 @@
 import { PROSE_ROLES, type StepRole } from './roles.js';
-import type { CastingSheet } from './casting-sheet.js';
+import type { CastingSheet, RoleModel } from './casting-sheet.js';
 import { isValidModelId } from '../../ai/model-id.js';
 
 export interface CastInputs {
   step: { role?: StepRole; modelOverride?: { provider?: string; model?: string; temperature?: number } };
   sheet: CastingSheet | null;
   proseModel?: { provider: string; model?: string };
+  authorModels?: Partial<Record<StepRole, RoleModel>>;
+  bucketTemperature?: number;
   spiceRoute?: { provider: string; model?: string } | null;
 }
 export interface CastResult {
   provider?: string;
   model?: string;
   temperature?: number;
-  source: 'spice' | 'manual' | 'prose-pick' | 'sheet' | 'tier-fallback';
+  source: 'spice' | 'manual' | 'author' | 'prose-pick' | 'sheet' | 'tier-fallback';
 }
 
 /** Drop a model id that would be unsafe to send to a provider API; keep the provider. */
@@ -25,7 +27,7 @@ function clean(provider: string | undefined, model: string | undefined, temperat
 }
 
 export function castStep(inputs: CastInputs): CastResult {
-  const { step, sheet, proseModel, spiceRoute } = inputs;
+  const { step, sheet, proseModel, authorModels, bucketTemperature, spiceRoute } = inputs;
   const role = step.role;
   const mo = step.modelOverride;
 
@@ -37,24 +39,37 @@ export function castStep(inputs: CastInputs): CastResult {
     // 2. Manual per-step pin (the existing escape hatch).
     if (mo && (mo.provider || mo.model)) return clean(mo.provider, mo.model, mo.temperature, 'manual');
 
-    // 3. The author's prose-model pick, applied to prose roles only.
+    // 3. Author/book per-role model (manifest sceneBriefModel/draftModel), applied
+    //    to its exact role. A role-specific pin beats the blunt prose-pick default;
+    //    the manual per-step pin above still wins. Temperature is inherited from the
+    //    genre sheet's role default so stripping the pipelines' baked temp pins
+    //    doesn't silently drop draft to the provider's 0.7 default.
+    const am = role ? authorModels?.[role] : undefined;
+    if (am) {
+      const temp = am.temperature ?? (role ? sheet?.roleModels?.[role]?.temperature : undefined);
+      return clean(am.provider, am.model, temp, 'author');
+    }
+
+    // 4. The book-level prose-model pick (preferredModel), applied to prose roles only.
     const proseRoles = sheet?.proseRoles?.length ? new Set(sheet.proseRoles) : PROSE_ROLES;
     if (proseModel && role && proseRoles.has(role)) {
       return clean(proseModel.provider, proseModel.model, undefined, 'prose-pick');
     }
 
-    // 4. Genre casting-sheet default for the role.
+    // 5. Genre casting-sheet default for the role.
     const rm = role && sheet?.roleModels?.[role];
     if (rm) return clean(rm.provider, rm.model, rm.temperature, 'sheet');
 
-    // 5. Nothing pinned → tier routing decides downstream.
+    // 6. Nothing pinned → tier routing decides downstream.
     return { provider: undefined, model: undefined, temperature: undefined, source: 'tier-fallback' };
   })();
 
-  // A manual temperature ALWAYS applies on top of whichever model source won —
-  // a temperature-only override must not be dropped just because it has no
-  // provider/model to pin (branch 2's guard above only fires on provider/model).
+  // Temperature precedence: an explicit per-step pin ALWAYS wins (even temperature-
+  // only, which branch 2's provider/model guard skips); else the book's Creative/
+  // Surgical bucket temperature overrides whatever the model source set; else the
+  // source temp (sheet) stands.
   if (typeof mo?.temperature === 'number') result.temperature = mo.temperature;
+  else if (typeof bucketTemperature === 'number') result.temperature = bucketTemperature;
 
   return result;
 }

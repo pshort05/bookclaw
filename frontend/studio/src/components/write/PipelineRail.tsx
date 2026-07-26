@@ -115,6 +115,23 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   // above — it tracks /current-project, which returns the next phase automatically
   // once the current one completes, so no separate "follow" effect is needed.)
 
+  // Resolve an Alternate Takes gate by picking a candidate, then refresh.
+  const pickTake = async (index: number) => {
+    if (busyRef.current || !activeProject) return;
+    busyRef.current = true;
+    setActionBusy(true); setError(null);
+    try {
+      await api(`/api/projects/${encodeURIComponent(activeProject.id)}/takes/select`, { method: 'POST', body: JSON.stringify({ index }) });
+      const r = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(activeProject.id)}`).catch(() => null);
+      if (r?.project) onProjectChange(r.project);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      busyRef.current = false;
+      setActionBusy(false);
+    }
+  };
+
   const action = async (url: string) => {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -387,6 +404,25 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
           >
             {actionBusy ? 'Starting…' : 'Start pipeline'}
           </button>
+        ) : activeProject.status === 'paused' && activeProject.takes ? (
+          // Alternate Takes gate: parked awaiting a human pick among candidate
+          // takes. Execute/Resume don't apply until a take is chosen.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <span className={styles.dimmed} style={{ fontSize: 12 }}>Alternate Takes — pick one to continue:</span>
+            {activeProject.takes.candidates.map((c) => (
+              <button
+                key={c.index}
+                className={styles.ctrlBtn}
+                style={{ textAlign: 'left', whiteSpace: 'normal', height: 'auto', padding: '8px 10px', lineHeight: 1.35 }}
+                disabled={actionBusy}
+                title="Use this take"
+                onClick={() => pickTake(c.index)}
+              >
+                <strong style={{ fontSize: 11, opacity: 0.7 }}>Take {c.index + 1}</strong>
+                <div style={{ fontSize: 12.5 }}>{c.text.length > 400 ? c.text.slice(0, 400) + '…' : c.text}</div>
+              </button>
+            ))}
+          </div>
         ) : activeProject.status === 'paused' && activeProject.awaitingSelection ? (
           // LLM Council propose-mode gate: the pipeline is parked awaiting a
           // base-story pick, not a plain pause — Execute/Resume don't apply

@@ -49,11 +49,6 @@
           "phase": "brief",
           "chapterNumber": "{{n}}",
           "promptTemplate": "Create the SCENE BRIEF for Chapter {{n}} of \"{{title}}\". Follow your spicy-romance scene-brief methodology (in your context). Use the chapter outline, character bible, world guide, and the previous chapter's text in your context. This is a Heat Level 4 spicy romance: mark any on-page intimate scene per your methodology. Output the scene brief only — a blueprint, not the prose.",
-          "modelOverride": {
-            "provider": "openrouter",
-            "model": "anthropic/claude-opus-4.8",
-            "temperature": 1
-          },
           "role": "scene_brief"
         },
         {
@@ -64,11 +59,6 @@
           "wordCountTarget": "{{wordsPerChapter}}",
           "chapterNumber": "{{n}}",
           "promptTemplate": "Write the COMPLETE Chapter {{n}} of \"{{title}}\" based exclusively on the scene brief in your context. Follow your spicy-romance first-draft methodology, the style guide, and the genre guide in your context. Target about {{wordsPerChapter}} words of prose. Honor the brief's heat handling for any on-page intimate scene. Output the chapter prose only, in Markdown.",
-          "modelOverride": {
-            "provider": "openrouter",
-            "model": "anthropic/claude-opus-4.8",
-            "temperature": 1
-          },
           "role": "draft"
         },
         {

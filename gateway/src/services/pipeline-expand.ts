@@ -11,6 +11,9 @@ export interface ResolvedStepInput {
   // id ('g'+entryIndex) shared by every member of that group. Absent on ordinary
   // steps (including the implicit join step that follows a group).
   parallelGroup?: string;
+  // Alternate Takes (Verbalized Sampling) opt-in — carried through to ProjectStep.
+  // Set by the per-book inject-takes-steps overlay (not present in on-disk pipelines).
+  vs?: { enabled: true; k?: number; threshold?: number; variant?: 'standard' | 'cot' | 'multi' };
 }
 
 // Bug #36a: warn (once per var name) when a {{var}} references a key that is

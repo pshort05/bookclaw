@@ -40,6 +40,8 @@ export interface LibraryEntryFull extends LibraryEntry {
   files?: Record<string, string>; // author/genre: filename -> content
   contentBrand?: { spiceCeiling: number; violenceCeiling: number }; // author: sidecar meta.json — inherited by a new book's contentCeiling (Flagship Plan 2)
   reviewCadence?: Cadence; // author: sidecar meta.json — inherited by a new book's review.cadence when unset (Flagship Plan 5)
+  sceneBriefModel?: { provider: string; model?: string }; // author: sidecar meta.json — inherited by a new book's sceneBriefModel
+  draftModel?: { provider: string; model?: string };      // author: sidecar meta.json — inherited by a new book's draftModel
   content?: string;               // section (md) / skill (SKILL.md)
   pipeline?: LibraryPipeline;     // pipeline: parsed JSON
   sequence?: LibrarySequence;     // sequence: parsed JSON
@@ -82,6 +84,16 @@ export interface LibraryWriteBody {
   files?: Record<string, string>; // author/voice/genre
   content?: string;               // section / pipeline (raw JSON text)
   description?: string;           // author/voice/genre/section: sidecar meta.json
+  sceneBriefModel?: { provider: string; model?: string }; // author: meta.json role model (provider '' clears)
+  draftModel?: { provider: string; model?: string };      // author: meta.json role model (provider '' clears)
+}
+
+/** Parse a stored role-model pin from meta.json; drop anything malformed (fail-soft). */
+function parseRoleModel(v: unknown): { provider: string; model?: string } | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const o = v as { provider?: unknown; model?: unknown };
+  if (typeof o.provider !== 'string' || !o.provider) return undefined;
+  return typeof o.model === 'string' && o.model ? { provider: o.provider, model: o.model } : { provider: o.provider };
 }
 
 export class LibraryService {
@@ -202,8 +214,11 @@ export class LibraryService {
         if (typeof files[fname] !== 'string') throw new Error(`File content must be a string: ${fname}`);
       }
     } else if (!files || Object.keys(files).length === 0) {
-      // No files provided — require at least a description so the write does something.
-      if (typeof body.description !== 'string') throw new Error(`${kind} requires at least one .md file`);
+      // No files provided — require at least a description or a role model so the
+      // write does something.
+      if (typeof body.description !== 'string' && body.sceneBriefModel === undefined && body.draftModel === undefined) {
+        throw new Error(`${kind} requires at least one .md file`);
+      }
     }
     // NOTE (deliberate): this UPSERTs files and never deletes — to drop a single
     // file from an entry, delete the whole overlay (deleteOverlayEntry) and re-add.
@@ -216,11 +231,11 @@ export class LibraryService {
       for (const [fname, content] of Object.entries(finalFiles)) {
         await writeFile(join(target, fname), content, 'utf-8');
       }
-    } else if (typeof body.description === 'string') {
-      // Description-only write: materialize the currently-resolved .md files into
-      // the overlay dir before writing the sidecar. Without this, the overlay would
-      // contain only meta.json with no .md files, silently shadowing the builtin's
-      // real content and leaving the entry with files: {}.
+    } else if (typeof body.description === 'string' || body.sceneBriefModel !== undefined || body.draftModel !== undefined) {
+      // Meta-only write (description and/or a role model): materialize the
+      // currently-resolved .md files into the overlay dir before writing meta.json.
+      // Without this, the overlay would contain only meta.json with no .md files,
+      // silently shadowing the builtin's real content and leaving files: {}.
       const currentFiles = this.get(kind, name)?.files ?? {};
       if (Object.keys(currentFiles).length === 0) {
         // Entry doesn't exist anywhere — a description-only create would produce
@@ -232,10 +247,24 @@ export class LibraryService {
         await writeFile(join(target, fname), content, 'utf-8');
       }
     }
-    // Persist description sidecar if provided (only for author/voice/genre/section).
-    if (typeof body.description === 'string') {
+    // Persist meta.json (author/voice/genre) by MERGING onto any existing file, so
+    // writing one field never clobbers siblings (description / contentBrand /
+    // reviewCadence / the other role model). Provider '' clears a role model.
+    const wantsMeta = typeof body.description === 'string'
+      || body.sceneBriefModel !== undefined || body.draftModel !== undefined;
+    if (wantsMeta) {
       await mkdir(target, { recursive: true });
-      await writeFile(join(target, 'meta.json'), JSON.stringify({ description: body.description }), 'utf-8');
+      const metaPath = join(target, 'meta.json');
+      let meta: Record<string, unknown> = {};
+      try { if (existsSync(metaPath)) meta = JSON.parse(readFileSync(metaPath, 'utf-8')); } catch { meta = {}; }
+      if (typeof body.description === 'string') meta.description = body.description;
+      for (const key of ['sceneBriefModel', 'draftModel'] as const) {
+        const sel = body[key];
+        if (sel === undefined) continue;
+        if (sel.provider) meta[key] = sel.model ? { provider: sel.provider, model: sel.model } : { provider: sel.provider };
+        else delete meta[key];
+      }
+      await writeFile(metaPath, JSON.stringify(meta), 'utf-8');
     }
   }
 
@@ -260,7 +289,7 @@ export class LibraryService {
     return true;
   }
 
-  private readMetaSidecar(file: string): { description?: string; groups?: string[]; contentBrand?: { spiceCeiling: number; violenceCeiling: number }; reviewCadence?: Cadence } {
+  private readMetaSidecar(file: string): { description?: string; groups?: string[]; contentBrand?: { spiceCeiling: number; violenceCeiling: number }; reviewCadence?: Cadence; sceneBriefModel?: { provider: string; model?: string }; draftModel?: { provider: string; model?: string } } {
     try {
       if (!existsSync(file)) return {};
       const meta = JSON.parse(readFileSync(file, 'utf-8'));
@@ -272,7 +301,9 @@ export class LibraryService {
         ? { spiceCeiling: meta.contentBrand.spiceCeiling, violenceCeiling: meta.contentBrand.violenceCeiling }
         : undefined;
       const reviewCadence = VALID_CADENCES.includes(meta?.reviewCadence) ? (meta.reviewCadence as Cadence) : undefined;
-      return { description, groups, contentBrand, reviewCadence };
+      const sceneBriefModel = parseRoleModel(meta?.sceneBriefModel);
+      const draftModel = parseRoleModel(meta?.draftModel);
+      return { description, groups, contentBrand, reviewCadence, sceneBriefModel, draftModel };
     } catch { return {}; }
   }
 
@@ -355,11 +386,19 @@ export class LibraryService {
           const groups = meta.groups ?? prev?.groups;
           const contentBrand = meta.contentBrand ?? prev?.contentBrand;
           const reviewCadence = meta.reviewCadence ?? prev?.reviewCadence;
+          // Overlay-over-builtin fallback (same as contentBrand/reviewCadence): an
+          // overlay that omits a role model inherits the builtin's. A consequence is
+          // that a role model shipped by a BUILTIN author can't be cleared via the
+          // overlay — theoretical today (no builtin author ships role models).
+          const sceneBriefModel = meta.sceneBriefModel ?? prev?.sceneBriefModel;
+          const draftModel = meta.draftModel ?? prev?.draftModel;
           out.set(item.name, { kind, name: item.name, source, files,
             ...(description !== undefined ? { description } : {}),
             ...(groups !== undefined ? { groups } : {}),
             ...(contentBrand !== undefined ? { contentBrand } : {}),
-            ...(reviewCadence !== undefined ? { reviewCadence } : {}) });
+            ...(reviewCadence !== undefined ? { reviewCadence } : {}),
+            ...(sceneBriefModel !== undefined ? { sceneBriefModel } : {}),
+            ...(draftModel !== undefined ? { draftModel } : {}) });
         }
       } catch (err) {
         console.error(`  ⚠ Library: failed to load ${kind}/${item.name}`, err);

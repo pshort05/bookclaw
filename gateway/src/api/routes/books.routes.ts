@@ -298,6 +298,10 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     res.json({
       default: { provider: m.preferredProvider ?? '', model: m.preferredModel ?? '' },
       stageModels: m.stageModels ?? {},
+      sceneBriefModel: m.sceneBriefModel ?? null,
+      draftModel: m.draftModel ?? null,
+      alternateTakes: m.alternateTakes ?? { sceneTakes: false, draftOpening: false },
+      temperatures: m.temperatures ?? null,
       reviewCadence: m.review?.cadence ?? '',
     });
   });
@@ -349,6 +353,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       && (s.provider === undefined || (typeof s.provider === 'string' && (s.provider === '' || AI_PROVIDER_IDS.includes(s.provider))))
       && (s.model === undefined || (typeof s.model === 'string' && (s.model === '' || /^[A-Za-z0-9._\-/:]{1,200}$/.test(s.model)))));
     if (!validSel(body.default)) return res.status(400).json({ error: 'invalid default { provider, model }' });
+    if (!validSel(body.sceneBriefModel)) return res.status(400).json({ error: 'invalid sceneBriefModel { provider, model }' });
+    if (!validSel(body.draftModel)) return res.status(400).json({ error: 'invalid draftModel { provider, model }' });
     const stageModels = body.stageModels && typeof body.stageModels === 'object' ? body.stageModels : undefined;
     if (stageModels) {
       for (const [k, v] of Object.entries(stageModels)) {
@@ -363,15 +369,26 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     if (reviewCadence !== undefined && reviewCadence !== '' && !['per_act', 'per_chapter', 'outline_only', 'autonomous'].includes(reviewCadence)) {
       return res.status(400).json({ error: `invalid reviewCadence: ${reviewCadence}` });
     }
+    const temps = body.temperatures;
+    const validTemp = (t: any) => t === undefined || (typeof t === 'number' && t >= 0 && t <= 2);
+    if (temps !== undefined && (typeof temps !== 'object' || temps === null || !validTemp(temps.creative) || !validTemp(temps.surgical))) {
+      return res.status(400).json({ error: 'invalid temperatures { creative, surgical } (numbers in [0,2])' });
+    }
     try {
       // Only touch the model config when model fields were sent, so a cadence-only
       // save doesn't push a spurious model-config history entry (and vice-versa).
       let manifest;
-      if (body.default !== undefined || stageModels !== undefined) {
-        manifest = await services.books.setModelConfig(slug, { default: body.default, stageModels });
+      if (body.default !== undefined || stageModels !== undefined || body.sceneBriefModel !== undefined || body.draftModel !== undefined) {
+        manifest = await services.books.setModelConfig(slug, { default: body.default, stageModels, sceneBriefModel: body.sceneBriefModel, draftModel: body.draftModel });
       }
       if (reviewCadence !== undefined) {
         manifest = await services.books.setReviewCadence(slug, reviewCadence);
+      }
+      if (body.alternateTakes !== undefined && typeof body.alternateTakes === 'object') {
+        manifest = await services.books.setAlternateTakes(slug, { sceneTakes: !!body.alternateTakes.sceneTakes, draftOpening: !!body.alternateTakes.draftOpening });
+      }
+      if (temps !== undefined) {
+        manifest = await services.books.setTemperatures(slug, { creative: temps.creative, surgical: temps.surgical });
       }
       // Neither field sent: report current config (open() can still miss if the
       // file was removed/corrupted since the exists() check → 404, not a 500).
@@ -379,7 +396,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       if (!manifest) return res.status(404).json({ error: 'Book not found' });
       const project = gateway.getProjectEngine?.()?.frontierProjectForBook(slug) ?? null;
       if (project) applyBookModelConfig(project, manifest);
-      res.json({ success: true, default: { provider: manifest.preferredProvider ?? '', model: manifest.preferredModel ?? '' }, stageModels: manifest.stageModels ?? {}, reviewCadence: manifest.review?.cadence ?? '' });
+      res.json({ success: true, default: { provider: manifest.preferredProvider ?? '', model: manifest.preferredModel ?? '' }, stageModels: manifest.stageModels ?? {}, sceneBriefModel: manifest.sceneBriefModel ?? null, draftModel: manifest.draftModel ?? null, alternateTakes: manifest.alternateTakes ?? { sceneTakes: false, draftOpening: false }, temperatures: manifest.temperatures ?? null, reviewCadence: manifest.review?.cadence ?? '' });
     } catch (err: any) {
       const msg = (err as Error)?.message || String(err);
       res.status(/not found/i.test(msg) ? 404 : /read-only|quarantine/i.test(msg) ? 409 : 500).json({ error: msg });

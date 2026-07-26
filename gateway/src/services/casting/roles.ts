@@ -1,10 +1,10 @@
 export type StepRole =
-  | 'scene_brief' | 'draft' | 'improve' | 'rewrite' | 'humanize' | 'intimacy'
+  | 'scene_brief' | 'approach' | 'draft' | 'improve' | 'rewrite' | 'humanize' | 'intimacy'
   | 'editorial' | 'analysis' | 'research' | 'bible' | 'outline' | 'plan'
   | 'format' | 'marketing' | 'continuity';
 
 export const STEP_ROLES: readonly StepRole[] = [
-  'scene_brief', 'draft', 'improve', 'rewrite', 'humanize', 'intimacy',
+  'scene_brief', 'approach', 'draft', 'improve', 'rewrite', 'humanize', 'intimacy',
   'editorial', 'analysis', 'research', 'bible', 'outline', 'plan',
   'format', 'marketing', 'continuity',
 ];

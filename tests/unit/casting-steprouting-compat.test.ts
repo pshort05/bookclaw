@@ -37,8 +37,10 @@ test('stageModels[taskType] pins an untagged step, below an explicit modelOverri
 });
 
 test('stageModels also pins a tagged (role) step via the manual-pin slot', () => {
-  const project = { context: { genre: '__no_sheet__' }, stageModels: { creative_writing: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' } } };
-  const r = stepRouting(project, { role: 'draft', taskType: 'creative_writing' });
+  // A stage pin applies to tagged steps whose role is NOT scene_brief/draft — those
+  // two are governed by the author/book role layer (see author-role-models-routing).
+  const project = { context: { genre: '__no_sheet__' }, stageModels: { revision: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' } } };
+  const r = stepRouting(project, { role: 'rewrite', taskType: 'revision' });
   assert.equal(r.provider, 'openrouter');
   assert.equal(r.model, 'anthropic/claude-opus-4.8');
 });

@@ -3,6 +3,7 @@ import { renderMarkdown } from '@bookclaw/shared';
 import type { LibraryKind } from '@bookclaw/shared';
 import type { Scope } from '../../lib/assetApi.js';
 import { readEntry, writeEntry, createLibraryEntry } from '../../lib/assetApi.js';
+import { ModelPicker } from './ModelPicker.js';
 import { sourceBadge } from '../../lib/sourceBadge.js';
 import { useDialog } from '../Dialog.js';
 import styles from '../../routes/AssetStudio.module.css';
@@ -20,6 +21,9 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
   const [files, setFiles] = useState<Record<string, string>>({});
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [description, setDescription] = useState('');
+  // Per-author role-model defaults (author kind only), persisted to meta.json.
+  const [sceneBriefModel, setSceneBriefModel] = useState<{ provider?: string; model?: string }>({});
+  const [draftModel, setDraftModel] = useState<{ provider?: string; model?: string }>({});
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -43,6 +47,8 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
         const firstFile = Object.keys(f)[0] ?? '';
         setSelectedFile(firstFile);
         setDescription(entry.description ?? '');
+        setSceneBriefModel(entry.sceneBriefModel ?? {});
+        setDraftModel(entry.draftModel ?? {});
         setSource(entry.source ?? '');
       })
       .catch((e) => setError(String(e)));
@@ -71,10 +77,13 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
     setSaveMsg(null);
     try {
       const isSingleFile = SINGLE_FILE_KINDS.includes(kind);
+      const roleModels = kind === 'author' && scope === 'library'
+        ? { sceneBriefModel: { provider: sceneBriefModel.provider ?? '', model: sceneBriefModel.model ?? '' }, draftModel: { provider: draftModel.provider ?? '', model: draftModel.model ?? '' } }
+        : {};
       if (isSingleFile) {
-        await writeEntry(scope, kind, name, { content: currentContent, description });
+        await writeEntry(scope, kind, name, { content: currentContent, description, ...roleModels });
       } else {
-        await writeEntry(scope, kind, name, { files, description });
+        await writeEntry(scope, kind, name, { files, description, ...roleModels });
       }
       setDirty(false);
       setSaveMsg('Saved');
@@ -153,6 +162,24 @@ export function ProseEditor({ scope, kind, name, displayName }: Props) {
           spellCheck={false}
         />
       </div>
+
+      {/* Per-author model defaults: the models this author's books use for the
+          scene-brief and first-draft steps. Book board / write screen can override.
+          Library scope only — per-book edits go through the book board's model panel,
+          which writes the same manifest fields (the template write path here does not
+          persist them, so showing the pickers in book scope would be a silent no-op). */}
+      {kind === 'author' && scope === 'library' && (
+        <div className={styles.descfield} style={{ display: 'grid', gap: 10 }}>
+          <div>
+            <div className={styles.fl}>Scene-brief model <em>· author default (book or step can override)</em></div>
+            <ModelPicker value={sceneBriefModel} onChange={(v) => { setSceneBriefModel({ provider: v.provider, model: v.model }); setDirty(true); setSaveMsg(null); }} hideTemperature />
+          </div>
+          <div>
+            <div className={styles.fl}>First-draft model <em>· author default (book or step can override)</em></div>
+            <ModelPicker value={draftModel} onChange={(v) => { setDraftModel({ provider: v.provider, model: v.model }); setDirty(true); setSaveMsg(null); }} hideTemperature />
+          </div>
+        </div>
+      )}
 
       {isReadOnly ? (
         <div>

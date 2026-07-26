@@ -77,3 +77,68 @@ test('a dropped invalid model id logs a warning', () => {
   assert.equal(calls.length, 1);
   assert.match(String(calls[0][0]), /dropping invalid model id "has spaces\/bad"/);
 });
+
+test('authorModels drives the draft role, inheriting sheet temperature', () => {
+  const r = castStep({
+    step: { role: 'draft' },
+    sheet,
+    authorModels: { draft: { provider: 'openrouter', model: 'auto:newest-opus' } },
+  });
+  assert.equal(r.source, 'author');
+  assert.equal(r.provider, 'openrouter');
+  assert.equal(r.model, 'auto:newest-opus');
+  assert.equal(r.temperature, 1); // inherited from the sheet's draft role
+});
+
+test('authorModels is role-scoped: a draft entry does not affect scene_brief', () => {
+  const briefSheet: CastingSheet = {
+    genre: 'romance',
+    roleModels: { scene_brief: { provider: 'openrouter', model: 'sheet-brief' } },
+    proseRoles: ['scene_brief', 'draft'],
+  };
+  const r = castStep({
+    step: { role: 'scene_brief' },
+    sheet: briefSheet,
+    authorModels: { draft: { provider: 'openrouter', model: 'auto:newest-opus' } },
+  });
+  assert.equal(r.source, 'sheet');
+  assert.equal(r.model, 'sheet-brief');
+});
+
+test('a manual per-step pin still wins over authorModels', () => {
+  const r = castStep({
+    step: { role: 'draft', modelOverride: { provider: 'openrouter', model: 'manual-pin' } },
+    sheet: null,
+    authorModels: { draft: { provider: 'openrouter', model: 'auto:newest-opus' } },
+  });
+  assert.equal(r.source, 'manual');
+  assert.equal(r.model, 'manual-pin');
+});
+
+test('authorModels beats prose-pick (book preferred model) for the draft role', () => {
+  const flat: CastingSheet = { genre: 'romance', roleModels: {}, proseRoles: ['scene_brief', 'draft'] };
+  const r = castStep({
+    step: { role: 'draft' },
+    sheet: flat,
+    proseModel: { provider: 'openrouter', model: 'book-default' },
+    authorModels: { draft: { provider: 'openrouter', model: 'auto:newest-opus' } },
+  });
+  assert.equal(r.source, 'author');
+  assert.equal(r.model, 'auto:newest-opus');
+});
+
+test('bucketTemperature overrides the casting-sheet role temperature', () => {
+  const r = castStep({ step: { role: 'draft' }, sheet, bucketTemperature: 0.85 });
+  assert.equal(r.model, 'anthropic/claude-opus-4.6'); // model still from the sheet
+  assert.equal(r.temperature, 0.85);                  // temp from the bucket, not the sheet's 1
+});
+
+test('an explicit modelOverride.temperature still wins over bucketTemperature', () => {
+  const r = castStep({ step: { role: 'draft', modelOverride: { temperature: 0.2 } }, sheet, bucketTemperature: 0.85 });
+  assert.equal(r.temperature, 0.2);
+});
+
+test('no bucketTemperature → the sheet temperature is unchanged', () => {
+  const r = castStep({ step: { role: 'draft' }, sheet });
+  assert.equal(r.temperature, 1);
+});
