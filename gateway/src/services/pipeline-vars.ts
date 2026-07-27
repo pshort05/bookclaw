@@ -19,7 +19,7 @@ export interface PipelineVars extends Record<string, string | number> {
  *     collapsing boundaries together for books too small to fit every beat
  *     distinctly rather than producing a boundary past the book's end.
  */
-function computeBeats(chapterCount: number) {
+export function computeBeats(chapterCount: number) {
   let setupEnd = Math.max(Math.round(chapterCount * 0.12), 1);
   let incitingEnd = Math.max(Math.round(chapterCount * 0.20), setupEnd + 1);
   let midpoint = Math.max(Math.round(chapterCount * 0.50), incitingEnd + 2);

@@ -18,6 +18,7 @@ import { ContextEngine } from './context-engine.js';
 import type { SkillCatalogEntry } from '../skills/loader.js';
 import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
+import { buildTwoTierOutlineBlock, extractOutlineChapterSection } from './outline-skeleton.js';
 import { expandSteps } from './pipeline-expand.js';
 import { injectTakesSteps } from '../sampling/inject-takes-steps.js';
 import { appendTakesLog } from '../sampling/takes-log.js';
@@ -300,29 +301,8 @@ export function formatPriorPhaseContext(
     phaseBlocks.join('\n\n');
 }
 
-/**
- * Extract a single chapter's section from a joined outline block (bug #18a
- * helper): find the "Chapter <n>" heading matching `chapterNum` and slice up
- * to the next "Chapter <...>" heading (or end of text). Returns null if no
- * heading for that chapter number is found — callers keep the default
- * head-truncated block unchanged (fail-soft).
- */
-function extractOutlineChapterSection(outlineText: string, chapterNum: number): string | null {
-  const headingRe = /\bChapter\s+(\d+)\b/gi;
-  let match: RegExpExecArray | null;
-  let start = -1;
-  let end = outlineText.length;
-  while ((match = headingRe.exec(outlineText)) !== null) {
-    if (start === -1) {
-      if (Number(match[1]) === chapterNum) start = match.index;
-      continue;
-    }
-    end = match.index;
-    break;
-  }
-  if (start === -1) return null;
-  return outlineText.slice(start, end).trim();
-}
+// extractOutlineChapterSection + the two-tier outline helpers now live in
+// ./outline-skeleton.ts (C1) and are imported above.
 
 // ═══════════════════════════════════════════════════════════
 // Project Engine
@@ -2033,8 +2013,27 @@ Description: ${description}`;
       // the context window exploding on chapter 25.
       context += this.buildBookProductionContext(project, step);
     } else {
+      // C1: deterministic book-sequence pipelines (type e.g. 'romance-sweet-
+      // deterministic') land here — the default branch had NO per-chapter outline
+      // handling, so the outline reached a Scene Brief only as a head+tail slice of
+      // the outline step and the middle chapters ("[...middle omitted...]") never
+      // arrived (audit: "outline only runs through Chapter 9"). Inject a
+      // truncation-proof two-tier outline block for any per-chapter step: the full
+      // short skeleton (every chapter + its beat) plus the prior/current/next full
+      // outline sections. The outline step is then excluded from the truncated dump
+      // below so the model isn't handed a conflicting half-outline.
+      const chapterNum = Number((step as any).chapterNumber) || 0;
+      const outlineStep = chapterNum
+        ? project.steps.find(s => s.phase === 'outline' && s.status === 'completed' && s.result)
+        : undefined;
+      if (chapterNum && outlineStep?.result) {
+        // Spice gates the "Intimate scene" beat tag (open-door pipelines only).
+        const spicy = /spic|explicit|open.?door|erotic/i.test(String(project.type) || '');
+        context += `## Outline (structural — authoritative for this chapter)\n\n`;
+        context += `${buildTwoTierOutlineBlock(outlineStep.result, chapterNum, { spicy })}\n\n`;
+      }
       // Default: add results from prior steps
-      const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result);
+      const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result && s !== outlineStep);
       if (completedSteps.length > 0) {
         context += `## Previous Steps Completed\n\n`;
         // Keep the HEAD as well as the tail: planning outputs (character

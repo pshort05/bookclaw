@@ -11,13 +11,32 @@ export function buildBookFormat(
   body: { structure?: string; customStructure?: unknown; form?: string; chapterCount?: number; wordsPerChapter?: number },
   structures: StoryStructureService,
 ): { format?: BookFormat; error?: string } {
-  const hasAny = body.structure || body.form || body.chapterCount != null || body.wordsPerChapter != null;
-  if (!hasAny) return {};
+  const hasStructureOrForm = !!(body.structure || body.form);
+  const hasCounts = body.chapterCount != null || body.wordsPerChapter != null;
+  if (!hasStructureOrForm && !hasCounts) return {};
 
   const structureId = String(body.structure ?? '');
   const formId = String(body.form ?? '');
   const chapterCount = Number(body.chapterCount);
   const wordsPerChapter = Number(body.wordsPerChapter);
+
+  // Length-only format: the premise-intake flow lets the author set a chapter
+  // count + per-chapter target but never produces a structure/form pair. Persist
+  // the counts alone (structure 'none', no form) so generation reads the chosen
+  // chapter count — there is no form to enforce a word-band against.
+  if (!hasStructureOrForm) {
+    if (!Number.isFinite(chapterCount) || chapterCount < 1) return { error: 'chapterCount must be a positive number' };
+    if (!Number.isFinite(wordsPerChapter) || wordsPerChapter < 1) return { error: 'wordsPerChapter must be a positive number' };
+    return {
+      format: {
+        structureId: 'none',
+        formId: '',
+        chapterCount: Math.floor(chapterCount),
+        wordsPerChapter: Math.floor(wordsPerChapter),
+        totalTarget: Math.floor(chapterCount) * Math.floor(wordsPerChapter),
+      },
+    };
+  }
 
   if (!structureId) return { error: 'structure is required when declaring a format' };
   if (!formId) return { error: 'form is required when declaring a format' };

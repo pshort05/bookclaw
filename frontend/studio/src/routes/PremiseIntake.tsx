@@ -150,11 +150,6 @@ export function PremiseIntake() {
         const field: TextSeedField = isTextField(g.targetField) ? g.targetField : 'blueprint';
         final[field] = `${final[field]}\n\n[${g.question}] ${ans}`;
       }
-      // Length target: the /api/books format block requires a structure+form pair the
-      // intake never produces, so send the target as a blueprint annotation instead —
-      // this is the field the outline prompt reads.
-      final.blueprint = `${final.blueprint}\n\n[Target length] ${seeds.chapterCount} chapters of ~${seeds.wordsPerChapter} words each.`;
-
       await api<{ book: BookManifest }>('/api/books', { method: 'POST', body: JSON.stringify({
         title: title.trim(),
         author,
@@ -165,6 +160,11 @@ export function PremiseIntake() {
         characters: final.characters,
         setting: final.setting,
         blueprint: final.blueprint,
+        // Length target as a real (length-only) format block so the deterministic
+        // pipeline generates the chosen chapter count. buildBookFormat accepts
+        // counts without a structure/form pair (which the intake never produces).
+        chapterCount: seeds.chapterCount,
+        wordsPerChapter: seeds.wordsPerChapter,
         // Canon Drift Gate: forward the verified intake grounding so it persists as
         // the durable per-book anchor. The verified setting (author-reviewed, with
         // fact-check splices) is the dossier written to data/verified-canon.md.

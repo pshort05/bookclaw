@@ -44,6 +44,22 @@ test('formatGuideFor returns null when no format set', async () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('length-only format (premise intake) → formatGuideFor returns the chosen counts, empty rail', async () => {
+  // Regression: a premise-seeded book carries a structure-less length-only format
+  // (structureId 'none', no form). formatGuideFor must still surface the chapter
+  // count so the deterministic pipeline generates that many chapters — the bug
+  // was that this count never reached the pipeline (defaulted to 25).
+  const root = mkdtempSync(join(tmpdir(), 'bookfmt-'));
+  try {
+    const { books } = await setup(root);
+    const m = await books.create({ title: 'Premise Book', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [], format: { structureId: 'none', formId: '', chapterCount: 30, wordsPerChapter: 2500, totalTarget: 75000 } });
+    const guide = books.formatGuideFor(m.slug);
+    assert.equal(guide?.chapterCount, 30);
+    assert.equal(guide?.wordsPerChapter, 2500);
+    assert.equal(guide?.structureRail, ''); // 'none' structure → no beat rail
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('create() with a format persists it in the manifest', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookfmt-'));
   try {
