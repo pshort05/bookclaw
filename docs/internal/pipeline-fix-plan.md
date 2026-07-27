@@ -73,11 +73,13 @@ No single layer is sufficient — the outlines already *contained* the HEA, so p
 - **Files:** new `gateway/src/services/ending-gate.ts`; steps 135/136 prompts; `projects.ts` review-gate wiring.
 - **Verify:** run the gate over the two existing books → it must flag "no HEA delivered" for both.
 
-### C11 — Romance-light pacing review (plan guard)
-- **Goal:** cheap macro/micro sanity on the plan; **advisory, not a rewrite** (the heavy romantasy/MSF pacing review is too heavy-handed for romance).
-- **Approach:** at **premise** (macro) confirm the arc names the required romance beats and an HEA; after **outline** (micro) confirm each act's chapter budget and that the grovel/reunion/HEA occupy the final-act window. Flag imbalances; do not rewrite.
-- **Files:** new light skill `skills/**/romance-pacing-check/SKILL.md`; wire as advisory steps in `library/pipelines/romance-*-deterministic.json`.
-- **Note:** this guards the plan only — it would have *passed* both audited books (their outlines were complete). It does not replace C2/C3.
+### C11 — Romance engagement checkers (book + chapter), human-gated  ✅ DONE (2026-07-27)
+Adapted the maintainer's action-oriented `engagement-checker.json` into two romance prompts and wired them to the existing human-review gate (no new gate machinery).
+- **Two prompts** (`library/prompts/`): **romance-arc-checker** (whole book — arc/beat map, tension/pull audit with a romance toolkit, and an explicit **genre-promise PASS/FAIL** on HEA delivery) and **romance-chapter-checker** (single chapter — ADVANCE / TENSION / HOOK / BEAT-FIT → RATING · ISSUE · FIX). Runnable standalone via the Prompt Runner.
+- **Wiring** (`services/pipeline/romance-checks.ts` + `human-review.ts` `maybeOpenCadenceGate`, gated on `project.type` matching romance, fail-soft): the **arc checker** runs on the outline at the always-on `outline_approved` gate (validate the plan before generation) → `findings.romanceArc`; the **chapter checker** runs on a **cheap route** (OpenRouter/Haiku) for **every** chapter and **FORCE-OPENS** a gate on a `Stall` verdict even when the book's cadence would not pause → `findings.romanceChapter`. Both surface in the Confirmations screen; a person approves / edits / regenerates / stops.
+- **Files:** `library/prompts/romance-arc-checker.json`, `library/prompts/romance-chapter-checker.json` (new); `gateway/src/services/pipeline/romance-checks.ts` (new); `gateway/src/services/human-review.ts`; call sites in `gateway/src/api/routes/projects.routes.ts` (×2) + `gateway/src/index.ts`.
+- **Verified:** `romance-checks` + `romance-gate` unit tests (verdict parse, cheap-route, fail-soft, force-gate-on-Stall, arc-annotates-outline, inert-for-non-romance) + full suite 2419/0; `tsc` clean; both prompts validate via `parsePrompt`. Headless/autonomous runs skip it (existing posture).
+- **Note:** the plan-only guard still passes a complete-but-later-dropped outline, so this complements — does not replace — C3's deterministic ending gate. The C2 numeric anchor below is now largely subsumed by C1's skeleton ("deliver the ending/HEA now" on the final chapter) plus this chapter checker; the explicit "chapter N of M" line remains an optional small add.
 
 ### C4 — Persistent canon fact-sheet
 - **Goal:** one maintained source of truth for generation **and** the consistency audit.

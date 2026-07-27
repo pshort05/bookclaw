@@ -3,6 +3,7 @@ import { generateDocxBuffer } from '../../services/docx-export.js';
 import { stepRouting, applyBookModelConfig, resolveIntimacyRouting, resolveGroundingBlock, resolveAnalyzeApplyBlock, resolveEnsemblePremise, runBetaReaderGate, makeGatherChapters } from './_shared.js';
 import { generationMeta } from '../../services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from '../../services/human-review.js';
+import { romanceCheckDepsFrom } from '../../services/pipeline/romance-checks.js';
 import { maybeRunCouncilStep } from '../../services/council-gate.js';
 import { buildCouncilService } from '../../services/council.js';
 import { maybeRunTakesStep } from '../../services/takes-gate.js';
@@ -941,7 +942,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
         const cadenceGate = await maybeOpenCadenceGate(
           { gate: services.confirmationGate, engine },
           project, activeStep, response,
-          { manifest: bookManifest, craftCritic: services.craftCritic, dialogueAuditor: services.dialogueAuditor },
+          { manifest: bookManifest, craftCritic: services.craftCritic, dialogueAuditor: services.dialogueAuditor, romance: romanceCheckDepsFrom(services) },
         );
         if (cadenceGate.gated) {
           return res.json({ humanReview: true, confirmationId: cadenceGate.confirmationId, project: engine.getProject(project.id) });
@@ -1665,7 +1666,7 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
           const cadenceGate = await maybeOpenCadenceGate(
             { gate: services.confirmationGate, engine },
             currentProject, activeStep, response,
-            { manifest: bookManifest, craftCritic: services.craftCritic, dialogueAuditor: services.dialogueAuditor },
+            { manifest: bookManifest, craftCritic: services.craftCritic, dialogueAuditor: services.dialogueAuditor, romance: romanceCheckDepsFrom(services) },
           );
           if (cadenceGate.gated) {
             results.push({ step: activeStep.label, success: false, wordCount, error: 'awaiting human review' });

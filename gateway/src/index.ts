@@ -30,6 +30,7 @@ import { ResearchGate } from './services/research.js';
 import { ActivityLog } from './services/activity-log.js';
 import { generationMeta } from './services/activity-meta.js';
 import { isHumanReviewStep, openReviewGate, maybeOpenCadenceGate } from './services/human-review.js';
+import { romanceCheckDepsFrom } from './services/pipeline/romance-checks.js';
 import { maybeRunCouncilStep } from './services/council-gate.js';
 import { maybeRunTakesStep } from './services/takes-gate.js';
 import { makeGenerateTakes } from './sampling/generate-takes.js';
@@ -2828,7 +2829,7 @@ class BookClawGateway {
           const cadenceGate = await maybeOpenCadenceGate(
             { gate: gateway.confirmationGate, engine: gateway.projectEngine },
             project, activeStep, aiResponse,
-            { manifest: bookManifest, craftCritic: gateway.craftCritic, dialogueAuditor: gateway.dialogueAuditor, headless },
+            { manifest: bookManifest, craftCritic: gateway.craftCritic, dialogueAuditor: gateway.dialogueAuditor, headless, romance: romanceCheckDepsFrom(gateway) },
           );
           if (cadenceGate.gated) return { error: 'awaiting human review' };
         }

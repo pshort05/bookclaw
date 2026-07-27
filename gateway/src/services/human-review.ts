@@ -10,6 +10,7 @@
  * checkDecision and applies the decision.
  */
 import { resolveCadence, shouldGate, computeBoundaries, type Boundary } from './pipeline/gate-cadence.js';
+import { runRomanceArcCheck, runRomanceChapterCheck, type RomanceCheckDeps } from './pipeline/romance-checks.js';
 import { analyzeChapter, describeFindings } from './pipeline/analyze-apply.js';
 import { aggregateActContinuity, type ActChapterFlags } from './consistency/continuity-check.js';
 import { runChapterContextExtraction, type ContextExtractionDeps } from '../util/chapter-context-extraction.js';
@@ -215,20 +216,43 @@ export interface CadenceGateResult {
  */
 export async function maybeOpenCadenceGate(
   deps: Deps, project: any, step: any, response: string,
-  ctx: { manifest?: any; craftCritic?: any; dialogueAuditor?: any; headless?: boolean } = {},
+  ctx: { manifest?: any; craftCritic?: any; dialogueAuditor?: any; headless?: boolean; romance?: RomanceCheckDeps } = {},
 ): Promise<CadenceGateResult> {
   if (ctx.headless) return { gated: false };
   const steps = project?.steps ?? [];
   const stepIndex = steps.findIndex((s: any) => s.id === step?.id);
   const cadence = resolveCadence(ctx.manifest);
   const boundaries = computeBoundaries(stepIndex, steps);
-  const hit = boundaries.find((b) => shouldGate(cadence, b));
-  if (!hit) return { gated: false };
+  const cadenceHit = boundaries.find((b) => shouldGate(cadence, b));
 
-  const findings = buildCadenceGateFindings(project, step, response, ctx);
-  const req = await openReviewGate(deps, project, step, 'cadence-gate', undefined, findings);
+  // Romance engagement checks (C2) — romance books only, fail-soft. The ARC
+  // checker runs on the outline at the always-on outline gate; the CHAPTER
+  // checker runs cheaply on every chapter and FORCE-OPENS a gate on a Stall,
+  // even when the book's cadence would not otherwise pause on this chapter.
+  let romanceFindings: Record<string, unknown> | undefined;
+  let forceGate = false;
+  const isRomance = /romance|romantic/i.test(String(project?.type || ''));
+  if (isRomance && ctx.romance) {
+    if (boundaries.includes('outline_approved')) {
+      const arc = await runRomanceArcCheck(ctx.romance, response);
+      if (arc) romanceFindings = { romanceArc: arc };
+    } else if (typeof step?.chapterNumber === 'number') {
+      const chk = await runRomanceChapterCheck(ctx.romance, response);
+      if (chk) {
+        romanceFindings = { romanceChapter: chk.text };
+        if (chk.stall) forceGate = true;
+      }
+    }
+  }
+
+  if (!cadenceHit && !forceGate) return { gated: false };
+
+  const base = buildCadenceGateFindings(project, step, response, ctx) ?? {};
+  const findings = { ...base, ...(romanceFindings ?? {}) };
+  const req = await openReviewGate(deps, project, step, 'cadence-gate', undefined,
+    Object.keys(findings).length ? findings : undefined);
   if (project.review) project.review.pendingResult = response;
-  return { gated: true, confirmationId: req?.id, boundary: hit };
+  return { gated: true, confirmationId: req?.id, boundary: cadenceHit ?? 'chapter' };
 }
 
 /** Assemble the automated pre-gate findings payload — see maybeOpenCadenceGate. */
