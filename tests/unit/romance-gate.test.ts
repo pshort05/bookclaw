@@ -80,6 +80,26 @@ test('non-romance project is inert (no romance check, no forced gate)', async ()
   assert.equal(r.gated, false);
 });
 
+test('final chapter with a missing HEA force-gates via the deterministic ending backstop + passes the HEA beat', async () => {
+  // 9 chapters + a review step + assembly, so chapter 9 is NOT pre_export.
+  const steps: any[] = Array.from({ length: 9 }, (_, i) => ({ id: `ch${i + 1}`, label: `Chapter ${i + 1}`, chapterNumber: i + 1, skill: 'romance-sweet-first-draft' }));
+  steps.push({ id: 'rev', label: 'Continuity & Arc Review', skill: 'revision' });
+  steps.push({ id: 'asm', label: 'Compile manuscript', skill: 'assembly' });
+  const project = { id: 'p3', title: 'Book', type: 'romance-sweet-deterministic', steps, review: undefined as any };
+  const final = steps[8]; // chapter 9 (the last chapter)
+  const calls: any[] = [];
+  const gate = strictGate();
+  const r = await maybeOpenCadenceGate(
+    { gate, engine: fakeEngine } as any, project, final,
+    'The screen went dark. It was over. She was alone. Goodbye.', // clear-cut missing ending
+    { manifest: { review: { cadence: 'autonomous' } }, // autonomous never gates on cadence
+      romance: romanceDep({ complete: async (req: any) => { calls.push(req); return { text: 'RATING: Strong (8)\nBEAT: delivered' }; } }) },
+  );
+  assert.equal(r.gated, true, 'ending backstop forced a gate despite autonomous cadence + Strong chapter rating');
+  assert.match(String(gate.created[0].payload.findings.ending), /NOT delivered/i);
+  assert.match(calls[0].messages[0].content, /INTENDED BEAT: HEA \/ HFN/); // the HEA beat was fed to the checker
+});
+
 test('arc checker annotates the always-on outline gate', async () => {
   const project = { id: 'p2', title: 'Book', type: 'romance-sweet-deterministic',
     steps: [{ id: 'o', label: 'Chapter Outline', skill: 'outline', role: 'outline' }], review: undefined as any };

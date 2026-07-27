@@ -11,6 +11,8 @@
  */
 import { resolveCadence, shouldGate, computeBoundaries, type Boundary } from './pipeline/gate-cadence.js';
 import { runRomanceArcCheck, runRomanceChapterCheck, type RomanceCheckDeps } from './pipeline/romance-checks.js';
+import { beatForChapter } from './outline-skeleton.js';
+import { detectEnding } from './pipeline/ending-gate.js';
 import { analyzeChapter, describeFindings } from './pipeline/analyze-apply.js';
 import { aggregateActContinuity, type ActChapterFlags } from './consistency/continuity-check.js';
 import { runChapterContextExtraction, type ContextExtractionDeps } from '../util/chapter-context-extraction.js';
@@ -237,10 +239,23 @@ export async function maybeOpenCadenceGate(
       const arc = await runRomanceArcCheck(ctx.romance, response);
       if (arc) romanceFindings = { romanceArc: arc };
     } else if (typeof step?.chapterNumber === 'number') {
-      const chk = await runRomanceChapterCheck(ctx.romance, response);
+      // Tell the checker which beat this chapter owes (C1's beatForChapter) so it
+      // can judge BEAT FIT — for the FINAL chapter the beat is "HEA / HFN", which
+      // makes a dropped ending come back BEAT: missing → stall → force-gate (C3).
+      const chapterNums = steps.filter((s: any) => typeof s.chapterNumber === 'number').map((s: any) => s.chapterNumber as number);
+      const totalChapters = new Set(chapterNums).size;
+      const beat = beatForChapter(step.chapterNumber, totalChapters);
+      const chk = await runRomanceChapterCheck(ctx.romance, response, beat);
       if (chk) {
         romanceFindings = { romanceChapter: chk.text };
         if (chk.stall) forceGate = true;
+      }
+      // Ending gate (C3): a deterministic backstop on the final chapter — flags a
+      // clear-cut missing HEA even if the LLM check is unavailable.
+      if (chapterNums.length && step.chapterNumber === Math.max(...chapterNums)) {
+        const ending = detectEnding(response);
+        romanceFindings = { ...(romanceFindings ?? {}), ending: ending.summary };
+        if (ending.status === 'missing') forceGate = true;
       }
     }
   }

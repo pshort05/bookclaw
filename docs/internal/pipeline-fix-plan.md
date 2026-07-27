@@ -64,14 +64,16 @@ No single layer is sufficient — the outlines already *contained* the HEA, so p
 - **Files:** `gateway/src/services/projects.ts` + `skills/**/romance-*-scene-brief/SKILL.md`.
 - **Verify:** generate a short (6–8 ch) test book; the final chapter's brief demands the HEA and the draft delivers reunion + both leads.
 
-### C3 — Ending gate + full-manuscript continuity review
-- **Goal:** never ship an unfinished book or a hallucinated completion report.
-- **Approach:**
-  1. **Deterministic ending gate** after the last chapter: assert the final chapter contains the reunion, both leads present, and HEA/HFN markers. On failure → **fail loud** and route to the human **review gate** (`project.review`).
-  2. Feed the **full manuscript** to the Continuity & Arc Review (step 135), chunked/map-reduce (same rehydration as C1) so it no longer sees only early chapters.
-  3. Ground the Compile Report (step 136) in **detected facts** (chapter count, ending-gate result) instead of free narration.
-- **Files:** new `gateway/src/services/ending-gate.ts`; steps 135/136 prompts; `projects.ts` review-gate wiring.
-- **Verify:** run the gate over the two existing books → it must flag "no HEA delivered" for both.
+### C3 — Ending gate (never ship an unfinished book / hallucinated report)  ✅ DONE (2026-07-27) — step-135 full-manuscript feed deferred
+- **Goal:** never ship a book that drops the HEA, and never let the completion report claim one that isn't there.
+- **Design note (forced by real data):** a purely lexical HEA detector was built and run against the two real final chapters — **both came back `uncertain`, not `missing`** (romance prose conflates plot mentions like the antagonist's "engaged/married" with the couple's resolution). So the **reliable gate is the LLM check with the beat**, and the deterministic detector is demoted to a grounding/backstop signal.
+- **Implemented:**
+  1. **Beat-aware chapter check (the real gate):** `maybeOpenCadenceGate` now feeds each chapter's beat (C1's `beatForChapter`) to the chapter checker; the FINAL chapter's beat is **"HEA / HFN"**, so a dropped ending returns `BEAT: missing → stall → force-gate`.
+  2. **Deterministic backstop + finding:** `gateway/src/services/pipeline/ending-gate.ts` `detectEnding(finalText, leadNames?)` → `delivered | missing | uncertain` from HEA vs. rupture signals (rupture only counted in the last ~1,200 chars, resolution-guarded). Runs on the final chapter → `findings.ending`; a clear-cut `missing` also force-gates even if the LLM is unavailable.
+  3. **Grounded compile report (step 136):** `buildProjectContext` injects the detected ending status into the assembly step's context ("do not claim a reunion/HEA the manuscript does not contain") — runs even **headless** (no LLM), so an autonomous book still reports the truth.
+- **Files:** `gateway/src/services/pipeline/ending-gate.ts` (new); `gateway/src/services/human-review.ts`; `gateway/src/services/projects.ts`.
+- **Verified:** `ending-gate` unit tests (delivered/missing/uncertain, resolution-guard, optional leads) + `romance-gate` final-chapter test (force-gate on a missing ending under autonomous cadence + Strong rating; HEA beat fed to the checker) + full suite 2426/0; `tsc` clean. Against the real books the deterministic detector reads `uncertain` and surfaces the rupture signals (Firefly: "went dark, screen dimmed") — enough to ground the report; the LLM beat-check is what firmly force-gates.
+- **Deferred:** feeding the **full manuscript** to the Continuity & Arc Review (step 135) — a larger context-assembly change; the beat-check + grounded report already close the "silent unfinished book" hole.
 
 ### C11 — Romance engagement checkers (book + chapter), human-gated  ✅ DONE (2026-07-27)
 Adapted the maintainer's action-oriented `engagement-checker.json` into two romance prompts and wired them to the existing human-review gate (no new gate machinery).

@@ -19,6 +19,7 @@ import type { SkillCatalogEntry } from '../skills/loader.js';
 import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
 import { buildTwoTierOutlineBlock, extractOutlineChapterSection } from './outline-skeleton.js';
+import { detectEnding } from './pipeline/ending-gate.js';
 import { expandSteps } from './pipeline-expand.js';
 import { injectTakesSteps } from '../sampling/inject-takes-steps.js';
 import { appendTakesLog } from '../sampling/takes-log.js';
@@ -2032,6 +2033,23 @@ Description: ${description}`;
         context += `## Outline (structural — authoritative for this chapter)\n\n`;
         context += `${buildTwoTierOutlineBlock(outlineStep.result, chapterNum, { spicy })}\n\n`;
       }
+      // C3: ground the compile/assembly report — inject the DETECTED ending
+      // status of the final chapter so the report cannot claim a resolution the
+      // manuscript lacks (the audit found step 136 hallucinating a HEA). Runs
+      // even headless (no LLM), so an autonomous book still reports the truth.
+      const isCompileStep = !chapterNum && (/compile|assemble/i.test(String(step.label || '')) || (step as any).phase === 'assembly');
+      if (isCompileStep && /romance|romantic/i.test(String(project.type || ''))) {
+        const chapterSteps = project.steps.filter(s => typeof (s as any).chapterNumber === 'number' && s.status === 'completed' && s.result);
+        if (chapterSteps.length) {
+          const maxCh = Math.max(...chapterSteps.map(s => (s as any).chapterNumber as number));
+          const finalStep = [...chapterSteps].reverse().find(s => (s as any).chapterNumber === maxCh);
+          if (finalStep?.result) {
+            const ending = detectEnding(finalStep.result);
+            context += `## Detected ending status (ground your report in this)\n\n${ending.summary}\nDo NOT claim a reunion, resolution, or HEA the manuscript does not actually contain; if the ending is missing or uncertain, say so plainly.\n\n`;
+          }
+        }
+      }
+
       // Default: add results from prior steps
       const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result && s !== outlineStep);
       if (completedSteps.length > 0) {
