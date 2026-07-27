@@ -171,6 +171,45 @@ test('loadNonCanonicalOverride reads sidecar; fail-soft on missing', () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('selectChapterFiles: the FINAL humanize sweep wins over the first draft (real pipeline names)', () => {
+  // Deterministic romance pipeline emits 5 files per chapter; the auditor must
+  // read the final humanized version (highest step-N), not the first draft.
+  const names = [
+    'project-81-step-10-scene-brief-chapter-1.md',        // excluded: "brief"
+    'project-81-step-11-first-draft-chapter-1.md',        // step 11
+    'project-81-step-12-consistency-audit-chapter-1.md',  // excluded: "consistency"/"audit"
+    'project-81-step-13-consistency-apply-chapter-1.md',  // excluded: "consistency"
+    'project-81-step-14-humanize-de-ai-sweep-chapter-1.md', // step 14 — the final version
+    'project-81-step-16-first-draft-chapter-2.md',
+    'project-81-step-19-humanize-de-ai-sweep-chapter-2.md',
+  ];
+  const result = selectChapterFiles(names);
+  assert.deepEqual(result, [
+    'project-81-step-14-humanize-de-ai-sweep-chapter-1.md',
+    'project-81-step-19-humanize-de-ai-sweep-chapter-2.md',
+  ]);
+  assert.ok(!result.some(n => /first-draft/.test(n)), 'no first-draft file selected');
+});
+
+test('selectChapterFiles: final version is generic — consistency-apply wins when no de-AI stage follows', () => {
+  // A pipeline that ENDS on consistency-apply (prose) with no humanize after it.
+  // consistency-audit (a JSON edit list) is excluded; consistency-apply is the
+  // final prose and must be picked over the first draft.
+  const a = selectChapterFiles([
+    'p-step-11-first-draft-chapter-1.md',
+    'p-step-12-consistency-audit-chapter-1.md',   // excluded (edit list)
+    'p-step-13-consistency-apply-chapter-1.md',   // FINAL prose
+  ]);
+  assert.deepEqual(a, ['p-step-13-consistency-apply-chapter-1.md']);
+
+  // And when a de-AI sweep DOES follow, the later stage still wins (step order).
+  const b = selectChapterFiles([
+    'p-step-13-consistency-apply-chapter-1.md',
+    'p-step-14-humanize-de-ai-sweep-chapter-1.md',
+  ]);
+  assert.deepEqual(b, ['p-step-14-humanize-de-ai-sweep-chapter-1.md']);
+});
+
 // I1: selectChapterFiles unit tests
 test('I1: selectChapterFiles keeps only chapter prose, deduplicates by stage rank', () => {
   // Typical novel-pipeline output filenames

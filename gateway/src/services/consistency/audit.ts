@@ -62,7 +62,13 @@ function emptyReport(): AuditReport {
 }
 
 // Noise labels that disqualify a file from being treated as chapter prose.
-const CHAPTER_NOISE = /outline|summary|brief|guide|consistency|audit|council|bible|notes|premise|dossier|plan|beta|critique|structure/;
+// NOTE: 'consistency' is deliberately NOT here — the `consistency-audit` stage
+// (a JSON edit list, not prose) is already excluded by 'audit', while the
+// `consistency-apply` stage IS full chapter prose and must stay a candidate so a
+// pipeline that ends on it (no de-AI sweep after) still resolves to its FINAL
+// version rather than falling back to the first draft. Selection is by highest
+// pipeline step, so a later prose stage (humanize/polish/etc.) still wins.
+const CHAPTER_NOISE = /outline|summary|brief|guide|audit|council|bible|notes|premise|dossier|plan|beta|critique|structure/;
 
 // How many times to attempt a chapter's extraction before counting it failed.
 // Retries catch a fleeting empty/parse/transient error; a deterministic failure
@@ -79,23 +85,27 @@ function stageRank(name: string): number {
 
 /**
  * Select chapter-prose files from a set of data-dir filenames.
- * Keeps only files whose lowercased stem matches /chapter-(\d+)\b/,
- * excluding noise labels. For each chapter number, keeps the highest-ranked
- * stage (polish > revise > write/draft > bare). Returns sorted ascending by
- * chapter number.
+ * Keeps only files whose lowercased stem matches /chapter-(\d+)\b/, excluding
+ * noise labels. For each chapter number keeps the FINAL version: the highest
+ * pipeline `step-N` wins (the last-generated stage — e.g. the humanize/de-AI
+ * sweep, not the first draft), falling back to stage rank (polish > revise >
+ * write/draft > bare) when a file carries no step number (imported books).
+ * Returns sorted ascending by chapter number.
  */
 export function selectChapterFiles(names: string[]): string[] {
-  const best = new Map<number, { name: string; rank: number }>();
+  const best = new Map<number, { name: string; step: number; stage: number }>();
   for (const name of names) {
     const stem = name.toLowerCase().replace(/\.md$/, '');
     const m = stem.match(/chapter-(\d+)\b/);
     if (!m) continue;
     if (CHAPTER_NOISE.test(stem)) continue;
     const num = parseInt(m[1], 10);
-    const rank = stageRank(stem);
+    const sm = stem.match(/step-(\d+)/); // pipeline step order — the last stage is the final chapter
+    const step = sm ? parseInt(sm[1], 10) : -1;
+    const stage = stageRank(stem);
     const prev = best.get(num);
-    if (!prev || rank > prev.rank) {
-      best.set(num, { name, rank });
+    if (!prev || step > prev.step || (step === prev.step && stage > prev.stage)) {
+      best.set(num, { name, step, stage });
     }
   }
   return [...best.entries()]
