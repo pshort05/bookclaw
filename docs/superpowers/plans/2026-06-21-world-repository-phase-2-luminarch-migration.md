@@ -692,7 +692,7 @@ Make the importer discoverable and document the live invocation (this is a maint
 
 **Files:**
 - `package.json` (add a script entry)
-- `docs/TODO.md` / `docs/COMPLETED.md` (move the Phase 2 item on completion, per `CLAUDE.md`)
+- `docs/internal/TODO.md` / `docs/internal/COMPLETED.md` (move the Phase 2 item on completion, per `CLAUDE.md`)
 
 **Interfaces:** none new.
 
@@ -701,7 +701,7 @@ Make the importer discoverable and document the live invocation (this is a maint
 - [ ] Add to `package.json` `scripts`: `"import:luminarch": "node --import tsx scripts/import-luminarch-world.ts"`. Match the existing script style (do not reformat the block).
 - [ ] Verify the script runs with `--help`-less argv defaults only on the maintainer's box; in CI/dev just confirm `npm run import:luminarch -- /tmp/does-not-exist.json /tmp/empty /tmp/lib` exits non-zero with a clear error (no crash trace). This is the debug-logging path — the `  ✓ / ⚠` lines stream to stdout so a failing live run is diagnosable without re-instrumenting.
 - [ ] `npx tsc --noEmit` → clean. `node --import tsx --test tests/unit/luminarch-import.test.ts` → green.
-- [ ] On completion, move the Phase 2 line from `docs/TODO.md` to `docs/COMPLETED.md` with a `2026-…` date (per `CLAUDE.md` feature-tracking rules), and write the `commit_message` file. Do **not** `git commit`.
+- [ ] On completion, move the Phase 2 line from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with a `2026-…` date (per `CLAUDE.md` feature-tracking rules), and write the `commit_message` file. Do **not** `git commit`.
 
 ---
 

@@ -438,7 +438,7 @@ Expected: both names present. The studio `NewBook.tsx` picker loads `/api/librar
 
 - [ ] **Step 2: Update feature tracking**
 
-Move the Foundation item from `docs/TODO.md` to `docs/COMPLETED.md` with today's date (`2026-07-08`), per the repo feature-tracking rule. If the Romance Workflow is tracked as one umbrella item, check the Foundation sub-item and leave Guided/Council/Adaptive pending.
+Move the Foundation item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with today's date (`2026-07-08`), per the repo feature-tracking rule. If the Romance Workflow is tracked as one umbrella item, check the Foundation sub-item and leave Guided/Council/Adaptive pending.
 
 - [ ] **Step 3: Write the `commit_message` file**
 

@@ -42,7 +42,7 @@ AuthorAgent already solved — these outrank the feature ports.
 ## Tier 1 — Live defects in the current tree (do first; low effort)
 
 > **Status: DONE (2026-07-11).** All three shipped via spec → plan → TDD → code review → smoke; see
-> `docs/COMPLETED.md` (2026-07-11) and
+> `docs/internal/COMPLETED.md` (2026-07-11) and
 > `docs/superpowers/{specs,plans}/2026-07-11-authoragent-tier1-hardening*`.
 
 These are confirmed problems in BookClaw today that AuthorAgent already fixed. They rank above new

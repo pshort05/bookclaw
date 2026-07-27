@@ -1,7 +1,7 @@
 # AuthorAgent Port — Tier 4 Features (items #10–#17)
 
 **Date:** 2026-07-11
-**Source:** `docs/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md`, Tier 4 table (items #10–#17). Fork ref: `authoragent/main` (`47e9570`).
+**Source:** `docs/internal/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md`, Tier 4 table (items #10–#17). Fork ref: `authoragent/main` (`47e9570`).
 **Baseline:** `T4-BASE = 8f53a41` (HEAD after the Tier 2/3 push).
 
 ## Purpose

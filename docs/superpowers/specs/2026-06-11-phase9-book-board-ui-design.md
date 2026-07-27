@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-11
 **Status:** Decisions confirmed (owner, 2026-06-11) — ready for an implementation plan. See §6.
-**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) Phase 9 (follows Phase 8 multi-book concurrency; precedes Phase 10 per-channel active book)
+**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) Phase 9 (follows Phase 8 multi-book concurrency; precedes Phase 10 per-channel active book)
 **Mockup:** `dashboard/concept/phase9-book-board.html` (faithful Atelier mockup of the enriched board, drawer, full rail, and the three polish items — open in a browser).
 
 ## 1. Goal

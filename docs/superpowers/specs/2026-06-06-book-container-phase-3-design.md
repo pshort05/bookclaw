@@ -1,7 +1,7 @@
 # Book-Container Phase 3 — Per-book wiring (design)
 
 **Status:** Approved via brainstorm 2026-06-06. Feeds `writing-plans`.
-**Companion:** `docs/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 3 bullet). Uses the canonical vocabulary in `docs/GLOSSARY.md`.
+**Companion:** `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 3 bullet). Uses the canonical vocabulary in `docs/GLOSSARY.md`.
 
 ## Goal
 

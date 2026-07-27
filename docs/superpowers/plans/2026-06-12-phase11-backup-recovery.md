@@ -735,8 +735,8 @@ export function mountBackups(app: Application, gateway: any, _baseDir: string): 
 
 **Files:**
 - Modify: `tests/feature-smoke.sh` (new free Tier-A section)
-- Modify: `docs/BOOK-CONTAINER-ARCHITECTURE.md` (mark Phase 11 implemented, same style as Phases 0–10)
-- Modify: `docs/TODO.md` → `docs/COMPLETED.md` (move the Phase 11 line with date)
+- Modify: `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (mark Phase 11 implemented, same style as Phases 0–10)
+- Modify: `docs/internal/TODO.md` → `docs/internal/COMPLETED.md` (move the Phase 11 line with date)
 - Modify: `CLAUDE.md` (stateful-dirs section: note the backup root + new env vars; bump unit-test count in the Testing section if mentioned)
 - Modify: `.remember/remember.md` (handoff)
 - Create: `commit_message`

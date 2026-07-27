@@ -13,7 +13,7 @@ Give an author a "last mile" surface that turns a finished manuscript into a KDP
 1. **Format Finisher** — take an existing `.docx` (the book's compiled manuscript, or any uploaded `.docx`) and apply print/KDP finishing: remove blank-paragraph cruft, page-break before chapters, scene-break rules → `* * *`, KDP TOC fix, first-line indents, drop-cap chapter initials, document-wide font conversion, line spacing, excerpt block-indent, font resize — all over an optional chapter range. Output a new finished `.docx`. **This is a faithful TypeScript port of `clean_docx.py`.**
 2. **Launch** — one page that surfaces the existing 90-day Launch Orchestrator, Release Calendar, AMS ad-copy, and DOCX/EPUB export, so the author drives compile → metadata → cover → ad-copy → calendar → launch-plan from a single screen, with every irreversible action routed through the existing confirmation gate.
 
-**Explicitly out of scope (deferred, tracked in `docs/TODO.md`):** print-interior PDF generation. The Python tool emits print-ready *DOCX*, not PDF; no PDF library is present; a from-scratch typesetter is a separate project.
+**Explicitly out of scope (deferred, tracked in `docs/internal/TODO.md`):** print-interior PDF generation. The Python tool emits print-ready *DOCX*, not PDF; no PDF library is present; a from-scratch typesetter is a separate project.
 
 ---
 

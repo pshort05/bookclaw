@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext, `.js` import extensions), Express, `node --test` via `tsx`, esbuild (dashboard), Docker.
 
-**Source of truth for design:** `docs/BOOK-CONTAINER-ARCHITECTURE.md` — the `book.json` manifest sketch (lines ~113–135), the three resolution layers, the version gate table (~232–251), and the Phase 2 bullet. This plan implements the **lean** Phase 2 agreed 2026-06-06 (owner decisions below).
+**Source of truth for design:** `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` — the `book.json` manifest sketch (lines ~113–135), the three resolution layers, the version gate table (~232–251), and the Phase 2 bullet. This plan implements the **lean** Phase 2 agreed 2026-06-06 (owner decisions below).
 
 ---
 
@@ -55,7 +55,7 @@
 - `dashboard/src/index.html` — add a "Books" nav item + an empty `<div class="panel" id="panel-books">`.
 - `dashboard/src/main.js` — import `loadBooks`, add `books` to `panelTitles`, add a `switchPanel` case.
 - `CLAUDE.md` — "Stateful directories": add `workspace/books/`.
-- `docs/BOOK-CONTAINER-ARCHITECTURE.md` / `docs/TODO.md` — Phase 2 status (on completion).
+- `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` / `docs/internal/TODO.md` — Phase 2 status (on completion).
 
 ---
 
@@ -721,7 +721,7 @@ async function submitCreate(box) {
 
 ### Task 6: Docs, tracking, and hand-off for push
 
-**Files:** `CLAUDE.md`, `docs/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/TODO.md`, `docs/BOOK-CONTAINER-PHASE-2-STATUS.md` (create), and `commit_message`.
+**Files:** `CLAUDE.md`, `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/internal/TODO.md`, `docs/BOOK-CONTAINER-PHASE-2-STATUS.md` (create), and `commit_message`.
 
 - [ ] **Step 1: `CLAUDE.md`** — in "Stateful directories", add:
 ```markdown
@@ -729,9 +729,9 @@ async function submitCreate(box) {
 ```
 (And confirm `workspace/books/` is gitignored — it should already be covered; if not, add it. Check `git check-ignore workspace/books/x/book.json`.)
 
-- [ ] **Step 2: `docs/BOOK-CONTAINER-ARCHITECTURE.md`** — mark the Phase 2 bullet implemented (lean: entity + snapshot + gate + API + New Book page; migration runners + skills-in-snapshot deferred), dated, mirroring the Phase 1 style.
+- [ ] **Step 2: `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`** — mark the Phase 2 bullet implemented (lean: entity + snapshot + gate + API + New Book page; migration runners + skills-in-snapshot deferred), dated, mirroring the Phase 1 style.
 
-- [ ] **Step 3: `docs/TODO.md`** — under the multi-author umbrella, mark Phase 2 done (lean) and note deferrals (migration runners; skills join the book snapshot in Phase 3/4). Move nothing to COMPLETED until deployed + accepted.
+- [ ] **Step 3: `docs/internal/TODO.md`** — under the multi-author umbrella, mark Phase 2 done (lean) and note deferrals (migration runners; skills join the book snapshot in Phase 3/4). Move nothing to COMPLETED until deployed + accepted.
 
 - [ ] **Step 4: Create `docs/BOOK-CONTAINER-PHASE-2-STATUS.md`** — phase table, decisions (lean scope; skills deferred; snapshot covers author/genre/pipeline/sections), how-to-resume, deploy steps. Mirror the Phase 1 status file.
 

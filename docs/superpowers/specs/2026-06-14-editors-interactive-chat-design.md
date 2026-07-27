@@ -149,5 +149,5 @@ command + chat endpoints; forces OpenRouter; self-cleaning (clears the channel e
 - **Dedicated Editors picker UI deferred**; commands + Asset Studio editor are MVP.
 - **No ConfirmationGate** — editor chat has no external side effects; the injection detector still
   runs on inbound messages.
-- **TODO bookkeeping:** add the "Editors" feature to `docs/TODO.md` before starting; move to
-  `docs/COMPLETED.md` on completion (2026-06-14).
+- **TODO bookkeeping:** add the "Editors" feature to `docs/internal/TODO.md` before starting; move to
+  `docs/internal/COMPLETED.md` on completion (2026-06-14).

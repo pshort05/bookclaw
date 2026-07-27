@@ -262,9 +262,9 @@ for f in library/editors/*.json; do node --import tsx -e 'import("./gateway/src/
 
 ### Task 10: Bookkeeping
 
-**Files:** Modify `docs/TODO.md`, `docs/COMPLETED.md`
+**Files:** Modify `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`
 
-- [ ] **Step 1:** Move the "Editors — interactive developmental-editor chat" item from `docs/TODO.md` to `docs/COMPLETED.md` with a `2026-06-14` date.
+- [ ] **Step 1:** Move the "Editors — interactive developmental-editor chat" item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with a `2026-06-14` date.
 
 ### Task INT1: Full verify + review + deploy (integrator)
 - [ ] `npx tsc --noEmit` → 0; `node --import tsx --test tests/unit/*.test.ts` → all pass (prior + new); `npm run build:frontend` → clean; `npm run test:api` → pass (incl. editor assertions); `npm run test:smoke` → pass.

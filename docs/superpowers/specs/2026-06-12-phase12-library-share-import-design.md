@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-12
 **Status:** Draft for owner approval
-**Source design:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) § Phase 12 (post-release enhancement; the Phase 11 release gate is passed). Deviations are called out.
+**Source design:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) § Phase 12 (post-release enhancement; the Phase 11 release gate is passed). Deviations are called out.
 
 ## Goal
 

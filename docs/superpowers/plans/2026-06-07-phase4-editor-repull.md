@@ -1260,7 +1260,7 @@ git commit -m "test(phase4): library-write + book-snapshot + re-pull e2e asserti
 ## Post-plan: docs + final review
 
 After all tasks, before finishing:
-- Move the Phase 4 TODO entry to `docs/COMPLETED.md` with today's date; update the Phase 4 line in `docs/BOOK-CONTAINER-ARCHITECTURE.md` to "Implemented".
+- Move the Phase 4 TODO entry to `docs/internal/COMPLETED.md` with today's date; update the Phase 4 line in `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` to "Implemented".
 - Update `gateway/src/api/routes/library.routes.ts` header comment (currently says the write path is Phase 4 / not built) to reflect it now exists.
 - Write the `commit_message` file summarizing the whole phase for the maintainer's `./push.sh` (per repo workflow). Run the final code-review pass (e.g. `/code-review`) over the branch diff.
 

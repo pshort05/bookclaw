@@ -134,7 +134,7 @@ export interface EntryStageResult {
 ### Task 6: Feature-smoke + docs + commit_message
 
 **Files:**
-- Modify: `tests/feature-smoke.sh`, `docs/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/TODO.md` → `docs/COMPLETED.md`, `CLAUDE.md` (one line in the library bullet), `.remember/remember.md`
+- Modify: `tests/feature-smoke.sh`, `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/internal/TODO.md` → `docs/internal/COMPLETED.md`, `CLAUDE.md` (one line in the library bullet), `.remember/remember.md`
 - Create: `commit_message`
 
 - [ ] **Step 1: Smoke section** `### Tier A (Phase 12) — library entry share/import (free, no AI)`, feature-detected (probe the export endpoint on a known built-in; 404 → SKIP all), following the script's existing helpers + trap:

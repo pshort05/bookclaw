@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-10
 **Status:** Decisions confirmed (owner, 2026-06-10) — ready for an implementation plan. See §5.
-**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) Phase 8 (follows Phase 7 genre wiring; precedes Phase 9 book-board UI and Phase 10 per-channel active book)
+**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) Phase 8 (follows Phase 7 genre wiring; precedes Phase 9 book-board UI and Phase 10 per-channel active book)
 
 ## 1. Goal
 

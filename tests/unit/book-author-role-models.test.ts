@@ -59,6 +59,24 @@ test('a book bound to an author with no role models omits the manifest fields', 
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('new books default alternateTakes to sceneTakes ON', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookmodel-'));
+  try {
+    const { books } = await setup(root);
+    const m = await books.create({ title: 'Takes Default', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [] });
+    assert.deepEqual(m.alternateTakes, { sceneTakes: true, draftOpening: false });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('an explicit alternateTakes on create wins over the default', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'bookmodel-'));
+  try {
+    const { books } = await setup(root);
+    const m = await books.create({ title: 'No Takes', author: 'default', voice: 'default', genre: null, pipeline: 'novel-pipeline', sections: [], alternateTakes: { sceneTakes: false, draftOpening: false } });
+    assert.equal(m.alternateTakes, undefined); // both false → field omitted
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('setModelConfig sets and clears role models', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bookmodel-'));
   try {

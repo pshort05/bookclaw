@@ -21,7 +21,7 @@ sub-phase keeps the chip on its containing segment and `card.phase` is always �
 The steps 7–8 `Board.tsx` rewrite should still guard `phases.indexOf(card.phase) === -1`
 defensively (for the no-pipeline `phases:[]` → `LIFECYCLE_PHASES` fallback case).
 
-Tracks `docs/TODO.md` item: *"Possible bug — books don't update in real time on
+Tracks `docs/internal/TODO.md` item: *"Possible bug — books don't update in real time on
 the Book Board."* The investigation showed the item is really **three**
 intertwined problems; this doc records the reproduction, the approved design,
 the ordered implementation plan, and the current on-disk / on-Mercury state.
@@ -149,7 +149,7 @@ Approved sub-decisions:
 9. Extend `tests/book-phase-probe.sh` to report `phases` + count.
 10. Deploy to Mercury (`deploy.sh`), run the probe, **watch the board**:
     verify RESULT flips to "advanced", `phases` count = 4, chip walks the 4 phases.
-11. Bookkeeping: move #15 from `docs/TODO.md` → `docs/COMPLETED.md` (date), write `commit_message`.
+11. Bookkeeping: move #15 from `docs/internal/TODO.md` → `docs/internal/COMPLETED.md` (date), write `commit_message`.
 
 ---
 

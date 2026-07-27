@@ -519,7 +519,7 @@ Expected: all phases PASS.
 Run: `npm run test:unit && npx tsc --noEmit && npm run build:frontend`
 Expected: unit suite green (including the existing `world-binding.test.ts` and the new `world-bind-orchestration.test.ts`), `tsc` clean, frontend builds.
 
-- [ ] **Step 4: Move the TODO item to COMPLETED.** Per `CLAUDE.md`: cut the "World binding + per-book bible wiring" bullet from `docs/TODO.md` and add it to `docs/COMPLETED.md` with a `2026-…` completion date and a one-line summary.
+- [ ] **Step 4: Move the TODO item to COMPLETED.** Per `CLAUDE.md`: cut the "World binding + per-book bible wiring" bullet from `docs/internal/TODO.md` and add it to `docs/internal/COMPLETED.md` with a `2026-…` completion date and a one-line summary.
 
 - [ ] **Step 5: Write `commit_message`** (one-line summary + dash detail lines covering the helper, routes, create inheritance, the `saveWorldDocs` fix, the UI controls, and the tests). Do **not** `git commit` — the maintainer runs `./push.sh`.
 

@@ -542,7 +542,7 @@ Expected: exit 0.
 
 ### Task INT4: TODO/COMPLETED bookkeeping + commit message
 
-- [ ] Move the three items from `docs/TODO.md` to `docs/COMPLETED.md` with a `2026-06-14` completion date (preserve original bullet text).
+- [ ] Move the three items from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with a `2026-06-14` completion date (preserve original bullet text).
 - [ ] Write `commit_message` (one-line summary + dash detail lines). Do **not** `git commit`/`git push` — the maintainer runs `./push.sh`.
 
 ### Task INT5: Deploy + real-money smoke (authorized)

@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-22
 **Status:** Approved (design). Next: implementation plan via `superpowers:writing-plans`.
-**Feature-tracking:** `docs/TODO.md` → "World binding + per-book bible wiring" (under the ★ World Repository section).
+**Feature-tracking:** `docs/internal/TODO.md` → "World binding + per-book bible wiring" (under the ★ World Repository section).
 **Builds on:** `docs/superpowers/specs/2026-06-21-world-repository-design.md` (World Repository Phases 1–6, all implemented).
 
 ## Problem

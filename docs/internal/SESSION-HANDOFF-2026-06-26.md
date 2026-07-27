@@ -14,7 +14,7 @@ Verified before handoff: `tsc` clean, full unit suite **1074/1074**, `build:fron
 
 ## 1. Where things live (three buckets)
 
-- **In git (after `./push.sh`):** all gateway/frontend/MCP code, `docs/TODO.md`, the new apply-fix spec, and `docker/docker-compose.writing.yml` (the vault host-bind-mount change). The full diff is summarized in `commit_message`.
+- **In git (after `./push.sh`):** all gateway/frontend/MCP code, `docs/internal/TODO.md`, the new apply-fix spec, and `docker/docker-compose.writing.yml` (the vault host-bind-mount change). The full diff is summarized in `commit_message`.
 - **Neptune-local, NOT in git** (lives on the Neptune host `192.168.1.28`; reach via `ssh neptune`):
   - The **Margot "fanfiction" editor** — `workspace/library/editors/fanfiction.json` (overlay asset). Edit it live via `PUT /api/library/editor/fanfiction` with `{content}`.
   - **`.env.writing`** secrets/config at `/mnt/bckup1/bookclaw-writing/.env.writing` — incl. the chat-enable + CORS vars added this session.
@@ -57,8 +57,8 @@ Always check idle first (`curl …/api/projects/list` → `{"projects":[]}`). En
 
 - **`./push.sh`** the batch (see §0). Optionally `touch build_now` + push to bring Mercury up to parity.
 - **Owner was test-driving Margot** — last ask was tuning her paranoia; she's working now. Possible next: dial paranoia menacing↔comic; trim `━━━` dividers if they ever print.
-- **Consistency apply-fix** — design approved, spec written: `docs/superpowers/specs/2026-06-26-consistency-apply-fix-design.md`. Next step is an implementation plan (writing-plans), then build. Tracked in `docs/TODO.md` (Larger items).
-- **New TODOs added this session** (in `docs/TODO.md`): cost-warning on the Consistency screen; choosable download location; reliable physical-trait tracking; in-depth beta/alpha read; more detailed logs + in-app log viewer; OpenRouter model picker (done-but-listed).
+- **Consistency apply-fix** — design approved, spec written: `docs/superpowers/specs/2026-06-26-consistency-apply-fix-design.md`. Next step is an implementation plan (writing-plans), then build. Tracked in `docs/internal/TODO.md` (Larger items).
+- **New TODOs added this session** (in `docs/internal/TODO.md`): cost-warning on the Consistency screen; choosable download location; reliable physical-trait tracking; in-depth beta/alpha read; more detailed logs + in-app log viewer; OpenRouter model picker (done-but-listed).
 
 ## 6. Access cheat-sheet
 

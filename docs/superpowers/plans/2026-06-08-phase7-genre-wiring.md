@@ -20,14 +20,14 @@
 
 ## File Structure
 
-- **Create** `docs/GENRE-GUIDE-TEMPLATE.md` — the authoring reference for the 7-file genre guide (what each file is for). Documentation only; not a selectable genre.
+- **Create** `docs/developer/GENRE-GUIDE-TEMPLATE.md` — the authoring reference for the 7-file genre guide (what each file is for). Documentation only; not a selectable genre.
 - **Create** `library/genres/romantasy/themes.md`, `library/genres/romantasy/must-haves.md`, `library/genres/romantasy/genre-killers.md` — the new guide files for the worked example.
 - **Modify** `library/genres/romantasy/reader-expectations.md`, `library/genres/romantasy/beats.md` — append the research-backed sections (tone/pacing/setting/archetypes/length; named obligatory scenes).
 - **Create** `tests/unit/genre-guide.test.ts` — unit tests for `BookService.getActiveGenreGuide()`.
 - **Modify** `gateway/src/services/book.ts` — add `getActiveGenreGuide()`.
 - **Modify** `gateway/src/index.ts` — add `genreGuide` to `buildSystemPrompt`'s context type + render the block; pass `this.books?.getActiveGenreGuide()` at the call site.
 - **Modify** `tests/feature-smoke.sh` — add a deterministic genre-injection (sentinel-echo) assertion.
-- **Modify** `CLAUDE.md`, `docs/TODO.md`, `docs/COMPLETED.md`; write `commit_message`.
+- **Modify** `CLAUDE.md`, `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`; write `commit_message`.
 
 ---
 
@@ -36,7 +36,7 @@
 No code changes — content only. The genre kind reads any `.md` in the dir (`LibraryService.loadKind`, `gateway/src/services/library.ts:240`), so new files need no library/snapshot/re-pull changes.
 
 **Files:**
-- Create: `docs/GENRE-GUIDE-TEMPLATE.md`
+- Create: `docs/developer/GENRE-GUIDE-TEMPLATE.md`
 - Create: `library/genres/romantasy/themes.md`
 - Create: `library/genres/romantasy/must-haves.md`
 - Create: `library/genres/romantasy/genre-killers.md`
@@ -45,7 +45,7 @@ No code changes — content only. The genre kind reads any `.md` in the dir (`Li
 
 - [ ] **Step 1: Write the genre-guide authoring reference**
 
-Create `docs/GENRE-GUIDE-TEMPLATE.md`:
+Create `docs/developer/GENRE-GUIDE-TEMPLATE.md`:
 
 ```markdown
 # Genre Guide Template
@@ -511,7 +511,7 @@ Expected: exits 0 (no syntax errors).
 ## Task 5: Docs, tracker, and commit message
 
 **Files:**
-- Modify: `CLAUDE.md`, `docs/TODO.md`, `docs/COMPLETED.md`
+- Modify: `CLAUDE.md`, `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`
 - Create: `commit_message`
 
 - [ ] **Step 1: Note in CLAUDE.md that genre is now wired**
@@ -524,10 +524,10 @@ Genre is now injected into generation prompts via `BookService.getActiveGenreGui
 
 - [ ] **Step 2: Move the Phase 7 item TODO → COMPLETED**
 
-In `docs/TODO.md`, find the North-Star/roadmap reference to "Phase 7 genre wiring" (the genre-wiring line in the multi-book umbrella item). In `docs/COMPLETED.md`, under the current dated section, add:
+In `docs/internal/TODO.md`, find the North-Star/roadmap reference to "Phase 7 genre wiring" (the genre-wiring line in the multi-book umbrella item). In `docs/internal/COMPLETED.md`, under the current dated section, add:
 
 ```markdown
-- **Book-container Phase 7 — genre wiring.** The active book's genre guide is now injected into generation prompts alongside Author + Voice. New `BookService.getActiveGenreGuide()` composes `templates/genre/*.md` in canonical order (reader-expectations → tropes → themes → beats → must-haves → genre-killers → comps) under `## Genre Guide — <Title>` headers, threaded through the single `buildSystemPrompt` chokepoint (`gateway/src/index.ts`). Genre-guide content schema expanded (research-backed): added `themes.md`, `must-haves.md`, `genre-killers.md`; expanded `reader-expectations.md` (tone/pacing/setting/archetypes/length) and `beats.md` (named obligatory scenes); `romantasy` fleshed out as the worked example; `docs/GENRE-GUIDE-TEMPLATE.md` documents the 7-file schema. Verified: `tests/unit/genre-guide.test.ts` (compose order / genre-less→null / fresh-read) + a deterministic sentinel-echo assertion in `tests/feature-smoke.sh`. Spec: `docs/superpowers/specs/2026-06-08-phase7-genre-wiring-design.md`; plan: `docs/superpowers/plans/2026-06-08-phase7-genre-wiring.md`. Broad genre-library content remains out of scope.
+- **Book-container Phase 7 — genre wiring.** The active book's genre guide is now injected into generation prompts alongside Author + Voice. New `BookService.getActiveGenreGuide()` composes `templates/genre/*.md` in canonical order (reader-expectations → tropes → themes → beats → must-haves → genre-killers → comps) under `## Genre Guide — <Title>` headers, threaded through the single `buildSystemPrompt` chokepoint (`gateway/src/index.ts`). Genre-guide content schema expanded (research-backed): added `themes.md`, `must-haves.md`, `genre-killers.md`; expanded `reader-expectations.md` (tone/pacing/setting/archetypes/length) and `beats.md` (named obligatory scenes); `romantasy` fleshed out as the worked example; `docs/developer/GENRE-GUIDE-TEMPLATE.md` documents the 7-file schema. Verified: `tests/unit/genre-guide.test.ts` (compose order / genre-less→null / fresh-read) + a deterministic sentinel-echo assertion in `tests/feature-smoke.sh`. Spec: `docs/superpowers/specs/2026-06-08-phase7-genre-wiring-design.md`; plan: `docs/superpowers/plans/2026-06-08-phase7-genre-wiring.md`. Broad genre-library content remains out of scope.
 ```
 
 - [ ] **Step 3: Write the commit message**
@@ -550,7 +550,7 @@ Genre was snapshot-but-unwired; now injected alongside Author + Voice.
 - Genre guide schema expanded (research-backed): add themes.md, must-haves.md,
   genre-killers.md; expand reader-expectations.md (tone/pacing/setting/
   archetypes/length) + beats.md (obligatory scenes). romantasy fleshed out;
-  docs/GENRE-GUIDE-TEMPLATE.md documents the 7-file schema.
+  docs/developer/GENRE-GUIDE-TEMPLATE.md documents the 7-file schema.
 - Tests: tests/unit/genre-guide.test.ts (order / genre-less→null / fresh-read);
   deterministic sentinel-echo assertion in tests/feature-smoke.sh.
 

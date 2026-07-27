@@ -55,6 +55,7 @@ export interface BookSelection {
   contentCeiling?: { spice: number; violence: number };  // explicit content axes; overrides the bound author's contentBrand when set
   sceneBriefModel?: { provider: string; model?: string }; // explicit per-book scene-brief model; overrides the bound author's sceneBriefModel at create
   draftModel?: { provider: string; model?: string };      // explicit per-book draft model; overrides the bound author's draftModel at create
+  alternateTakes?: { sceneTakes?: boolean; draftOpening?: boolean }; // explicit per-book Alternate Takes opt-in; when omitted, new books default to sceneTakes ON
   uncensoredProvider?: 'grok' | 'venice' | 'auto';        // preferred spice-reroute provider, persisted on the manifest
   reviewCadence?: Cadence;  // explicit human-review gate cadence; overrides the bound author's reviewCadence when set (Flagship Plan 5)
   costBudget?: number;      // per-book spend cap in dollars (Flagship Plan 6, Task 3); persisted on the manifest
@@ -401,6 +402,11 @@ export class BookService {
       const sceneBriefModel = sel.sceneBriefModel ?? author.sceneBriefModel;
       const draftModel = sel.draftModel ?? author.draftModel;
 
+      // Alternate Takes defaults ON for new books (Scene Takes only — the primary
+      // "what happens" decision point; Draft Opening stays opt-in to avoid two
+      // pick-gates per chapter). An explicit value on the create request wins.
+      const alternateTakes = sel.alternateTakes ?? { sceneTakes: true, draftOpening: false };
+
       const manifest: BookManifest = {
         id: slug,
         slug,
@@ -426,6 +432,7 @@ export class BookService {
         ...(contentCeiling ? { contentCeiling } : {}),
         ...(sceneBriefModel ? { sceneBriefModel } : {}),
         ...(draftModel ? { draftModel } : {}),
+        ...((alternateTakes.sceneTakes || alternateTakes.draftOpening) ? { alternateTakes } : {}),
         ...(sel.uncensoredProvider ? { uncensoredProvider: sel.uncensoredProvider } : {}),
         ...(reviewCadence ? { review: { cadence: reviewCadence } } : {}),
         ...(typeof sel.costBudget === 'number' ? { costBudget: sel.costBudget } : {}),

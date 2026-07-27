@@ -711,7 +711,7 @@ Expected: tsc clean; suite green.
 ### Task 7: Reseed stale data + final sweep + commit_message
 
 **Files:**
-- Modify: `docs/TODO.md` → `docs/COMPLETED.md` (move the three loose-end items)
+- Modify: `docs/internal/TODO.md` → `docs/internal/COMPLETED.md` (move the three loose-end items)
 - Create: `commit_message`
 
 - [ ] **Step 1: Remove the stale local default-book (data expendable, decision 6)**
@@ -731,7 +731,7 @@ Expected: tsc clean; all unit tests pass; dashboard builds.
 
 - [ ] **Step 3: Move TODO items to COMPLETED**
 
-In `docs/TODO.md`, remove the Author/Voice split, per-book skills snapshot, and book DELETE entries (wherever they're tracked); add them to `docs/COMPLETED.md` under a `2026-06-06` heading with one line each.
+In `docs/internal/TODO.md`, remove the Author/Voice split, per-book skills snapshot, and book DELETE entries (wherever they're tracked); add them to `docs/internal/COMPLETED.md` under a `2026-06-06` heading with one line each.
 
 - [ ] **Step 4: Write `commit_message`**
 

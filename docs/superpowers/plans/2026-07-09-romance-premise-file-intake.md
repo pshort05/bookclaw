@@ -549,7 +549,7 @@ git commit -m "feat(studio): From Premise File review gate (seeds + grounded set
 
 ## Feature tracking
 
-- [ ] Add a "Romance Premise-File Intake" entry to `docs/TODO.md` under the existing "Romance Workflow" section before starting; move it to `docs/COMPLETED.md` with the completion date when Task 6 lands. (Per repo CLAUDE.md feature-tracking rule.)
+- [ ] Add a "Romance Premise-File Intake" entry to `docs/internal/TODO.md` under the existing "Romance Workflow" section before starting; move it to `docs/internal/COMPLETED.md` with the completion date when Task 6 lands. (Per repo CLAUDE.md feature-tracking rule.)
 
 ## Self-Review (completed against the spec)
 

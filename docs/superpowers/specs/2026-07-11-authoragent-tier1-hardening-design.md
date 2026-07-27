@@ -1,7 +1,7 @@
 # AuthorAgent Tier-1 Hardening — Design & Spec
 
 - **Date:** 2026-07-11
-- **Source:** Tier 1 of `docs/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md` — three live defects in the
+- **Source:** Tier 1 of `docs/internal/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md` — three live defects in the
   current BookClaw tree that the sibling fork `Ckokoski/AuthorAgent` already fixed.
 - **Reference implementation:** fetched locally as ref `authoragent/main` (compare:
   `https://github.com/pshort05/bookclaw/compare/main...Ckokoski:AuthorAgent:main`).

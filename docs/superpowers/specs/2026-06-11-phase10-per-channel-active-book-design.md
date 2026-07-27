@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-11
 **Status:** Decisions confirmed (owner, 2026-06-11) — ready for an implementation plan. See §6.
-**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) Phase 10 (follows Phase 9 book-board UI; precedes Phase 11 backup & recovery — the release gate)
+**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) Phase 10 (follows Phase 9 book-board UI; precedes Phase 11 backup & recovery — the release gate)
 
 ## 1. Goal
 
@@ -114,7 +114,7 @@ Discord is **not** updated (stub posture).
 2. **`handleMessage`** (`index.ts`): introduce `overrideSlug = bookSlug ?? this.books?.getChannelBook(channel)`; use it in the soul/genre block.
 3. **Project binding**: Telegram `/novel` path → `resolveBook(telegramChannel)`.
 4. **Telegram bridge**: `/book` list+select, `/status` book line; add the small gateway helper(s) it delegates to.
-5. **Docs**: update `BOOK-CONTAINER-ARCHITECTURE.md` Phase 10 to "Implemented"; move the TODO/architecture note; `docs/COMPLETED.md`; `CLAUDE.md` workspace-dir note (`.config/channel-books.json`); `commit_message`; the `.remember` handoff.
+5. **Docs**: update `BOOK-CONTAINER-ARCHITECTURE.md` Phase 10 to "Implemented"; move the TODO/architecture note; `docs/internal/COMPLETED.md`; `CLAUDE.md` workspace-dir note (`.config/channel-books.json`); `commit_message`; the `.remember` handoff.
 
 ## 7. Risks / notes
 

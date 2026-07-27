@@ -748,7 +748,7 @@ Expected: all checks pass incl. the new export/import + gated-import ones; recor
 ---
 
 ## Post-plan
-- Move the Phase 5 TODO/roadmap entry to `docs/COMPLETED.md`; update the arch doc Phase 5 line to "Implemented".
+- Move the Phase 5 TODO/roadmap entry to `docs/internal/COMPLETED.md`; update the arch doc Phase 5 line to "Implemented".
 - Run a final `/code-review` over the branch diff; address findings.
 
 ## Self-review notes (author)

@@ -1112,15 +1112,15 @@ git commit -m "feat(deai): wire chunked two-pass sweep + banned-terms into the d
 ## Task 12: Docs — TODO/COMPLETED + SECURITY posture note
 
 **Files:**
-- Modify: `docs/TODO.md` → move this feature to `docs/COMPLETED.md` with the `2026-07-14` date (per CLAUDE.md feature-tracking rule).
-- Modify: `docs/COMPLETED.md`.
+- Modify: `docs/internal/TODO.md` → move this feature to `docs/internal/COMPLETED.md` with the `2026-07-14` date (per CLAUDE.md feature-tracking rule).
+- Modify: `docs/internal/COMPLETED.md`.
 
-- [ ] **Step 1:** Add the feature bullet to `docs/TODO.md` first if it isn't already tracked (CLAUDE.md requires it be tracked before work).
-- [ ] **Step 2:** On completion move it to `docs/COMPLETED.md` with `2026-07-14`, preserving the bullet text.
+- [ ] **Step 1:** Add the feature bullet to `docs/internal/TODO.md` first if it isn't already tracked (CLAUDE.md requires it be tracked before work).
+- [ ] **Step 2:** On completion move it to `docs/internal/COMPLETED.md` with `2026-07-14`, preserving the bullet text.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add docs/TODO.md docs/COMPLETED.md
+git add docs/internal/TODO.md docs/internal/COMPLETED.md
 git commit -m "docs(deai): move chunked two-pass de-AI + banned-terms to COMPLETED"
 ```
 

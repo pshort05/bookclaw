@@ -1098,7 +1098,7 @@ natural conversation. World-building through incidental details during action.
 
 3. **For creating an action/thriller profile:** Use `kinetic-ya-scifi` (YA sci-fi action), `velocity-political-thriller` (political thriller), or `near-future-techno-thriller` (techno-thriller). Each demonstrates a different approach to fast-paced, plot-driven narrative.
 
-4. **For creating a new profile from scratch:** Start with the closest family above and customize each file using the guidelines in [HOW-TO-CREATE-AUTHOR-PROFILES.md](HOW-TO-CREATE-AUTHOR-PROFILES.md).
+4. **For creating a new profile from scratch:** Start with the closest family above and customize each file using the guidelines in [HOW-TO-CREATE-AUTHOR-PROFILES.md](../HOW-TO-CREATE-AUTHOR-PROFILES.md).
 
 ---
 

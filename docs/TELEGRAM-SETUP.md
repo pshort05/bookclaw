@@ -377,7 +377,7 @@ When several people on your LAN drive the same bot:
 - **Anything destructive is gated.** The confirmation gate applies regardless of who initiated the action. The owner (you) sets policy in `config/default.json`.
 - **The dashboard shows global state.** Any LAN user opening `http://<host-ip>:3847` sees every project, every persona, every file. There's no per-user view. Treat the bot allowlist as "trusted co-authors," not "isolated tenants."
 
-For genuinely isolated multi-tenant use (one bot per pen name, separate workspaces, separate API keys per author), BookClaw doesn't support it yet — see [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #8 ("Multi-agent routing with isolated workspaces") for the upstream feature being tracked.
+For genuinely isolated multi-tenant use (one bot per pen name, separate workspaces, separate API keys per author), BookClaw doesn't support it yet — see [OPENCLAW-UPDATES.md](internal/OPENCLAW-UPDATES.md) item #8 ("Multi-agent routing with isolated workspaces") for the upstream feature being tracked.
 
 ---
 

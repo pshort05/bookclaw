@@ -644,15 +644,15 @@ git commit -m "feat(studio): wire the Guided wizard live on the New hub"
 
 ### Task 4: Feature tracking
 
-Move the "Sub-project 2 — Guided wizard" bullet from `docs/TODO.md` to `docs/COMPLETED.md`, per the repo's feature-tracking rule.
+Move the "Sub-project 2 — Guided wizard" bullet from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md`, per the repo's feature-tracking rule.
 
 **Files:**
-- Modify: `docs/TODO.md` (remove the Sub-project 2 bullet)
-- Modify: `docs/COMPLETED.md` (add it, dated, under a new entry)
+- Modify: `docs/internal/TODO.md` (remove the Sub-project 2 bullet)
+- Modify: `docs/internal/COMPLETED.md` (add it, dated, under a new entry)
 
 - [ ] **Step 1: Remove from TODO.md**
 
-Delete this bullet from `docs/TODO.md` (currently under "## Romance Workflow — Foundation (sub-project 1) complete (2026-07-08)"):
+Delete this bullet from `docs/internal/TODO.md` (currently under "## Romance Workflow — Foundation (sub-project 1) complete (2026-07-08)"):
 
 ```
 - [ ] **Sub-project 2 — Guided wizard.** Deterministic seed-collection form (studio UI) that gathers the shared seed contract and creates a book on `romance-{sweet,spicy}-full`. Proves the seed contract end-to-end with the least machinery. Depends on Foundation (contract). **Hub card exists as "Coming soon" — wire it live when built.**
@@ -660,7 +660,7 @@ Delete this bullet from `docs/TODO.md` (currently under "## Romance Workflow —
 
 - [ ] **Step 2: Add to COMPLETED.md**
 
-Add a new dated entry to `docs/COMPLETED.md` (immediately above or below the existing "Romance Workflow — Foundation (sub-project 1) complete" entry, matching its style):
+Add a new dated entry to `docs/internal/COMPLETED.md` (immediately above or below the existing "Romance Workflow — Foundation (sub-project 1) complete" entry, matching its style):
 
 ```
 ## Romance Workflow — Guided wizard (sub-project 2) complete (2026-07-10)
@@ -671,7 +671,7 @@ Second slice of the Romance Workflow: a deterministic single-page studio form at
 - [ ] **Step 3: Commit**
 
 ```bash
-git add docs/TODO.md docs/COMPLETED.md
+git add docs/internal/TODO.md docs/internal/COMPLETED.md
 git commit -m "docs(romance): move Guided wizard (sub-project 2) to COMPLETED"
 ```
 

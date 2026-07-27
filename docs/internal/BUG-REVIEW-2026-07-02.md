@@ -484,5 +484,5 @@ These were rated *low* by their finder and passed through without a verification
 
 - 15 finder agents (one per subsystem partition) → 33 raw medium+ findings → adversarial verification → 31 distinct confirmed/plausible; 4 refuted dropped.
 - Verifiers were prompted to *refute*; a finding survived only if it could not be traced to a guard, dead code, or intentional design.
-- The review excluded already-tracked issues (docs/TODO.md, run-review docs) by instruction.
+- The review excluded already-tracked issues (docs/internal/TODO.md, run-review docs) by instruction.
 - Lows were not verified — expect a higher false-positive rate there.

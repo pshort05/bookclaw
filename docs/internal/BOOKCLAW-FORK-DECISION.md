@@ -1,6 +1,6 @@
 # BookClaw: Evolve BookClaw vs. Re-Fork OpenClaw — Effort Comparison
 
-> **Status (2026-06-18):** Decision implemented — Option A was taken. The rename (AuthorClaw → BookClaw) is complete and the book-container model is fully shipped (Phases 0–12; Phase 12 was the final planned phase). Frozen decision record; see docs/COMPLETED.md for current state.
+> **Status (2026-06-18):** Decision implemented — Option A was taken. The rename (AuthorClaw → BookClaw) is complete and the book-container model is fully shipped (Phases 0–12; Phase 12 was the final planned phase). Frozen decision record; see docs/internal/COMPLETED.md for current state.
 
 Decision memo for review. Prepared 2026-05-30.
 
@@ -20,7 +20,7 @@ below.
 ## The single fact that decides this
 
 **BookClaw is already a fork of OpenClaw.** `package.json`, the startup banner, and
-`docs/OPENCLAW-UPDATES.md` confirm the last upstream sync was OpenClaw commit `80df746`. So the
+`docs/internal/OPENCLAW-UPDATES.md` confirm the last upstream sync was OpenClaw commit `80df746`. So the
 two options are not symmetric:
 
 | Option | What it actually is |
@@ -48,7 +48,7 @@ upstream commits. That is the core of the trade.
 
 ### 1. Multi-book support
 
-Already scoped in `docs/TODO.md` as a "Larger item." It is a data-model addition on top of
+Already scoped in `docs/internal/TODO.md` as a "Larger item." It is a data-model addition on top of
 existing infrastructure:
 
 - A `book` entity owning phase/state across planning -> bible -> production -> revision ->
@@ -62,7 +62,7 @@ OpenClaw fork none of those exist yet, so Option B makes this feature *more* exp
 
 ### 2. StoryHackerAI feature
 
-`docs/STORYHACKERAI-PORTING.md` already audited this. The headline item is making OpenRouter the
+`docs/internal/STORYHACKERAI-PORTING.md` already audited this. The headline item is making OpenRouter the
 canonical AI gateway (a router/config change), plus the Selector -> Brief -> Draft -> Check
 multi-pass chapter pipeline and explicit Chronology/Style/Wordcount checks. Several of those
 checks already exist as services (`continuity` checking, `craft-critic`, `dialogue-auditor`).
@@ -151,7 +151,7 @@ those match "multi-book + StoryHackerAI for one author."
 
 1. **Is the goal genuinely single-author multi-book,** or aimed at an agency / multi-tenant
    product? That single answer is the one that could flip the recommendation toward B.
-2. **Multi-book and the rename are not yet marked in-flight in `docs/TODO.md`.** Per the
+2. **Multi-book and the rename are not yet marked in-flight in `docs/internal/TODO.md`.** Per the
    feature-tracking workflow in `CLAUDE.md`, neither should start until tracked as active.
 
 ---
@@ -160,7 +160,7 @@ those match "multi-book + StoryHackerAI for one author."
 
 - [TODO.md](TODO.md) — multi-book is listed under "Larger items"; rename under "Pending plans."
 - [RENAME-PLAN.md](RENAME-PLAN.md) — ready, reversible BookClaw -> BookClaw runbook.
-- [GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md) — OpenClaw architecture comparison + 3-level
+- [GOD-CLASS-REFACTOR.md](../developer/GOD-CLASS-REFACTOR.md) — OpenClaw architecture comparison + 3-level
   incremental refactor plan.
 - [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) — upstream features and which justify the plugin
   architecture.

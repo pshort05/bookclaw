@@ -1,6 +1,6 @@
 # BookClaw Architecture
 
-This document describes how BookClaw is structured and how a request flows through it. For installation and usage, see the [README](../README.md). For the forward-looking data model, see [BOOK-CONTAINER-ARCHITECTURE.md](BOOK-CONTAINER-ARCHITECTURE.md); for the in-progress decomposition of the large entry-point classes, see [GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md).
+This document describes how BookClaw is structured and how a request flows through it. For installation and usage, see the [README](../README.md). For the forward-looking data model, see [BOOK-CONTAINER-ARCHITECTURE.md](developer/BOOK-CONTAINER-ARCHITECTURE.md); for the in-progress decomposition of the large entry-point classes, see [GOD-CLASS-REFACTOR.md](developer/GOD-CLASS-REFACTOR.md).
 
 ## Overview
 
@@ -82,6 +82,8 @@ Six providers — **Ollama** (free local), **Gemini** (free), **DeepSeek** (chea
 
 - **Output budget matters** — tasks such as `outline`, `book_bible`, and `creative_writing` need large token budgets (≈16K); under-budgeting silently truncates output and breaks downstream pipeline steps.
 - **Reasoning effort** (`thinking: low|medium|high`) is translated per provider (Claude thinking budget, Gemini `thinkingConfig`, DeepSeek model swap, OpenAI `reasoning.effort`) and ignored silently where unsupported.
+- **Per-step model + temperature resolution** (`castStep` / `stepRouting` in `api/routes/_shared.ts`) picks each step's provider/model/temperature by precedence: spice re-route → explicit per-step pin → per-stage pin → **author/book per-role model** (a book's author-set `sceneBriefModel` / `draftModel`, kept consistent across that author's books) → book "all-stages" default → genre **casting sheet** role model → tier default. A per-book **Creative/Surgical temperature** (defaults 0.8 / 0.3, applied by classifying each step's role) overrides the casting-sheet temperature below any explicit pin.
+- **Alternate Takes** (Verbalized Sampling, `gateway/src/sampling/`) — at opted-in decision steps (a *Scene Takes* step above `scene_brief`, a *Draft Opening* step above `draft`) the model emits *k* candidate "takes"; the pipeline parks on a `project.takes` gate for a human pick (`POST /api/projects/:id/takes/select`), logging the choice to a per-book preference file. Never auto-selects; fails open to a single direct completion. Default-on for new books (Scene Takes only).
 
 ### 3. Skills and Projects (the autonomous loop)
 
@@ -105,7 +107,7 @@ BookClaw is a **multi-author, multi-book studio**, where each book is a self-con
 
 - **Series** (`workspace/series/`) — an optional container above books for authors running multi-book series, with a cross-book series bible and divergence tracking between a book's snapshot refs and the series' current refs.
 
-The (now-completed) phased roadmap (storage → library → book entity → per-book wiring → editor/re-pull → share/import → front-end → genre wiring → multi-book concurrency → book-board UI → per-channel active book → backup/recovery) is recorded in [BOOK-CONTAINER-ARCHITECTURE.md](BOOK-CONTAINER-ARCHITECTURE.md).
+The (now-completed) phased roadmap (storage → library → book entity → per-book wiring → editor/re-pull → share/import → front-end → genre wiring → multi-book concurrency → book-board UI → per-channel active book → backup/recovery) is recorded in [BOOK-CONTAINER-ARCHITECTURE.md](developer/BOOK-CONTAINER-ARCHITECTURE.md).
 
 ## Frontend
 
@@ -154,7 +156,7 @@ There is no heavyweight test framework. Tests are scripts so any check is repeat
 ## Related Documents
 
 - [README.md](../README.md) — installation, usage, and configuration.
-- [BOOK-CONTAINER-ARCHITECTURE.md](BOOK-CONTAINER-ARCHITECTURE.md) — the book-container data model and phased roadmap.
-- [GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md) — decomposition of the `index.ts` / `routes.ts` god classes.
+- [BOOK-CONTAINER-ARCHITECTURE.md](developer/BOOK-CONTAINER-ARCHITECTURE.md) — the book-container data model and phased roadmap.
+- [GOD-CLASS-REFACTOR.md](developer/GOD-CLASS-REFACTOR.md) — decomposition of the `index.ts` / `routes.ts` god classes.
 - [SECURITY.md](SECURITY.md) — security posture, threat model, and deployment guidance.
 - [GLOSSARY.md](GLOSSARY.md) — canonical vocabulary.

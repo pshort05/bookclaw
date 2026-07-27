@@ -279,9 +279,9 @@ List which source prompts were imported vs skipped (and why).
 
 ### Task 10: Bookkeeping
 
-**Files:** Modify `docs/TODO.md`, `docs/COMPLETED.md`
+**Files:** Modify `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`
 
-- [ ] Move the "Prompt Runner" item from `docs/TODO.md` to `docs/COMPLETED.md` (2026-06-14), preserving the bullet.
+- [ ] Move the "Prompt Runner" item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` (2026-06-14), preserving the bullet.
 
 ### Task INT1: Full verify + review + deploy (integrator)
 - [ ] `npx tsc --noEmit` 0; `node --import tsx --test tests/unit/*.test.ts` all pass; `npm run build:frontend` clean; `npm run test:api` pass (incl. prompt assertions); `npm run test:smoke` pass.

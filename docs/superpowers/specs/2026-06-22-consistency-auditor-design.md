@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-22
 **Status:** Design — under review. Next: implementation plan via `superpowers:writing-plans`.
-**Feature-tracking:** `docs/TODO.md` → "Post-writing consistency auditor (fact-ledger continuity checker)" + "Consistency-ledger database maintenance".
+**Feature-tracking:** `docs/internal/TODO.md` → "Post-writing consistency auditor (fact-ledger continuity checker)" + "Consistency-ledger database maintenance".
 **Related:** roadmap #3 (Deep continuity engine), #12 (semantic memory + bible knowledge-graph); the existing entity-index continuity engine (`gateway/src/services/context-engine.ts` `runContinuityCheck`, old-project model); the World Repository (`docs/superpowers/specs/2026-06-21-world-repository-design.md`) as a canon source.
 
 ## Problem

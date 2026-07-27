@@ -776,7 +776,7 @@ Expected: build succeeds.
 ### Task 10: Full suite, docs, and commit message
 
 **Files:**
-- Modify: `docs/TODO.md` (remove the per-author-model item), `docs/COMPLETED.md` (add it, dated)
+- Modify: `docs/internal/TODO.md` (remove the per-author-model item), `docs/internal/COMPLETED.md` (add it, dated)
 - Create: `commit_message`
 
 - [ ] **Step 1: Run the full unit suite**
@@ -791,7 +791,7 @@ Expected: PASS.
 
 - [ ] **Step 3: Move the TODO item to COMPLETED**
 
-Remove the "Per-author scene-brief + draft models" bullet from `docs/TODO.md` (Larger items) and add it to `docs/COMPLETED.md` with a `2026-07-26` prefix, preserving the bullet text and linking the spec/plan.
+Remove the "Per-author scene-brief + draft models" bullet from `docs/internal/TODO.md` (Larger items) and add it to `docs/internal/COMPLETED.md` with a `2026-07-26` prefix, preserving the bullet text and linking the spec/plan.
 
 - [ ] **Step 4: Write `commit_message`**
 

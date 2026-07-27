@@ -50,5 +50,5 @@ Phase 2 is a data task, not code: import `~/data/Writing/shattered-cradle-world/
 
 - Design spec: `docs/superpowers/specs/2026-06-21-world-repository-design.md` (all sections approved)
 - Plans + shared contract: `docs/superpowers/plans/2026-06-21-world-repository-00-index-and-contract.md` (the "Resolved reconciliations" section is authoritative) + the six `…-phase-N-…` plans
-- Completion record: `docs/COMPLETED.md` (2026-06-22 entries for Phase 1 and Phases 3–6)
-- Roadmap status: `docs/TODO.md` (★ World Repository block)
+- Completion record: `docs/internal/COMPLETED.md` (2026-06-22 entries for Phase 1 and Phases 3–6)
+- Roadmap status: `docs/internal/TODO.md` (★ World Repository block)

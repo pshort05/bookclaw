@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-08
 **Status:** Decisions confirmed (owner, 2026-06-08) — ready for an implementation plan. See §5.
-**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) Phase 7 (follows the Phase 6 front-end rewrite; precedes Phase 8 multi-book concurrency)
+**Roadmap:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) Phase 7 (follows the Phase 6 front-end rewrite; precedes Phase 8 multi-book concurrency)
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ Phase 7 (a) defines a richer, research-backed **genre guide** content model, and
 3. Genre re-pull works (edit the library genre → re-pull updates the book's snapshot → next generation reflects it).
 
 ### Explicitly out of scope
-- **Broad genre library content.** Phase 7 ships the *schema* + *wiring* and fleshes out the one existing built-in genre (`romantasy`) as the worked example. Authoring many genres is content work, tracked separately ([BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) non-goals).
+- **Broad genre library content.** Phase 7 ships the *schema* + *wiring* and fleshes out the one existing built-in genre (`romantasy`) as the worked example. Authoring many genres is content work, tracked separately ([BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) non-goals).
 - **Task-targeted injection tuning** beyond the v1 rule in §4 (see the decision in §5.1).
 - Anything Phase 8+ (multi-book concurrency, per-channel active book).
 

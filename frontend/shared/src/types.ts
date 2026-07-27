@@ -147,6 +147,7 @@ export interface ProjectStep {
   chapterNumber?: number;
   wordCountTarget?: number;
   modelOverride?: { provider: string; model?: string } | null;
+  role?: string; // semantic casting role (scene_brief/draft/…); drives inherited-model display
 }
 
 /** Project shape from GET /api/projects/list and GET /api/projects/:id. */
@@ -168,6 +169,10 @@ export interface Project {
   // Alternate Takes gate (mirrors gateway projects.ts `takes`): present while parked
   // awaiting a human pick among candidate takes (POST /api/projects/:id/takes/select).
   takes?: { stepId: string; role: string; candidates: Array<{ index: number; text: string }>; config?: { k: number; variant: string; threshold: number } };
+  // Author/book per-role model defaults synced onto the project (mirrors the manifest).
+  // The write screen surfaces these as the inherited model on scene_brief/draft steps.
+  sceneBriefModel?: { provider?: string; model?: string };
+  draftModel?: { provider?: string; model?: string };
   [k: string]: unknown;
 }
 

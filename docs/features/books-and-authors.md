@@ -76,6 +76,10 @@ A **pen name** in BookClaw is an Author profile paired with a Voice profile — 
 
 They are kept as separate library kinds so a voice can be mixed and matched, but a complete pen name is an author **plus** a voice, usually created under the same name. They are **cloneable and editable** in the Asset Studio (Make → Library), and both are **selectable per book** on the New Book page. To create or edit them, see [How to Create Author Profiles](../HOW-TO-CREATE-AUTHOR-PROFILES.md).
 
+**Per-author models.** An author profile can also pin the models used for its two prose-generating steps — a `sceneBriefModel` and a `draftModel` (set in the author editor, typically an `auto:newest-*` sentinel like "Newest Opus"). These inherit into a new book's manifest at creation, so a pen name's underlying model stays consistent across all of its books — part of making each author "sound different." A per-book or per-step choice still overrides them.
+
+**Per-book temperature.** Each book has two temperature knobs on the Book Board — **Creative** (default 0.8) and **Surgical** (default 0.3). Every step is auto-classified into a bucket (creative steps like drafting run warm; surgical steps like consistency run cool) and uses that temperature, overriding the genre defaults but yielding to an explicit per-step pin.
+
 Once a book exists, its frozen author and voice can be edited in the book's own scope (this edits the snapshot, not the library):
 
 ```

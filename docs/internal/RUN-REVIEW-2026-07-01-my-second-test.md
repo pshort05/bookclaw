@@ -19,7 +19,7 @@ has them; otherwise commit + push):
  M frontend/studio/src/components/write/OutlinePane.tsx     # fix #A (outputs list)
  M frontend/studio/src/components/write/PipelineRail.tsx    # fix #B (frontier poll)
  M frontend/studio/src/routes/Write.tsx                     # fix #A wiring
-?? docs/RUN-REVIEW-2026-07-01-my-second-test.md             # this doc
+?? docs/internal/RUN-REVIEW-2026-07-01-my-second-test.md             # this doc
 ```
 
 Both fixes **type-check clean** (`cd frontend/studio && npx tsc --noEmit`). There is no frontend
@@ -216,7 +216,7 @@ leading/trailing framing) and (b) **inside a code fence**. This is distinct from
 - **Proposed fix (deferred — needs the generation path, not a blind mid-doc regex):** detect a chapter
   step output that contains a fenced/inline AI-reasoning block or a mid-word truncation and re-run /
   repair it (the chapter equivalent of `validateAssembly`), rather than broadening the safe-first
-  leading/trailing strip to eat mid-document content. Tracked in `docs/TODO.md`.
+  leading/trailing strip to eat mid-document content. Tracked in `docs/internal/TODO.md`.
 
 **Still pending:** headless re-run on Mercury to verify B1 end-to-end + that the consistency audit now
 runs (B2); B7 chapter-repair fix.

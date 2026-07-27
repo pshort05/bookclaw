@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-12
 **Status:** Draft for owner approval
-**Source design:** [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md) § "Backup and recovery" (approved 2026-06-04). This spec turns that section into a buildable design; deviations from it are called out explicitly.
+**Source design:** [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md) § "Backup and recovery" (approved 2026-06-04). This spec turns that section into a buildable design; deviations from it are called out explicitly.
 
 ## Goal
 

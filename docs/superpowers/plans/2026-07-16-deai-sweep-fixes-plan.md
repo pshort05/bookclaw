@@ -872,7 +872,7 @@ git commit -m "feat(deai): preflight provider check with family-preserving fallb
 ## Task 7: Full-suite verification + docs bookkeeping
 
 **Files:**
-- Modify: `docs/TODO.md` / `docs/COMPLETED.md` (move the three items per the project workflow)
+- Modify: `docs/internal/TODO.md` / `docs/internal/COMPLETED.md` (move the three items per the project workflow)
 - Modify: `commit_message` (repo-root, per the maintainer workflow — do NOT `git commit`/`push`)
 
 - [ ] **Step 1: Run the whole unit suite**
@@ -885,7 +885,7 @@ Expected: PASS (no red). If any non-de-AI test references the old `DEFAULT_PASS`
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 3: Move the tracked items** — in `docs/TODO.md`, find the three de-AI sweep items (short-circuit fix, preflight/fallback, AI-name checker) and move them to `docs/COMPLETED.md` with a `2026-07-16` completion-date prefix, preserving the original bullet text. If they are not yet listed in `docs/TODO.md`, add them to `COMPLETED.md` directly under the de-AI grouping.
+- [ ] **Step 3: Move the tracked items** — in `docs/internal/TODO.md`, find the three de-AI sweep items (short-circuit fix, preflight/fallback, AI-name checker) and move them to `docs/internal/COMPLETED.md` with a `2026-07-16` completion-date prefix, preserving the original bullet text. If they are not yet listed in `docs/internal/TODO.md`, add them to `COMPLETED.md` directly under the de-AI grouping.
 
 - [ ] **Step 4: Write the commit message** — write `commit_message` at the repo root (the maintainer runs `./push.sh`):
 
@@ -905,7 +905,7 @@ feat(deai): pass-2-after-failure fix, provider preflight/fallback, AI-name check
 - [ ] **Step 5: Commit the plan bookkeeping**
 
 ```bash
-git add docs/TODO.md docs/COMPLETED.md commit_message
+git add docs/internal/TODO.md docs/internal/COMPLETED.md commit_message
 git commit -m "docs(deai): move sweep-fix items to COMPLETED; write commit_message"
 ```
 

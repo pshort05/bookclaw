@@ -24,7 +24,7 @@
 - **Create** `tests/unit/channel-books.test.ts` — the override resolution + persistence proof.
 - **Modify** `gateway/src/index.ts` — (a) `handleMessage` override resolution; (b) `createProject` Telegram handler binds to the channel's book; (c) two new command handlers (`listBooks`, `selectBook`).
 - **Modify** `gateway/src/bridges/telegram.ts` — `CommandHandlers` interface (channel on `createProject`, add `listBooks`/`selectBook`); `/book` command; `/status` book line; `/help` line; pass `telegram:${chatId}` to `createProject`.
-- **Modify** docs: `docs/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/COMPLETED.md`, `CLAUDE.md`, plus `commit_message` and the `.remember` handoff.
+- **Modify** docs: `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/internal/COMPLETED.md`, `CLAUDE.md`, plus `commit_message` and the `.remember` handoff.
 
 ---
 
@@ -487,15 +487,15 @@ Run: `npm run build:frontend` → Expected: green (no FE change, gate stays gree
 ## Task 5: Docs, commit message, handoff
 
 **Files:**
-- Modify: `docs/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 10 → Implemented)
-- Modify: `docs/COMPLETED.md` (new dated entry)
+- Modify: `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 10 → Implemented)
+- Modify: `docs/internal/COMPLETED.md` (new dated entry)
 - Modify: `CLAUDE.md` (workspace `.config` note: add `channel-books.json`)
 - Create: `commit_message`
 - Modify: `.remember/remember.md` + the memory status file
 
 - [ ] **Step 1: Mark Phase 10 implemented in the architecture doc**
 
-In `docs/BOOK-CONTAINER-ARCHITECTURE.md`, the `Phase 10 — Per-channel active book` bullet (≈line 542): prepend `**(Implemented 2026-06-11.)** ` and append a one-sentence note: persisted per-channel overrides in `.config/channel-books.json`, `resolveBook(channel)=override ?? global`, web follows the global pointer, Telegram `/book` selects, API deferred.
+In `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`, the `Phase 10 — Per-channel active book` bullet (≈line 542): prepend `**(Implemented 2026-06-11.)** ` and append a one-sentence note: persisted per-channel overrides in `.config/channel-books.json`, `resolveBook(channel)=override ?? global`, web follows the global pointer, Telegram `/book` selects, API deferred.
 
 - [ ] **Step 2: Add the COMPLETED.md entry**
 

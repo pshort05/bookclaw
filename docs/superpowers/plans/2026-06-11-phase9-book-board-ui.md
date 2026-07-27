@@ -33,7 +33,7 @@ Spec: [docs/superpowers/specs/2026-06-11-phase9-book-board-ui-design.md](../spec
 - **Modify** `frontend/studio/src/routes/Activity.tsx` + `Activity.module.css` — `hhmmss`, single-space rows, `money()`.
 - **Modify** `frontend/studio/src/routes/Insights.tsx`, `frontend/studio/src/routes/Confirmations.tsx` — `money()` on spend.
 - **Modify** `tests/feature-smoke.sh` — assert `/api/books` carries `next`.
-- **Modify** `docs/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/TODO.md`, `docs/COMPLETED.md`; write `commit_message`.
+- **Modify** `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`, `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`; write `commit_message`.
 
 ---
 
@@ -609,7 +609,7 @@ Expected: SUMMARY all passed, 0 failed, including `Phase 9: /api/books rows carr
 
 - [ ] **Step 4: Live visual check (documentation surface)** — open `http://192.168.1.32:3847/` and confirm: board cards show the 6-segment phase bar + next-action; a book with a running project shows the live strip and the rail's Generating count is non-zero; the Activity feed shows `HH:MM:SS` single-spaced rows; costs read 4-decimals (e.g. `$0.0001`) while limits read `$5.00`. (This is the screenshot surface — the renamed real book titles make it presentable.)
 
-- [ ] **Step 5: Docs** — mark Phase 9 Implemented in `docs/BOOK-CONTAINER-ARCHITECTURE.md` (one line + verify note, matching the Phase 7/8 entries); move the three GUI-polish items + the Phase 9 board item from `docs/TODO.md` to `docs/COMPLETED.md` under a `## 2026-06-11` heading (preserve bullet text, prepend the date, link spec+plan). Note Phase 10 (per-channel active book) is next.
+- [ ] **Step 5: Docs** — mark Phase 9 Implemented in `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (one line + verify note, matching the Phase 7/8 entries); move the three GUI-polish items + the Phase 9 board item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` under a `## 2026-06-11` heading (preserve bullet text, prepend the date, link spec+plan). Note Phase 10 (per-channel active book) is next.
 
 - [ ] **Step 6: Write `commit_message`** — at the repo root:
 

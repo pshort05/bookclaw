@@ -1,6 +1,6 @@
 # Config-not-code pipeline follow-ups — STATUS / HANDOFF
 
-Source: `docs/TODO.md` → "Config-not-code pipelines — follow-ups (from the 2026-06-14 review)".
+Source: `docs/internal/TODO.md` → "Config-not-code pipelines — follow-ups (from the 2026-06-14 review)".
 Three items, each run through the full 8-step workflow (design → plan → TDD → code-review → fix medium+ → smoke → deploy to Mercury → run smoke). Then a final full-smoke update + run.
 
 Started: 2026-06-18. Driver: autonomous (per user request).
@@ -52,7 +52,7 @@ Next action: implement F2 with TDD — extract `passiveSkillBlock(services, skil
 ## Log
 - 2026-06-18: investigated all 3; designs above.
 - 2026-06-18: F1 coded (TDD). `advancePipeline` + tests/unit/pipeline-advance.test.ts (5 tests); onProjectCompleted auto-advance hook (phase-06-content.ts); POST /api/pipeline/:id/advance route; PipelineRail follow-to-next-phase + "Phase X / N" + Project type fields. Backend tsc clean, studio build clean, 387/387 unit.
-- 2026-06-18: F1 code-review (3 finder agents). Fixed: (B2) corrected over-claiming "zero unattended cost" comments — accurate now re: heartbeat picks up active/pending sequence projects when autonomous mode is ON (pre-existing; no NEW cost); (F5) PipelineRail follow-effect set `followedRef` before the fetch → a transient failure dead-ended the sequence; now set only after a successful pipeline read; (F4) reset seqTotal on pipeline switch. Added docs/TODO.md note: heartbeat doesn't enforce sequence phase order in autonomous mode (pre-existing, out of scope). Re-verified tsc/build/tests.
+- 2026-06-18: F1 code-review (3 finder agents). Fixed: (B2) corrected over-claiming "zero unattended cost" comments — accurate now re: heartbeat picks up active/pending sequence projects when autonomous mode is ON (pre-existing; no NEW cost); (F5) PipelineRail follow-effect set `followedRef` before the fetch → a transient failure dead-ended the sequence; now set only after a successful pipeline read; (F4) reset seqTotal on pipeline switch. Added docs/internal/TODO.md note: heartbeat doesn't enforce sequence phase order in autonomous mode (pre-existing, out of scope). Re-verified tsc/build/tests.
 - 2026-06-18: F1 smoke `tests/pipeline-advance-smoke.sh` (gate + real-AI auto-advance hook). Local boot test clean. Deployed F1 (commit cce955e, last-build PASS). Mercury smoke 7/7 (incl. real-AI phase-1 completion → phase-2 auto-started). F1 DONE.
 - 2026-06-18: F3 deployed (commit aca105f, last-build PASS). Step 9: added Tier E to tests/feature-smoke.sh (runs the F1 + F2 dedicated sub-smokes against the same target; F3 noted as local/unit-covered). Running full feature-smoke against Mercury — 87/0/0 through Tier D, Tier E pending.
 

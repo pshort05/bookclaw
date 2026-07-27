@@ -1,6 +1,6 @@
 # StoryHackerAI → BookClaw Feature-Porting Candidates
 
-> **Status (2026-06-09):** Porting roadmap snapshot (~2026-05-28), mostly unimplemented. Item #3 (genre templates) was since built in Phase 7 via a different 7-file schema — see docs/GENRE-GUIDE-TEMPLATE.md. Other items remain candidates.
+> **Status (2026-06-09):** Porting roadmap snapshot (~2026-05-28), mostly unimplemented. Item #3 (genre templates) was since built in Phase 7 via a different 7-file schema — see docs/developer/GENRE-GUIDE-TEMPLATE.md. Other items remain candidates.
 >
 > **Status (2026-06-18):** Still a historical record. Since the note above, the book-container model shipped (Phases 0-12), which effectively delivers **#10** (per-novel metadata co-location): each book now carries its own `workspace/books/<slug>/book.json` manifest instead of a single global `projects-state.json`. Pipelines also became **config-not-code** — a book runs a data-driven `sequence` of editable JSON pipelines under `library/` (`pipelines/`, `sequences/`), the relevant infrastructure for #7/#9, though those items' specific behaviours (true earlier-phase replay, per-step tier metadata) are not yet built on top of it. The highest-value items remain candidates: **#1** (OpenRouter is still one provider among six in `gateway/src/ai/router.ts`, not the canonical gateway) and **#2/#4/#5/#6** (the chapter-internal multi-pass selector/brief/chronology/style/wordcount passes have no implementation in the source). The analysis below is unchanged from the 2026-05-28 snapshot.
 
@@ -36,7 +36,7 @@ Ranking criterion: marginal value for BookClaw's novelist workflow — not workf
 
 **Cross-references:**
 - [OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md) item #19 — OpenClaw's recent provider expansions (DeepInfra catalog, Pixverse video, bare Anthropic IDs, Claude CLI OAuth) become unnecessary work once OpenRouter is the gateway.
-- [GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md) Level 3 — provider plugin-ifying becomes far simpler when there's only one real provider plus a few overrides.
+- [GOD-CLASS-REFACTOR.md](../developer/GOD-CLASS-REFACTOR.md) Level 3 — provider plugin-ifying becomes far simpler when there's only one real provider plus a few overrides.
 
 ---
 
@@ -66,7 +66,7 @@ Ranking criterion: marginal value for BookClaw's novelist workflow — not workf
 
 **Effort:** High. This is a real architectural change to `services/projects.ts` and the production phase. Not a refactor of one file — it's a redesign of one phase's step graph. Suggest implementing it as an *opt-in* mode (`pipeline mode: standard | deep`) so existing users aren't disrupted.
 
-**Why it's #2:** Continuity and voice consistency are the #1 reader complaint about AI-assisted novels (also called out in [FIRST-NOVEL-GUIDE.md](FIRST-NOVEL-GUIDE.md)'s troubleshooting matrix). Multi-pass-per-chapter is the most effective known mitigation.
+**Why it's #2:** Continuity and voice consistency are the #1 reader complaint about AI-assisted novels (also called out in [FIRST-NOVEL-GUIDE.md](../FIRST-NOVEL-GUIDE.md)'s troubleshooting matrix). Multi-pass-per-chapter is the most effective known mitigation.
 
 ---
 
@@ -128,7 +128,7 @@ The same six files apply to every novel of that genre. You write the romance tem
 
 **BookClaw today:** No equivalent. The drafter writes the chapter, and if it comes back at 800 words against a 2,500 target, the author re-prompts. The error compounds across 30 chapters into a book that's the wrong length.
 
-**Author payoff:** Catches outline-vs-chapter-count drift that today only surfaces at the end of Phase 3 when you compile the manuscript and discover it's 60k instead of 90k. Same intervention point flagged as a troubleshooting item in [FIRST-NOVEL-GUIDE.md](FIRST-NOVEL-GUIDE.md) ("Output too short for word target").
+**Author payoff:** Catches outline-vs-chapter-count drift that today only surfaces at the end of Phase 3 when you compile the manuscript and discover it's 60k instead of 90k. Same intervention point flagged as a troubleshooting item in [FIRST-NOVEL-GUIDE.md](../FIRST-NOVEL-GUIDE.md) ("Output too short for word target").
 
 **Effort:** Very low. One cheap-model call per chapter with a structured-output prompt.
 
@@ -221,6 +221,6 @@ Compounding with the OpenClaw roadmap: items #1, #4, #5, #6 all become easier if
 ## Cross-reference index
 
 - **[OPENCLAW-UPDATES.md](OPENCLAW-UPDATES.md)** — OpenClaw upstream features. Item #5 (embeddings), #11 (Pixverse), #12 (ClawHub), #19 (provider expansions) all touch the same surface as the StoryHackerAI items above.
-- **[GOD-CLASS-REFACTOR.md](GOD-CLASS-REFACTOR.md)** — Level 3 plugin contracts for AI providers become trivially smaller once #1 (OpenRouter canonical gateway) is done — most of "the providers" collapse into "OpenRouter plus Ollama plus optional direct keys."
-- **[FIRST-NOVEL-GUIDE.md](FIRST-NOVEL-GUIDE.md)** — the troubleshooting matrix names several pains that #4 / #5 / #6 directly resolve.
-- **[../README.md](../README.md#documentation)** — top-level documentation index.
+- **[GOD-CLASS-REFACTOR.md](../developer/GOD-CLASS-REFACTOR.md)** — Level 3 plugin contracts for AI providers become trivially smaller once #1 (OpenRouter canonical gateway) is done — most of "the providers" collapse into "OpenRouter plus Ollama plus optional direct keys."
+- **[FIRST-NOVEL-GUIDE.md](../FIRST-NOVEL-GUIDE.md)** — the troubleshooting matrix names several pains that #4 / #5 / #6 directly resolve.
+- **[../../README.md](../../README.md#documentation)** — top-level documentation index.

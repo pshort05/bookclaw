@@ -48,7 +48,7 @@ Wave 1 must be complete first. The two clusters own disjoint file sets → safe 
 4. **Code review** — whole-diff (Opus), fix all Medium+. Focus: #15 realpath preserved + no null-byte regressions at the 28 sites; #14 override correctness + no double-count; #16 the two bug fixes + no output drift in the migrated consumers; #13 gate check at route; fail-soft everywhere.
 5. **Smoke tests** — extend `tests/` with live coverage: #10 `/api/vault` warning field, #11 `/api/onboarding/status`, #12 `/api/projects/:id/motivation-critique`, #13 `/api/translation/execute` (unapproved→409), #17 `/api/projects/:id/revision-report`. (#14/#15/#16 are unit-covered — internal, no clean live surface; note that.)
 6. **Deploy Mercury** — `touch build_now`; poll `.build-logs/`; run the new + existing smokes against `http://192.168.1.32:3847`; fix any finding.
-7. **Commit + push** — `commit_message`; add a `docs/COMPLETED.md` Tier-4 entry; push.
+7. **Commit + push** — `commit_message`; add a `docs/internal/COMPLETED.md` Tier-4 entry; push.
 
 ## Verification checklist
 

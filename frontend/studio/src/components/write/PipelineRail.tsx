@@ -274,9 +274,23 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   // the shared ModelPicker for that step. When the provider is OpenRouter the picker
   // surfaces the secondary catalog dropdown of specific models. One editor open at a
   // time. Requires a live project step (only those carry a stable id to pin against).
+  const prettyModel = (m?: string) =>
+    m === 'auto:newest-opus' ? 'Newest Opus'
+      : m === 'auto:newest-sonnet' ? 'Newest Sonnet'
+      : m === 'auto:newest-haiku' ? 'Newest Haiku'
+      : m;
+
   const stepModelControl = (step: ProjectStep | undefined, status: 'done' | 'cur' | 'queued') => {
     const ov = step?.modelOverride;
     const label = ov?.provider ? `${ov.provider}${ov.model ? ` · ${ov.model}` : ''}` : null;
+    // With no explicit per-step pin, a scene_brief/draft step inherits the book's
+    // author-set model (resolved by the router at run time, not stamped on the step).
+    // Surface it so the chip shows the EFFECTIVE model instead of "+ set model".
+    const inherited = !ov?.provider && step
+      ? (step.role === 'scene_brief' ? activeProject?.sceneBriefModel
+        : step.role === 'draft' ? activeProject?.draftModel : undefined)
+      : undefined;
+    const inheritedLabel = inherited?.model ? `${prettyModel(inherited.model)} · author` : null;
     if (!step || status === 'done') {
       return label ? <div className={styles.smeta}><span className={styles.model}>{label}</span></div> : null;
     }
@@ -286,9 +300,9 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
           type="button"
           className={styles.modelChip}
           onClick={() => setEditingStepId(step.id)}
-          title="Set the AI provider / model for this step"
+          title={label ? 'Set the AI provider / model for this step' : inheritedLabel ? 'Inherited from the author profile — click to override for this step' : 'Set the AI provider / model for this step'}
         >
-          {label ?? '+ set model'}
+          {label ?? inheritedLabel ?? '+ set model'}
         </button>
       );
     }

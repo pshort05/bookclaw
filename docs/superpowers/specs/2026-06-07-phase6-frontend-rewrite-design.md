@@ -26,7 +26,7 @@ optionally `framer-motion` for orchestrated load/hover motion. Server unchanged
 in language; small additions in `library.ts`, `book.ts`, and route files.
 
 **Roadmap:** Phase 6 of
-[BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md). Unblocks
+[BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md). Unblocks
 Phase 7 (genre wiring), 8 (multi-book concurrency), 9 (book-board UI), 10
 (per-channel active book).
 

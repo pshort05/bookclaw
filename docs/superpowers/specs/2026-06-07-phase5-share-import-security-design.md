@@ -17,7 +17,7 @@ the dashboard adds Export/Import controls.
 + multer, `node --test` via tsx, esbuild dashboard, one new pure-JS dep
 (`adm-zip`) for zip create/extract with pre-extraction entry inspection.
 
-**Roadmap:** Phase 5 of [BOOK-CONTAINER-ARCHITECTURE.md](../../BOOK-CONTAINER-ARCHITECTURE.md).
+**Roadmap:** Phase 5 of [BOOK-CONTAINER-ARCHITECTURE.md](../../developer/BOOK-CONTAINER-ARCHITECTURE.md).
 
 ---
 

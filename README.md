@@ -28,8 +28,6 @@ The 2026 AI-writing field splits into lanes — autocomplete assistants, lore/co
 
 > **"It's not just a writing tool. It's a writing partner, research assistant, editor, and marketing team rolled into one."**
 
-For the strategy behind this positioning, see [docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md).
-
 ---
 
 ## What can it do?
@@ -332,17 +330,8 @@ All supporting documents live in [`docs/`](docs/).
 
 **Architecture & design**
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture: entry point, init sequence, the three layers, and on-disk layout.
-- [docs/BOOK-CONTAINER-ARCHITECTURE.md](docs/BOOK-CONTAINER-ARCHITECTURE.md) — The book-as-container data model and its phased roadmap toward a multi-book studio.
-- [docs/GOD-CLASS-REFACTOR.md](docs/GOD-CLASS-REFACTOR.md) — The incremental refactor of the former `index.ts` / `routes.ts` god classes.
-- [docs/PRODUCT-DIRECTION.md](docs/PRODUCT-DIRECTION.md) — Product vision and the North Star.
-- [docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](docs/STRATEGY-LEADING-AI-WRITING-ASSISTANT.md) — Market positioning and the differentiators behind the "Why BookClaw stands out" section.
 - [mcp/README.md](mcp/README.md) — The vendored MCP server (exposes BookClaw to MCP clients like Claude Desktop/Code); see [mcp/docs/INSTALL.md](mcp/docs/INSTALL.md) to install it.
 
-**Roadmap, research & history**
-- [docs/TODO.md](docs/TODO.md) / [docs/COMPLETED.md](docs/COMPLETED.md) — Tracked work items, and finished items by date.
-- [docs/NERDY-NOVELIST-WORKFLOW.md](docs/NERDY-NOVELIST-WORKFLOW.md) — Design for a human-in-the-loop novel mode.
-- [docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md) — Audit of upstream OpenClaw features worth adopting.
-- [docs/STORYHACKERAI-PORTING.md](docs/STORYHACKERAI-PORTING.md) — Patterns to port from StoryHackerAI.
-- [docs/MATTERMOST-AGENT-CHAT-PLAN.md](docs/MATTERMOST-AGENT-CHAT-PLAN.md) — Plan for a Mattermost chat bridge.
-- [docs/BOOKCLAW-FORK-DECISION.md](docs/BOOKCLAW-FORK-DECISION.md) — Why BookClaw forked from AuthorClaw.
-- [docs/RENAME-PLAN.md](docs/RENAME-PLAN.md) — Historical record of the AuthorClaw → BookClaw rename.
+**Developer documentation** — start at **[DEVELOPER.md](DEVELOPER.md)** (development direction, feature set, engineering standards, and the full developer-doc index). Technical references live in [`docs/developer/`](docs/developer/); per-feature design specs and implementation plans are in [`docs/superpowers/`](docs/superpowers/).
+
+**Maintainer / internal notes** — the roadmap (TODO/COMPLETED), product vision and North Star, strategy, reviews, and audits are working notes kept in [`docs/internal/`](docs/internal/). They are not part of the public documentation.

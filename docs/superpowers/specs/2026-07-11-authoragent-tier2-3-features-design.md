@@ -1,7 +1,7 @@
 # AuthorAgent Port — Tier 2 + Tier 3 Features (items #4–#9)
 
 **Date:** 2026-07-11
-**Source:** `docs/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md`, items #4–#9. Fork ref: `authoragent/main` (common ancestor `6573d23`).
+**Source:** `docs/internal/AUTHORAGENT-PORT-ANALYSIS-2026-07-11.md`, items #4–#9. Fork ref: `authoragent/main` (common ancestor `6573d23`).
 **Baseline:** `T2-BASE = 85b1e2ded754b03ad2b830a2a028c1b13d6247b5` (HEAD `b7562ce`).
 
 ## Purpose

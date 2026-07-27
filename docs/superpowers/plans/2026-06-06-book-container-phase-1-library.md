@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext, `.js` import extensions), Express, `node --test` via `tsx`, esbuild (dashboard — untouched here), Docker multi-stage build.
 
-**Source of truth for design:** `docs/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 1 bullet + "Three resolution layers" + "Target data model"). This plan implements that Phase 1 bullet with the two owner decisions above.
+**Source of truth for design:** `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 1 bullet + "Three resolution layers" + "Target data model"). This plan implements that Phase 1 bullet with the two owner decisions above.
 
 ---
 
@@ -58,8 +58,8 @@
 - `gateway/src/api/routes.ts` — import + call `mountLibrary`.
 - `docker/Dockerfile` — `COPY library ./library` (runtime stage).
 - `tests/api/api-test.sh` — add library endpoint assertions.
-- `docs/BOOK-CONTAINER-ARCHITECTURE.md` — mark Phase 1 done (on completion) + add the "New Book page" note to Phase 2.
-- `docs/TODO.md` — add the "New Book page (component selection)" sub-item under the multi-author umbrella; on completion move the Phase 1 entry to `COMPLETED.md`.
+- `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` — mark Phase 1 done (on completion) + add the "New Book page" note to Phase 2.
+- `docs/internal/TODO.md` — add the "New Book page (component selection)" sub-item under the multi-author umbrella; on completion move the Phase 1 entry to `COMPLETED.md`.
 - `CLAUDE.md` — "Stateful directories": add `workspace/library/` and note the skill overlay path move.
 
 ---
@@ -995,8 +995,8 @@ git commit -m "feat(library): read API (GET /api/library[/:kind[/:name]]) + bake
 
 **Files:**
 - Modify: `CLAUDE.md` (Stateful directories)
-- Modify: `docs/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 1 status + New-Book note on Phase 2)
-- Modify: `docs/TODO.md` + `docs/COMPLETED.md`
+- Modify: `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 1 status + New-Book note on Phase 2)
+- Modify: `docs/internal/TODO.md` + `docs/internal/COMPLETED.md`
 
 - [ ] **Step 1: Update `CLAUDE.md` stateful-directories list**
 
@@ -1010,25 +1010,25 @@ And in "Skills + Projects", update the skills overlay path reference (`workspace
 
 - [ ] **Step 2: Update the architecture doc**
 
-In `docs/BOOK-CONTAINER-ARCHITECTURE.md`:
+In `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`:
 - Mark the **Phase 1** bullet as implemented (mirror the Phase 0 "*(Implemented + deployed …)*" style with today's date once deployed).
 - Resolve "collides with" item #3 ("decide during Phase 1"): record the decision — built-in skills stay at `skills/`; the user overlay folded into `workspace/library/skills/`.
 - Under **Phase 2**, add: "**New Book page** — a creation UI that lists library components (per kind) and lets the author select which to pull into the new book; default = pull all. (Owner ask, 2026-06-06.)"
 
 - [ ] **Step 3: Track the New-Book page in TODO and close Phase 1**
 
-In `docs/TODO.md`, under the multi-author umbrella item, add a sub-bullet:
+In `docs/internal/TODO.md`, under the multi-author umbrella item, add a sub-bullet:
 
 ```markdown
   - **New Book page (component selection).** A book-creation UI listing library components per kind (author/genre/pipeline/sections/skills) with per-component include toggles; default pulls all. Lands with the Phase 2 book entity + snapshot-on-create. (Owner ask 2026-06-06.)
 ```
 
-Then move the Phase 1 work into `docs/COMPLETED.md` with today's date (`2026-06-06`), preserving the original bullet text and summarizing what shipped (per the project's COMPLETED.md convention).
+Then move the Phase 1 work into `docs/internal/COMPLETED.md` with today's date (`2026-06-06`), preserving the original bullet text and summarizing what shipped (per the project's COMPLETED.md convention).
 
 - [ ] **Step 4: Commit docs**
 
 ```bash
-git add CLAUDE.md docs/BOOK-CONTAINER-ARCHITECTURE.md docs/TODO.md docs/COMPLETED.md
+git add CLAUDE.md docs/developer/BOOK-CONTAINER-ARCHITECTURE.md docs/internal/TODO.md docs/internal/COMPLETED.md
 git commit -m "docs: book-container Phase 1 (library read side) — status, decisions, New-Book Phase 2 note"
 ```
 

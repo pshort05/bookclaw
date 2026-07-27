@@ -148,7 +148,7 @@ imported as portable `.zip` bundles via the library transfer endpoints.
 - [How to Create Genre Guides](../HOW-TO-CREATE-GENRE-GUIDES.md) — the authoring
   walkthrough: what belongs in each of the seven files, naming rules, and worked
   examples.
-- [Genre Guide Template](../GENRE-GUIDE-TEMPLATE.md) — the one-page schema
+- [Genre Guide Template](../developer/GENRE-GUIDE-TEMPLATE.md) — the one-page schema
   reference.
 - [Books and Authors](./books-and-authors.md) — creating books, choosing an
   author and voice, and how a book binds its templates.

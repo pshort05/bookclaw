@@ -375,10 +375,10 @@ test('book-production.json expands to interleaved chapters + compile', () => {
 
 ### Task 18: Extended-feature-smoke update + bookkeeping
 
-**Files:** Modify `tests/extended-feature-smoke.sh`, `docs/TODO.md`, `docs/COMPLETED.md`
+**Files:** Modify `tests/extended-feature-smoke.sh`, `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`
 
 - [ ] **Step 1:** Update `extended-feature-smoke.sh` so its book-creation tier uses the sequence model (create from `sequence:'novel'`; assert `pipelineSequence`). Match the file's tier/assert conventions.
-- [ ] **Step 2:** Move the "config-not-code pipelines" item (+ the phase-order-as-data note) from `docs/TODO.md` to `docs/COMPLETED.md` with `2026-06-14`. Update the `schemaVersion gate` item: `setPhase` assertWritable now DONE; `dataDirOf` enforcement still deferred — leave that part.
+- [ ] **Step 2:** Move the "config-not-code pipelines" item (+ the phase-order-as-data note) from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with `2026-06-14`. Update the `schemaVersion gate` item: `setPhase` assertWritable now DONE; `dataDirOf` enforcement still deferred — leave that part.
 - [ ] **Step 3:** `bash -n tests/extended-feature-smoke.sh` → OK.
 
 ---

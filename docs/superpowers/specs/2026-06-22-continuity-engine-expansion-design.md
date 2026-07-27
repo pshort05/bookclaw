@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-22
 **Status:** Design — approved. Next: implementation plan via `superpowers:writing-plans`.
-**Feature-tracking:** `docs/TODO.md` → "★ Deep continuity engine — expand the consistency auditor (item #5)".
+**Feature-tracking:** `docs/internal/TODO.md` → "★ Deep continuity engine — expand the consistency auditor (item #5)".
 **Builds on:** the shipped post-writing consistency auditor (`docs/superpowers/specs/2026-06-22-consistency-auditor-design.md`; code under `gateway/src/services/consistency/`). Handoff context: `docs/superpowers/CONTINUITY-ENGINE-EXPANSION-HANDOFF.md`.
 
 ## Problem

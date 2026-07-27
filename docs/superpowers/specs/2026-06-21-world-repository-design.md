@@ -1,7 +1,7 @@
 # World Repository — Design Spec
 
 **Date:** 2026-06-21
-**Feature:** World Repository (TODO roadmap ★ top item — see `docs/TODO.md`)
+**Feature:** World Repository (TODO roadmap ★ top item — see `docs/internal/TODO.md`)
 **Process:** superpowers:brainstorming → (next) superpowers:writing-plans
 
 ---

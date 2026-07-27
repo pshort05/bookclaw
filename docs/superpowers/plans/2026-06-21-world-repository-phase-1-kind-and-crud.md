@@ -1140,7 +1140,7 @@ feat(world): world library kind + documents CRUD (World Repository Phase 1)
 - unit tests (parse, service) + tests/world-crud-smoke.sh
 ```
 
-Then move the World Repository Phase 1 item from `docs/TODO.md` to `docs/COMPLETED.md` with a `2026-06-21` completion date (per the project feature-tracking workflow).
+Then move the World Repository Phase 1 item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with a `2026-06-21` completion date (per the project feature-tracking workflow).
 
 ---
 

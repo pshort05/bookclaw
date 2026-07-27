@@ -29,7 +29,7 @@ Detailed review of the first full 6-phase autonomous run (model: `openrouter/goo
 - **Auto consistency audit built into the pipeline** (`onProjectCompleted`): runs after the production + revision phases, background, provider-gated, fail-soft — no explicit run needed. (Goal #3.)
 - **Meta-commentary stripper** (`services/strip-meta.ts`) applied at every step-save: removes the leaked chatbot framing; conservative (never touches prose).
 
-## Deferred follow-ups (see docs/TODO.md)
+## Deferred follow-ups (see docs/internal/TODO.md)
 - Change the deep-revision "apply" steps from whole-manuscript regeneration to **per-chapter** patch/diff (gated by the new shrink validator).
 - Wire the format-export pipeline's "export" steps to call the **real** DOCX/EPUB compiler against the assembled manuscript (and persist a real `manuscript.md/.docx` at production end).
 - Fix the bible **world-building** persistence gap; fix the manifest title typo ("Medial").

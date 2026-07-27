@@ -69,6 +69,10 @@ Resolution order for any step's AI call: **per-step override → project preferr
 
 For *which* model to pin where — provider/model pros and cons and per-task recommendations (including the cheap-draft/premium-edit cost pattern) — see the [Model guide](../MODEL-GUIDE.md).
 
+### Alternate Takes (human-in-the-loop at creative forks)
+
+**Alternate Takes** (Verbalized Sampling) counters AI mode-collapse: at a creative decision point the model proposes several genuinely different "takes" and you pick one, instead of it silently committing to the most typical option. Two opt-in points per chapter — **Scene Takes** (distinct approaches to *what happens* in the scene, above the scene brief) and **Draft Opening** (distinct opening variants, above the draft). The pipeline parks and shows the candidates; picking one resumes generation and logs your choice to the book's preference file. It never auto-selects, and falls back to a normal single generation if anything goes wrong. Toggle per book on the Book Board; **new books default to Scene Takes on**.
+
 ### Edit and clone pipelines in the Asset Studio
 
 The **Asset Studio** is where you edit library assets. For pipelines, the **Pipeline Editor** supports per-step editing (prompt, taskType, model override) and editing of the `expand` group (see below). The **Sequence Editor** edits the ordered list of pipeline names. To clone, export an asset and re-import it under a new name. Assets round-trip through the library transfer paths:

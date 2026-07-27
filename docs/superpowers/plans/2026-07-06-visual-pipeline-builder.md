@@ -1378,7 +1378,7 @@ Manual: `npm start` → Library → Sequences → open any sequence (create one 
 ### Task 8: Full verification + docs + commit message
 
 **Files:**
-- Modify: `docs/TODO.md`, `docs/COMPLETED.md`, `commit_message`
+- Modify: `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`, `commit_message`
 
 - [ ] **Step 1: Full test suite**
 
@@ -1397,7 +1397,7 @@ Expected: steps array = plain step, `{parallel:[…,…]}`, plain step — the e
 
 - [ ] **Step 3: Move the TODO entry to COMPLETED**
 
-In `docs/TODO.md`, delete the "**Visual drag-and-drop pipeline builder in the Asset Studio [owner ask 2026-07-06]**" bullet under "User experience & product features". In `docs/COMPLETED.md`, add under a `## 2026-07-XX` heading (today's date), preserving the original bullet text and prepending the completion date, with a short verification note (test counts, build green).
+In `docs/internal/TODO.md`, delete the "**Visual drag-and-drop pipeline builder in the Asset Studio [owner ask 2026-07-06]**" bullet under "User experience & product features". In `docs/internal/COMPLETED.md`, add under a `## 2026-07-XX` heading (today's date), preserving the original bullet text and prepending the completion date, with a short verification note (test counts, build green).
 
 - [ ] **Step 4: Write the commit message**
 

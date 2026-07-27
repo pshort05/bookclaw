@@ -91,5 +91,5 @@ the scan result is acted on); test `tests/unit/injection-severity.test.ts` (new)
 
 ## Feature tracking
 
-- [ ] On completion, note in `docs/COMPLETED.md` (Tier-1 AuthorAgent hardening) and reference the
+- [ ] On completion, note in `docs/internal/COMPLETED.md` (Tier-1 AuthorAgent hardening) and reference the
   port-analysis doc; update the port-analysis doc's Tier-1 items as done.

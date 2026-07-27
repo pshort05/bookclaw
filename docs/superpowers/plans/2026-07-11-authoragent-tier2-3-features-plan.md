@@ -87,7 +87,7 @@ Verify: legacy path (no `dependsOn`) unchanged; `derive-deps.test.ts` still gree
 4. **Code review** — whole-diff review (Opus, most-capable), fix all Medium+ findings.
 5. **Smoke tests** — extend `tests/` with live-surface coverage for each new feature (prose/evolve, reader-panel, writing/stats, learn route, archival-recall chat visibility, conductor opt-in no-op on legacy). Scripted + repeatable per CLAUDE.md.
 6. **Deploy Mercury** — `touch build_now`; poll `.build-logs/`; run smokes against `http://192.168.1.32:3847`; fix any finding.
-7. **Commit + push** — write `commit_message`; move #4–#9 from `docs/TODO.md`→`docs/COMPLETED.md`; push to remote (goal explicitly authorizes commit+push here).
+7. **Commit + push** — write `commit_message`; move #4–#9 from `docs/internal/TODO.md`→`docs/internal/COMPLETED.md`; push to remote (goal explicitly authorizes commit+push here).
 
 ## Verification checklist
 

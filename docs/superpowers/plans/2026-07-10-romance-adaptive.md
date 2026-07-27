@@ -446,7 +446,7 @@ git commit -m "feat(studio): Adaptive interview screen (conversational seed-coll
 
 ## Feature tracking
 
-- [ ] Before starting, note in `docs/TODO.md` that **Sub-project 4 — Adaptive interview** (already listed under "Romance Workflow", line ~178) is in progress. On completion (Task 4 lands), move that bullet from `docs/TODO.md` to `docs/COMPLETED.md` with the `2026-07-10` completion date, preserving the original text and adding a one-line summary of what shipped (the `RomanceInterviewService` + `/api/romance/interview` endpoint + the `AdaptiveInterview` studio screen + MCP `romance_interview` tool). Per repo CLAUDE.md feature-tracking rule — remove it from `TODO.md` in the same edit. This also completes the Romance Workflow decomposition's build order (Foundation → Guided → Council → Adaptive) for the Adaptive rung.
+- [ ] Before starting, note in `docs/internal/TODO.md` that **Sub-project 4 — Adaptive interview** (already listed under "Romance Workflow", line ~178) is in progress. On completion (Task 4 lands), move that bullet from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with the `2026-07-10` completion date, preserving the original text and adding a one-line summary of what shipped (the `RomanceInterviewService` + `/api/romance/interview` endpoint + the `AdaptiveInterview` studio screen + MCP `romance_interview` tool). Per repo CLAUDE.md feature-tracking rule — remove it from `TODO.md` in the same edit. This also completes the Romance Workflow decomposition's build order (Foundation → Guided → Council → Adaptive) for the Adaptive rung.
 
 ## Self-Review (completed against the spec)
 

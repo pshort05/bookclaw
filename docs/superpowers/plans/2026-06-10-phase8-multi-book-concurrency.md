@@ -30,7 +30,7 @@
 - **Modify** `gateway/src/api/routes/heartbeat.routes.ts` — ladder at 224 (uses active book; no project — keep `activeDataDir()` but document why).
 - **Create** `tests/unit/book-slug-accessors.test.ts`, `tests/unit/soul-compose.test.ts`; **extend** `tests/unit/genre-guide.test.ts`, `tests/unit/projects*.test.ts` (project carries bookSlug).
 - **Modify** `tests/feature-smoke.sh` — upgrade the two-book block to the concurrent-binding assertion.
-- **Modify** `docs/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 8 → Implemented), `docs/TODO.md`, `docs/COMPLETED.md`; write `commit_message`.
+- **Modify** `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md` (Phase 8 → Implemented), `docs/internal/TODO.md`, `docs/internal/COMPLETED.md`; write `commit_message`.
 
 ---
 
@@ -84,7 +84,7 @@
 
 - [ ] Run `/code-review` at high effort over the working-tree diff (finder angles: missed read site / soul mutation leak / binding not threaded to child projects / legacy fallback regressions). Triage findings; apply correctness fixes, record refusals with rationale.
 - [ ] Re-run gates after any fix (`tsc`, unit, frontend build, re-deploy + live smoke if code changed).
-- [ ] `docs/BOOK-CONTAINER-ARCHITECTURE.md`: mark Phase 8 **Implemented (2026-06-10)** with a one-line summary + verify note. Move the Phase 8 item from `docs/TODO.md` to `docs/COMPLETED.md` (preserve bullet text, prepend `2026-06-10`, link spec+plan). Note Phase 9 (book-board UI) is next.
+- [ ] `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`: mark Phase 8 **Implemented (2026-06-10)** with a one-line summary + verify note. Move the Phase 8 item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` (preserve bullet text, prepend `2026-06-10`, link spec+plan). Note Phase 9 (book-board UI) is next.
 - [ ] Update `CLAUDE.md`'s `workspace/books/` line to state projects are now book-bound (drop the "Not yet driving generation"-style staleness if present for Phase 8).
 - [ ] Write `commit_message` (`feat(phase8): bind projects to books — multi-book concurrency`; dash-prefixed detail per the repo convention). Do **not** commit.
 - **Verify:** `git status` shows the expected file set + a `commit_message`; the live feature-smoke is green; the handoff (`.remember/remember.md`) and memory index reflect Phase 8 done.

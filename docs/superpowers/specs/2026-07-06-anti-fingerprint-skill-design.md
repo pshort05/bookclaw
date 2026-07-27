@@ -204,4 +204,4 @@ full `npm run test:unit`, `npx tsc --noEmit`, `bash tests/smoke-test.sh`.
 
 Mercury first (`touch build_now`), verify the pipeline appears in the Studio and
 a test book runs it; then Neptune via the documented manual deploy
-(`docs/DEPLOYMENT.local.md`) with the standard pre-deploy backup.
+(`docs/internal/DEPLOYMENT.local.md`) with the standard pre-deploy backup.

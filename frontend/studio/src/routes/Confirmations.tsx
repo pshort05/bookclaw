@@ -44,6 +44,25 @@ export function Confirmations() {
     [pending, selectedId],
   );
 
+  // One-step "Save & Approve" for an editable (cadence-gate) chapter: apply the
+  // edited text AND approve in a single call — /review/action edit completes the
+  // step with the edit, resolves the linked confirmation, and re-drives the pipeline.
+  const editApprove = async (projectId: string, editedText: string) => {
+    setErr(null);
+    setBusy(selectedId);
+    try {
+      await api(`/api/projects/${encodeURIComponent(projectId)}/review/action`, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'edit', editedText }),
+      });
+    } catch (e) {
+      setErr(`Couldn't save & approve — ${String(e)}`);
+    } finally {
+      await loadConfirmations().catch(() => {});
+      setBusy(null);
+    }
+  };
+
   const decide = async (id: string, decision: 'approve' | 'reject') => {
     let body: string | undefined;
     if (decision === 'reject') {
@@ -98,7 +117,7 @@ export function Confirmations() {
           </div>
           <div className={styles.detail}>
             {selected ? (
-              <DetailPane key={selected.id} c={selected} busy={busy} onDecide={decide} />
+              <DetailPane key={selected.id} c={selected} busy={busy} onDecide={decide} onEditApprove={editApprove} />
             ) : (
               <p className={styles.empty}>Select a confirmation to review it.</p>
             )}
@@ -118,10 +137,12 @@ function DetailPane({
   c,
   busy,
   onDecide,
+  onEditApprove,
 }: {
   c: ConfirmationRequest;
   busy: string | null;
   onDecide: (id: string, decision: 'approve' | 'reject') => void;
+  onEditApprove: (projectId: string, editedText: string) => Promise<void>;
 }) {
   const chapter = editableChapter(c);
   const meta = (c.payload ?? {}) as ReviewMeta;
@@ -223,9 +244,12 @@ function DetailPane({
             />
             {saveErr && <p className={styles.error}>{saveErr}</p>}
             <div className={styles.editActs}>
-              <Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
-              <Button variant="primary" onClick={save} disabled={saving}>
+              <Button variant="secondary" onClick={() => setEditing(false)} disabled={saving || busy === c.id}>Cancel</Button>
+              <Button variant="secondary" onClick={save} disabled={saving || busy === c.id}>
                 {saving ? 'Saving…' : 'Save (keep paused)'}
+              </Button>
+              <Button variant="primary" onClick={() => chapter && onEditApprove(chapter.projectId, draft)} disabled={saving || busy === c.id}>
+                {busy === c.id ? '…' : 'Save & Approve'}
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 Date: 2026-06-14
 
-Three independent items from `docs/TODO.md`, bundled into one change:
+Three independent items from `docs/internal/TODO.md`, bundled into one change:
 
 1. **Persistent lifetime spend + per-book spend** (Owner roadmap) — incl. a Danger-Zone "reset total spend" control.
 2. **Re-point the AI-generated-skill writer to the workspace overlay** (Quick cleanups).
@@ -92,4 +92,4 @@ For single-snapshot kinds (author / voice / genre / pipeline), book scope stores
 - No ConfirmationGate involvement — `resetLifetime` mutates a local counter (no external side effect); the typed-phrase gate is the control, matching the delete-books Danger-Zone pattern.
 
 ## TODO bookkeeping
-On completion, move all three items from `docs/TODO.md` to `docs/COMPLETED.md` with a `2026-06-14` date.
+On completion, move all three items from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with a `2026-06-14` date.

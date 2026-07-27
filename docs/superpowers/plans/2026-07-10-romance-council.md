@@ -346,7 +346,7 @@ The propose-mode UI: a screen that fetches the ranked candidates, shows the AI r
 
 ## Feature tracking
 
-- [ ] Before starting: sub-project 3 is already listed in `docs/TODO.md:177` ("Sub-project 3 — LLM Council"). On completion, move that bullet to `docs/COMPLETED.md` with the completion date (per repo CLAUDE.md feature-tracking rule), preserving the bullet text and noting the pause-resume gate + `project.selection` mechanism.
+- [ ] Before starting: sub-project 3 is already listed in `docs/internal/TODO.md:177` ("Sub-project 3 — LLM Council"). On completion, move that bullet to `docs/internal/COMPLETED.md` with the completion date (per repo CLAUDE.md feature-tracking rule), preserving the bullet text and noting the pause-resume gate + `project.selection` mechanism.
 
 ## Self-Review (against the brief)
 

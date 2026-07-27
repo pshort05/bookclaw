@@ -1,7 +1,7 @@
 # Book-Container Architecture
 
-**Status (updated 2026-06-18):** all phases (0–12) are now implemented and deployed — the per-phase records in the [Phased implementation plan](#phased-implementation-plan) below carry their own completion dates (Phase 12 landed 2026-06-12). *(Original status line, preserved for the record: "Phases 0–7 implemented and deployed (as of 2026-06-09). Phases 8–12 remain.")* This doc is the roadmap source-of-truth; per-phase completion detail is in docs/COMPLETED.md and docs/TODO.md. This is the concrete
-data-model design for the [North Star](TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision)
+**Status (updated 2026-06-18):** all phases (0–12) are now implemented and deployed — the per-phase records in the [Phased implementation plan](#phased-implementation-plan) below carry their own completion dates (Phase 12 landed 2026-06-12). *(Original status line, preserved for the record: "Phases 0–7 implemented and deployed (as of 2026-06-09). Phases 8–12 remain.")* This doc is the roadmap source-of-truth; per-phase completion detail is in docs/internal/COMPLETED.md and docs/internal/TODO.md. This is the concrete
+data-model design for the [North Star](../internal/TODO.md#north-star--the-ultimate-goal-use-this-to-weigh-every-other-decision)
 multi-author / multi-book platform, and it subsumes the in-dashboard
 prompt/skill editor (the "[In-dashboard editor for prompts + skills]" TODO item,
 "#1") — that editor becomes the editing surface for this model rather than a
@@ -427,7 +427,7 @@ Each phase is independently shippable and verifiable.
   data-expansion deferred to Phase 3). The skills overlay was folded in (see
   "collides with" #3). Plan:
   `docs/superpowers/plans/2026-06-06-book-container-phase-1-library.md`
-  (completion recorded in `docs/COMPLETED.md`). *Verified:* unit tests
+  (completion recorded in `docs/internal/COMPLETED.md`). *Verified:* unit tests
   override-by-name + reload + pipeline drift guard + migration; API lists
   templates; `tsc` clean. *Deferred to Phase 3:* the engine still reads the
   hardcoded `PROJECT_TEMPLATES` (the JSON is a parallel copy kept in sync by the
@@ -444,7 +444,7 @@ Each phase is independently shippable and verifiable.
   panel) lists books with gate-status badges and creates one by selecting library
   components. Plan:
   `docs/superpowers/plans/2026-06-06-book-container-phase-2-book-entity.md`
-  (completion recorded in `docs/COMPLETED.md`). *Verified:* unit tests for slug, the
+  (completion recorded in `docs/internal/COMPLETED.md`). *Verified:* unit tests for slug, the
   gate (too-old/too-new/in-range via `classifyVersion`, `list`, `open`), and
   create→snapshot+manifest (incl. genre-less path + dedup); API contract tests.
   **Deferred (lean):** the migration *runners* (ordered `vN→vN+1` chains +
@@ -512,7 +512,7 @@ Each phase is independently shippable and verifiable.
   alongside the Author identity and Voice style, so a book genuinely "writes in
   its own genre" end-to-end. Genre was snapshot-but-unwired until here.
   *Verify:* genre content reaches the relevant pipeline steps; changing a book's
-  genre changes output; genre re-pull works. BookService.getActiveGenreGuide() composes the active book's templates/genre/*.md (7-file schema) and buildSystemPrompt injects a '# Active Book — Genre Guide' block reaching chat and every pipeline step; see docs/GENRE-GUIDE-TEMPLATE.md.
+  genre changes output; genre re-pull works. BookService.getActiveGenreGuide() composes the active book's templates/genre/*.md (7-file schema) and buildSystemPrompt injects a '# Active Book — Genre Guide' block reaching chat and every pipeline step; see docs/developer/GENRE-GUIDE-TEMPLATE.md.
 - **Phase 8 — Multi-book concurrency.** **(Implemented 2026-06-10.)** Replaced the
   single global active-book pointer *as the generation driver* with an immutable
   per-project book binding (`Project.bookSlug`, captured at creation). `BookService`

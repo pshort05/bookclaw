@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node/TS (`LibraryService`, `BookService`, Express route mounters, `safePath`); React studio (`BookDrawer`).
 
-**Spec/outline:** `docs/superpowers/plans/2026-06-07-phase6-frontend-rewrite.md` (6e outline) + `docs/BOOK-CONTAINER-ARCHITECTURE.md`. Run after 6c.
+**Spec/outline:** `docs/superpowers/plans/2026-06-07-phase6-frontend-rewrite.md` (6e outline) + `docs/developer/BOOK-CONTAINER-ARCHITECTURE.md`. Run after 6c.
 
 ---
 

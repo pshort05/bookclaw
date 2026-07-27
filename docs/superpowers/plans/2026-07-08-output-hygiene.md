@@ -361,7 +361,7 @@ Expected: all green (the prior ~1296 + the new cases). Investigate any regressio
 
 - [ ] **Step 3: Code review** — run `/code-review` at effort `high` over the working diff; fix every Medium-and-above finding, re-running `npm run test:unit` after fixes.
 
-- [ ] **Step 4: Move the TODO item** — move the "Output hygiene" entry from `docs/TODO.md` to `docs/COMPLETED.md` with the `2026-07-08` completion date, preserving the bullet text. Write the `commit_message` file (summary + dash detail lines). Do NOT `git commit`/`push` (maintainer runs `./push.sh`).
+- [ ] **Step 4: Move the TODO item** — move the "Output hygiene" entry from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md` with the `2026-07-08` completion date, preserving the bullet text. Write the `commit_message` file (summary + dash detail lines). Do NOT `git commit`/`push` (maintainer runs `./push.sh`).
 
 ---
 

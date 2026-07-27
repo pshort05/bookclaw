@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-22
 **Status:** Design — under review. Next: implementation plan via `superpowers:writing-plans`.
-**Feature-tracking:** `docs/TODO.md` → "Book Format & Structure (declared at creation, enforced in generation, checked in review)".
+**Feature-tracking:** `docs/internal/TODO.md` → "Book Format & Structure (declared at creation, enforced in generation, checked in review)".
 **Related:** the existing `gateway/src/services/story-structures.ts` (10 frameworks, `recommend()`, `checkOutline()`); the book container model (`gateway/src/services/book.ts`, `book.json` manifest); the per-book consistency auditor surface as the UI pattern (`frontend/studio/src/routes/Consistency.tsx`).
 
 ## Problem
