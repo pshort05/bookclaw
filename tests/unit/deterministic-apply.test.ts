@@ -4,6 +4,20 @@ import { parseAuditEdits, applyDeAiEdits, runDeterministicApply, type DeAiEdit }
 
 const DRAFT = `Chapter 4.\n\nShe utilized the old coal oven. The rain fell on flour, sugar, and salt. Gia was furious. The night held on.`;
 
+test('C8: guardEntities rejects a POV/name-injecting de-AI swap but the consistency path (unguarded) still applies it', async () => {
+  const base = 'She turned. I said nothing and watched the door.';
+  const edit: DeAiEdit[] = [{ op: 'swap', find: 'I said nothing', replace: 'Addi said nothing' }];
+  // De-AI path: guarded → the corrupting edit is rejected, text unchanged, counted malformed.
+  const guarded = await applyDeAiEdits(base, edit, undefined, { guardEntities: true });
+  assert.equal(guarded.text, base, 'guarded de-AI apply kept the original span');
+  assert.equal(guarded.malformed, 1);
+  assert.equal(guarded.appliedSwaps, 0);
+  // Consistency path: no guard → a name swap is a legitimate fix and applies.
+  const unguarded = await applyDeAiEdits(base, edit);
+  assert.match(unguarded.text, /Addi said nothing/);
+  assert.equal(unguarded.appliedSwaps, 1);
+});
+
 test('parseAuditEdits pulls a JSON array out of surrounding prose/fences', () => {
   const raw = 'Here are the edits:\n```json\n[{"op":"swap","find":"utilized","replace":"used"},{"op":"rewrite","find":"Gia was furious.","instruction":"show it"}]\n```\ndone';
   const edits = parseAuditEdits(raw);

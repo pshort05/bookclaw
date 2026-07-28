@@ -52,6 +52,14 @@ Output nothing but the array. Example (illustrative — detect what is actually 
 
 ## What to check (against the canon)
 
+- **The CANON FACT-SHEET is your primary authority.** A compact fact-sheet
+  (character names + spellings/aliases, ages, the POV/tense rule, and key places)
+  is in your context. Every name, age, POV/tense, and place in the chapter MUST
+  match it exactly — check each one. An empty array is a positive claim that you
+  verified all of them and found no contradiction; do not return empty by default.
+- **POV & tense** — the narration must stay in the POV and tense the fact-sheet
+  specifies; flag any span that slips (e.g. first-person present → past, or a POV
+  the chapter shouldn't be in) with a `rewrite` edit.
 - **Character facts** — appearance (eye/hair color, height, scars), age,
   profession, background, personality traits: must match the bible.
 - **Names & relationships** — every named character, place, and business must use

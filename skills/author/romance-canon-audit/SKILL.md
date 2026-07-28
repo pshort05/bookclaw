@@ -35,6 +35,17 @@ find-and-replace — it does NOT run a model over the document. Therefore:
 `verified-canon` (human-blessed geography) **>** setting bible **>** character bible.
 Reconcile the document TO the anchor. Never "fix" the anchor to match the document.
 
+## Character consistency (when the document is a character bible)
+
+The **PREMISE and the intake-resolved character notes are also anchors** for a
+character bible. Every named person's **name spelling, age, and relationships**
+must match them. Reconcile the bible TO the premise — flag with an edit any
+character the bible **renamed, re-aged, mis-related, or invented** that the premise
+did not establish (e.g. a parent given a different name, a sibling roster changed,
+a name colliding with another character's). An empty array is a positive claim
+that you checked every named person — and every place a character references — and
+found no contradiction; do not return empty by default.
+
 ## Output format (exactly this)
 
 A single JSON array. Each element is one edit:

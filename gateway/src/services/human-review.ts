@@ -13,6 +13,7 @@ import { resolveCadence, shouldGate, computeBoundaries, type Boundary } from './
 import { runRomanceArcCheck, runRomanceChapterCheck, type RomanceCheckDeps } from './pipeline/romance-checks.js';
 import { beatForChapter } from './outline-skeleton.js';
 import { detectEnding } from './pipeline/ending-gate.js';
+import { parseCanonSheet, collectCanonNouns, flagNewProperNouns, checkPovTense } from './pipeline/canon-sheet.js';
 import { analyzeChapter, describeFindings } from './pipeline/analyze-apply.js';
 import { aggregateActContinuity, type ActChapterFlags } from './consistency/continuity-check.js';
 import { runChapterContextExtraction, type ContextExtractionDeps } from '../util/chapter-context-extraction.js';
@@ -249,6 +250,18 @@ export async function maybeOpenCadenceGate(
       if (chk) {
         romanceFindings = { romanceChapter: chk.text };
         if (chk.stall) forceGate = true;
+      }
+      // C4: flag proper nouns not in the canon sheet (drift candidates — new/
+      // invented characters or places). Advisory: attached to the gate that opens,
+      // not a force-gate (new capitalized words are common).
+      const canonStep = steps.find((s: any) => (s.label || '').includes('Canon Fact-Sheet') && s.result);
+      const sheet = canonStep?.result ? parseCanonSheet(canonStep.result) : null;
+      if (sheet) {
+        const flags = flagNewProperNouns(response, collectCanonNouns(sheet));
+        if (flags.length) romanceFindings = { ...(romanceFindings ?? {}), newNouns: flags };
+        // C6: deterministic POV/tense pre-check against the canon rule.
+        const pov = checkPovTense(response, sheet.povTense);
+        if (pov) romanceFindings = { ...(romanceFindings ?? {}), povTense: pov };
       }
       // Ending gate (C3): a deterministic backstop on the final chapter — flags a
       // clear-cut missing HEA even if the LLM check is unavailable.

@@ -81,6 +81,29 @@ A few sentences naming the narrative voice — its register (urgent, lush, clipp
 distance and interiority, and the feeling it should leave. This is the high-level description
 that the `STYLE-GUIDE.md` then operationalizes.
 
+## Making pen names sound *different* — Prose Mechanics + Voice Exemplars
+
+Abstract descriptors ("sharp", "lush") barely move the prose — with the same base model, two
+pen names drift toward one register. Two additions to the voice files fix that, and the
+first-draft step is instructed to obey them. Add either or both, in `STYLE-GUIDE.md` (or
+`VOICE-PROFILE.md` — both are injected in full):
+
+- **A `## Prose Mechanics` block — measurable knobs, not mood words.** Give the numbers the
+  model can actually hit and that make voices measurably diverge: average sentence length and
+  variance, paragraph length, a punctuation fingerprint (em-dashes vs. ellipses vs.
+  parentheticals; italics use), POV/tense, metaphor domain (food/urban vs. body/sensory), and
+  dialogue style. Crucially, **have each pen name ban the other's signature** so they can't converge.
+
+- **A `## Voice Exemplars` block — 1–3 short (150–300-word) gold passages in this voice.**
+  This is the highest-leverage item: a model imitates a *demonstrated* style far more reliably
+  than a described one. The first-draft step matches the exemplars' **rhythm, paragraph shape,
+  and punctuation — not their content or names**. Prefer real, human-written or
+  curated-and-approved passages; keep them short (long samples dilute the signal).
+
+Do **not** add a separate post-hoc "voice rewrite" pass — that reintroduces drift. Get the
+voice right in the first draft via these, and measure divergence after (sentence-length
+distribution, punctuation rates) rather than rewriting.
+
 ## `meta.json` (optional but recommended)
 
 A small sidecar at `<author-dir>/meta.json` (and `<voice-dir>/meta.json`) gives the entry a

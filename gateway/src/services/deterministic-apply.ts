@@ -18,6 +18,8 @@
  * fully unit-testable.
  */
 
+import { unsafeEditReason } from './deai/validate-edit.js';
+
 export interface DeAiEdit {
   op: 'swap' | 'rewrite';
   find: string;
@@ -143,6 +145,7 @@ export async function applyDeAiEdits(
   base: string,
   edits: DeAiEdit[],
   rewriteFn?: (span: string, instruction: string) => Promise<string>,
+  opts?: { guardEntities?: boolean },
 ): Promise<ApplyResult> {
   let text = String(base ?? '');
   let appliedSwaps = 0, appliedRewrites = 0, skipped = 0, malformed = 0;
@@ -157,6 +160,9 @@ export async function applyDeAiEdits(
       // ~3x + 200 chars is a hallucinated injection (a whole scene), not a phrase
       // swap — skip it. Without this, one bad audit edit could drift the chapter.
       if (replace.length > e.find.length * 3 + 200) { skipped++; continue; }
+      // C8 de-AI entity guard: a de-AI swap must not inject a name/number, flip
+      // person, or duplicate a word — keep the original span if it would.
+      if (opts?.guardEntities && unsafeEditReason(e.find, replace)) { skipped++; malformed++; continue; }
       const candidate = text.slice(0, idx) + replace + text.slice(idx + e.find.length);
       // Seam guard: reject a swap that INTRODUCES orphaned punctuation or an empty
       // quote (e.g. `replace:""` deleting quoted dialogue → `","`). Fail closed to
@@ -174,6 +180,7 @@ export async function applyDeAiEdits(
     // Guard the scoped rewrite: empty, or ballooned past ~3x + 200 chars, is
     // treated as a bad/over-generated result — keep the original span.
     if (!revised || revised.length > e.find.length * 3 + 200) { skipped++; continue; }
+    if (opts?.guardEntities && unsafeEditReason(e.find, revised)) { skipped++; malformed++; continue; }
     const candidate = text.slice(0, idx) + revised + text.slice(idx + e.find.length);
     // Same seam guard for scoped rewrites.
     const candArtifacts = countSeamArtifacts(candidate);

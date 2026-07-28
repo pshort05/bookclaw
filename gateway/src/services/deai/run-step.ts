@@ -9,8 +9,17 @@ import { runChunkedDeAiSweep, secondReaderFraming, type SweepResult } from './sw
 import type { BannedTerms } from './banned-terms.js';
 import type { AiNameMap } from './ai-names.js';
 import { applyDeAiEdits, parseAuditEdits, makeScopedRewriteFn, type DeAiEdit } from '../deterministic-apply.js';
+import { limitEmDashes } from './em-dash.js';
+
+// Human authors use one or two em-dashes per chapter; LLMs use one per paragraph.
+// Cap the mid-sentence em-dashes at this budget (dialogue interruptions exempt).
+const EM_DASH_BUDGET = 3;
 
 interface StepLike { skill?: string; role?: string; chapterNumber?: number; status: string; result?: string }
+
+// C8: phrase-level constraints appended to every de-AI audit window so the model
+// stops emitting the edits the applier now rejects (name/POV/number/duplication).
+const DEAI_EDIT_CONSTRAINTS = '\n\nHARD CONSTRAINTS — an edit that breaks these is rejected by the applier and wasted: each `replace` MUST preserve every proper noun, character name, number, and quoted line exactly as in the `find`; keep the same grammatical person and POV (never turn "I" into a name or "she", or vice versa); add no new character, object, place, plot, or imagery; introduce no repeated word. Rephrase only — say the same thing more plainly, usually shorter.';
 
 /**
  * The chapter text the de-AI sweep operates on: prefer the completed
@@ -45,7 +54,8 @@ export async function runDeaiSweepStep(args: {
   const auditWindow = async (w: { windowText: string; seam: string; pass: 1 | 2; forbiddenBlock: string; provider: string; model: string }): Promise<DeAiEdit[]> => {
     const system = args.skillContent
       + (w.pass === 2 ? `\n\n${secondReaderFraming()}` : '')
-      + w.forbiddenBlock;
+      + w.forbiddenBlock
+      + DEAI_EDIT_CONSTRAINTS;
     const seamNote = w.seam
       ? `\n\n## Read-only preceding context (do NOT emit edits for this — it is here only so you can spot cross-seam tells):\n${w.seam}\n`
       : '';
@@ -60,11 +70,21 @@ export async function runDeaiSweepStep(args: {
     return parseAuditEdits(res?.text ?? '');
   };
 
-  const applyEdits = (base: string, edits: DeAiEdit[]) => applyDeAiEdits(base, edits, rewriteFn);
+  const applyEdits = (base: string, edits: DeAiEdit[]) => applyDeAiEdits(base, edits, rewriteFn, { guardEntities: true });
 
-  return runChunkedDeAiSweep({
+  const result = await runChunkedDeAiSweep({
     draft, banned: args.banned, aiNames: args.aiNames, availableProviders: args.availableProviders,
     stageModels: args.stageModels,
     deps: { auditWindow, applyEdits }, targetWords: args.targetWords,
   });
+
+  // Em-dash frequency cap — deterministic final pass over the humanized chapter.
+  const em = limitEmDashes(result.text, EM_DASH_BUDGET);
+  result.text = em.text;
+
+  // C8: per-chapter log — trim%, unsafe edits the guard rejected, em-dashes thinned.
+  const trimmedPct = draft.length ? Math.round((1 - result.text.length / draft.length) * 1000) / 10 : 0;
+  const rejected = result.passStats.reduce((a, s) => a + s.malformed, 0);
+  console.log(`  ✓ de-AI ch${args.chapterNumber ?? '?'}: ${result.passes} pass(es), trim ${trimmedPct}%, ${rejected} unsafe edit(s) rejected, ${em.removed} em-dash(es) thinned`);
+  return result;
 }

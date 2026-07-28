@@ -12,6 +12,8 @@ BookClaw is a self-hosted, security-hardened AI writing studio for authors who r
 
 **Give it an idea and a pen name. It plans, writes, checks its own continuity, revises, formats, and launches** — autonomously, on your hardware, with your keys. A free Google Gemini key (or a local Ollama install) can write a whole book for $0.
 
+**What's new:** see [CHANGES.md](CHANGES.md) for the latest updates.
+
 ---
 
 ## Why BookClaw stands out

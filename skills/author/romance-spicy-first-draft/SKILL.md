@@ -172,6 +172,17 @@ After reviewing your revised projections, our team
 would like to schedule a follow-up meeting...
 ```
 
+## Author voice — imitate the exemplars
+
+Your context includes an Author Voice Profile. If it contains **VOICE EXEMPLARS** (sample passages), study them and **match their sentence rhythm, paragraph shape, and punctuation habits** — imitate the *style*, never the content or the names. If it lists **PROSE MECHANICS** (sentence length, paragraph length, punctuation fingerprint, metaphor domain, dialogue style), hit those targets on every line. Two different pen names must read differently even on the same beat — do not drift toward a generic "literary" register.
+
+## Avoid these AI tells (write around them from the first draft)
+
+- **No filter verbs:** cut "she felt / he watched / she noticed / he saw / he heard" — put the reader directly in the sensation or the action.
+- **No crutch patterns:** avoid "the way he/she [verb]" as description, and don't end scenes or paragraphs on a short aphoristic one-line "button".
+- **Never use:** delve, tapestry, meticulous, poignant, curated, crucial, certainly, precisely, "a testament to", "shed light".
+- **Plain over wordy:** "in order to" → "to", "due to the fact that" → "because".
+
 ## Output Format
 
 Output the **chapter prose only** in Markdown — no meta-commentary about your process, no word count at the end, no author's notes, nothing outside the chapter. Paragraphs separated by blank lines; *italics* for internal thoughts; `monospace` for in-world artifacts; each dialogue line its own paragraph with action beats attached to the speaker. Preserve the chapter header exactly as given in the brief, including the `(Intimacy)` marker when present.

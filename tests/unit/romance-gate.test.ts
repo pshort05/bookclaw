@@ -100,6 +100,25 @@ test('final chapter with a missing HEA force-gates via the deterministic ending 
   assert.match(calls[0].messages[0].content, /INTENDED BEAT: HEA \/ HFN/); // the HEA beat was fed to the checker
 });
 
+test('canon fact-sheet flags a new proper noun as an advisory finding on an open gate', async () => {
+  const steps: any[] = [
+    { id: 'canon', label: 'Canon Fact-Sheet', skill: 'book-bible',
+      result: '{"characters":[{"name":"Gia Ferraro","aliases":["Gia"]}],"places":["Surf City"]}' },
+    ...Array.from({ length: 9 }, (_, i) => ({ id: `ch${i + 1}`, label: `Chapter ${i + 1}`, chapterNumber: i + 1, skill: 'romance-sweet-first-draft' })),
+    { id: 'asm', label: 'Compile manuscript', skill: 'assembly' },
+  ];
+  const project = { id: 'p4', title: 'Book', type: 'romance-sweet-deterministic', steps, review: undefined as any };
+  const step = steps[3]; // chapter 3 — an act boundary for a 9-chapter book (gates under per_act)
+  const gate = strictGate();
+  const r = await maybeOpenCadenceGate(
+    { gate, engine: fakeEngine } as any, project, step,
+    'Gia met Denny Alvarez down in Surf City that afternoon.',
+    { manifest: { review: { cadence: 'per_act' } }, romance: romanceDep({ complete: async () => ({ text: 'RATING: Strong (8)\nBEAT: delivered' }) }) },
+  );
+  assert.equal(r.gated, true); // act boundary opens the gate
+  assert.deepEqual(gate.created[0].payload.findings.newNouns, ['Denny Alvarez']); // flagged; Gia + Surf City are canon
+});
+
 test('arc checker annotates the always-on outline gate', async () => {
   const project = { id: 'p2', title: 'Book', type: 'romance-sweet-deterministic',
     steps: [{ id: 'o', label: 'Chapter Outline', skill: 'outline', role: 'outline' }], review: undefined as any };

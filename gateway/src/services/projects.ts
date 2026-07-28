@@ -20,6 +20,7 @@ import type { LibraryPipeline } from './library-types.js';
 import { buildPipelineVars } from './pipeline-vars.js';
 import { buildTwoTierOutlineBlock, extractOutlineChapterSection } from './outline-skeleton.js';
 import { detectEnding } from './pipeline/ending-gate.js';
+import { parseCanonSheet, formatCanonSheet } from './pipeline/canon-sheet.js';
 import { expandSteps } from './pipeline-expand.js';
 import { injectTakesSteps } from '../sampling/inject-takes-steps.js';
 import { appendTakesLog } from '../sampling/takes-log.js';
@@ -2033,6 +2034,15 @@ Description: ${description}`;
         context += `## Outline (structural — authoritative for this chapter)\n\n`;
         context += `${buildTwoTierOutlineBlock(outlineStep.result, chapterNum, { spicy })}\n\n`;
       }
+      // C4: inject the compact canon fact-sheet (names/ages/POV/places), truncation-
+      // protected, into every per-chapter step (drafts + the consistency audit).
+      const canonStep = chapterNum
+        ? project.steps.find(s => (s.label || '').includes('Canon Fact-Sheet') && s.status === 'completed' && s.result)
+        : undefined;
+      if (chapterNum && canonStep?.result) {
+        const sheet = parseCanonSheet(canonStep.result);
+        if (sheet) context += `${formatCanonSheet(sheet)}\n\n`;
+      }
       // C3: ground the compile/assembly report — inject the DETECTED ending
       // status of the final chapter so the report cannot claim a resolution the
       // manuscript lacks (the audit found step 136 hallucinating a HEA). Runs
@@ -2050,8 +2060,9 @@ Description: ${description}`;
         }
       }
 
-      // Default: add results from prior steps
-      const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result && s !== outlineStep);
+      // Default: add results from prior steps (the outline + the raw canon-sheet
+      // JSON are injected in structured form above, so exclude them from the dump).
+      const completedSteps = project.steps.filter(s => s.status === 'completed' && s.result && s !== outlineStep && s !== canonStep);
       if (completedSteps.length > 0) {
         context += `## Previous Steps Completed\n\n`;
         // Keep the HEAD as well as the tail: planning outputs (character

@@ -91,6 +91,17 @@ Write the full chapter "in the moment" from the POV character's perspective, obs
 5. Sentence rhythm: vary short, punchy lines with lush descriptions and longer, complex sentences.
 6. Stop exactly at the scene's conclusion (no foreshadowing beyond the brief).
 
+## Author voice — imitate the exemplars
+
+Your context includes an Author Voice Profile. If it contains **VOICE EXEMPLARS** (sample passages), study them and **match their sentence rhythm, paragraph shape, and punctuation habits** — imitate the *style*, never the content or the names. If it lists **PROSE MECHANICS** (sentence length, paragraph length, punctuation fingerprint, metaphor domain, dialogue style), hit those targets on every line. Two different pen names must read differently even on the same beat — do not drift toward a generic "literary" register.
+
+## Avoid these AI tells (write around them from the first draft)
+
+- **No filter verbs:** cut "she felt / he watched / she noticed / he saw / he heard" — put the reader directly in the sensation or the action.
+- **No crutch patterns:** avoid "the way he/she [verb]" as description, and don't end scenes or paragraphs on a short aphoristic one-line "button".
+- **Never use:** delve, tapestry, meticulous, poignant, curated, crucial, certainly, precisely, "a testament to", "shed light".
+- **Plain over wordy:** "in order to" → "to", "due to the fact that" → "because".
+
 Format the output using Markdown.
 
 ## Forbidden Words

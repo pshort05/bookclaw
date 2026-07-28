@@ -23,7 +23,7 @@
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise in your context and honor the author's setting notes and any verified real-world geography exactly. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
+      "promptTemplate": "Write the SETTING guide for \"{{title}}\": the real-world place the romance is grounded in. Make the reader feel present — name the concrete locations, buildings, businesses and restaurants, streets and neighborhoods where scenes unfold, and the sensory texture (sights, sounds, smells, weather, the rhythm of the town) that brings them alive. Use the premise in your context and honor the author's setting notes and any verified real-world geography exactly. Follow your book-bible methodology. Output the setting guide only — no preamble or commentary.\n\nSETTING ONLY: do not name, roster, or invent people (no family members, business owners, friends, staff, or supporting cast). Refer to people only by names already established in the premise or character notes; the character bible owns every character name.\n\nAuthor-provided setting notes — develop and preserve, filling gaps; if blank, originate from the premise.\nSetting notes:\n{{setting}}"
     },
     {
       "label": "Canon Audit — Setting",
@@ -49,14 +49,14 @@
       "skill": "book-bible",
       "taskType": "book_bible",
       "phase": "bible",
-      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise AND the setting guide in your context — every place, town, road, and business a character references MUST come from the setting guide; never invent geography. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
+      "promptTemplate": "Write the CHARACTER BIBLE for \"{{title}}\": the protagonist, the love interest, and the full relationship arc (attraction -> tension -> midpoint shift -> black moment -> reconciliation), plus supporting cast. Use the premise AND the setting guide in your context — every place, town, road, and business a character references MUST come from the setting guide; never invent geography. Use the character NAMES, AGES and RELATIONSHIPS given in the premise and character notes VERBATIM: never rename, re-age, re-relate, merge, split, or invent named characters; if a needed person is unnamed, keep their descriptor rather than inventing a name. Follow your book-bible methodology. Output the character bible only — no preamble or commentary.\n\nAuthor-provided characters — develop and preserve, filling gaps; if blank, originate from the premise.\nCharacters:\n{{characters}}"
     },
     {
       "label": "Canon Audit — Characters",
       "skill": "romance-canon-audit",
       "taskType": "revision",
       "phase": "bible",
-      "promptTemplate": "Audit the CHARACTER BIBLE for \"{{title}}\" in your context against the anchors in your context (the setting guide and the verified real-world geography). Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the character bible. Do NOT rewrite or reproduce the bible; output nothing but the JSON array.",
+      "promptTemplate": "Audit the CHARACTER BIBLE for \"{{title}}\" in your context against the anchors in your context (the PREMISE and character notes, the setting guide, and the verified real-world geography). Cross-check every named character: name spelling, age, and relationships must match the premise; flag any character the bible renamed, re-aged, mis-related, or invented. Also verify every place a character references comes from the setting guide. Do not return an empty list until you have checked each named person and place. Follow your canon-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the character bible. Do NOT rewrite or reproduce the bible; output nothing but the JSON array.",
       "modelOverride": {
         "provider": "openrouter",
         "model": "auto:newest-haiku",
@@ -69,6 +69,18 @@
       "taskType": "general",
       "phase": "bible",
       "promptTemplate": "Deterministic apply: the Canon Audit edit list plus the free proper-noun/place entity gate are applied to the character bible by code (literal find-and-replace). This is the gate that catches an invented town like \"Bay Haven.\" No model rewrites the bible."
+    },
+    {
+      "label": "Canon Fact-Sheet",
+      "skill": "book-bible",
+      "taskType": "revision",
+      "phase": "bible",
+      "promptTemplate": "Extract a strict-JSON CANON FACT-SHEET from the character bible and setting guide in your context. Output ONLY this JSON object and nothing else: {\"characters\":[{\"name\":\"\",\"aliases\":[],\"age\":\"\",\"role\":\"\",\"relationships\":\"\"}],\"povTense\":\"\",\"places\":[],\"timeline\":[]}. Copy every named character's name, age and role EXACTLY from the character bible (the protagonist, the love interest, and all supporting cast); aliases = every other spelling or nickname used for that person; povTense = the POV and tense from the style guide; places = the named locations from the setting guide; timeline = the story's key time anchors. No prose, no commentary, no markdown fences - the JSON object only.",
+      "modelOverride": {
+        "provider": "openrouter",
+        "model": "auto:newest-haiku",
+        "temperature": 0.2
+      }
     },
     {
       "label": "Chapter Outline",
@@ -105,7 +117,7 @@
           "taskType": "revision",
           "phase": "humanize",
           "chapterNumber": "{{n}}",
-          "promptTemplate": "Check the Chapter {{n}} draft of \"{{title}}\" in your context against the story canon (character bible, name registry, setting, and previous chapters). Follow your consistency-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
+          "promptTemplate": "Check the Chapter {{n}} draft of \"{{title}}\" in your context against the CANON FACT-SHEET (the authoritative names, ages, POV/tense and places in your context) and the rest of the story canon (character bible, name registry, setting, previous chapters). Verify every character name and age, the POV/tense, and every place in the chapter matches the fact-sheet EXACTLY and emit an edit for each mismatch; return an empty list ONLY after you have checked each of these. Follow your consistency-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
           "modelOverride": {
             "provider": "openrouter",
             "model": "auto:newest-sonnet",

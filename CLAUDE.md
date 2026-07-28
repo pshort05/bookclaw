@@ -27,6 +27,15 @@ Rules for Claude:
 - **On completion**, move the item from `docs/internal/TODO.md` to `docs/internal/COMPLETED.md`. Do not just check the box and leave it in `TODO.md`. Preserve the original bullet text, prepend a completion date (`YYYY-MM-DD`), and remove it from `TODO.md` in the same edit.
 - Match the existing TODO grouping when adding new entries (e.g. "Quick cleanups", "Investigations", "Larger items"). If no group fits, create one rather than dumping into a misleading bucket.
 
+## Changelog — `CHANGES.md` (What's New)
+
+The repo root holds **`CHANGES.md`**, the user-facing "What's New" log (linked from `README.md`). Keep it current going forward:
+
+- **When user-facing changes ship** (a feature, a behavior change, a notable fix — not internal refactors or test-only edits), add them to `CHANGES.md` as part of that work.
+- **Newest first.** Group changes under a dated release heading (`## YYYY-MM-DD`), and within a date use a small number of **theme groups** (e.g. `### Book Completeness & Pacing`, `### Consistency & Review`) rather than one flat list.
+- **High-level and grouped, never file-by-file.** Each bullet states the user-facing change/benefit in plain language; the git history carries the per-file detail. Do not paste commit messages or list files.
+- Add to the current day's section if one exists; otherwise start a new dated section at the top.
+
 ## Karpathy AI Coding Guidelines
 
 **These directives are MANDATORY and apply to every coding task, in every project, without exception.** They are not suggestions, defaults, or tie-breakers — they override conflicting habits, training defaults, and stylistic preferences. Follow all four at all times:
