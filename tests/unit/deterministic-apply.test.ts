@@ -1,8 +1,42 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAuditEdits, applyDeAiEdits, runDeterministicApply, type DeAiEdit } from '../../gateway/src/services/deterministic-apply.js';
+import { parseAuditEdits, applyDeAiEdits, runDeterministicApply, resolveChapterDraftStep, type DeAiEdit } from '../../gateway/src/services/deterministic-apply.js';
 
 const DRAFT = `Chapter 4.\n\nShe utilized the old coal oven. The rain fell on flour, sugar, and salt. Gia was furious. The night held on.`;
+
+test('resolveChapterDraftStep prefers a completed Rewrite over the First Draft, else falls back', () => {
+  const draft = { chapterNumber: 1, role: 'draft', status: 'completed', result: 'first' };
+  const rewrite = { chapterNumber: 1, role: 'rewrite', status: 'completed', result: 'revised' };
+  assert.equal(resolveChapterDraftStep([draft, rewrite], 1)?.result, 'revised'); // rewrite wins
+  assert.equal(resolveChapterDraftStep([draft], 1)?.result, 'first');            // no rewrite → draft
+  const pending = { chapterNumber: 1, role: 'rewrite', status: 'active', result: '' };
+  assert.equal(resolveChapterDraftStep([draft, pending], 1)?.result, 'first');   // incomplete rewrite ignored
+});
+
+test('runDeterministicApply operates on the Rewrite output, not the superseded First Draft', async () => {
+  const steps = [
+    { chapterNumber: 4, role: 'draft', skill: 'romance-sweet-first-draft', status: 'completed', result: 'Ch4.\n\nShe utilized the coal oven.' },
+    { chapterNumber: 4, role: 'rewrite', skill: 'romance-sweet-rewrite', status: 'completed', result: 'Ch4.\n\nShe lit the coal oven, hands steady.' },
+    { chapterNumber: 4, skill: 'romance-consistency-audit', status: 'completed',
+      result: JSON.stringify([{ op: 'swap', find: 'hands steady', replace: 'her hands steady' }]) },
+  ];
+  const applyStep = { chapterNumber: 4, skill: 'deterministic-apply', status: 'active' };
+  const { text } = await runDeterministicApply(steps as any, applyStep as any, async (s: string) => s);
+  assert.match(text, /her hands steady/);   // "find" only exists in the rewrite → rewrite was the base
+  assert.match(text, /lit the coal oven/);   // rewrite prose retained
+  assert.doesNotMatch(text, /utilized/);     // first draft was NOT the base
+});
+
+test('runDeterministicApply falls back to the First Draft when no Rewrite step ran (backward compatible)', async () => {
+  const steps = [
+    { chapterNumber: 4, role: 'draft', skill: 'romance-sweet-first-draft', status: 'completed', result: DRAFT },
+    { chapterNumber: 4, skill: 'romance-consistency-audit', status: 'completed',
+      result: JSON.stringify([{ op: 'swap', find: 'utilized', replace: 'used' }]) },
+  ];
+  const applyStep = { chapterNumber: 4, skill: 'deterministic-apply', status: 'active' };
+  const { text } = await runDeterministicApply(steps as any, applyStep as any, async (s: string) => s);
+  assert.match(text, /used the old coal oven/);
+});
 
 test('C8: guardEntities rejects a POV/name-injecting de-AI swap but the consistency path (unguarded) still applies it', async () => {
   const base = 'She turned. I said nothing and watched the door.';

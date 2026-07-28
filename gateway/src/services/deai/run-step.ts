@@ -8,7 +8,7 @@
 import { runChunkedDeAiSweep, secondReaderFraming, type SweepResult } from './sweep.js';
 import type { BannedTerms } from './banned-terms.js';
 import type { AiNameMap } from './ai-names.js';
-import { applyDeAiEdits, parseAuditEdits, makeScopedRewriteFn, type DeAiEdit } from '../deterministic-apply.js';
+import { applyDeAiEdits, parseAuditEdits, makeScopedRewriteFn, resolveChapterDraftStep, type DeAiEdit } from '../deterministic-apply.js';
 import { limitEmDashes } from './em-dash.js';
 
 // Human authors use one or two em-dashes per chapter; LLMs use one per paragraph.
@@ -31,7 +31,8 @@ export function resolveSweepBaseDraft(steps: StepLike[], chapterNumber?: number)
   const done = (s: StepLike) => s.status === 'completed' && !!s.result;
   const apply = steps.find(s => s.chapterNumber === chapterNumber && s.skill === 'deterministic-apply' && done(s));
   if (apply?.result) return apply.result;
-  const draft = steps.find(s => s.chapterNumber === chapterNumber && s.role === 'draft' && done(s));
+  // No consistency-apply yet → the working prose is the Rewrite if one ran, else the draft.
+  const draft = resolveChapterDraftStep(steps, chapterNumber);
   return draft?.result ?? null;
 }
 

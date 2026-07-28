@@ -17,7 +17,7 @@ permissions:
 
 # Sweet Romance Rewrite Skill
 
-Using the original chapter draft and the improvement plan provided in your context, implement the suggestions in the improvement plan. Only implement the suggested changes; do not change anything else about the original chapter. Reproduce the entire chapter with the suggested changes made. Do not use any of the words or phrases found in the forbidden-words list in your context.
+Using the original chapter draft and the improvement plan in your context, implement the plan's suggestions with a surgical hand — a scalpel, not a rewrite from scratch. Change ONLY what the plan flags; copy every other sentence through exactly as written. Preserve the author's voice, the POV and tense, every character name and age, and every plot beat — you are refining, not reimagining. Reproduce the ENTIRE chapter start to finish with the flagged changes made; never summarize, truncate, or output only the changed passages, and keep it at least as long as the original. Do not use any of the words or phrases in the forbidden-words list in your context, and use em dashes sparingly — at most one or two in the whole chapter, never as a default connector.
 
 This is a sweet, closed-door romance (spice level 2 / fade-to-black). Keep all intimacy at the sensual ceiling: build to the threshold (the kiss, the embrace, the charged decision, the bedroom door), close the door at the point of escalation, and resume in the emotional afterglow. Never introduce explicit anatomy, mechanics, or graphic content while applying the plan.
 

@@ -224,9 +224,26 @@ export interface ApplyRunnerStep {
 }
 
 /**
+ * The working chapter prose for a chapter: a completed Rewrite (role `rewrite`)
+ * if the pipeline ran one, else the First Draft (role `draft`). A pipeline can
+ * insert a free-form rewrite pass after the draft; without this the downstream
+ * deterministic apply + de-AI chain would silently operate on the superseded
+ * first draft and discard the rewrite. Backward compatible: no rewrite → draft.
+ */
+export function resolveChapterDraftStep<T extends { chapterNumber?: number; role?: string; status: string; result?: string }>(
+  steps: T[],
+  n: number | undefined,
+): T | undefined {
+  const done = (s: T) => s.status === 'completed' && !!s.result;
+  return steps.find(s => s.chapterNumber === n && s.role === 'rewrite' && done(s))
+      ?? steps.find(s => s.chapterNumber === n && s.role === 'draft' && done(s));
+}
+
+/**
  * Resolve the base draft + audit edits for an Apply step and run the deterministic
- * apply. Base = this chapter's `draft` step. Edits = gathered from EVERY completed
- * audit step of this chapter (any skill ending in `-audit`: consistency, de-AI, …)
+ * apply. Base = this chapter's working prose (Rewrite if present, else Draft).
+ * Edits = gathered from EVERY completed audit step of this chapter (any skill
+ * ending in `-audit`: consistency, de-AI, …)
  * — the "N audits → 1 apply" model. Consistency audits are applied first (fix
  * facts on the original draft), then the rest (prose polish); an edit whose `find`
  * a prior audit already changed is simply skipped. Throws if the draft is missing,
@@ -239,7 +256,7 @@ export async function runDeterministicApply(
 ): Promise<{ text: string; stats: ApplyResult & { auditSteps: number } }> {
   const N = step.chapterNumber;
   const done = (s: ApplyRunnerStep) => s.status === 'completed' && !!s.result;
-  const draft = steps.find(s => s.chapterNumber === N && s.role === 'draft' && done(s));
+  const draft = resolveChapterDraftStep(steps, N);
   if (!draft?.result) throw new Error(`deterministic-apply: no completed draft for chapter ${N}`);
   const audits = steps
     .filter(s => s.chapterNumber === N && done(s) && /audit$/i.test(s.skill ?? ''))

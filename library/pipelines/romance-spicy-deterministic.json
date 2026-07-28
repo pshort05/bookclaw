@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "romance-spicy-deterministic",
   "label": "Spicy Romance — Deterministic De-AI (Seeded)",
-  "description": "End-to-end spicy romance (Heat Level 4, explicit on-page intimacy) with a DRIFT-PROOF de-AI pass: seed-woven premise, character bible, setting and chapter outline, then per chapter Scene Brief -> First Draft (writes the on-page intimacy per the brief) -> Consistency Audit + De-AI Audit (emits an edit list) -> Apply (code applies the edits to the draft; no model rewrites the chapter, so it cannot drift). Developmental improve/rewrite and the regenerating humanize/intimacy steps are intentionally removed — the explicit heat lives in the draft and the audits only patch flagged spans.",
+  "description": "End-to-end spicy romance (Heat Level 4, explicit on-page intimacy): seed-woven premise, character bible, setting and chapter outline, then per chapter Scene Brief -> First Draft (writes the on-page intimacy per the brief) -> Improvement Plan -> Rewrite (a free-form craft/voice pass that keeps the heat on-page and makes the prose read less AI) -> Consistency Audit + De-AI Audit (emit an edit list) -> Apply (code applies the edits to the working chapter — the Rewrite output if present, else the draft). The rewrite runs BEFORE the drift-proof consistency/canon/de-AI steps, which then clean up any names, POV or canon it disturbed — craft gains without letting an LLM rewrite silently drift the book.",
   "steps": [
     {
       "label": "Council — Base Story Origination",
@@ -112,12 +112,36 @@
           "role": "draft"
         },
         {
+          "label": "Improvement Plan — Chapter {{n}}",
+          "skill": "romance-spicy-improvement-plan",
+          "taskType": "revision",
+          "phase": "critique",
+          "chapterNumber": "{{n}}",
+          "role": "improve",
+          "promptTemplate": "Critique the Chapter {{n}} draft of \"{{title}}\" in your context against its scene brief, the style guide, and the forbidden-words list. Follow your spicy-romance improvement-plan methodology: flag telling-instead-of-showing, flat rhythm, shallow POV, clichés and adverb pile-ups, off-voice or on-the-nose dialogue, wordiness/filler, weak banter or chemistry, and any AI-tell wording. Produce a prioritized, line-by-line plan with specific before/after examples. Leave canon facts (names, ages, POV/tense, places) to the consistency step that runs after the rewrite — focus on craft, voice and heat. Output the critique only — do NOT rewrite the chapter.",
+          "modelOverride": {
+            "provider": "openrouter",
+            "model": "auto:newest-sonnet",
+            "temperature": 0.4
+          }
+        },
+        {
+          "label": "Rewrite — Chapter {{n}}",
+          "skill": "romance-spicy-rewrite",
+          "taskType": "creative_writing",
+          "phase": "rewrite",
+          "wordCountTarget": "{{wordsPerChapter}}",
+          "chapterNumber": "{{n}}",
+          "role": "rewrite",
+          "promptTemplate": "Apply the improvement plan in your context to the Chapter {{n}} draft of \"{{title}}\" with surgical accuracy. Follow your spicy-romance rewrite methodology: change only what the plan flags, preserve the author's voice, POV, character names and every plot beat, reproduce the COMPLETE chapter (at least {{wordsPerChapter}} words), and remove every forbidden word. Keep any on-page intimate scene explicit (Heat Level 4) — do not fade or dilute the heat. Output the full revised chapter only, in Markdown."
+        },
+        {
           "label": "Consistency Audit — Chapter {{n}}",
           "skill": "romance-consistency-audit",
           "taskType": "revision",
           "phase": "humanize",
           "chapterNumber": "{{n}}",
-          "promptTemplate": "Check the Chapter {{n}} draft of \"{{title}}\" in your context against the CANON FACT-SHEET (the authoritative names, ages, POV/tense and places in your context) and the rest of the story canon (character bible, name registry, setting, previous chapters). Verify every character name and age, the POV/tense, and every place in the chapter matches the fact-sheet EXACTLY and emit an edit for each mismatch; return an empty list ONLY after you have checked each of these. Follow your consistency-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the draft. Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
+          "promptTemplate": "Check the current (most recent, post-rewrite) Chapter {{n}} text of \"{{title}}\" in your context against the CANON FACT-SHEET (the authoritative names, ages, POV/tense and places in your context) and the rest of the story canon (character bible, name registry, setting, previous chapters). Verify every character name and age, the POV/tense, and every place in the chapter matches the fact-sheet EXACTLY and emit an edit for each mismatch; return an empty list ONLY after you have checked each of these. Follow your consistency-audit methodology and output ONLY the JSON edit list — each edit's \"find\" copied VERBATIM from the latest chapter text (the Rewrite output if present). Do NOT rewrite or reproduce the chapter; output nothing but the JSON array.",
           "modelOverride": {
             "provider": "openrouter",
             "model": "auto:newest-sonnet",

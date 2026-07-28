@@ -4,6 +4,10 @@ A running log of notable, user-facing changes to BookClaw, newest first. Entries
 
 ## 2026-07-28
 
+### More human prose
+
+- **A craft rewrite pass is back in the deterministic romance pipelines.** After the first draft, each chapter now gets an Improvement Plan (a line-by-line craft critique) and a free-form Rewrite that acts on it — the pass that restructures telling into showing, fixes rhythm and deepens POV, so drafts read markedly less "AI". It runs *before* the consistency, canon and de-AI steps, which then clean up anything the rewrite disturbed (names, POV, canon) — so you get the craft gains without an LLM rewrite silently drifting the book.
+
 ### Clearer errors
 
 - **Premise analysis says why it failed.** When "Analyze" can't reach the AI provider, the message now names the cause and the fix — "the AI provider (OpenRouter) is out of credits — top up the account, then re-run Analyze" — instead of the opaque "Premise intake failed".
