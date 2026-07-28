@@ -2,6 +2,12 @@
 
 A running log of notable, user-facing changes to BookClaw, newest first. Entries are grouped by theme rather than listed file-by-file; see the git history for the fine detail.
 
+## 2026-07-28
+
+### Clearer errors
+
+- **Premise analysis says why it failed.** When "Analyze" can't reach the AI provider, the message now names the cause and the fix — "the AI provider (OpenRouter) is out of credits — top up the account, then re-run Analyze" — instead of the opaque "Premise intake failed".
+
 ## 2026-07-27
 
 ### Book Completeness & Pacing

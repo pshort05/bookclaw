@@ -51,6 +51,26 @@ export function parseVerifiedCanonBody(body: any): {
 }
 
 /**
+ * Turn a raw AI provider / router error (e.g. `OpenRouter HTTP 402: {...}`) into a
+ * short, actionable sentence for the UI. Returns null when the error is not a
+ * recognizable upstream-provider failure, so the caller can keep its generic
+ * message. Names the provider and the fix (out of credits / bad key / rate-limit).
+ */
+export function describeProviderError(raw: string): string | null {
+  const s = String(raw ?? '');
+  const code = Number(s.match(/\bHTTP (\d{3})\b/)?.[1]) || undefined;
+  const provider = s.match(/^\s*([A-Za-z][\w.-]*)\s+HTTP\b/)?.[1];
+  // Not an upstream HTTP failure and no credit hint → let the caller stay generic.
+  if (!code && !/insufficient credits/i.test(s)) return null;
+  const who = provider ? `the AI provider (${provider})` : 'the AI provider';
+  if (code === 402 || /insufficient credits/i.test(s)) return `${who} is out of credits — top up the account, then re-run Analyze.`;
+  if (code === 401 || code === 403) return `${who} rejected the API key — check the key in the vault, then re-run Analyze.`;
+  if (code === 429) return `${who} is rate-limited right now — wait a moment, then re-run Analyze.`;
+  if (code && code >= 500) return `${who} had a server error (HTTP ${code}) — try again shortly.`;
+  return `${who} returned HTTP ${code}.`;
+}
+
+/**
  * Books API (book-container Phase 2 + Phase 4). Read + create + template editing.
  * Behind the same bearer-auth + IP allowlist as the rest of /api/*.
  */
@@ -143,6 +163,8 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
         return res.status(500).json({ error: 'Could not parse the premise into structured seeds. Try a clearer document or create the book manually.' });
       }
       console.log(`  ⚠ premise intake failed: ${err?.message ?? err}`);
+      const provider = describeProviderError(msg);
+      if (provider) return res.status(502).json({ error: `Premise intake couldn't reach the AI — ${provider}` });
       res.status(500).json({ error: 'Premise intake failed' });
     }
   });
