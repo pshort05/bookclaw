@@ -1,0 +1,53 @@
+/* Version trail — ported from dashboard/concept/view-book.html (.trail block). */
+
+.trail {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--bg) 74%, transparent);
+  padding: 11px 40px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(100%, 980px);
+  margin-inline: auto;
+}
+
+.vers {
+  display: flex;
+  gap: 2px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 2px;
+  overflow-x: auto;
+}
+
+.vers button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.vers button:hover { color: var(--dim); }
+
+.vers button[aria-pressed="true"] { background: var(--panel-hi); color: var(--text); }
+
+.vers button[data-latest="1"][aria-pressed="true"] { color: var(--ember); }
+
+.st { color: rgba(125, 115, 89, .75); margin-right: 5px; }
+
+.when {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  color: var(--faint);
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

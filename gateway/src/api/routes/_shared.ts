@@ -16,6 +16,7 @@ import { intimacyDecision, resolveUncensoredProvider, type IntimacyDecision } fr
 import { classifyScene } from '../../services/casting/heat-classify.js';
 import { profanityInjection } from '../../services/casting/profanity.js';
 import { runGroundingResearch } from '../../services/pipeline/grounding-research.js';
+import { chapterTextSteps } from '../../services/pipeline/chapter-files.js';
 import {
   runIdeationEnsemble, selectPitch, resolvePanelMemberProvider, resolveEnsemblePanel, loadIdeationAngles,
   type EnsemblePitch, type SelectPitchResult,
@@ -663,12 +664,15 @@ export function makeGatherChapters(baseDir: string, dataDirResolver?: (project: 
     try { activeDataDir = dataDirResolver?.(project) ?? null; } catch { activeDataDir = null; }
     const projectDir = activeDataDir ?? j(baseDir, 'workspace', 'projects', projectSlug);
 
-    const writingSteps = project.steps
-      .filter((s: any) => (s.phase === 'writing' || s.label?.toLowerCase().includes('chapter')) && s.status === 'completed')
-      .sort((a: any, b: any) => (a.chapterNumber || 0) - (b.chapterNumber || 0));
-
+    // One text step per chapter. Selecting on "the label mentions a chapter"
+    // collected scene briefs and JSON audits, and TWO full-prose steps per
+    // chapter in the deterministic romance pipelines (consistency apply + de-AI
+    // sweep) — a duplicated manuscript. chapter-files.ts resolves the single
+    // current version instead, degrading to the chapter's last completed step
+    // when no label matched a prose role (so an unrecognised pipeline still
+    // exports rather than silently yielding an empty manuscript).
     const chapters: Array<{ id: string; number: number; title: string; text: string }> = [];
-    for (const ws of writingSteps) {
+    for (const { number, step: ws } of chapterTextSteps(project.steps)) {
       let text = ws.result || '';
       // If no inline result, try reading from disk.
       if (!text && ex(projectDir)) {
@@ -680,12 +684,7 @@ export function makeGatherChapters(baseDir: string, dataDirResolver?: (project: 
         }
       }
       if (text && text.length > 200) {
-        chapters.push({
-          id: ws.id,
-          number: ws.chapterNumber || chapters.length + 1,
-          title: ws.label,
-          text,
-        });
+        chapters.push({ id: ws.id, number, title: ws.label, text });
       }
     }
     return chapters;

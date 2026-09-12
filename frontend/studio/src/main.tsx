@@ -16,6 +16,7 @@ import { CouncilSelect } from './routes/CouncilSelect.js';
 import { EasyStart } from './routes/EasyStart.js';
 import { AssetStudio } from './routes/AssetStudio.js';
 import { Write } from './routes/Write.js';
+import { BookViewRoute } from './routes/BookViewRoute.js';
 import { Settings } from './routes/Settings.js';
 import { Confirmations } from './routes/Confirmations.js';
 import { Files } from './routes/Files.js';
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="series" element={<Series />} />
           <Route path="write" element={<Write />} />
           <Route path="write/:slug" element={<Write />} />
+          <Route path="book/:slug/view" element={<BookViewRoute />} />
           {/* Insights merged into Activity; redirect old links. */}
           <Route path="insights" element={<Navigate to="/activity" replace />} />
           <Route path="settings" element={<Settings />} />

@@ -1,0 +1,31 @@
+/* The mockup's in-pane button set (`.btn` and its three variants), shared by
+   the reading pane, the raw pane and the gate panel. The studio's <Button> is a
+   different, heavier control — this view's own buttons follow the mockup. */
+
+.btn {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 7px 13px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line-2);
+  background: none;
+  cursor: pointer;
+  color: var(--dim);
+}
+
+.btn:hover:not([disabled]) { color: var(--text); border-color: var(--dim); }
+
+.btn[disabled] { opacity: .32; cursor: not-allowed; }
+
+.primary {
+  background: linear-gradient(105deg, #ff6a39, #f0913a 60%, #e8c46a);
+  color: #1a0f08;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.primary:hover:not([disabled]) { color: #1a0f08; border-color: transparent; }
+
+.warn { border-color: rgba(232, 196, 106, .45); color: var(--gold); }
+
+.quiet { border-color: var(--line); color: var(--faint); }

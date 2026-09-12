@@ -10,11 +10,9 @@
  * stripped — and validates the result didn't silently lose chapters/words.
  */
 
-export interface ChapterFile { name: string; content: string; mtime: number; }
+import { classifyChapterFile, isProseRole, type ChapterRole } from './pipeline/chapter-files.js';
 
-// Allow an optional title suffix after the number (a step label like "Write
-// Chapter 1: The Night Shift" sanitizes to ...-write-chapter-1-the-night-shift.md).
-const CHAPTER_RE = /(write|polish)-chapter-(\d+)(?:-[^/]*)?\.md$/i;
+export interface ChapterFile { name: string; content: string; mtime: number; }
 
 // The deep-revision pipeline's "Apply {macro,scene-level,line-level} revisions
 // (full manuscript rewrite)" steps save the ENTIRE rewritten manuscript as one
@@ -24,11 +22,12 @@ const CHAPTER_RE = /(write|polish)-chapter-(\d+)(?:-[^/]*)?\.md$/i;
 // any chapter it contains.
 const REVISION_RE = /apply-.*revisions.*full-manuscript-rewrite-?\.md$/i;
 
-/** Parse a step-output filename into its chapter number + kind, or null. */
-export function parseChapterFile(name: string): { number: number; kind: 'write' | 'polish' } | null {
-  const m = CHAPTER_RE.exec(name);
-  if (!m) return null;
-  return { number: Number(m[2]), kind: m[1].toLowerCase() as 'write' | 'polish' };
+/** Parse a step-output filename into its chapter number + kind, or null.
+ * Delegates to the shared classifier so the deterministic romance pipelines
+ * (first draft / rewrite / consistency apply / de-AI sweep) are recognised too. */
+export function parseChapterFile(name: string): { number: number; kind: ChapterRole } | null {
+  const meta = classifyChapterFile(name);
+  return meta ? { number: meta.number, kind: meta.role } : null;
 }
 
 /** Split a whole-manuscript revision-rewrite file into per-chapter chunks keyed
@@ -53,6 +52,20 @@ function splitRevisionChapters(content: string): Map<number, string> {
   return chapters;
 }
 
+// Prose passes ranked by pipeline order — the later pass is the canonical text.
+// write < polish (the older pipelines); first draft < rewrite < consistency
+// apply < de-AI sweep (the deterministic romance pipelines). Non-prose roles
+// (scene brief, improvement plan, consistency audit) are absent by design.
+// Pipeline order, so a later pass beats an earlier one for the same chapter.
+// `intimacy` outranks `humanize` because it is the FINAL pass in the spicy
+// pipelines (romance-spicy, romance-*-full); `apply-edits` is the applying pass
+// of the editorial-* pipelines, which run alone over a finished manuscript.
+const ROLE_RANK: Partial<Record<ChapterRole, number>> = {
+  write: 1, polish: 2,
+  'first-draft': 10, rewrite: 11, 'consistency-apply': 12,
+  humanize: 13, 'humanize-pass': 13, intimacy: 14, 'apply-edits': 14,
+};
+
 /**
  * One file per chapter number: polish wins over write (the canonical output);
  * within the same kind, the newest mtime wins. A deep-revision whole-manuscript
@@ -66,15 +79,17 @@ function splitRevisionChapters(content: string): Map<number, string> {
  * mtime is used — earlier revision passes are not merged in chapter-by-chapter.
  */
 export function pickLatestChapters(files: ChapterFile[]): ChapterFile[] {
-  const best = new Map<number, { file: ChapterFile; kind: 'write' | 'polish' | 'revision' }>();
+  const best = new Map<number, { file: ChapterFile; kind: ChapterRole | 'revision' }>();
   for (const f of files) {
     const meta = parseChapterFile(f.name);
-    if (!meta) continue;
+    if (!meta || !isProseRole(meta.kind)) continue;                         // briefs/plans/audits aren't the chapter
     const cur = best.get(meta.number);
     if (!cur) { best.set(meta.number, { file: f, kind: meta.kind }); continue; }
+    const rank = ROLE_RANK[meta.kind] ?? 0;
+    const curRank = cur.kind === 'revision' ? Infinity : (ROLE_RANK[cur.kind] ?? 0);
     const better =
-      (meta.kind === 'polish' && cur.kind !== 'polish') ||                 // polish beats write
-      (meta.kind === cur.kind && f.mtime > cur.file.mtime);                 // newer same-kind wins
+      rank > curRank ||                                                     // a later pass beats an earlier one
+      (rank === curRank && f.mtime > cur.file.mtime);                       // newer same-pass wins
     if (better) best.set(meta.number, { file: f, kind: meta.kind });
   }
 
@@ -90,20 +105,29 @@ export function pickLatestChapters(files: ChapterFile[]): ChapterFile[] {
 }
 
 /** Strip the working-draft headers a chapter file carries above its real
- * "## Chapter N" heading: "# Polish/Write Chapter N" step labels (any heading
- * level, possibly repeated) and a redundant duplicate "# Chapter N" that sits
- * directly above the titled heading. A lone "# Chapter N" that IS the heading is
- * kept. (run-review #9, 2026-06-30.) */
+ * "## Chapter N" heading: the injected "# <step label>" heading every step
+ * file is written with (any heading level, possibly repeated) and a redundant
+ * duplicate "# Chapter N" that sits directly above the titled heading. A lone
+ * "# Chapter N" that IS the heading is kept. (run-review #9, 2026-06-30; widened
+ * from an enumerated Polish|Write list to any step label, finding #4 2026-09-12
+ * — the chapter classifier now admits first-draft/rewrite/consistency-apply/
+ * humanize/etc., and every one of those labels ends in "Chapter N" too.) */
 export function normalizeChapter(content: string): string {
   let text = String(content ?? '').replace(/^﻿/, '');
   const stripLeading = () => {
     let changed = true;
     while (changed) {
       changed = false;
-      // "# Polish Chapter N" / "## Write Chapter N" working header (any level).
-      // Bare only (review #4): require the line to END after the number, so a
-      // real titled heading like "# Write Chapter 5: The Reckoning" is NOT eaten.
-      const a = text.replace(/^\s*#{1,3}\s+(?:Polish|Write)\s+Chapter\s+\d+[ \t]*(?:\n|$)/i, '');
+      // Any "<role prefix> Chapter N" working header (any heading level), e.g.
+      // "Polish Chapter 5", "First Draft — Chapter 3", "Consistency Apply —
+      // Chapter 7", "Humanize — De-AI Sweep — Chapter 12" — every chapter
+      // step's label ends in "Chapter N" (library/pipelines/*.json). The
+      // leading negative lookahead requires a non-empty prefix before
+      // "Chapter" so a bare "# Chapter N" heading (the real, untitled chapter
+      // heading) is never matched. Bare only (review #4): require the line to
+      // END after the number, so a real titled heading like "# Write Chapter
+      // 5: The Reckoning" is NOT eaten.
+      const a = text.replace(/^\s*#{1,3}[ \t]+(?!Chapter\s+\d+[ \t]*(?:\n|$))\S.*?\bChapter\s+\d+[ \t]*(?:\n|$)/i, '');
       if (a !== text) { text = a; changed = true; }
       // Leading blank lines / horizontal rules left behind.
       const b = text.replace(/^(?:\s*(?:---|\*\*\*)\s*\n)+/, '').replace(/^\s*\n+/, '');

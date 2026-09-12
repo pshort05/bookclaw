@@ -100,3 +100,34 @@ test('validateAssembly flags missing chapters and shrinkage', () => {
   assert.equal(validateAssembly({ markdown: 'x', chapterCount: 5, wordCount: 5000 }, {}).ok, true);
   assert.equal(validateAssembly({ markdown: '', chapterCount: 0, wordCount: 0 }, {}).ok, false);
 });
+
+// The file-name path (still live for GET /api/books/:slug/download/latest-manuscript)
+// ranks by role, so every prose role the classifier admits needs a rank. Without
+// one a role defaults to 0 and LOSES to an earlier pass — backwards for the two
+// roles that run last: Intimacy (final pass of the spicy pipelines) and the
+// editorial "Apply …" passes.
+test('pickLatestChapters ranks the final pass of every pipeline family last', () => {
+  const f = (name: string, content: string, mtime: number) => ({ name, content, mtime });
+
+  // romance-spicy: Intimacy runs AFTER the de-AI sweep.
+  const spicy = pickLatestChapters([
+    f('project-7-step-3-humanize-de-ai-sweep-chapter-1.md', '# Humanize — De-AI Sweep — Chapter 1\n\nswept', 200),
+    f('project-7-step-4-intimacy-chapter-1.md', '# Intimacy — Chapter 1\n\nfinal', 100),
+  ]);
+  assert.equal(spicy.length, 1);
+  assert.match(spicy[0].content, /final/, 'Intimacy must beat Humanize even with an older mtime');
+
+  // editorial-*: the "Apply …" pass supersedes the draft it edits.
+  const edited = pickLatestChapters([
+    f('project-8-step-2-first-draft-chapter-1.md', '# First Draft — Chapter 1\n\ndraft', 100),
+    f('project-8-step-5-apply-copyedits-chapter-1.md', '# Apply Copyedits — Chapter 1\n\ncopyedited', 200),
+  ]);
+  assert.match(edited[0].content, /copyedited/, 'Apply Copyedits must beat the first draft');
+
+  // humanize-claude/gemini: "Pass N" passes rank with humanize, newest wins.
+  const passes = pickLatestChapters([
+    f('project-9-step-2-pass-1-de-cliche-chapter-1.md', '# Pass 1: De-cliché — Chapter 1\n\npass one', 100),
+    f('project-9-step-3-pass-10-final-chapter-1.md', '# Pass 10: Final — Chapter 1\n\npass ten', 200),
+  ]);
+  assert.match(passes[0].content, /pass ten/, 'the newest humanize pass wins');
+});

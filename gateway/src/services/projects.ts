@@ -1284,17 +1284,18 @@ Description: ${description}`;
   }
 
   /**
-   * The book's FRONTIER project — the chained pipeline's current phase: the
-   * lowest-pipelinePhase project that isn't completed (so a finished Planning
-   * yields the Bible project). Falls back to the last phase when every phase is
-   * done (the rail shows the finished state) and to insertion order for
-   * un-phased projects. Returns null when the book has no projects. Lets the
-   * Write view bind to the live project instead of just the pipeline template.
+   * Every project in the book's CHAIN, in pipeline-phase order (insertion order
+   * for un-phased projects). The chain is the book's real run: planning → bible
+   * → production → … → launch, one project per phase, each holding only its own
+   * phase's steps. A reader of the whole book (View Book's contents tree) needs
+   * all of them — the chapters live in production, the bible and outline in
+   * planning — so the chain selection lives here ONCE and
+   * `frontierProjectForBook` is derived from it. Empty when the book has none.
    */
-  frontierProjectForBook(bookSlug: string): Project | null {
-    if (!bookSlug) return null;
+  chainProjectsForBook(bookSlug: string): Project[] {
+    if (!bookSlug) return [];
     const mine = Array.from(this.projects.values()).filter(p => p.bookSlug === bookSlug);
-    if (!mine.length) return null;
+    if (!mine.length) return [];
 
     // Group by pipeline (un-pipelined projects each form their own group). A book
     // can carry duplicate pipelines when "start" was clicked repeatedly (each
@@ -1321,7 +1322,20 @@ Description: ${description}`;
     const phased = chain
       .filter(p => typeof p.pipelinePhase === 'number')
       .sort((a, b) => (a.pipelinePhase as number) - (b.pipelinePhase as number));
-    const seq = phased.length ? phased : chain;
+    return phased.length ? phased : chain;
+  }
+
+  /**
+   * The book's FRONTIER project — the chain's current phase: the lowest-
+   * pipelinePhase project that isn't completed (so a finished Planning yields
+   * the Bible project). Falls back to the last phase when every phase is done
+   * (the rail shows the finished state). Returns null when the book has no
+   * projects. Lets the Write view bind to the live project instead of just the
+   * pipeline template.
+   */
+  frontierProjectForBook(bookSlug: string): Project | null {
+    const seq = this.chainProjectsForBook(bookSlug);
+    if (!seq.length) return null;
     return seq.find(p => p.status !== 'completed') ?? seq[seq.length - 1];
   }
 

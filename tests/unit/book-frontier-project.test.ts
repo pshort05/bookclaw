@@ -97,3 +97,54 @@ test('returns null for an unknown book or empty slug', () => {
   assert.equal(e.frontierProjectForBook(''), null);
   quiesce(e);
 });
+
+// ---------------------------------------------------- chainProjectsForBook --
+// The View Book contents tree needs EVERY project in the winning chain, not just
+// its current phase: a book in its launch phase keeps its chapters in the
+// production project and its bible/outline in the planning project. The chain
+// selection (most completed phases, then most recent) lives here once, and
+// `frontierProjectForBook` is the last runnable project of that chain.
+
+test('chainProjectsForBook returns the whole chain in pipeline-phase order', () => {
+  const e = makeEngine();
+  const planning = phaseProj(e, 'book-a', 1, 'completed');
+  const production = phaseProj(e, 'book-a', 3, 'completed');
+  const bible = phaseProj(e, 'book-a', 2, 'completed');
+  const launch = phaseProj(e, 'book-a', 4, 'pending');
+  assert.deepEqual(
+    e.chainProjectsForBook('book-a').map((p) => p.id),
+    [planning.id, bible.id, production.id, launch.id],
+  );
+  quiesce(e);
+});
+
+test('chainProjectsForBook excludes a duplicate/abandoned chain for the same book', () => {
+  const e = makeEngine();
+  const realPlanning = phaseProj(e, 'book-a', 1, 'completed', 'pl-1');
+  const realBible = phaseProj(e, 'book-a', 2, 'pending', 'pl-1');
+  phaseProj(e, 'book-a', 1, 'paused', 'pl-2');          // a fresh duplicate chain
+  phaseProj(e, 'book-a', 2, 'pending', 'pl-2');
+  assert.deepEqual(e.chainProjectsForBook('book-a').map((p) => p.id), [realPlanning.id, realBible.id]);
+  quiesce(e);
+});
+
+test('chainProjectsForBook ignores other books, and is empty for an unknown book', () => {
+  const e = makeEngine();
+  const mine = phaseProj(e, 'book-a', 1, 'pending');
+  phaseProj(e, 'book-b', 1, 'pending');
+  assert.deepEqual(e.chainProjectsForBook('book-a').map((p) => p.id), [mine.id]);
+  assert.deepEqual(e.chainProjectsForBook('no-such-book'), []);
+  assert.deepEqual(e.chainProjectsForBook(''), []);
+  quiesce(e);
+});
+
+test('the frontier is the last runnable project of the chain', () => {
+  const e = makeEngine();
+  phaseProj(e, 'book-a', 1, 'completed');
+  const bible = phaseProj(e, 'book-a', 2, 'pending');
+  phaseProj(e, 'book-a', 3, 'pending');
+  const chain = e.chainProjectsForBook('book-a');
+  assert.equal(e.frontierProjectForBook('book-a')?.id, chain.find((p) => p.status !== 'completed')?.id);
+  assert.equal(e.frontierProjectForBook('book-a')?.id, bible.id);
+  quiesce(e);
+});

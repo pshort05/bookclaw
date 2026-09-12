@@ -1,6 +1,6 @@
 import { Application, Request, Response } from 'express';
 import multer from 'multer';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { uploadZip, requireApprovedConfirmation, safePath, serveFile, applyBookModelConfig } from './_shared.js';
 import { NEWEST_SONNET_SENTINEL } from '../../ai/newest-sonnet.js';
@@ -12,12 +12,16 @@ import { mapRunnerPath, isUploadableName, resolveBookUpload } from '../../servic
 import { bindBookWorld } from './world-bind.js';
 import { buildBookFormat } from '../../services/format-input.js';
 import { AI_PROVIDER_IDS } from '../../ai/router.js';
-import { assembleManuscript, validateAssembly } from '../../services/manuscript-assembly.js';
+import { assembleManuscript, normalizeChapter, pickLatestChapters, validateAssembly } from '../../services/manuscript-assembly.js';
+import { chapterTextSteps } from '../../services/pipeline/chapter-files.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
 import { PremiseIntakeService, composeGroundedSetting } from '../../services/premise-intake.js';
 import { RomanceInterviewService } from '../../services/romance-interview.js';
 import { loadRegistry } from '../../services/registry/store.js';
+import { buildContents, resolveItem, proseWords, stepFileName, type BuildInput } from '../../services/book-contents.js';
+import { decideSave } from '../../services/book-save-routing.js';
+import { makeReviewActions } from './review-action.js';
 
 /**
  * Canon Drift Gate (Risk R2 bridge): shape-check the grounding payload the client
@@ -705,6 +709,305 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       const notFound = msg === 'version not found' || msg === 'invalid version id';
       res.status(notFound ? 404 : 500).json({ error: msg });
     }
+  });
+
+  // ── View Book (design §3): contents tree, item read/write, compile ─────────
+  // Item-addressed, never step-addressed: the client asks for `chapter:19`, not
+  // for `project-84-step-143-humanize-de-ai-sweep-chapter-19.md`. All the I/O
+  // happens here; `services/book-contents.ts` stays pure.
+
+  /** The single compiled-manuscript file, so every compile keeps one version trail. */
+  const COMPILED_FILE = 'compiled-manuscript.md';
+
+  const { applyReviewAction } = makeReviewActions(gateway, services);
+
+  /** Strip the `# <step label>` heading the step-file writer puts above the body. */
+  const stripStepHeading = (raw: string): string => raw.replace(/^# .+\n\n/, '');
+
+  /**
+   * Gather everything `buildContents` needs for one book. Returns null when the
+   * book is unknown. Rehydrates truncated step results first, so word counts and
+   * bodies are the real text after a restart rather than 567-character stubs.
+   *
+   * The steps come from the book's WHOLE CHAIN, not just its frontier project.
+   * The frontier is the chain's current phase, so a book past the writing phase
+   * has a launch/format project as its frontier and that project holds no
+   * chapter steps — resolving contents from it reported "0 of 32 written" and an
+   * empty Reference group for exactly the finished books a reader wants to read
+   * (found on Mercury, 2026-09-12). Concatenating in chain order also means a
+   * later phase that rewrites chapter N wins over the earlier one, since every
+   * chapter resolver takes the LAST matching prose step.
+   *
+   * `project` (the run's id, its review, and the target of a gate edit) stays the
+   * one project that actually carries state: the gated one if any, else the
+   * frontier. Its steps are the merged list, so a step id resolves chain-wide;
+   * the step OBJECTS are shared with their owning project, so writing through
+   * one updates the project that owns it.
+   */
+  async function loadBookView(slug: string): Promise<
+    { input: BuildInput; dataDir: string; project: any; steps: any[]; engine: any } | null
+  > {
+    if (!services.books.exists(slug)) return null;
+    const dataDir = services.books.dataDirOf(slug);
+    if (!dataDir) return null;
+    const manifest = (await services.books.open(slug).catch(() => null))?.manifest ?? null;
+    const engine = gateway.getProjectEngine?.() ?? null;
+    const frontier = engine?.frontierProjectForBook?.(slug) ?? null;
+    const chain: any[] = engine?.chainProjectsForBook?.(slug) ?? (frontier ? [frontier] : []);
+    // Fail-soft: without the full text, word counts and bodies fall back to stubs.
+    for (const p of chain) { try { await engine?.rehydrateTruncatedResults?.(p); } catch { /* keep stubs */ } }
+
+    const steps: any[] = chain.flatMap((p) => p.steps ?? []);
+    const project = chain.find((p) => p.review) ?? frontier;
+    // The tree reads the chain's steps; everything else (the gate, the drive
+    // lock, a saved edit) still acts on `project` itself.
+    const viewProject = project ? { ...project, steps } : null;
+
+    let compiled: BuildInput['compiled'] = null;
+    const compiledPath = safePath(dataDir, COMPILED_FILE);
+    if (compiledPath && existsSync(compiledPath)) {
+      try {
+        compiled = {
+          file: COMPILED_FILE,
+          words: proseWords(readFileSync(compiledPath, 'utf-8')),
+          createdAt: statSync(compiledPath).mtime.toISOString(),
+          versions: (await listVersions(dataDir, COMPILED_FILE)).map((v) => ({ id: v.id, createdAt: v.at })),
+        };
+      } catch { compiled = { file: COMPILED_FILE }; }   // fail-soft: the row still renders
+    }
+
+    // Findings + expiry live on the confirmation request, not on project.review.
+    let gate: BuildInput['gate'] = null;
+    const confirmationId = project?.review?.confirmationId;
+    if (confirmationId) {
+      const request = services.confirmationGate?.get?.(confirmationId);
+      if (request) gate = { findings: request.payload?.findings, expiresAt: request.expiresAt };
+    }
+
+    return {
+      dataDir, project, steps, engine,
+      input: {
+        manifest,
+        project: viewProject,
+        files: services.books.listFiles(slug) ?? [],
+        compiled,
+        gate,
+        projectIsDriving: !!(project && engine?.isDriving?.(project.id)),
+      },
+    };
+  }
+
+  app.get('/api/books/:slug/contents', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const view = await loadBookView(slug);
+    if (!view) return res.status(404).json({ error: 'Book not found' });
+    res.json(buildContents(view.input));
+  });
+
+  // Read one item, latest version by default. A step whose file is gone renders
+  // as an empty body plus the row's `missing file` flag, never a 500.
+  app.get('/api/books/:slug/items/:itemId', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const view = await loadBookView(slug);
+    if (!view) return res.status(404).json({ error: 'Book not found' });
+
+    const resolved = resolveItem(view.input, String(req.params.itemId));
+    if (!resolved) return res.status(404).json({ error: 'Item not found' });
+
+    const wanted = typeof req.query.version === 'string' ? req.query.version : '';
+    const latest = resolved.versions.find((v) => v.latest) ?? resolved.versions.at(-1);
+    const version = wanted ? resolved.versions.find((v) => v.id === wanted) : latest;
+    if (wanted && !version) return res.status(404).json({ error: 'Version not found' });
+
+    let body = '';
+    if (version?.file) {
+      const path = safePath(view.dataDir, version.file);
+      if (!path) return res.status(403).json({ error: 'Path traversal blocked' });
+      if (existsSync(path)) {
+        try {
+          const raw = readFileSync(path, 'utf-8');
+          body = version.step ? stripStepHeading(raw) : raw;
+        } catch { body = ''; }
+      }
+    }
+    // Fall back to what the engine holds: a gated chapter's pending text is not
+    // written to disk until the gate resolves, and a step result is authoritative
+    // when its file is missing.
+    if (!body && version?.step && view.project) {
+      const review = view.project.review;
+      if (review?.stepId === version.step && typeof review.pendingResult === 'string') body = review.pendingResult;
+      else body = view.steps.find((s: any) => s.id === version.step)?.result ?? '';
+    }
+
+    const { run } = buildContents(view.input);
+    const mode = decideSave({
+      // No version at all is a ghost row — let rule 2 name it, not rule 1.
+      versionIsLatest: version ? !!version.latest : true,
+      itemReady: resolved.item.ready,
+      itemIsDerived: !!resolved.item.derived,
+      gateStepId: run.gate?.stepId,
+      itemLatestStepId: resolved.stepId,
+      projectIsDriving: !!view.input.projectIsDriving,
+    });
+
+    res.json({
+      item: resolved.item,
+      version,
+      body,
+      editable: mode.mode !== 'refuse',
+      ...(mode.mode === 'refuse' ? { lockReason: mode.reason } : {}),
+      file: version?.file ?? null,
+    });
+  });
+
+  // Save an edit. `decideSave` owns the routing: a gated chapter's edit IS the
+  // gate decision (a plain file write there is overwritten when the pipeline
+  // resumes), a plain edit writes the .md AND updates the step's stored result,
+  // and everything else refuses with a reason rather than overwriting silently.
+  app.put('/api/books/:slug/items/:itemId', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const body = req.body?.body;
+    if (typeof body !== 'string') return res.status(400).json({ error: 'body (string) is required' });
+
+    const view = await loadBookView(slug);
+    if (!view) return res.status(404).json({ error: 'Book not found' });
+    const resolved = resolveItem(view.input, String(req.params.itemId));
+    if (!resolved) return res.status(404).json({ error: 'Item not found' });
+
+    const versionId = typeof req.body?.versionId === 'string' ? req.body.versionId : '';
+    const latest = resolved.versions.find((v) => v.latest) ?? resolved.versions.at(-1);
+    if (versionId && !resolved.versions.some((v) => v.id === versionId)) {
+      return res.status(404).json({ error: 'Version not found' });
+    }
+
+    const { run } = buildContents(view.input);
+    const mode = decideSave({
+      versionIsLatest: !versionId || versionId === latest?.id,
+      itemReady: resolved.item.ready,
+      itemIsDerived: !!resolved.item.derived,
+      gateStepId: run.gate?.stepId,
+      itemLatestStepId: resolved.stepId,
+      projectIsDriving: !!view.input.projectIsDriving,
+    });
+    if (mode.mode === 'refuse') return res.status(409).json({ error: mode.reason });
+
+    if (mode.mode === 'gate-edit') {
+      if (!view.project?.review) return res.status(409).json({ error: 'The gate is no longer open — reload the book.' });
+      try {
+        await applyReviewAction(view.project, 'edit', { editedText: body });
+        return res.json({ saved: true, mode: 'gate-edit' });
+      } catch (err) {
+        return res.status(400).json({ error: (err as Error)?.message || 'Gate edit failed' });
+      }
+    }
+
+    if (!resolved.file) return res.status(409).json({ error: 'This item has no file to write.' });
+    if (!safePath(view.dataDir, resolved.file)) return res.status(403).json({ error: 'Path traversal blocked' });
+    // Chain-wide: the step that owns this item may sit in an earlier phase's
+    // project, and the object is the owning project's own step — so setting
+    // `result` below updates the project that will be asked to reproduce it.
+    const step = resolved.stepId ? view.steps.find((s: any) => s.id === resolved.stepId) : null;
+    try {
+      // Keep the step-file shape (`# <label>` + body) so a restart rehydrates
+      // the edited text, and push the same text onto the live step so a resumed
+      // run reads the edit rather than the pre-edit result.
+      await writeWithVersion(view.dataDir, resolved.file, step ? `# ${step.label}\n\n${body}` : body);
+      if (step) { step.result = body; view.engine?.saveState?.(); }
+      res.json({ saved: true, mode: 'file' });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+  });
+
+  // Compile front matter → chapters → back matter into one file in the book's
+  // data dir. Items that don't exist are skipped, not stubbed, and the response
+  // reports what went in — an unfinished book compiles to its written chapters.
+  app.post('/api/books/:slug/compile', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    const view = await loadBookView(slug);
+    if (!view) return res.status(404).json({ error: 'Book not found' });
+
+    const manifest: any = view.input.manifest ?? {};
+    const title = String(manifest.title || slug);
+    const author = String(manifest.pulledFrom?.author?.name || manifest.author?.name || 'BookClaw');
+
+    // Chapters, through the SAME step-based resolution the reading surface uses
+    // (design §4) over the same chain-wide step list, so compile and View Book
+    // can never disagree about which pass is the chapter — and a book past its
+    // writing phase compiles the chapters its production project wrote.
+    // Reading the data dir instead mixed in a sibling project's
+    // chapters — two projects bound to one book is a supported state — and, by
+    // ranking files on name + mtime, could ship the text of a step that is
+    // gated (the .md is written before the gate opens) or has since been reset
+    // by a regenerate. The resolution is completed-steps-only, so what compiles
+    // is the last APPROVED text.
+    const stepText = (step: any): string => {
+      const p = safePath(view.dataDir, stepFileName(step));
+      if (p && existsSync(p)) {
+        try { return stripStepHeading(readFileSync(p, 'utf-8')); } catch { /* fall back to the step's result */ }
+      }
+      return String(step.result ?? '');
+    };
+    const fromSteps = chapterTextSteps(view.steps).map(({ step }) => stepText(step));
+    // Degrade, don't vanish: a book with NO bound project at all still compiles
+    // from the files on disk.
+    const dirChapterFiles = () => (existsSync(view.dataDir) ? readdirSync(view.dataDir) : [])
+      .filter((n) => n.endsWith('.md') && n !== COMPILED_FILE)
+      .map((name) => {
+        const p = safePath(view.dataDir, name);
+        if (!p) return null;
+        try { return { name, content: readFileSync(p, 'utf-8'), mtime: statSync(p).mtimeMs }; } catch { return null; }
+      })
+      .filter((f): f is { name: string; content: string; mtime: number } => !!f);
+    const chapterBodies = fromSteps.length
+      ? fromSteps
+      : pickLatestChapters(dirChapterFiles()).map((f) => f.content);
+    const chapters = chapterBodies.map(normalizeChapter).filter(Boolean);
+    const chaptersMarkdown = chapters.join('\n\n');
+
+    // Front/back matter, in the contents order, skipping anything unwritten.
+    const { groups } = buildContents(view.input);
+    const matter = (groupId: 'front' | 'back'): string[] => {
+      const out: string[] = [];
+      for (const item of groups.find((g) => g.id === groupId)?.items ?? []) {
+        if (!item.ready || item.kind === 'cover') continue;
+        const file = item.versions.find((v) => v.latest)?.file;
+        const path = file ? safePath(view.dataDir, file) : null;
+        if (!path || !existsSync(path)) continue;
+        try {
+          const text = stripStepHeading(readFileSync(path, 'utf-8')).trim();
+          if (text) out.push(text);
+        } catch { /* skipped, not stubbed */ }
+      }
+      return out;
+    };
+
+    const head = `# ${title}${author ? `\n\n*by ${author}*` : ''}`;
+    const front = matter('front');
+    const back = matter('back');
+    const markdown = [head, ...front, chaptersMarkdown, ...back]
+      .filter((part) => part && part.trim())
+      .join('\n\n') + '\n';
+
+    if (!chaptersMarkdown && front.length === 0 && back.length === 0) {
+      return res.status(400).json({ error: 'Nothing to compile yet — write a chapter first.' });
+    }
+
+    const check = validateAssembly(
+      { chapterCount: chapters.length, wordCount: proseWords(chaptersMarkdown) },
+      { expectedChapters: manifest.format?.chapterCount },
+    );
+    try {
+      await writeWithVersion(view.dataDir, COMPILED_FILE, markdown);
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error)?.message || String(err) });
+    }
+    if (!check.ok) console.log(`  ℹ compile ${slug}: ${check.problems.join('; ')}`);
+    res.json({ file: COMPILED_FILE, words: proseWords(markdown), chapters: chapters.length });
   });
 
   app.post('/api/books', async (req: Request, res: Response) => {

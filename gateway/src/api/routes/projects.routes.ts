@@ -8,6 +8,7 @@ import { maybeRunCouncilStep } from '../../services/council-gate.js';
 import { buildCouncilService } from '../../services/council.js';
 import { maybeRunTakesStep } from '../../services/takes-gate.js';
 import { makeGenerateTakes } from '../../sampling/generate-takes.js';
+import { makeReviewActions } from './review-action.js';
 
 /**
  * Build the Alternate Takes generator for the drive loop: VS runs on the step's
@@ -30,7 +31,7 @@ function buildGenerateTakes(services: any, engine: any, buildStepUserMessage: (p
   });
 }
 import { checkBudgetPause, applyBudgetPause } from '../../services/pipeline/budget-gate.js';
-import { acquireDrive, releaseDrive, tryAcquireDriveNow } from '../../services/pipeline/scheduler.js';
+import { releaseDrive, tryAcquireDriveNow } from '../../services/pipeline/scheduler.js';
 import { stripMetaCommentary } from '../../services/strip-meta.js';
 import { buildBookCanonBlock } from '../../services/book-canon.js';
 import { applyStructureRail } from '../../services/format-guide.js';
@@ -49,7 +50,6 @@ import { buildRoster } from '../../services/registry/roster.js';
 import { injectRoster } from '../../services/projects.js';
 import { isValidModelId } from '../../ai/model-id.js';
 import { chapterSummaryTarget } from '../../util/chapter-summary.js';
-import { runChapterContextExtraction } from '../../util/chapter-context-extraction.js';
 import { bannedContentCheck, operationalDetailGuard } from '../../services/casting/safety-floor.js';
 import { isStepRole, isProseStep } from '../../services/casting/roles.js';
 import { looksLikeRefusal } from '../../services/casting/heat.js';
@@ -1920,32 +1920,10 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
     res.json({ project: engine.getProject(req.params.id) });
   });
 
-  // M1 fix: an API/headless caller of /review/action has no browser polling
-  // /auto-execute and no Telegram loop driving it — without this, a resumed
-  // project stays 'active' with an 'active' step but nothing ever runs it
-  // (worst for regenerate: reset to active, nothing re-runs at all). Mirrors
-  // the phase-10 heartbeat resolver sweep's own driveProject: claims the
-  // shared drive lock (never races a concurrent /auto-execute or the sweep),
-  // drives to the next gate/error/end via the same startAndRunProject the
-  // headless driver and Telegram bridge use, fire-and-forget so the HTTP
-  // response isn't blocked by a long chapter chain. Fail-soft.
-  async function driveResumedProject(projectId: string): Promise<void> {
-    const engine = gateway.getProjectEngine?.();
-    if (!engine) return;
-    if (!(await acquireDrive(services.driveScheduler, engine, projectId))) return;
-    try {
-      const handlers = gateway.buildTelegramCommandHandlers?.();
-      if (!handlers) return;
-      for (let i = 0; i < 500; i++) {
-        const p = engine.getProject(projectId);
-        if (!p || p.status !== 'active' || !p.steps.some((s: any) => s.status === 'active')) break;
-        const r = await handlers.startAndRunProject(projectId);
-        if (r && 'error' in r) break; // next gate hit, error raised, or nothing runnable
-      }
-    } finally {
-      releaseDrive(services.driveScheduler, engine, projectId);
-    }
-  }
+  // The gate-resolution + re-drive machinery lives in review-action.ts so the
+  // View Book editor can resolve a gate with the human's edit through the exact
+  // same path (View Book §5 rule 4) instead of copying it.
+  const { driveResumedProject, applyReviewAction } = makeReviewActions(gateway, services);
 
   // ── LLM Council (sub-project 3, Task 5): the propose-mode selection API ─────
   // GET the pending ranked candidates for the studio review screen.
@@ -2040,50 +2018,8 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
       return res.status(400).json({ error: 'editedText (string) required for action=edit' });
     }
 
-    const { confirmationId, stepId, kind, pendingResult } = project.review;
-    const gate = services.confirmationGate;
     try {
-      if (action === 'stop') {
-        if (gate && confirmationId) await gate.reject(confirmationId, 'user', req.body?.note).catch(() => {});
-        engine.clearReview(project.id);
-      } else {
-        if (gate && confirmationId) {
-          await gate.approve(confirmationId);
-          await gate.recordOutcome(confirmationId, {
-            success: true,
-            message: `Human review: ${action}`,
-            executedAt: new Date().toISOString(),
-          }).catch(() => {});
-        }
-        // Capture the step + its canonical resumed text BEFORE applyReviewResume
-        // clears project.review — H1 fix: applyReviewResume completes the step
-        // OUTSIDE this file's drive loop, so the loop's own inline
-        // ContextEngine hook (summary + entity extraction) never runs for a
-        // gated-then-approved/edited chapter. Re-run the identical hook here.
-        const stepForExtraction = project.steps.find((s: any) => s.id === stepId);
-        const resumedText = action === 'edit' ? req.body?.editedText : (pendingResult ?? '[approved by human review]');
-
-        engine.applyReviewResume(project.id, stepId, kind, action, {
-          editedText: req.body?.editedText,
-          note: req.body?.note,
-        });
-
-        if ((action === 'approve' || action === 'edit') && kind === 'cadence-gate' && stepForExtraction) {
-          await runChapterContextExtraction(
-            {
-              contextEngine: services.contextEngine,
-              aiComplete: (r: any) => services.aiRouter.complete(r),
-              aiSelectProvider: (t: string) => services.aiRouter.selectProvider(t),
-            },
-            project, stepForExtraction, resumedText ?? '',
-          );
-        }
-
-        // M1 fix: re-drive in the background (see driveResumedProject) —
-        // never awaited here, so a long chapter chain never blocks this response.
-        void driveResumedProject(project.id).catch((err: any) =>
-          console.error('[review-action] re-drive failed:', err?.message || err));
-      }
+      await applyReviewAction(project, action, { editedText: req.body?.editedText, note: req.body?.note });
       res.json({ project: engine.getProject(req.params.id) });
     } catch (err: any) {
       res.status(400).json({ error: err?.message || 'Review action failed' });

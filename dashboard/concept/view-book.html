@@ -1,0 +1,659 @@
+<title>View Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110b; --bg-2:#1b150e; --panel:#221b12; --panel-2:#2a2217; --panel-hi:#322817;
+  --line:rgba(238,229,210,.075); --line-2:rgba(238,229,210,.14);
+  --text:#efe7d4; --dim:#b4a98f; --faint:#7d7359;
+  --ember:#f0913a; --ember-hot:#ff6a39; --gold:#e8c46a;
+  --alert:#ff6a39; --ok:#8fbf7e;
+  --r:14px; --r-s:9px;
+  --ui:'Hanken Grotesk',system-ui,sans-serif;
+  --display:'Fraunces',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --head-h:56px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:4px}
+
+/* ── app header ───────────────────────────────────────────────── */
+.head{height:var(--head-h);display:flex;align-items:center;gap:18px;padding-inline:18px;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--bg-2),var(--bg))}
+.back{display:flex;align-items:center;gap:7px;color:var(--dim);font-size:12.5px}
+.back:hover{color:var(--text)}
+.head .id{display:flex;align-items:baseline;gap:10px;min-width:0}
+.head .bk{font-family:var(--display);font-weight:430;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head .by{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+.head .stats{margin-left:auto;display:flex;align-items:center;font-family:var(--mono);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.head .stats span{padding-inline:12px;border-left:1px solid var(--line)}
+.head .stats b{color:var(--text);font-weight:500}
+/* run state + actions */
+.runchip{display:flex;align-items:center;gap:7px;padding:5px 11px;border-radius:20px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;border:1px solid currentColor;white-space:nowrap}
+.runchip .pulse{width:6px;height:6px;border-radius:50%;background:currentColor}
+.runchip.gate{color:var(--gold)} .runchip.generating{color:var(--ember)} .runchip.complete{color:var(--ok)}
+.runchip.generating .pulse{animation:beat 1.4s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.25}}
+.runchip button{font:inherit;letter-spacing:inherit;color:inherit;text-decoration:underline;text-underline-offset:3px}
+.statesw{display:flex;gap:2px;margin-left:14px;padding:2px;border:1px dashed var(--line-2);border-radius:var(--r-s)}
+.statesw button{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(125,115,89,.8);padding:4px 7px;border-radius:6px}
+.statesw button[aria-pressed="true"]{background:var(--panel-hi);color:var(--dim)}
+.swlbl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(125,115,89,.55);margin-left:14px}
+.genwrap{display:flex;align-items:center;gap:10px;margin-left:16px;padding-left:16px;border-left:1px solid var(--line)}
+.gen{font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:var(--r-s);
+  background:linear-gradient(105deg,#ff6a39,#f0913a 60%,#e8c46a);color:#1a0f08;white-space:nowrap}
+.gen[data-busy="1"]{background:var(--panel-hi);color:var(--dim)}
+.genstate{font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.35;max-width:190px}
+.genstate b{color:var(--ok);font-weight:500}
+.panes{display:flex;gap:2px;margin-left:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:2px}
+.panes button{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:5px 9px;border-radius:6px}
+.panes button[aria-pressed="true"]{background:var(--panel-hi);color:var(--text)}
+
+/* ── frame ────────────────────────────────────────────────────── */
+.frame{display:grid;grid-template-columns:282px minmax(0,1fr) 440px;height:calc(100vh - var(--head-h))}
+.frame.no-toc{grid-template-columns:0 minmax(0,1fr) 440px}
+.frame.no-raw{grid-template-columns:282px minmax(0,1fr) 0}
+.frame.no-toc.no-raw{grid-template-columns:0 minmax(0,1fr) 0}
+.col{overflow-y:auto;overflow-x:hidden;min-width:0}
+.frame.no-toc .rail,.frame.no-raw .raw{display:none}
+
+/* ── contents rail ────────────────────────────────────────────── */
+.rail{background:var(--bg-2);border-right:1px solid var(--line)}
+.railhead{position:sticky;top:0;z-index:3;background:var(--bg-2);padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.filters{display:flex;gap:6px;margin-top:10px}
+.filters button{font-size:11px;color:var(--dim);padding:3px 9px;border:1px solid var(--line-2);border-radius:20px}
+.filters button[aria-pressed="true"]{background:var(--panel-hi);border-color:transparent;color:var(--text)}
+.filters .n{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:5px}
+.grp{display:flex;align-items:center;gap:8px;padding:17px 14px 7px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.grp .gline{flex:1;height:1px;background:var(--line)}
+.grp .gstate{letter-spacing:.06em;color:rgba(125,115,89,.9);text-transform:none}
+.toc{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:26px minmax(0,1fr);gap:9px;align-items:start;
+  padding:8px 14px;border-left:2px solid transparent;text-align:left;width:100%}
+.row:hover{background:rgba(238,229,210,.035)}
+.row[aria-current="true"]{background:var(--panel);border-left-color:var(--ember)}
+.row .num{font-family:var(--mono);font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:2px}
+.row[aria-current="true"] .num{color:var(--ember)}
+.row .ttl{font-family:var(--display);font-size:13.5px;line-height:1.35;color:var(--text)}
+.row .sub{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
+.row .w{font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+.row.doc .ttl{font-family:var(--ui);font-size:13px;color:var(--dim)}
+.row.doc[aria-current="true"] .ttl{color:var(--text)}
+.row.ghost .ttl{color:var(--faint)}
+.row.ghost .num{color:rgba(125,115,89,.5)}
+.row.ghost:hover .ttl{color:var(--dim)}
+.chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:1px 6px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.chip.bad{color:var(--alert)} .chip.warn{color:var(--gold)}
+.chip.note{color:var(--faint)} .chip.todo{color:rgba(125,115,89,.75);border-style:dashed}
+
+/* ── reading pane ─────────────────────────────────────────────── */
+.read{background:var(--bg);padding-bottom:96px}
+.inner{max-width:68ch;margin-inline:auto;padding:36px 40px 0}
+.trail{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,var(--bg) 74%,transparent);
+  padding:11px 40px 14px;display:flex;align-items:center;gap:10px;max-width:min(100%,980px);margin-inline:auto}
+.vers{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:2px;overflow-x:auto}
+.vers button{font-family:var(--mono);font-size:10px;color:var(--faint);padding:5px 8px;border-radius:6px;white-space:nowrap}
+.vers button:hover{color:var(--dim)}
+.vers button[aria-pressed="true"]{background:var(--panel-hi);color:var(--text)}
+.vers button[data-latest="1"][aria-pressed="true"]{color:var(--ember)}
+.vers .st{color:rgba(125,115,89,.75);margin-right:5px}
+.trail .when{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+h1.ch{font-family:var(--display);font-weight:430;font-size:38px;line-height:1.1;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+.sceneline{font-size:12.5px;color:var(--dim);margin:0}
+.rule{height:1px;background:var(--line-2);margin:26px 0 30px}
+.prose{font-family:var(--display);font-optical-sizing:auto;font-size:17.5px;line-height:1.78;color:#e7dcc5}
+.prose p{margin:0 0 1.15em}
+.banner{max-width:68ch;margin:0 auto 22px;padding:12px 16px;border-radius:var(--r-s);font-size:12.5px;
+  display:flex;align-items:center;gap:10px}
+.banner.old{background:rgba(232,196,106,.07);border:1px solid rgba(232,196,106,.28);color:var(--gold)}
+.banner.old b{color:var(--text);font-weight:600}
+.banner .go{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid currentColor;border-radius:6px;padding:4px 9px}
+.flagstrip{max-width:68ch;margin:0 auto 26px;padding:14px 16px;border-radius:var(--r-s);
+  background:rgba(255,106,57,.07);border:1px solid rgba(255,106,57,.26)}
+.flagstrip h3{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--alert);margin:0 0 8px}
+.flagstrip ul{margin:0;padding-left:16px;color:var(--dim);font-size:12.5px;line-height:1.6}
+.flagstrip li::marker{color:var(--alert)}
+.flagstrip code{font-family:var(--mono);font-size:11.5px;color:var(--text)}
+
+/* human gate panel — the decision lives with the chapter */
+.gate{max-width:68ch;margin:0 auto 26px;border-radius:var(--r);overflow:hidden;
+  border:1px solid rgba(232,196,106,.34);background:rgba(232,196,106,.05)}
+.gate .gh{display:flex;align-items:center;gap:9px;padding:12px 16px;border-bottom:1px solid rgba(232,196,106,.2)}
+.gate .gh .pip{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.gate .gh .age{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.gate .gb{padding:14px 16px}
+.gate .gb p{margin:0 0 12px;font-size:13px;color:var(--dim)}
+.gate .gb p b{color:var(--text);font-weight:500}
+.gate ul{margin:0 0 14px;padding-left:16px;color:var(--dim);font-size:12.5px;line-height:1.6}
+.gate ul li::marker{color:var(--gold)}
+.gate code{font-family:var(--mono);font-size:11.5px;color:var(--text)}
+.gacts{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 14px;align-items:center}
+.gacts .hint{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto}
+.btn.warn{border-color:rgba(232,196,106,.45);color:var(--gold)}
+.btn.quiet{border-color:var(--line);color:var(--faint)}
+.row.unwritten .ttl{color:rgba(125,115,89,.75)}
+.row.unwritten .num{color:rgba(125,115,89,.45)}
+.note{max-width:68ch;margin-inline:auto;padding:26px 40px;color:var(--faint);font-size:13px}
+.note b{color:var(--dim);font-weight:500}
+
+/* not-yet-generated state */
+.empty{max-width:56ch;margin:40px auto;padding:34px 36px;text-align:center;
+  border:1px dashed var(--line-2);border-radius:var(--r);background:rgba(238,229,210,.012)}
+.empty .pip{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.empty h2{font-family:var(--display);font-weight:430;font-size:26px;margin:12px 0 8px}
+.empty p{color:var(--dim);font-size:13px;margin:0 auto 20px;max-width:44ch}
+.empty .src{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px}
+
+/* cover artboard */
+.coverwrap{display:flex;justify-content:center;padding:34px 40px}
+.cover{width:300px;aspect-ratio:2/3;max-width:100%;border-radius:4px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;padding:28px;text-align:center;
+  background:linear-gradient(168deg,#2a2217,#3a2a18 55%,#1b150e);
+  border:1px solid var(--line-2);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.cover .t{font-family:var(--display);font-size:27px;line-height:1.12;letter-spacing:-.01em;text-wrap:balance}
+.cover .a{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.cover .ph{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-top:auto}
+
+/* ── raw editor ───────────────────────────────────────────────── */
+.raw{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.rawhead{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.rawhead .f{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--ember);flex:0 0 auto;box-shadow:0 0 10px var(--ember)}
+.rawhead .state{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);white-space:nowrap}
+.editor{flex:1 1 auto;display:grid;grid-template-columns:44px minmax(0,1fr);overflow:auto;background:var(--bg-2)}
+.gutter{font-family:var(--mono);font-size:11px;line-height:1.75;color:rgba(125,115,89,.6);text-align:right;
+  padding:14px 8px 60px 0;user-select:none;border-right:1px solid var(--line);font-variant-numeric:tabular-nums}
+.gutter div{height:1.75em}
+textarea.src{font-family:var(--mono);font-size:11.5px;line-height:1.75;color:#ddd2b8;background:transparent;
+  border:0;resize:none;padding:14px 12px 60px;outline:none;white-space:pre-wrap;overflow-wrap:break-word}
+textarea.src[readonly]{color:rgba(221,210,184,.34)}
+.raw.locked .editor{background:rgba(21,17,11,.6)}
+.raw.locked .gutter{color:rgba(125,115,89,.35)}
+.lockbar{display:none;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line);
+  background:rgba(232,196,106,.06);color:var(--gold);font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.raw.locked .lockbar{display:flex}
+.rawfoot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex:0 0 auto}
+.btn{font-size:12.5px;padding:7px 13px;border-radius:var(--r-s);border:1px solid var(--line-2);color:var(--dim)}
+.btn:hover{color:var(--text);border-color:var(--dim)}
+.btn.primary{background:linear-gradient(105deg,#ff6a39,#f0913a 60%,#e8c46a);color:#1a0f08;border-color:transparent;font-weight:600}
+.btn.primary[disabled]{opacity:.32;cursor:not-allowed}
+.rawfoot .delta{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ── narrow window ────────────────────────────────────────────── */
+.toonarrow{display:none;padding:64px 24px;text-align:center;max-width:440px;margin-inline:auto}
+.toonarrow .ic{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin-bottom:14px}
+.toonarrow h2{font-family:var(--display);font-weight:430;font-size:24px;margin:0 0 10px}
+.toonarrow p{color:var(--dim);font-size:13.5px;margin:0}
+@media (max-width:1180px){.frame{display:none}.toonarrow{display:block}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="head">
+  <button class="back" aria-label="Back to Book Board">&#8592;&nbsp;Book Board</button>
+  <div class="id">
+    <div class="bk">Three Months of Summer</div>
+    <div class="by">hk-shaewood &middot; sweet romance</div>
+  </div>
+  <div class="stats">
+    <span>24&nbsp;<b>chapters</b></span>
+    <span><b>59,505</b>&nbsp;words</span>
+    <span>spend&nbsp;<b>$26.90</b></span>
+  </div>
+  <div class="genwrap">
+    <div id="runSlot"></div>
+    <button class="gen" id="gen">Compile</button>
+    <div class="genstate" id="genState">never compiled</div>
+  </div>
+  <div class="panes">
+    <button id="tToc" aria-pressed="true">Contents</button>
+    <button id="tRaw" aria-pressed="true">Raw</button>
+  </div>
+  <div class="swlbl" title="Mockup only — not part of the design">mockup&nbsp;state</div>
+  <div class="statesw" id="statesw">
+    <button data-run="gate">At a gate</button>
+    <button data-run="generating">Writing</button>
+    <button data-run="complete" aria-pressed="true">Complete</button>
+  </div>
+</header>
+
+<div class="toonarrow">
+  <div class="ic">Wider window needed</div>
+  <h2>View Book reads three panes at once</h2>
+  <p>Contents, the typeset chapter, and its raw markdown need about 1,200px of width. Widen the window, or open the chapter in Write.</p>
+</div>
+
+<div class="frame" id="frame">
+  <nav class="col rail" aria-label="Contents">
+    <div class="railhead">
+      <div class="kicker">Contents</div>
+      <div class="filters">
+        <button id="fAll" aria-pressed="true">All<span class="n">45</span></button>
+        <button id="fReady" aria-pressed="false">Written<span class="n">29</span></button>
+        <button id="fFlag" aria-pressed="false">Flagged<span class="n">6</span></button>
+      </div>
+    </div>
+    <div id="tocRoot"></div>
+  </nav>
+
+  <main class="col read" id="read">
+    <div class="trail" id="trail"></div>
+    <div id="readBody"></div>
+  </main>
+
+  <aside class="col raw" id="rawPane" aria-label="Raw markdown">
+    <div class="rawhead">
+      <div class="dot" id="dirtyDot" hidden></div>
+      <div class="f" id="rawFile">&mdash;</div>
+      <div class="state" id="rawState">saved</div>
+    </div>
+    <div class="lockbar" id="lockbar">&#128274;&nbsp; earlier version &mdash; editing disabled</div>
+    <div class="editor">
+      <div class="gutter" id="gutter"></div>
+      <textarea class="src" id="src" spellcheck="false" aria-label="Raw markdown source"></textarea>
+    </div>
+    <div class="rawfoot">
+      <button class="btn primary" id="save" disabled>Save chapter</button>
+      <button class="btn" id="revert">Revert</button>
+      <div class="delta" id="delta"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+   Mockup data. Chapter titles, word counts, file names and step
+   numbers are real, from the finished book. Full prose ships for
+   chapters 1, 19 and 24 only.
+   ──────────────────────────────────────────────────────────────── */
+const CH = [
+ [1,'Two Blocks North',2369,[]],            [2,"The Numbers Don't Lie",2398,[]],
+ [3,'Two Blocks Apart, Same Storm',2570,[]],[4,'The Bonetti Order',3117,[]],
+ [5,'The Watch',2505,[]],                   [6,'Three Inches of Bay Water',2406,[['warn','timeline']]],
+ [7,'The Ask',2422,[]],                     [8,'The Same Lobster Tail',2362,[['note','numeral style']]],
+ [9,'Borrowed Kitchen',2631,[['note','numeral style']]], [10,'Free Rent',2329,[['note','numeral style']]],
+ [11,'Three A.M. Under the Bakery Lights',2323,[]], [12,'The Kiss',2243,[]],
+ [13,'Two Blocks, One Season',2614,[]],     [14,'What He Envies',2536,[]],
+ [15,'The Weight of the Silence',2712,[]],  [16,'The Quiet',2353,[['warn','beat 7/10']]],
+ [17,"Nonna's Table",2428,[]],              [18,'Three Confessions',2354,[]],
+ [19,'The Empty Storefront',2825,[['bad','POV drift'],['bad','preamble']]],
+ [20,'Dead Season',2567,[]],                [21,'One of Three',2356,[]],
+ [22,'Both, Same Walk',2404,[['warn','beat 5/10']]], [23,'The Name Over the Door',2393,[]],
+ [24,'Since Six',2311,[]],
+];
+
+/* Front / back matter come from the format-export pipeline; launch
+   items from book-launch. Neither has run for this book yet. */
+const GROUPS = [
+ {id:'front', label:'Front matter', state:'not generated', items:[
+   {id:'cover',   t:'Cover',        kind:'cover', ready:false, skill:'cover-designer'},
+   {id:'title',   t:'Title page',   ready:false, skill:'format'},
+   {id:'copy',    t:'Copyright page', ready:false, skill:'format'},
+   {id:'ded',     t:'Dedication',   ready:false, skill:'format', chips:[['todo','optional']]},
+   {id:'alsoby',  t:'Also by this author', ready:false, skill:'format', chips:[['todo','optional']]},
+ ]},
+ {id:'ms', label:'Manuscript', state:'24 of 24 written', items:'chapters'},
+ {id:'back', label:'Back matter', state:'not generated', items:[
+   {id:'ack',  t:'Acknowledgements', ready:false, skill:'format'},
+   {id:'about',t:'About the author', ready:false, skill:'format'},
+   {id:'news', t:'Newsletter call-to-action', ready:false, skill:'blurb-writer'},
+   {id:'ab2',  t:'Also-by list', ready:false, skill:'format'},
+ ]},
+ {id:'ref', label:'Reference', state:'5 documents', items:[
+   {id:'bible', t:'Character bible', ready:true, file:'project-84-step-6-character-bible.md'},
+   {id:'outline',t:'Chapter outline', ready:true, file:'project-84-step-10-chapter-outline.md'},
+   {id:'canon', t:'Canon fact-sheet', ready:true, file:'project-84-step-9-canon-fact-sheet.md'},
+   {id:'review',t:'Continuity &amp; arc review', ready:true, chips:[['bad','1 priority-1']], file:'project-84-step-179-continuity-arc-review.md'},
+   {id:'report',t:'Completion report', ready:true, file:'project-84-step-180-compile-manuscript-report.md'},
+ ]},
+ {id:'launch', label:'Launch', state:'not generated', items:[
+   {id:'blurb', t:'Back cover blurb', ready:false, skill:'blurb-writer'},
+   {id:'amz',   t:'Amazon book description', ready:false, skill:'blurb-writer'},
+   {id:'kw',    t:'Amazon categories &amp; keywords', ready:false, skill:'research'},
+   {id:'ads',   t:'Ad copy', ready:false, skill:'ad-copy'},
+   {id:'social',t:'Social launch posts', ready:false, skill:'blurb-writer'},
+   {id:'check', t:'Launch checklist &amp; timeline', ready:false, skill:'format'},
+   {id:'covers',t:'Book cover concepts', ready:false, skill:'cover-designer'},
+ ]},
+];
+
+/* The seven per-chapter stages the deterministic pipeline writes. */
+const STAGES = ['Scene brief','First draft','Improvement plan','Rewrite','Consistency audit','Consistency apply','De-AI sweep'];
+const SWEEP_STEP = {1:17,19:143,24:178};        // last step of each chapter
+const firstStep = n => SWEEP_STEP[n] ? SWEEP_STEP[n]-6 : null;
+
+const TEXT = {
+ 24:{when:'10 Sep, 10:11',scene:'Late August, one year later &mdash; Sal&rsquo;s Morning Joint, Ship Bottom',pov:'Gia',
+  body:`The case light hummed to life, and I loaded the trays one at a time, no rush. Four trays. Two rows each. Last summer I&rsquo;d have been doing this at a dead run, phone wedged against my shoulder, crisis already three steps ahead. This morning I set each tray down slow enough to hear it click into its groove, and that click was the only thing telling me I&rsquo;d started.
+
+I lined up what I&rsquo;d started calling the Barnegat Twist. Laminated dough gone dark gold at the edges, a swirl of brown butter and sea salt caramel through the center, the kind of lamination Cole taught me without saying he was teaching me anything. There wasn&rsquo;t a page in my grandfather&rsquo;s book that had anything to do with it. No cannoli shell underneath pretending to be tradition. It was just mine, built out of a flood, and it sold out most mornings by nine.
+
+The back door banged once, the way it always did no matter how many times I asked Francesca to stop letting it slam.
+
+&ldquo;You&rsquo;re doing the thing again,&rdquo; she said, dropping her bag behind the counter and coming around to steal a look at the case before I&rsquo;d even finished loading it.
+
+&ldquo;What thing.&rdquo;
+
+&ldquo;The staring-at-pastry-like-it-owes-you-money thing.&rdquo; She reached past me and adjusted a tray a half inch to the left, which did nothing, which she knew did nothing, which was the entire point. &ldquo;You&rsquo;ve been doing it since March.&rdquo;`,
+  raw:`## Chapter 24 — "Since Six" *(One Year Later)*
+**Late August, one year later — Sal's Morning Joint in Ship Bottom, Long Beach Island**
+*Gia*
+
+---
+
+The case light hummed to life, and I loaded the trays one at a time, no rush. Four trays. Two rows each. Last summer I'd have been doing this at a dead run, phone wedged against my shoulder, crisis already three steps ahead.
+
+I lined up what I'd started calling the Barnegat Twist. Laminated dough gone dark gold at the edges, a swirl of brown butter and sea salt caramel through the center, the kind of lamination Cole taught me without saying he was teaching me anything.`},
+ 19:{when:'10 Sep, 09:08',scene:'Ferraro&rsquo;s Bakery, Surf City &mdash; Labor Day Saturday',pov:'Gia',
+  flags:['Third person throughout &mdash; chapters 1 and 24 are first-person Gia.',
+         'Model preamble leaked into the file: &ldquo;Here&rsquo;s the revised Chapter 19, formatted in Markdown:&rdquo;',
+         'Two literal <code>[blank line]</code> placeholders left in the prose.',
+         'Cole is on-page and the Bonetti cake is being prepped &mdash; the outline puts him gone for this chapter.'],
+  body:`The air in the back room of Ferraro&rsquo;s hung thick with the scent of saltwater, damp wood, and a faint, lingering bitterness. Gia moved through it like a ghost, carefully laying out parchment and pens on the scarred butcher block&mdash;a futile attempt to impose order on the chaos that had become her life. The remnants of the Bonetti wedding cake&mdash;three tiers of lemon poppyseed, delicately frosted with meringue, sat stacked precariously on a makeshift table fashioned from salvaged wood and an old metal shelving unit. Rumor had it Cole was there, ostensibly overseeing the pastry prep, though his gaze kept drifting to her, assessing, measuring.
+
+Mrs. Marchetti noticed the stand mixer running, the one Cole had left behind, calibrated for a different volume than what she needed.
+
+Gia didn&rsquo;t bother meeting his eyes. She meticulously piped frosting onto miniature lemon tarts, the last vestiges of their shared task, her movements precise, almost frantic. &ldquo;It&rsquo;s functional.&rdquo;
+
+&ldquo;Functional doesn&rsquo;t equal optimal,&rdquo; he countered, and she knew it wasn&rsquo;t a challenge; it was an observation, delivered with the cool detachment of someone who valued efficiency above all else.`,
+  raw:`# Humanize — De-AI Sweep — Chapter 19
+
+Here's the revised Chapter 19, formatted in Markdown:
+
+---
+## Chapter 19 — "The Empty Storefront"
+**Time and Location:** Ferraro's Bakery, Long Beach Boulevard, Surf City, NJ — Labor Day Saturday
+*POV (Gia)*
+---
+[blank line]
+---
+[blank line]
+
+The air in the back room of Ferraro's hung thick with the scent of saltwater, damp wood, and a faint, lingering bitterness. Gia moved through it like a ghost, carefully laying out parchment and pens on the scarred butcher block—a futile attempt to impose order on the chaos that had become her life.`},
+ 1:{when:'18 Aug, 11:02',scene:'June morning &mdash; Ferraro&rsquo;s Bakery, Long Beach Boulevard, Surf City',pov:'Gia',
+  body:`Six lobster tails, two dozen pignoli, and a woman in a visor asking if the elephant ears were vegan. It was 8:47 a.m. at Ferraro&rsquo;s, and I had exactly one pair of hands and a case that needed restocking before the next wave hit the door.
+
+&ldquo;They&rsquo;re a hundred percent butter,&rdquo; I told the visor woman, boxing the pignoli two at a time, string tied off with a flick I&rsquo;d done so many times my fingers didn&rsquo;t need my brain for it anymore. &ldquo;Butter&rsquo;s not vegan. Butter&rsquo;s the opposite of vegan. Butter is a lifestyle choice.&rdquo;
+
+She laughed like I was kidding. I wasn&rsquo;t, but I let her have it.
+
+Behind me, the espresso machine hissed and spat, the one Sal had let me install three summers ago against every instinct in his second-generation body, and it was already backed up four deep because nobody on this island drinks regular coffee anymore. Francesca worked the second register beside me, close enough that our elbows shared the same six inches of counter space without colliding, twenty-nine years of practice between us.`,
+  raw:`## Chapter 1 — "Two Blocks North"
+**June morning, Ferraro's Bakery, Long Beach Boulevard, Surf City**
+*Gia*
+
+---
+
+Six lobster tails, two dozen pignoli, and a woman in a visor asking if the elephant ears were vegan. It was 8:47 a.m. at Ferraro's, and I had exactly one pair of hands and a case that needed restocking before the next wave hit the door.`},
+};
+
+const PIPE = {front:'format-export',back:'format-export',launch:'book-launch'};
+
+/* Run state. The frontier is the last chapter that has been written; the
+   gate sits on it. Chapters past it are not written yet. */
+const RUN={
+  complete:  {frontier:24, cls:'complete',   chip:'Complete &middot; 24 of 24'},
+  generating:{frontier:12, cls:'generating', chip:'Writing chapter 12 of 24'},
+  gate:      {frontier:19, cls:'gate',       chip:'Paused &middot; gate at chapter 19'},
+};
+let run='complete', sel={kind:'ch',n:24}, stage=6, filter='all';
+const frontier=()=>RUN[run].frontier;
+
+/* ── contents ─────────────────────────────────────────────────── */
+const tocRoot=document.getElementById('tocRoot');
+const chips=l=>(l||[]).map(c=>`<span class="chip ${c[0]}">${c[1]}</span>`).join('');
+
+function chapterRows(){
+  const fr=frontier();
+  return CH.filter(c=>{
+    if(filter==='flag')  return c[3].length || (run==='gate'&&c[0]===fr);
+    if(filter==='ready') return c[0]<=fr;
+    return true;
+  }).map(([n,t,w,f])=>{
+    const written=n<=fr;
+    const extra = run==='gate'&&n===fr ? [['warn','gate']]
+                : run==='generating'&&n===fr ? [['warn','writing now']] : [];
+    return `
+    <button class="row ${written?'':'unwritten'}" data-ch="${n}" aria-current="${sel.kind==='ch'&&sel.n===n}">
+      <span class="num">${written?String(n).padStart(2,'0'):'&#9633;'}</span>
+      <span><span class="ttl">${t}</span>
+        <span class="sub">${written?`<span class="w">${w.toLocaleString()} w</span>`:'<span class="w">not written</span>'}${chips([...extra,...f])}</span></span>
+    </button>`;
+  }).join('');
+}
+function docRows(g){
+  return g.items.filter(i=>{
+    if(filter==='ready') return i.ready;
+    if(filter==='flag')  return (i.chips||[]).some(c=>c[0]==='bad'||c[0]==='warn');
+    return true;
+  }).map(i=>`
+    <button class="row doc ${i.ready?'':'ghost'}" data-doc="${g.id}:${i.id}" aria-current="${sel.kind==='doc'&&sel.id===g.id+':'+i.id}">
+      <span class="num">${i.ready?'&middot;':'&#9633;'}</span>
+      <span><span class="ttl">${i.t}</span>
+        ${(i.chips||[]).length?`<span class="sub">${chips(i.chips)}</span>`:''}</span>
+    </button>`).join('');
+}
+function renderToc(){
+  tocRoot.innerHTML = GROUPS.map(g=>{
+    const body = g.items==='chapters' ? chapterRows() : docRows(g);
+    if(!body) return '';
+    const state = g.items==='chapters' ? `${frontier()} of 24 written` : g.state;
+    return `<div class="grp">${g.label}<span class="gline"></span><span class="gstate">${state}</span></div>
+            <div class="toc">${body}</div>`;
+  }).join('');
+  tocRoot.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>{sel={kind:'ch',n:+b.dataset.ch};stage=6;render()});
+  tocRoot.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{sel={kind:'doc',id:b.dataset.doc};render()});
+}
+
+/* ── panes ────────────────────────────────────────────────────── */
+const trail=document.getElementById('trail'), readBody=document.getElementById('readBody'),
+      src=document.getElementById('src'), gutter=document.getElementById('gutter'),
+      rawFile=document.getElementById('rawFile'), delta=document.getElementById('delta'),
+      save=document.getElementById('save'), dot=document.getElementById('dirtyDot'),
+      state=document.getElementById('rawState');
+const paras=t=>t.split('\n\n').map(p=>`<p>${p}</p>`).join('');
+const lock=msg=>{document.getElementById('lockbar').innerHTML=msg};
+
+function render(){
+  tocRoot.querySelectorAll('.row').forEach(r=>{
+    const cur = r.dataset.ch ? (sel.kind==='ch'&&+r.dataset.ch===sel.n)
+                             : (sel.kind==='doc'&&r.dataset.doc===sel.id);
+    r.setAttribute('aria-current',String(cur));
+  });
+  sel.kind==='ch' ? renderChapter() : renderDoc();
+  document.getElementById('read').scrollTop=0;
+  lines(); setDirty(false);
+}
+
+/* The human gate, rendered where the chapter is — you read it, then decide. */
+function gatePanel(n){
+  return `<div class="gate">
+    <div class="gh"><span class="pip">Human gate &middot; act boundary</span>
+      <span class="age">opened 4 min ago &middot; expires in 23h 56m</span></div>
+    <div class="gb">
+      <p>Generation is paused after <b>De-AI sweep &middot; chapter ${n}</b>. Nothing past this chapter has been written yet.</p>
+      <ul>
+        <li>Beat check: <b>Stall (4/10)</b> &mdash; wants the grovel-and-reunion beat here; your outline stages it at chapter 21.</li>
+        <li>Third person throughout &mdash; chapters 1 and 24 are first-person Gia.</li>
+        <li>Model preamble and two <code>[blank line]</code> placeholders left in the file.</li>
+      </ul>
+    </div>
+    <div class="gacts">
+      <button class="btn primary" id="gApprove">Approve &amp; continue</button>
+      <button class="btn warn" id="gRegen">Regenerate chapter</button>
+      <button class="btn quiet">Stop here</button>
+      <span class="hint">edit the raw pane &rarr; Approve with my edits</span>
+    </div></div>`;
+}
+
+function renderChapter(){
+  const n=sel.n, meta=CH.find(c=>c[0]===n), d=TEXT[n], base=firstStep(n), latest=stage===6;
+  const atGate = run==='gate' && n===frontier();
+
+  if(n>frontier()){                       /* not written yet */
+    trail.innerHTML=`<div class="vers"><button aria-pressed="true">Not written</button></div>
+      <div class="when">chapter ${n} of 24</div>`;
+    readBody.innerHTML=`<div class="inner">
+        <div class="eyebrow">Chapter ${n}</div><h1 class="ch">${meta[1]}</h1><div class="rule"></div></div>
+      <div class="empty"><div class="pip">${run==='gate'?'blocked by the gate at chapter '+frontier():'queued'}</div>
+        <h2>Not written yet</h2>
+        <p>${run==='gate'
+            ? 'Generation stopped at the chapter '+frontier()+' gate. Clear that gate and the pipeline writes through to here.'
+            : 'The pipeline is working forward one chapter at a time; this one is still queued.'}</p>
+        <button class="btn primary" data-jump="${frontier()}">Go to chapter ${frontier()}</button></div>`;
+    const j=readBody.querySelector('[data-jump]');
+    if(j) j.onclick=()=>{sel={kind:'ch',n:frontier()};stage=6;render()};
+    src.value=`[chapter ${n} has not been written]`; src.readOnly=true;
+    lock('&#128274;&nbsp; nothing to edit &mdash; not written yet');
+    rawFile.innerHTML='&mdash;'; delta.textContent='';
+    return;
+  }
+  trail.innerHTML=`
+    <div class="vers" id="vers">${STAGES.map((s,i)=>`
+      <button data-i="${i}" data-latest="${i===6?1:0}" aria-pressed="${i===stage}">
+        <span class="st">${base?base+i:'&mdash;'}</span>${s}${i===6?' &middot; latest':''}</button>`).join('')}
+    </div>
+    <div class="when">${d?d.when:'&mdash;'}</div>`;
+  document.querySelectorAll('#vers button').forEach(b=>b.onclick=()=>{stage=+b.dataset.i;render()});
+
+  const head=`<div class="inner">
+      <div class="eyebrow">Chapter ${n}${d?' &middot; POV '+d.pov:''} &middot; ${meta[2].toLocaleString()} words</div>
+      <h1 class="ch">${meta[1]}</h1>
+      ${d?`<p class="sceneline">${d.scene}</p>`:''}
+      <div class="rule"></div></div>`;
+
+  if(!latest){
+    readBody.innerHTML=head+`
+      <div class="banner old"><b>${STAGES[stage]}</b> &middot; step ${base?base+stage:'&mdash;'} &mdash; an earlier version, read-only.
+        <span class="go">Jump to latest</span></div>
+      <div class="note"><b>Sample mockup.</b> Only the latest version ships here; the real view loads any step&rsquo;s file from the book folder so you can read the chapter as it was at each stage.</div>`;
+    readBody.querySelector('.go').onclick=()=>{stage=6;render()};
+    src.value=`# ${STAGES[stage]} — Chapter ${n}\n\n[loads project-84-step-${base?base+stage:'…'}-chapter-${n}.md]`;
+    src.readOnly=true;
+    lock(`&#128274;&nbsp; ${STAGES[stage]} &mdash; earlier version, editing disabled`);
+    rawFile.textContent=`project-84-step-${base?base+stage:'…'}-…-chapter-${n}.md`;
+  } else if(d){
+    readBody.innerHTML=head
+      +(atGate?gatePanel(n):'')
+      +(d.flags&&!atGate?`<div class="flagstrip"><h3>Flagged on read</h3><ul>${d.flags.map(f=>`<li>${f}</li>`).join('')}</ul></div>`:'')
+      +`<div class="inner" style="padding-top:0"><div class="prose">${paras(d.body)}</div></div>`;
+    src.value=d.raw; src.readOnly=false;
+    rawFile.textContent=`project-84-step-${SWEEP_STEP[n]}-humanize-de-ai-sweep-chapter-${n}.md`;
+    if(atGate) wireGate();
+  } else {
+    readBody.innerHTML=head+`<div class="note"><b>Sample mockup.</b> Full text ships here for chapters 1, 19 and 24 only &mdash; the real view loads every chapter&rsquo;s latest file from the book folder.</div>`;
+    src.value=`## ${meta[1]}\n\n[loads project-84-step-…-chapter-${n}.md]`; src.readOnly=false;
+    rawFile.textContent=`project-84-step-…-humanize-de-ai-sweep-chapter-${n}.md`;
+  }
+  delta.textContent=`${meta[2].toLocaleString()} words`;
+  /* At a gate an edit IS the gate decision — it resolves the gate and writes
+     the chapter, rather than a plain file write the resume would overwrite. */
+  save.textContent = atGate ? 'Approve with my edits' : 'Save chapter';
+}
+
+function wireGate(){
+  const a=document.getElementById('gApprove'), r=document.getElementById('gRegen');
+  if(a) a.onclick=()=>{run='complete';sel={kind:'ch',n:24};stage=6;syncRun();renderToc();render()};
+  if(r) r.onclick=()=>{run='generating';syncRun();renderToc();render()};
+}
+
+/* header run state */
+const runSlot=document.getElementById('runSlot');
+function syncRun(){
+  const c=RUN[run];
+  runSlot.innerHTML=`<div class="runchip ${c.cls}"><span class="pulse"></span>${c.chip}${
+    run==='complete'?'':` &middot; <button data-goto="1">go to chapter ${c.frontier}</button>`}</div>`;
+  const b=runSlot.querySelector('[data-goto]');
+  if(b) b.onclick=()=>{sel={kind:'ch',n:frontier()};stage=6;render()};
+  /* compiling a half-written book is legal but worth saying out loud */
+  const g=document.getElementById('gen'), s=document.getElementById('genState');
+  if(run==='complete'){ g.textContent='Compile'; s.textContent='never compiled'; }
+  else { g.textContent='Compile anyway'; s.innerHTML=`partial book<br>${c.frontier} of 24 chapters`; }
+  document.querySelectorAll('#statesw button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.run===run)));
+}
+document.querySelectorAll('#statesw button').forEach(b=>b.onclick=()=>{
+  run=b.dataset.run;
+  sel={kind:'ch',n:Math.min(sel.kind==='ch'?sel.n:24,frontier())}; stage=6;
+  syncRun(); renderToc(); render();
+});
+
+function renderDoc(){
+  const [gid,iid]=sel.id.split(':'); const g=GROUPS.find(x=>x.id===gid); const i=g.items.find(x=>x.id===iid);
+  trail.innerHTML=`<div class="vers"><button aria-pressed="true">${i.ready?'Current':'Not generated'}</button></div>
+    <div class="when">${g.label}</div>`;
+  if(!i.ready){
+    const cover = i.kind==='cover' ? `<div class="coverwrap"><div class="cover">
+        <div class="t">Three Months of Summer</div>
+        <div class="a">HK Shaewood</div>
+        <div class="ph">no cover yet</div></div></div>` : '';
+    readBody.innerHTML=cover+`<div class="empty">
+        <div class="pip">skill &middot; ${i.skill}</div>
+        <h2>${i.t} not written yet</h2>
+        <p>Run the <b style="color:var(--dim)">${i.skill}</b> skill to draft it. The result lands in this pane as normal text &mdash; fully editable here, saved straight back to its file.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn primary">Run ${i.skill}</button>
+          <button class="btn">Run ${PIPE[gid]} &mdash; all ${g.label.toLowerCase()}</button>
+        </div>
+        <div class="src">writes to books/three-months-of-summer/data/</div></div>`;
+  } else {
+    readBody.innerHTML=`<div class="inner">
+        <div class="eyebrow">${g.label}</div>
+        <h1 class="ch">${i.t}</h1><div class="rule"></div></div>
+      <div class="note"><b>Sample mockup.</b> Reference documents render here in the same reading column as the chapters &mdash; the continuity review, the outline, the canon fact-sheet.</div>`;
+  }
+  src.value= i.ready ? `# ${i.t.replace(/&amp;/g,'&')}\n\n[loads ${i.file}]` : `[not written yet — run the ${i.skill} skill]`;
+  src.readOnly=!i.ready;
+  if(!i.ready) lock(`&#128274;&nbsp; nothing to edit &mdash; run <b>${i.skill}</b> first`);
+  rawFile.innerHTML= i.ready ? i.file : '&mdash;';
+  delta.textContent= i.ready ? 'document' : '';
+  save.textContent='Save document';
+}
+
+function lines(){
+  const n=src.value.split('\n').length;
+  gutter.innerHTML=Array.from({length:n},(_,i)=>`<div>${i+1}</div>`).join('');
+}
+function setDirty(d){
+  const locked=src.readOnly;
+  document.getElementById('rawPane').classList.toggle('locked',locked);
+  document.getElementById('revert').disabled=locked;
+  save.disabled=!d||locked; dot.hidden=!d||locked;
+  state.textContent=locked?'read-only':(d?'unsaved changes':'saved');
+  state.style.color=d&&!locked?'var(--ember)':'';
+}
+src.addEventListener('input',()=>{setDirty(true);lines()});
+save.onclick=()=>setDirty(false);
+document.getElementById('revert').onclick=()=>render();
+
+/* ── Generate: compile the whole book into one file ───────────── */
+const gen=document.getElementById('gen'), genState=document.getElementById('genState');
+gen.onclick=()=>{
+  if(gen.dataset.busy==='1') return;
+  gen.dataset.busy='1'; gen.textContent='Compiling…';
+  genState.textContent='front matter · 24 chapters · back matter';
+  setTimeout(()=>{
+    gen.dataset.busy=''; gen.textContent='Regenerate';
+    genState.innerHTML='<b>three-months-of-summer.md</b><br>59,505 words · just now';
+  },1400);
+};
+
+const frame=document.getElementById('frame');
+document.getElementById('tToc').onclick=e=>{const on=e.target.getAttribute('aria-pressed')==='true';
+  e.target.setAttribute('aria-pressed',String(!on));frame.classList.toggle('no-toc',on)};
+document.getElementById('tRaw').onclick=e=>{const on=e.target.getAttribute('aria-pressed')==='true';
+  e.target.setAttribute('aria-pressed',String(!on));frame.classList.toggle('no-raw',on)};
+
+const fAll=document.getElementById('fAll'),fReady=document.getElementById('fReady'),fFlag=document.getElementById('fFlag');
+[[fAll,'all'],[fReady,'ready'],[fFlag,'flag']].forEach(([b,v])=>b.onclick=()=>{
+  filter=v;[fAll,fReady,fFlag].forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderToc();render()});
+
+syncRun(); renderToc(); render();
+</script>

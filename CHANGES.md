@@ -2,6 +2,27 @@
 
 A running log of notable, user-facing changes to BookClaw, newest first. Entries are grouped by theme rather than listed file-by-file; see the git history for the fine detail.
 
+## 2026-09-12
+
+### Reading your book
+
+- **View Book — read the whole book in one place.** A new button beside "Open in Write" opens your book as a book: contents down the left (front matter, the chapters, back matter, reference documents and launch copy), the chapter typeset for reading in the middle, and its raw markdown on the right. Click any chapter to jump to it; the latest version always opens first. Press **b** from anywhere to pull it up.
+- **Every draft of a chapter, one click apart.** The pipeline writes seven files per chapter — scene brief, first draft, improvement plan, rewrite, consistency audit, consistency apply, de-AI sweep. The version trail lists them in order with the current one marked, so reading an earlier draft no longer means guessing at file names. Earlier versions are read-only; only the current one can be edited.
+- **Edit while you read.** The raw pane saves straight back to the chapter's own file. When the book is paused at a gate, saving becomes "Approve with my edits" — your text becomes the chapter and the run continues, instead of being overwritten when the pipeline resumes.
+- **Approve a chapter where you actually read it.** A paused run now shows its state in the header, greys out the chapters it hasn't written yet, and puts the approve/regenerate/stop decision on the gated chapter itself, under the findings — rather than in a queue where you approve prose you can't comfortably read.
+- **See what hasn't been written.** Front matter, back matter and launch copy your book doesn't have yet are listed but greyed, each naming the skill or pipeline that writes it, runnable from the page.
+- **Compile the book into one file.** One button assembles front matter, chapters and back matter into a single manuscript, readable in the same view. An unfinished book still compiles and says how much of it went in.
+
+### Fixes
+
+- **Full-manuscript assembly works for the deterministic romance pipelines again.** Assembling or downloading a complete manuscript matched only the older `write`/`polish` chapter files, so books written by the deterministic pipelines assembled to nothing. The same fix stops manuscript analysis from being handed each chapter twice.
+
+## 2026-08-18
+
+### Mobile
+
+- **You can approve from your phone.** The Confirmations screen — where generation pauses for your sign-off — no longer squeezes the item under review into an unreadable one-word-per-line column. On a phone the queue and the item now stack full-width: the chapter prose, the pre-review notes and the Approve / Reject buttons are all readable and tappable without sideways scrolling. Editing a chapter in place works too — the editor no longer triggers iOS's zoom-on-focus. Desktop is unchanged.
+
 ## 2026-07-28
 
 ### More human prose

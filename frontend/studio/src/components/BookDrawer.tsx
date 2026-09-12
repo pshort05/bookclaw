@@ -189,6 +189,7 @@ export function BookDrawer({ slug, onClose }: { slug: string; onClose: () => voi
           <Button variant="secondary" onClick={setActive} disabled={!data || isActive || activating}>
             {isActive ? 'Active book' : activating ? 'Activating…' : 'Set as active'}
           </Button>
+          <Button variant="secondary" onClick={() => { onClose(); navigate(`/book/${slug}/view`); }}>View Book</Button>
           <Button variant="primary" onClick={() => { onClose(); navigate(`/write/${slug}`); }}>Open in Write</Button>
         </div>
       </aside>
