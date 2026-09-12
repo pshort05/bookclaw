@@ -261,3 +261,40 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* --- Mobile: stack the master/detail panes ---------------------------
+   The desktop layout pins the queue to a non-shrinking 340px column
+   (`.list { flex: 0 0 340px }`), which on its own overflows a ~390px phone
+   and crushes `.detail` to a one-word-per-line sliver. Below the studio's
+   768px breakpoint (same one App/Rail use) the two panes stack instead.
+
+   The flex axis flips with `flex-direction: column`: `flex-basis` now sizes
+   HEIGHT (so the panes need `flex: 0 0 auto`, not the 340px basis), and
+   `align-items` now sizes WIDTH (so the desktop `flex-start` must become
+   `stretch`, or both panes shrink-wrap to their content). */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .list,
+  .detail {
+    flex: 0 0 auto;
+  }
+
+  .scroll { padding: 18px 14px 48px; }
+  .dcard { padding: 16px 14px; }
+  .h1 { font-size: 28px; margin-bottom: 16px; }
+
+  /* Three buttons (Cancel / Save / Save & Approve) don't fit one phone row. */
+  .acts,
+  .editActs { flex-wrap: wrap; }
+
+  /* iOS zooms the viewport when a focused field is under 16px. */
+  .textarea {
+    font-size: 16px;
+    min-height: 300px;
+  }
+}

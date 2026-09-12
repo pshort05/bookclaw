@@ -44,3 +44,22 @@ test('studio bundle carries the mobile responsive shell', { timeout: 180000 }, (
   const appCss = readFileSync(join(repo, 'frontend/studio/src/App.module.css'), 'utf-8');
   assert.match(appCss, /grid-row:\s*2/, 'mobile .main must occupy grid row 2 (else content pane collapses to the 52px bar row)');
 });
+
+/**
+ * Mobile Phase 2 slice — the Confirmations master/detail panes. The desktop
+ * rule pins the queue to `flex: 0 0 340px`, which alone overflows a phone and
+ * squeezes the detail pane (the one awaiting Approve/Reject) into an unreadable
+ * sliver. Guard the stacking block against deletion, and specifically the two
+ * axis-flip rules that are easy to drop: the panes must lose the 340px basis
+ * (it becomes a HEIGHT once the direction is column) and the cross-axis
+ * alignment must stretch (the desktop `flex-start` would shrink-wrap widths).
+ */
+test('Confirmations stacks its two panes below the mobile breakpoint', () => {
+  const css = readFileSync(join(repo, 'frontend/studio/src/routes/Confirmations.module.css'), 'utf-8');
+  const block = /@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*)\}\s*$/.exec(css);
+  assert.ok(block, 'Confirmations must carry a 768px mobile block');
+  const rules = block[1];
+  assert.match(rules, /flex-direction:\s*column/, 'the master/detail layout must stack');
+  assert.match(rules, /flex:\s*0\s+0\s+auto/, 'panes must drop the 340px basis (it sizes height once stacked)');
+  assert.match(rules, /align-items:\s*stretch/, 'panes must stretch to full width, not shrink-wrap');
+});
