@@ -4,6 +4,50 @@ Tracking list of items surfaced while writing CLAUDE.md. Grouped by effort.
 
 Anything currently being worked on must appear in this list. When an item is finished, move it to [COMPLETED.md](COMPLETED.md) with a `YYYY-MM-DD` completion date — don't just check the box and leave it here.
 
+## Firefly Pond run — fix in one sweep (opened 2026-09-13)
+
+Issues found while generating *Firefly Pond*. Collected here deliberately rather than fixed one at a
+time, so they ship as a single build/deploy cycle. Add to this list as the run turns up more.
+
+- [ ] **1. The canon-drift gate's Approve and Reject both do nothing.** A `canon-drift-gate` /
+  `reconcile-canon` confirmation asks for a decision the code never reads. `onAmbiguous`
+  (`projects.routes.ts:1346`, `:754`, `index.ts:2622`) creates the request and **returns immediately** —
+  the drive loop has already moved on, and the ambiguous phrases were skipped by the rewriter before you
+  ever saw the gate. Nothing anywhere keys on `service === 'canon-drift-gate'`, and the periodic
+  `resolveReviewGates` sweep only walks projects with `project.review` set (the human-review cadence/pipeline
+  gates), which a canon gate never sets. So approve and reject are the same no-op: the flagged names stay in
+  the document either way. Confirmed live on this run — an earlier canon gate was **rejected** and the names
+  came back in the regenerated Setting doc regardless. Two fixes, pick one or both: (a) label it honestly
+  ("Acknowledge / Dismiss") so it stops implying it changes the book; (b) make the decision real, per the
+  existing 2026-07-28 item "Edit the source doc from a decision-gate confirmation" — Edit → Save & Approve
+  writing the corrected doc back to the step result *and* its archival file, so Reject can mean "strip these".
+
+- [ ] **2. A single rural anchor flags every legitimate urban street.** This gate fired on 17 place names with
+  the reason `unknown road "X" — anchor has 0 candidate roads`. The book's grounded anchor is **Phillipsport,
+  NY** (ZIP 12769, Sullivan County), a hamlet with no road list in the grounding sources — so the checker has
+  nothing to validate against and flags *everything*, including real streets (Ludlow, Delancey, Attorney,
+  Canal, Centre, Fifth Avenue, Queens Boulevard, Skillman, Northern Boulevard) and a real NJ neighbourhood
+  (Botany Village). The book is deliberately multi-location (Manhattan office + Queens + NJ + a Catskills
+  pond) while the anchor is one hamlet, so the mismatch is structural, not a canon error. Fix direction: let a
+  book carry **multiple anchors** (one per real location in the setting) and validate each proper noun against
+  the nearest one; and when an anchor has zero candidate roads, treat road-level nouns as *unverifiable*
+  rather than *drifted* — flagging 17 unactionable items trains the author to ignore the gate. Note the
+  town-level flags behaved differently (`4 candidate towns`), so the town path has candidates and the road
+  path does not.
+
+- [ ] **3. "Change all" when pinning a model to a chapter step [owner ask 2026-09-13].** In Write's pipeline
+  rail, changing a step's model calls `setStepModel(stepId, value)` → `POST /api/projects/:id/steps/:stepId/model`,
+  which sets `modelOverride` on **that one step**. Pinning e.g. First Draft to a different model for chapter 7
+  leaves chapters 1-6 and 8-25 on the old one, and re-pinning by hand across 25 chapters is not realistic. Add a
+  "change all" affordance beside the picker. Design decision to settle first: **"all" should mean this step's
+  ROLE in every chapter** (every `First Draft`, not literally every step — nobody wants the scene brief and the
+  draft forced onto one model). Second decision: per-step overrides only reach steps that already exist, so for
+  a book whose later chapters have not been expanded yet the durable fix is the **book-level stage model**
+  (`POST /api/books/:slug/models` `stageModels`, which `castStep`/`stepRouting` already resolve) — likely
+  "change all" should write the stage model *and* clear now-conflicting per-step overrides, so future chapters
+  inherit it too. Watch the known caveat from `pipeline-ops-neptune`: the per-step model endpoint carries
+  provider+model only and **drops temperature**, and the OpenRouter path defaults an omitted temperature to 0.7.
+
 ## Targeted feature roadmap (product, consolidated 2026-06-21)
 
 A single ranked, deduplicated list of the **differentiating product features** distilled from [STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](STRATEGY-LEADING-AI-WRITING-ASSISTANT.md) + the six tool reviews ([NARRATIVE-ENGINE](NARRATIVE-ENGINE-INTEGRATION.md), [STORYTHREAD](STORYTHREAD-STUDIO-INTEGRATION.md), [MIRRORSHARD](MIRRORSHARD-INTEGRATION.md), [NOVELMINT-TOOLS](NOVELMINT-TOOLS-REVIEW.md), [CLAUDE-CODE-METHODS](CLAUDE-CODE-WRITING-METHODS-REVIEW.md), [LONEWRITER](LONEWRITER-REVIEW.md)). **Detailed scoping for each item lives in the linked doc** — this is the canonical index; the scattered strategy/review bullets that fed it were removed from "Larger items" below so each feature appears once. The **multi-author/multi-book studio** (North Star, below) is the umbrella platform these build on; it is not re-listed here.
