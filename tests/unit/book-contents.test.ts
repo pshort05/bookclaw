@@ -586,3 +586,117 @@ test('GET /contents derives run from the GATED project even when it is not the f
   assert.equal(body.run.gate?.stepId, mine[6].id);
   assert.equal(body.run.gate?.itemId, 'chapter:12');
 });
+
+// --------------------------------------------- files no project step claims --
+// The production regression (Neptune, 2026-09-12): 14 of 21 books rendered a
+// COMPLETELY EMPTY View Book. They are older/imported books that predate
+// per-book project binding — no project at all, and a data dir holding a
+// whole-book `manuscript.md` rather than per-chapter step files. A step-only
+// tree therefore found nothing. The design's Error handling section already
+// requires the opposite: "contents still lists whatever files exist. A book can
+// be read without a run."
+
+test('a book with NO project and only manuscript.md on disk is still readable', () => {
+  const built = input({
+    project: null,
+    files: [{ name: 'manuscript.md', modified: '2026-03-04T10:00:00.000Z' }],
+  });
+  const { groups, run } = buildContents(built);
+
+  assert.equal(run.status, 'none', 'no project bound → run.status none');
+  assert.equal(run.projectId, undefined);
+  assert.equal(groupOf(groups, 'manuscript').state, '0 of 24 written', 'the group state stays honest');
+
+  const reference = groupOf(groups, 'reference');
+  const manuscript = reference.items[0];
+  assert.ok(manuscript, 'Reference is not empty');
+  assert.equal(manuscript.id, 'ref:manuscript');
+  assert.equal(manuscript.title, 'Manuscript');
+  assert.equal(manuscript.kind, 'document');
+  assert.equal(manuscript.ready, true);
+  assert.ok(!manuscript.derived, 'authored content, not derived');
+  assert.equal(manuscript.versions.length, 1);
+  assert.equal(manuscript.versions[0].latest, true);
+  assert.equal(manuscript.versions[0].file, 'manuscript.md');
+  assert.equal(manuscript.versions[0].createdAt, '2026-03-04T10:00:00.000Z');
+  assert.equal(reference.state, '1 document');
+});
+
+test('a discovered file resolves and saves through the plain file path', () => {
+  const built = input({ project: null, files: [{ name: 'manuscript.md' }] });
+  const resolved = resolveItem(built, 'ref:manuscript');
+
+  assert.ok(resolved, 'ref:manuscript resolves');
+  assert.equal(resolved!.file, 'manuscript.md');
+  assert.equal(resolved!.stepId, undefined, 'no owning step — never a step-result update');
+
+  const { run } = buildContents(built);
+  assert.equal(decideSave({
+    versionIsLatest: true,
+    itemReady: resolved!.item.ready,
+    itemIsDerived: !!resolved!.item.derived,
+    gateStepId: run.gate?.stepId,
+    itemLatestStepId: resolved!.stepId,
+    projectIsDriving: false,
+  }).mode, 'file');
+});
+
+test('an unclaimed file joins Reference once, without shadowing the step documents', () => {
+  const project = project84(24);
+  const files = [...filesFor(project), { name: 'notes.md', modified: '2026-09-01T00:00:00.000Z' }];
+  const { groups, run } = buildContents(input({ project, files }));
+
+  // The chapters still come from the steps.
+  assert.equal(groupOf(groups, 'manuscript').state, '24 of 24 written');
+  assert.equal(run.frontier, 24);
+
+  const ids = groupOf(groups, 'reference').items.map((i: BookViewItem) => i.id);
+  assert.deepEqual(ids, ['ref:character-bible', 'ref:chapter-outline', 'ref:notes']);
+  assert.equal(ids.filter((id) => id === 'ref:notes').length, 1, 'discovered exactly once');
+  assert.equal(itemOf(groups, 'ref:notes')!.title, 'Notes');
+});
+
+test('a file a step already claims is never duplicated as a discovered file', () => {
+  const project = project84(24);
+  const files = filesFor(project);                    // every step file, nothing else
+  const { groups } = buildContents(input({ project, files }));
+
+  const reference = groupOf(groups, 'reference');
+  assert.deepEqual(reference.items.map((i: BookViewItem) => i.id), ['ref:character-bible', 'ref:chapter-outline']);
+
+  // No chapter step file leaks into Reference either.
+  const chapterFile = stepFile(project.steps.find((s: any) => s.chapterNumber === 7));
+  assert.ok(!reference.items.some((i: BookViewItem) => i.versions.some((v) => v.file === chapterFile)));
+});
+
+test('the compiled book stays derived while discovered files are not, and manuscript.md sorts first', () => {
+  const project = project84(24);
+  const { groups } = buildContents(input({
+    project,
+    files: [...filesFor(project), { name: 'compiled-manuscript.md' }, { name: 'manuscript.md' }, { name: 'notes.md' }],
+    compiled: { file: 'compiled-manuscript.md', words: 81234, createdAt: '2026-09-12T09:00:00.000Z' },
+  }));
+  const reference = groupOf(groups, 'reference');
+
+  assert.deepEqual(
+    reference.items.map((i: BookViewItem) => i.id),
+    ['ref:manuscript', 'ref:compiled', 'ref:character-bible', 'ref:chapter-outline', 'ref:notes'],
+  );
+  assert.equal(itemOf(groups, 'ref:compiled')!.derived, true);
+  assert.ok(!itemOf(groups, 'ref:manuscript')!.derived);
+  assert.ok(!itemOf(groups, 'ref:notes')!.derived);
+  // The compiled file is never discovered a second time under its own name.
+  assert.ok(!reference.items.some((i: BookViewItem) => i.id === 'ref:compiled-manuscript'));
+
+  assert.equal(decideSave({
+    versionIsLatest: true, itemReady: true, itemIsDerived: true, projectIsDriving: false,
+  }).mode, 'refuse', 'the compiled output stays locked');
+});
+
+test('dotfiles and non-markdown files are never discovered', () => {
+  const { groups } = buildContents(input({
+    project: null,
+    files: [{ name: '.state.json' }, { name: 'cover.png' }, { name: 'outline.docx' }, { name: 'manuscript.md' }],
+  }));
+  assert.deepEqual(groupOf(groups, 'reference').items.map((i: BookViewItem) => i.id), ['ref:manuscript']);
+});

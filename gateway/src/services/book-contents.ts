@@ -71,8 +71,9 @@ export interface BuildInput {
      *  completes, so it lives here and not on `step.result`. */
     review?: { confirmationId: string; stepId: string; pendingResult?: string } | null;
   } | null;
-  /** The book's data dir listing — used to spot a step whose file is gone. */
-  files: Array<{ name: string }>;
+  /** The book's data dir listing — used to spot a step whose file is gone, and
+   *  to surface files no step claims at all (see `discoverFiles`). */
+  files: Array<{ name: string; modified?: string }>;
   /** The compiled manuscript, when one has been written. `versions` are PRIOR
    *  compiles (newest first, as `listVersions` returns them). */
   compiled?: { file: string; words?: number; createdAt?: string; versions?: Array<{ id: string; createdAt?: string }> } | null;
@@ -245,6 +246,41 @@ function itemFromStep(
   };
 }
 
+/** `manuscript.md` → "Manuscript"; `beta_read-notes.md` → "Beta Read Notes". */
+function humaniseFileName(name: string): string {
+  return name.replace(/\.md$/i, '').replace(/[-_.]+/g, ' ').trim().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Markdown in the data dir that no item already surfaces, as Reference documents.
+ *
+ * Older/imported books predate per-book project binding: no project is bound at
+ * all, and the data dir holds a whole-book `manuscript.md` rather than
+ * per-chapter step files. A step-only tree rendered those books COMPLETELY
+ * EMPTY — 14 of 21 on the production box (2026-09-12) — against the design's own
+ * rule that "contents still lists whatever files exist. A book can be read
+ * without a run." These items are authored content, so they stay editable; with
+ * no owning step they save through the plain `file` path.
+ */
+function discoverFiles(input: BuildInput, claimedFiles: Set<string>, takenIds: Set<string>): BookViewItem[] {
+  const out: BookViewItem[] = [];
+  for (const f of input.files ?? []) {
+    const name = String(f?.name ?? '');
+    if (!name || name.startsWith('.') || !/\.md$/i.test(name)) continue;
+    if (claimedFiles.has(name) || name === input.compiled?.file) continue;
+    const base = `ref:${slugify(name.replace(/\.md$/i, ''))}`.replace(/-+$/, '');
+    if (!ITEM_ID_RE.test(base)) continue;              // a name that slugifies to nothing
+    let id = base;
+    for (let n = 2; takenIds.has(id); n++) id = `${base}-${n}`;
+    takenIds.add(id);
+    out.push({
+      id, group: 'reference', title: humaniseFileName(name), kind: 'document', ready: true,
+      versions: [{ id: `file:${name}`, label: 'Current', createdAt: f.modified, latest: true, file: name }],
+    });
+  }
+  return out;
+}
+
 /** A ghost row: nothing written yet, so it names what would write it. */
 function ghostItem(entry: CatalogEntry): BookViewItem {
   const flags: ItemFlag[] = entry.optional ? [{ level: 'note', label: 'optional' }] : [];
@@ -345,6 +381,19 @@ export function buildContents(input: BuildInput): { groups: BookViewGroup[]; run
     if (!item.ready) item.producedBy = { skill: step.skill || 'write', pipeline: input.manifest?.pipeline || 'novel-pipeline' };
     reference.push(item);
   }
+
+  // …then whatever else is on disk. `manuscript.md` is the whole book on the
+  // older shape, so it leads Reference, ahead of the compiled row and the
+  // documents the steps produced.
+  const claimedFiles = new Set(
+    [...catalogItems, ...manuscript, ...reference]
+      .flatMap((i) => i.versions.map((v) => v.file))
+      .filter((f): f is string => !!f),
+  );
+  const discovered = discoverFiles(input, claimedFiles, new Set(reference.map((i) => i.id)));
+  const isWholeManuscript = (i: BookViewItem) => i.versions[0]?.file?.toLowerCase() === 'manuscript.md';
+  reference.unshift(...discovered.filter(isWholeManuscript));
+  reference.push(...discovered.filter((i) => !isWholeManuscript(i)));
 
   const byGroup = (id: GroupId) => catalogItems.filter((i) => i.group === id);
   const groups: BookViewGroup[] = [

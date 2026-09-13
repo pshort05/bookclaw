@@ -138,12 +138,17 @@ BOOKLIST=$(get "/api/books" | jq -r '.books[]? | "\(.slug)\t\(.phase)"' 2>/dev/n
 SLUG=""
 while IFS=$'\t' read -r b phase; do
   [ -n "$b" ] || continue
-  n=$(get "/api/books/$b/contents" | jq '[.groups[]? | select(.id=="manuscript") | .items[]? | select(.ready)] | length' 2>/dev/null || echo 0)
+  tree=$(get "/api/books/$b/contents")
+  n=$(echo "$tree" | jq '[.groups[]? | select(.id=="manuscript") | .items[]? | select(.ready)] | length' 2>/dev/null || echo 0)
+  # A legacy book legitimately has no per-chapter files — its manuscript is one
+  # whole-book .md — so "readable" means chapters OR reference documents. What
+  # must never happen is a book past writing rendering completely empty.
+  readable=$(echo "$tree" | jq '[.groups[]?.items[]? | select(.ready)] | length' 2>/dev/null || echo 0)
   case "$phase" in
     revision|assembly|launch)
-      [ "${n:-0}" -gt 0 ] \
-        && pass "book past writing ('$b', $phase) reports $n written chapters" \
-        || fail "'$b' is in '$phase' but View Book reports 0 written chapters — chain resolution is broken"
+      [ "${readable:-0}" -gt 0 ] \
+        && pass "book past writing ('$b', $phase) exposes $readable readable items" \
+        || fail "'$b' is in '$phase' but View Book shows NOTHING readable — its files are not reaching the contents tree"
       ;;
   esac
   if [ -z "$SLUG" ] && [ "${n:-0}" -gt 0 ]; then SLUG="$b"; CH_COUNT="$n"; fi
@@ -262,6 +267,14 @@ fi
 # ══ Phase 5: compile ═══════════════════════════════════════
 log ""
 log "Phase 5: compile"
+if [ "$NO_WRITE" -eq 1 ]; then
+  # compile writes compiled-manuscript.md into the book's data dir — additive,
+  # but still a write, so --no-write means no compile either.
+  skip "--no-write: compile phase skipped"
+  log ""
+  log "── result ──"
+  [ "$FAILED" -eq 0 ] && { log "PASS (with skips) — ${MODE} target"; exit 0; } || { log "FAIL — ${MODE} target"; exit 1; }
+fi
 COMPILE=$(curl -s --max-time 120 "${AUTH[@]}" -X POST "$BASE/api/books/$SLUG/compile")
 
 chapters=$(echo "$COMPILE" | jq -r '.chapters // 0')
