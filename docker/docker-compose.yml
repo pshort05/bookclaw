@@ -57,6 +57,10 @@ services:
       # because it drives generation (spends) with no human present; unset = the
       # cost-safe default (a browser or the autonomous heartbeat drives phases).
       - BOOKCLAW_HEADLESS_PIPELINE=${BOOKCLAW_HEADLESS_PIPELINE:-}
+      # Contradictions per chapter that force a human review gate (default 6).
+      # `0`/`off`/`false`/`no` disable the gate. Unset = the default; the
+      # effective posture is logged at startup.
+      - BOOKCLAW_CONTRADICTION_GATE=${BOOKCLAW_CONTRADICTION_GATE:-}
     # Security: Resource limits
     deploy:
       resources:

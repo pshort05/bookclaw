@@ -2811,7 +2811,11 @@ class BookClawGateway {
             // flight for this book.
             skipPersist: gateway.consistencyJobs?.isRunning(project.bookSlug) === true,
           });
-          if (flags.length) (activeStep as any).continuityFlags = flags;
+          // Always assign — see the /auto-execute attach site: a re-drafted
+          // chapter that now detects ZERO flags must not keep the previous
+          // run's array (stale flags would re-gate a Regenerate). `undefined`
+          // (not []) preserves "absent means never analysed" for readers.
+          (activeStep as any).continuityFlags = flags.length ? flags : undefined;
         }
 
         // Human-Gate Cadence (Flagship Plan 5): same check as the dashboard

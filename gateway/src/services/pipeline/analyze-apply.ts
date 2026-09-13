@@ -62,7 +62,7 @@ export function analyzeChapter(args: {
 
 /** Pure block builder: turns Findings into a bulleted list of named issues. */
 export function describeFindings(findings: Findings): string {
-  const lines: string[] = ['## Analysis Findings — fix ONLY these issues'];
+  const lines: string[] = ['## Analysis Findings — fix these IN ADDITION to the improvement plan; do not drop any other instruction'];
   for (const f of findings.craftFlags) {
     lines.push(`- [craft:${f.category}] ${f.description}${f.suggestion ? ` → ${f.suggestion}` : ''}`);
   }

@@ -4,6 +4,7 @@ import { SoulService } from '../services/soul.js';
 import { MemoryService } from '../services/memory.js';
 import { MemorySearchService } from '../services/memory-search.js';
 import { ConsistencyStore } from '../services/consistency/fact-store.js';
+import { resolveThreshold } from '../services/consistency/continuity-gate.js';
 import { ROOT_DIR } from '../paths.js';
 import type { BookClawGateway } from '../index.js';
 
@@ -62,4 +63,12 @@ export async function initSoulMemory(gw: BookClawGateway): Promise<void> {
   } catch (err) {
     console.warn(`  ⚠ Consistency store init failed: ${(err as Error)?.message || err}`);
   }
+
+  // Contradiction force-gate posture (consistency-feedback design, Feature 2):
+  // the one env knob that can stop a run on continuity findings, so its
+  // effective value is logged like every other env-gated knob.
+  const contradictionGate = resolveThreshold(process.env.BOOKCLAW_CONTRADICTION_GATE);
+  console.log(contradictionGate > 0
+    ? `  ✓ Contradiction gate: human review at ${contradictionGate}+ contradictions per chapter (BOOKCLAW_CONTRADICTION_GATE)`
+    : '  ⚠ Contradiction gate: OFF (BOOKCLAW_CONTRADICTION_GATE) — chapters never pause on contradiction count');
 }

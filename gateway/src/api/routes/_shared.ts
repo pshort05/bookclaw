@@ -22,6 +22,7 @@ import {
   type EnsemblePitch, type SelectPitchResult,
 } from '../../services/pipeline/ideation-ensemble.js';
 import { analyzeChapter, describeFindings } from '../../services/pipeline/analyze-apply.js';
+import { chapterContinuityFlags } from '../../services/human-review.js';
 import { renderBetaReaderReport } from '../../services/reports/render-beta-reader.js';
 
 /**
@@ -540,11 +541,14 @@ export async function resolveEnsemblePremise(opts: {
  * Analyze-then-apply polish seam (Flagship Plan 4, Task 3).
  *
  * A no-op unless `step` is a book-production "Polish Chapter N" step
- * (`phase: 'polish', skill: 'revise'`) — OR (L2, code-review) a per-chapter
- * rewrite/editorial step from the OTHER book-production generator, which
- * tags its chapter-level revise steps with `role: 'rewrite'|'editorial'` and
- * a `chapterNumber` under a different phase name — with a matching completed
- * "Write Chapter N" step and both deterministic critic services wired.
+ * (`phase: 'polish', skill: 'revise'`) — OR a per-chapter PROSE-REWRITE step,
+ * matched ROLE-first (`role: 'rewrite'`) so the deterministic romance
+ * pipelines, whose skills are named `romance-*-rewrite`, match too, plus the
+ * legacy `skill: 'revise' + role: 'editorial'` shape — with a matching
+ * completed drafting step for that chapter (`role: 'draft'`, or the legacy
+ * `skill: 'write'`) and both deterministic critic services wired. Critique-only
+ * siblings (role `improve`/`humanize`/`continuity`, or an un-roled step) are
+ * deliberately excluded: see the predicate.
  * Returns a findings block naming the specific craft/dialogue/continuity
  * issues found on the WRITE step's prose, for the polish prompt to target —
  * or '' when there's nothing to fix (or anything above is missing), in which
@@ -554,14 +558,27 @@ export async function resolveEnsemblePremise(opts: {
 export function resolveAnalyzeApplyBlock(opts: { services: any; project: any; step: any }): string {
   const { services, project, step } = opts;
   const isPolishPhaseStep = step?.phase === 'polish' && step?.skill === 'revise';
-  const isChapterRewriteStep = step?.skill === 'revise' && typeof step?.chapterNumber === 'number'
-    && (step?.role === 'rewrite' || step?.role === 'editorial');
+  // Role-first, and deliberately narrow: ONLY the prose-rewrite step. The
+  // sibling `skill: 'revise'` steps in technothriller/romantasy-production are
+  // critique-only contracts (role improve/humanize/continuity), as are the
+  // no-skill `role: 'editorial'` checks in nerdynovelistai-stage5 — telling a
+  // critique to "fix these" narrows the critique instead of adding repairs.
+  // The second clause is the pre-existing legacy shape, unchanged.
+  const isChapterRewriteStep = typeof step?.chapterNumber === 'number' && (
+    step?.role === 'rewrite'
+    || (step?.skill === 'revise' && step?.role === 'editorial')
+  );
   if (!isPolishPhaseStep && !isChapterRewriteStep) return '';
   if (!services?.craftCritic || !services?.dialogueAuditor) return '';
 
   const chNum = step.chapterNumber;
-  const writeStep = (project?.steps ?? []).find((s: any) =>
-    s.skill === 'write' && s.chapterNumber === chNum && s.status === 'completed' && s.result);
+  // Last completed drafting pass for this chapter: the ledger attaches its
+  // continuity flags to the draft, and a pipeline with two drafting passes
+  // must analyze the later prose, not the earlier.
+  const drafts = (project?.steps ?? []).filter((s: any) =>
+    s.chapterNumber === chNum && s.status === 'completed' && s.result
+    && (s.role === 'draft' || s.skill === 'write'));
+  const writeStep = drafts[drafts.length - 1];
   if (!writeStep?.result) return '';
 
   try {
@@ -570,7 +587,11 @@ export function resolveAnalyzeApplyBlock(opts: { services: any; project: any; st
       chapterNumber: chNum || 0,
       craftCritic: services.craftCritic,
       dialogueAuditor: services.dialogueAuditor,
-      continuityFlags: writeStep.continuityFlags,
+      // Union across EVERY step sharing this chapter number, not just the
+      // draft we took the prose from: the ledger attaches flags to any
+      // `role: 'draft'` step, and Alternate Takes injects a second one
+      // ("Draft Opening — Chapter N") whose flags would otherwise be dropped.
+      continuityFlags: chapterContinuityFlags(project, chNum),
     });
     return findings.hasFindings ? describeFindings(findings) : '';
   } catch (err) {

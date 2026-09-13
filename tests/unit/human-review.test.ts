@@ -18,6 +18,7 @@ import {
   openReviewGate,
   resolveReviewGates,
   maybeOpenCadenceGate,
+  chapterContinuityFlags,
 } from '../../gateway/src/services/human-review.js';
 import { ProjectEngine } from '../../gateway/src/services/projects.js';
 
@@ -360,4 +361,321 @@ test('an act-boundary cadence gate aggregates continuityFlags from phase:"draft"
     [1, 2],
     'only the flagged chapters are included, in order',
   );
+});
+
+// ── contradiction force-gate (consistency-feedback design, Feature 2) ────────
+// The ledger attaches continuityFlags to the chapter's DRAFT step, but the gate
+// must fire at the chapter's LAST prose step: the count is identical at every
+// prose step and applyReviewResume clears project.review, so gating on "any
+// prose step" re-opened an identical gate 3-4 times per chapter (each able to
+// die at the 24h Confirmations expiry) AND pre-empted the Improvement Plan +
+// Rewrite repair passes. Fires once, after the repair, so the author reviews
+// the repaired text.
+
+/** [id prefix, role, taskType, label] — the real romance-spicy-deterministic
+ *  per-chapter shape: 7 steps, 3 of them prose (draft, rewrite, sweep). */
+const DETERMINISTIC_CHAPTER: Array<[string, string, string, string]> = [
+  ['b', 'scene_brief', 'outline', 'Scene Brief'],
+  ['d', 'draft', 'creative_writing', 'First Draft'],
+  ['p', 'improve', 'revision', 'Improvement Plan'],
+  ['r', 'rewrite', 'creative_writing', 'Rewrite'],
+  ['a', '', 'revision', 'Consistency Audit'],
+  ['x', '', 'general', 'Consistency Apply'],
+  ['s', 'humanize', 'general', 'Humanize — De-AI Sweep'],
+];
+
+/** The real romance-*-full shape: 6 steps, 4 of them prose (draft, rewrite,
+ *  humanize, intimacy) — 4 firings under the old "any prose step" rule. */
+const FULL_CHAPTER: Array<[string, string, string, string]> = [
+  ['b', 'scene_brief', 'outline', 'Scene Brief'],
+  ['d', 'draft', 'creative_writing', 'First Draft'],
+  ['p', 'improve', 'revision', 'Improvement Plan'],
+  ['r', 'rewrite', 'revision', 'Rewrite'],
+  ['h', 'humanize', 'final_edit', 'Humanize'],
+  ['i', 'intimacy', 'creative_writing', 'Intimacy'],
+];
+
+/** novel-pipeline's single prose step per chapter. */
+const SINGLE_PROSE_CHAPTER: Array<[string, string, string, string]> = [
+  ['d', 'draft', 'creative_writing', 'Write Chapter'],
+];
+
+/** 9 chapters x the given per-chapter shape + a review step + assembly; acts land on 3/6/9. */
+function contradictionProject(
+  flagsByChapter: Record<number, any[]> = {},
+  shape: Array<[string, string, string, string]> = DETERMINISTIC_CHAPTER,
+) {
+  const steps: any[] = [];
+  for (let n = 1; n <= 9; n++) {
+    for (const [prefix, role, taskType, label] of shape) {
+      steps.push({
+        id: `${prefix}${n}`, label: `${label} — Chapter ${n}`, taskType, chapterNumber: n,
+        ...(role ? { role } : {}),
+        ...(prefix === 'd' ? { skill: 'romance-sweet-first-draft' } : {}),
+        ...(prefix === 'd' && flagsByChapter[n] ? { continuityFlags: flagsByChapter[n] } : {}),
+      });
+    }
+  }
+  steps.push({ id: 'rev', label: 'Continuity & Arc Review', skill: 'revision' });
+  steps.push({ id: 'asm', label: 'Compile manuscript', skill: 'assembly' });
+  return { id: 'pc', title: 'Book', type: 'book-production', steps, review: undefined as any };
+}
+
+const contradictions = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({ kind: 'contradiction', detail: `contradiction ${i + 1}` }));
+
+/** per_act + chapter 2 of 9 → no cadence hit; only the contradiction rule can gate. */
+const noCadenceHit = { manifest: { review: { cadence: 'per_act' } } };
+
+/** Drive every step of chapter `ch` in order, releasing the review slot between
+ *  steps exactly as applyReviewResume does — returns the ids that gated. */
+async function driveChapter(project: any, ch: number, gate: any, ctx: any = noCadenceHit): Promise<string[]> {
+  const engine = mockEngine([project]);
+  const fired: string[] = [];
+  for (const step of project.steps.filter((s: any) => s.chapterNumber === ch)) {
+    const r = await maybeOpenCadenceGate({ gate, engine }, project, step, `Chapter ${ch} prose.`, ctx);
+    if (r.gated) fired.push(step.id);
+    delete project.review; // applyReviewResume clears the slot on resume
+  }
+  return fired;
+}
+
+test('the contradiction gate fires ONCE per chapter, at the de-AI sweep — not at every prose step', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const gate = mockGate();
+
+  const fired = await driveChapter(project, 2, gate);
+
+  assert.deepEqual(fired, ['s2'], 'only the chapter\'s LAST prose step gates');
+  assert.equal(gate.calls.created.length, 1, 'one Confirmations request per chapter, not three');
+});
+
+test('the romance-*-full shape gates only at the intimacy pass (its last prose step)', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) }, FULL_CHAPTER);
+  const gate = mockGate();
+
+  const fired = await driveChapter(project, 2, gate);
+
+  assert.deepEqual(fired, ['i2'], 'four prose steps, one gate');
+});
+
+test('a single-prose-step pipeline gates on that one step', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) }, SINGLE_PROSE_CHAPTER);
+  const gate = mockGate();
+
+  const fired = await driveChapter(project, 2, gate);
+
+  assert.deepEqual(fired, ['d2']);
+});
+
+test('the DRAFT step never force-gates — the Improvement Plan and Rewrite run first', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const draft = project.steps.find((s: any) => s.id === 'd2');
+  const gate = mockGate();
+
+  const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, draft, 'Chapter 2 prose.', noCadenceHit);
+
+  assert.equal(r.gated, false, 'gating at the draft pre-empts the repair passes');
+  assert.equal(gate.calls.created.length, 0);
+});
+
+test('9 contradictions on the DRAFT step force a gate at the SWEEP step, with no cadence hit', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+  const engine = mockEngine([project]);
+
+  const r = await maybeOpenCadenceGate({ gate, engine }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+
+  assert.equal(r.gated, true, 'contradiction count force-opens the gate');
+  const text = String(gate.calls.created[0].payload.findings.contradictions);
+  assert.match(text, /^9 contradictions in chapter 2\b/, 'the count and chapter lead the note');
+  assert.match(text, /threshold of 6/);
+  assert.match(text, /found in the draft/i, 'the rewrite-may-have-fixed-it caveat is stated to the human');
+  assert.match(text, /^- contradiction 1$/m, 'the detail strings make the gate actionable');
+});
+
+test('the contradiction findings value is a plain string, never a nested object', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+
+  // A non-string value renders as raw JSON in Confirmations/GatePanel, and a
+  // >300-char line there drags the WHOLE findings payload into a JSON blob.
+  assert.equal(typeof gate.calls.created[0].payload.findings.contradictions, 'string');
+});
+
+test('the contradiction findings string is capped (10 flags + "+N more", <= 1200 chars)', async () => {
+  const project: any = contradictionProject({ 2: contradictions(25) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+
+  const text = String(gate.calls.created[0].payload.findings.contradictions);
+  assert.equal(text.split('\n').filter((l) => l.startsWith('- ')).length, 10);
+  assert.match(text, /\+15 more/);
+  assert.ok(text.length <= 1200, `expected <= 1200 chars, got ${text.length}`);
+});
+
+test('3 contradictions do NOT force a gate', async () => {
+  const project: any = contradictionProject({ 2: contradictions(3) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+
+  assert.equal(r.gated, false);
+  assert.equal(gate.calls.created.length, 0);
+});
+
+test('knowledge/timeline flags alone never force a gate, however many', async () => {
+  const flags = Array.from({ length: 12 }, (_, i) => ({ kind: i % 2 ? 'knowledge' : 'timeline', detail: `soft ${i}` }));
+  const project: any = contradictionProject({ 2: flags });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+
+  assert.equal(r.gated, false);
+});
+
+test('headless skips the contradiction gate, but the same chapter gates with a human present', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  const headless = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.',
+    { ...noCadenceHit, headless: true });
+  assert.equal(headless.gated, false, 'no human to resolve a Confirmations request');
+  assert.equal(gate.calls.created.length, 0);
+
+  const interactive = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+  assert.equal(interactive.gated, true, 'the twin: identical project, no headless flag → gated');
+});
+
+test('an explicit `autonomous` cadence is never contradiction-force-gated (per_act twin is)', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+
+  const auto = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.',
+    { manifest: { review: { cadence: 'autonomous' } } });
+  assert.equal(auto.gated, false, '"do not pause me" is the owner\'s explicit choice');
+  assert.equal(gate.calls.created.length, 0);
+
+  const perAct = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+  assert.equal(perAct.gated, true, 'the twin: identical project under per_act → gated');
+});
+
+test('a non-prose step is never force-gated, while the same chapter\'s prose step is', async () => {
+  const project: any = contradictionProject({ 2: contradictions(9) });
+  const gate = mockGate();
+
+  for (const id of ['b2', 'p2', 'a2', 'x2']) { // brief, improvement plan, consistency audit + apply
+    const step = project.steps.find((s: any) => s.id === id);
+    const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, step, 'Not prose.', noCadenceHit);
+    assert.equal(r.gated, false, `${step.label} must not be force-gated (2026-09-12 noise)`);
+    delete project.review;
+  }
+
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+  assert.equal(r.gated, true, 'the twin: the same chapter\'s prose step DOES gate');
+  assert.equal(gate.calls.created.length, 1);
+});
+
+test('BOOKCLAW_CONTRADICTION_GATE overrides the threshold', async () => {
+  const project: any = contradictionProject({ 2: contradictions(3) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+  const prev = process.env.BOOKCLAW_CONTRADICTION_GATE;
+  process.env.BOOKCLAW_CONTRADICTION_GATE = '3';
+  try {
+    const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+    assert.equal(r.gated, true);
+    assert.match(String(gate.calls.created[0].payload.findings.contradictions), /threshold of 3/);
+  } finally {
+    if (prev === undefined) delete process.env.BOOKCLAW_CONTRADICTION_GATE;
+    else process.env.BOOKCLAW_CONTRADICTION_GATE = prev;
+  }
+});
+
+test('BOOKCLAW_CONTRADICTION_GATE=0 disables the force-gate entirely', async () => {
+  const project: any = contradictionProject({ 2: contradictions(20) });
+  const sweep = project.steps.find((s: any) => s.id === 's2');
+  const gate = mockGate();
+  const prev = process.env.BOOKCLAW_CONTRADICTION_GATE;
+  process.env.BOOKCLAW_CONTRADICTION_GATE = '0';
+  try {
+    const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 2 prose.', noCadenceHit);
+    assert.equal(r.gated, false);
+  } finally {
+    if (prev === undefined) delete process.env.BOOKCLAW_CONTRADICTION_GATE;
+    else process.env.BOOKCLAW_CONTRADICTION_GATE = prev;
+  }
+});
+
+test('the chapter findings block picks up the DRAFT step flags when the gate fires at the sweep step', async () => {
+  // 3 contradictions: below the force-gate threshold, so the gate here is the
+  // ordinary per_act act boundary (chapter 3 of 9) — what is under test is that
+  // findings.chapter is no longer silently empty at a non-draft step.
+  const project: any = contradictionProject({ 3: contradictions(3) });
+  const sweep = project.steps.find((s: any) => s.id === 's3');
+  const gate = mockGate();
+  const ctx = {
+    manifest: { review: { cadence: 'per_act' } },
+    craftCritic: { analyze: () => ({ flags: [] }) },
+    dialogueAuditor: { audit: () => ({ flags: [] }) },
+  };
+
+  const r = await maybeOpenCadenceGate({ gate, engine: mockEngine([project]) }, project, sweep, 'Chapter 3 prose.', ctx as any);
+
+  assert.equal(r.gated, true, 'chapter 3 of 9 is an act boundary under per_act');
+  const findings = gate.calls.created[0].payload.findings;
+  assert.match(String(findings.chapter), /\[continuity:contradiction\] contradiction 1/);
+});
+
+// ── chapterContinuityFlags: the cross-step lookup + dedup key ────────────────
+// `detail` alone is a lossy key: it is a deterministic template over
+// entity+attribute+values, so two DISTINCT violations can be byte-identical and
+// differ only in `span` — which the old key discarded. Flags with no detail at
+// all collapsed to a single entry.
+
+test('chapterContinuityFlags gathers every step of the chapter and dedups on detail + span', () => {
+  const project = {
+    steps: [
+      { chapterNumber: 1, continuityFlags: [{ kind: 'contradiction', detail: 'Mara is 28', span: 'she was 28' }] },
+      { chapterNumber: 2, continuityFlags: [
+        { kind: 'contradiction', detail: 'the bar is on Main', span: 'the bar on Main' },
+        { kind: 'contradiction', detail: 'the bar is on Main', span: 'the bar on Main' }, // true duplicate
+        { kind: 'contradiction', detail: 'the bar is on Main', span: 'down at the bar' }, // distinct violation
+      ] },
+      { chapterNumber: 2, continuityFlags: [{ kind: 'timeline', detail: 'Tuesday twice' }] },
+      { chapterNumber: 3, continuityFlags: [{ kind: 'contradiction', detail: 'other chapter' }] },
+    ],
+  };
+
+  const flags = chapterContinuityFlags(project, 2);
+
+  assert.equal(flags.length, 3, 'the true duplicate collapses; the different-span flag survives');
+  assert.deepEqual(flags.map((f: any) => f.span), ['the bar on Main', 'down at the bar', undefined]);
+});
+
+test('chapterContinuityFlags never collapses detail-less flags into one', () => {
+  const project = {
+    steps: [{ chapterNumber: 4, continuityFlags: [
+      { kind: 'contradiction' }, { kind: 'contradiction' }, { kind: 'knowledge' },
+    ] }],
+  };
+
+  assert.equal(chapterContinuityFlags(project, 4).length, 3);
+});
+
+test('chapterContinuityFlags is fail-soft on a malformed project', () => {
+  assert.deepEqual(chapterContinuityFlags(undefined, 1), []);
+  assert.deepEqual(chapterContinuityFlags({ steps: null }, 1), []);
+  assert.deepEqual(chapterContinuityFlags({ steps: [{ chapterNumber: 1, continuityFlags: 'nope' }] }, 1), []);
 });

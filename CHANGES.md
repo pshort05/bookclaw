@@ -2,6 +2,13 @@
 
 A running log of notable, user-facing changes to BookClaw, newest first. Entries are grouped by theme rather than listed file-by-file; see the git history for the fine detail.
 
+## 2026-09-13
+
+### Consistency that acts
+
+- **The consistency checker's findings now reach the writing.** Every contradiction, knowledge-leak and timeline slip the ledger catches after a chapter's first draft is handed to the Rewrite pass as a named list of issues to fix — alongside the craft and dialogue notes it already received. Until now those findings only ever appeared in a review panel: *Three Months of Summer* carries 113 of them across all 24 chapters, and not one reached the pass that could have fixed it, because the wiring looked for step names the romance pipelines don't use.
+- **A chapter thick with contradictions now stops for you.** When a chapter crosses a threshold of contradictions (six by default), generation pauses for review once that chapter is finished, with the count and the specific contradictions listed in plain language. Previously only a beat or ending problem could stop a run — a chapter could ship with nine contradictions without pausing. The pause happens once per chapter, after the rewrite has had its chance, and never interrupts a book you've set to run autonomously. Set `BOOKCLAW_CONTRADICTION_GATE` to tune the threshold, or to `off` to disable it; the setting is reported at startup.
+
 ## 2026-09-12
 
 ### Reading your book

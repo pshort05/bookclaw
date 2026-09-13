@@ -1645,7 +1645,12 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
               // one is in flight for this book.
               skipPersist: gateway.consistencyJobs?.isRunning(currentProject.bookSlug) === true,
             });
-            if (flags.length) (activeStep as any).continuityFlags = flags;
+            // Always assign: a re-drafted chapter that now detects ZERO flags must
+            // not keep the previous run's array, or an author who hits Regenerate
+            // to clear contradictions is re-gated on the identical stale strings.
+            // `undefined` (not []) so readers that treat "absent" as "not analysed"
+            // (revision-orchestrator's continuity pass) behave as they did before.
+            (activeStep as any).continuityFlags = flags.length ? flags : undefined;
           } catch { /* fail-soft: continuity detection never blocks step completion */ }
         }
 

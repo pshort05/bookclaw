@@ -1,7 +1,7 @@
 {
   "name": "bookclaw",
   "version": "5.0.0",
-  "description": "The Autonomous AI Writing Agent — 6 book production phases, author personas, pipeline mode, 21-step deep revision, KDP-ready export. Built for authors who scale.",
+  "description": "The Autonomous AI Writing Agent \u2014 6 book production phases, author personas, pipeline mode, 21-step deep revision, KDP-ready export. Built for authors who scale.",
   "main": "gateway/src/index.ts",
   "type": "module",
   "workspaces": [
@@ -24,6 +24,7 @@
     "test:unit": "npm run build:frontend && node --import tsx --test --experimental-test-isolation=none tests/unit/*.test.ts",
     "test:api": "bash tests/api/api-test.sh",
     "test:smoke": "npm run build:frontend && bash tests/smoke-test.sh",
+    "test:consistency-smoke": "bash tests/consistency-feedback-smoke.sh",
     "test:intake-smoke": "bash tests/romance-premise-intake-smoke.sh",
     "test:adaptive-smoke": "bash tests/romance-adaptive-smoke.sh"
   },

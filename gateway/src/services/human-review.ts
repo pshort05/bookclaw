@@ -16,6 +16,9 @@ import { detectEnding } from './pipeline/ending-gate.js';
 import { parseCanonSheet, collectCanonNouns, flagNewProperNouns, checkPovTense } from './pipeline/canon-sheet.js';
 import { analyzeChapter, describeFindings } from './pipeline/analyze-apply.js';
 import { aggregateActContinuity, type ActChapterFlags } from './consistency/continuity-check.js';
+import type { ContinuityFlag } from './consistency/continuity-check.js';
+import { countContradictions, describeContradictions, resolveThreshold, shouldForceGate } from './consistency/continuity-gate.js';
+import { isProseStep } from './casting/roles.js';
 import { runChapterContextExtraction, type ContextExtractionDeps } from '../util/chapter-context-extraction.js';
 
 export const HUMAN_REVIEW_SKILL = 'human-review';
@@ -273,14 +276,102 @@ export async function maybeOpenCadenceGate(
     }
   }
 
+  // Contradiction force-gate (consistency-feedback design, Feature 2). The
+  // ledger's flags previously only annotated a gate that was opening anyway, so
+  // a chapter could ship with nine contradictions and never pause. Counted
+  // across every step of this chapter (the flags live on the draft step, the
+  // gate fires at a later one) and only at the chapter's LAST prose step — see
+  // isLastProseStepOfChapter. Not on an explicit 'autonomous' cadence: unlike
+  // the romance Stall gate this rule applies to every pipeline, and 'autonomous'
+  // is the owner saying "do not pause me". Fail-soft: a throw here never blocks
+  // the decision.
+  let contradictionFindings: Record<string, unknown> | undefined;
+  if (cadence !== 'autonomous' && isLastProseStepOfChapter(project, step)) {
+    try {
+      const flags = chapterContinuityFlags(project, step.chapterNumber);
+      const count = countContradictions(flags);
+      const threshold = resolveThreshold(process.env.BOOKCLAW_CONTRADICTION_GATE);
+      if (shouldForceGate(count, threshold)) {
+        forceGate = true;
+        // A STRING, like the sibling romanceChapter/ending keys — the gate views
+        // render a nested object as a raw JSON blob.
+        contradictionFindings = {
+          contradictions: describeContradictions(flags, threshold, step.chapterNumber),
+        };
+      }
+    } catch { /* fail-soft: never let the count block the gate decision */ }
+  }
+
   if (!cadenceHit && !forceGate) return { gated: false };
 
   const base = buildCadenceGateFindings(project, step, response, ctx) ?? {};
-  const findings = { ...base, ...(romanceFindings ?? {}) };
+  const findings = { ...base, ...(romanceFindings ?? {}), ...(contradictionFindings ?? {}) };
   const req = await openReviewGate(deps, project, step, 'cadence-gate', undefined,
     Object.keys(findings).length ? findings : undefined);
   if (project.review) project.review.pendingResult = response;
   return { gated: true, confirmationId: req?.id, boundary: cadenceHit ?? 'chapter' };
+}
+
+/**
+ * Every continuity flag recorded for one chapter, deduped by `detail` + `span`.
+ *
+ * The ledger attaches flags to the chapter's DRAFT step, but the cadence gate
+ * usually fires at a later step of the same chapter (the de-AI sweep), where
+ * `step.continuityFlags` is undefined — so gather across every step sharing
+ * this chapterNumber.
+ *
+ * `detail` alone is a lossy key: it is a deterministic template over
+ * entity + attribute + values, so two DISTINCT violations can be byte-identical
+ * and differ only in `span`. A flag with no detail at all is never deduped
+ * (they would all collapse to one). Fail-soft: a malformed project yields [].
+ */
+export function chapterContinuityFlags(project: any, chapterNumber: number): ContinuityFlag[] {
+  try {
+    const seen = new Set<string>();
+    const out: ContinuityFlag[] = [];
+    for (const s of project?.steps ?? []) {
+      if (s?.chapterNumber !== chapterNumber || !Array.isArray(s?.continuityFlags)) continue;
+      for (const f of s.continuityFlags) {
+        const detail = String(f?.detail ?? '');
+        if (detail) {
+          const key = `${detail} ${String(f?.span ?? '')}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+        }
+        out.push(f);
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Is this step the LAST prose step of its chapter?
+ *
+ * The contradiction count is identical at every prose step of a chapter
+ * (draft | rewrite | humanize | intimacy), and resuming a gate deletes
+ * `project.review` — so gating on "any prose step" re-opened an identical gate
+ * 3 times per chapter on the deterministic romance pipelines and 4 on
+ * `romance-*-full`, each one able to die at the 24h Confirmations expiry. It
+ * also fired FIRST at the draft, pre-empting the Improvement Plan and Rewrite
+ * repair passes. Firing only at the chapter's last prose step is deterministic,
+ * needs no persisted state, fires exactly once, and lands after the repair so
+ * the human reviews the repaired text. (A human who manually skips that step
+ * skips the gate with it — an explicit choice, same as skipping any gate.)
+ */
+export function isLastProseStepOfChapter(project: any, step: any): boolean {
+  try {
+    if (typeof step?.chapterNumber !== 'number' || !isProseStep(step)) return false;
+    const prose = (project?.steps ?? []).filter(
+      (s: any) => s?.chapterNumber === step.chapterNumber && isProseStep(s));
+    const last = prose[prose.length - 1];
+    if (!last) return false;
+    return last === step || (step.id != null && last.id === step.id);
+  } catch {
+    return false;
+  }
 }
 
 /** Assemble the automated pre-gate findings payload — see maybeOpenCadenceGate. */
@@ -297,7 +388,7 @@ function buildCadenceGateFindings(
         chapterNumber: step.chapterNumber,
         craftCritic: ctx.craftCritic,
         dialogueAuditor: ctx.dialogueAuditor,
-        continuityFlags: step?.continuityFlags,
+        continuityFlags: chapterContinuityFlags(project, step.chapterNumber),
       });
       if (f.hasFindings) findings.chapter = describeFindings(f);
     } catch { /* fail-soft: annotation only, never blocks the gate */ }
