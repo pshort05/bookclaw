@@ -25,15 +25,30 @@ function matches(item: BookItem, filter: Filter): boolean {
   return true;
 }
 
+/** A chapter can carry ten flags, each a full sentence. Show the first few —
+ *  worst level first, so a contradiction is never hidden behind a style note —
+ *  and count the rest. Every label clips to the rail width (see .chip) and
+ *  carries its full text as a tooltip; the reading pane lists them in full. */
+const FLAGS_SHOWN = 3;
+const LEVEL_ORDER: Record<string, number> = { bad: 0, warn: 1, note: 2 };
+
 function Chips({ item, gated }: { item: BookItem; gated: boolean }) {
   const flags = item.flags ?? [];
   if (!gated && flags.length === 0) return null;
+  const sorted = [...flags].sort((a, b) => (LEVEL_ORDER[a.level] ?? 3) - (LEVEL_ORDER[b.level] ?? 3));
+  const shown = sorted.slice(0, FLAGS_SHOWN);
+  const hidden = sorted.length - shown.length;
   return (
     <>
       {gated && <span className={`${styles.chip} ${styles.warn}`}>gate</span>}
-      {flags.map((f, i) => (
-        <span key={`${f.label}-${i}`} className={`${styles.chip} ${styles[f.level]}`}>{f.label}</span>
+      {shown.map((f, i) => (
+        <span key={`${f.label}-${i}`} className={`${styles.chip} ${styles[f.level]}`} title={f.label}>{f.label}</span>
       ))}
+      {hidden > 0 && (
+        <span className={`${styles.chip} ${styles.more}`} title={sorted.slice(FLAGS_SHOWN).map((f) => f.label).join('\n')}>
+          +{hidden} more
+        </span>
+      )}
     </>
   );
 }

@@ -1,8 +1,16 @@
 /* Reading pane — ported from dashboard/concept/view-book.html (.read block). */
 
+/* The reading column fills --read-width of the pane (80% by default, set on
+   the frame in BookView) rather than a fixed measure — the pane is resizable,
+   so the text tracks whatever width the reader gives it. */
 .read { background: var(--bg); padding-bottom: 96px; }
 
-.inner { max-width: 68ch; margin-inline: auto; padding: 36px 40px 0; }
+.inner {
+  width: var(--read-width, 80%);
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 36px 40px 0;
+}
 
 .inner.tight { padding-top: 0; }
 
@@ -66,7 +74,8 @@
 
 /* earlier-version banner */
 .banner {
-  max-width: 68ch;
+  width: var(--read-width, 80%);
+  max-width: 100%;
   margin: 0 auto 22px;
   padding: 12px 16px;
   border-radius: var(--r-s);
@@ -97,7 +106,8 @@
 
 /* defects found on read */
 .flagstrip {
-  max-width: 68ch;
+  width: var(--read-width, 80%);
+  max-width: 100%;
   margin: 0 auto 26px;
   padding: 14px 16px;
   border-radius: var(--r-s);
@@ -167,6 +177,6 @@
 .cover .ph { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-top: auto; }
 
 /* quiet in-column notes (loading, errors, missing file) */
-.note { max-width: 68ch; margin-inline: auto; padding: 26px 40px; color: var(--faint); font-size: 13px; }
+.note { width: var(--read-width, 80%); max-width: 100%; margin-inline: auto; padding: 26px 40px; color: var(--faint); font-size: 13px; }
 .note b { color: var(--dim); font-weight: 500; }
 .note .bad { color: var(--alert); }

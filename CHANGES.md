@@ -12,6 +12,8 @@ A running log of notable, user-facing changes to BookClaw, newest first. Entries
 - **Approve a chapter where you actually read it.** A paused run now shows its state in the header, greys out the chapters it hasn't written yet, and puts the approve/regenerate/stop decision on the gated chapter itself, under the findings — rather than in a queue where you approve prose you can't comfortably read.
 - **See what hasn't been written.** Front matter, back matter and launch copy your book doesn't have yet are listed but greyed, each naming the skill or pipeline that writes it, runnable from the page.
 - **Compile the book into one file.** One button assembles front matter, chapters and back matter into a single manuscript, readable in the same view. An unfinished book still compiles and says how much of it went in.
+- **The panes are yours to size.** Drag the divider on either side of the chapter to widen the contents list or the raw markdown; the view remembers your widths. Double-click a divider to reset it, or focus it and use the arrow keys. The chapter text now fills 80% of its pane rather than a fixed measure, so it grows as you give it room.
+- **Long consistency flags fit the contents list.** A flag whose text ran off the edge of the column now clips with the full wording on hover, and a chapter with more than three flags shows the most serious three plus a "+N more" count instead of a wall of orange.
 
 ### Fixes
 

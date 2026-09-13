@@ -112,7 +112,22 @@
   padding: 1px 6px;
   border-radius: 4px;
   border: 1px solid currentColor;
+  /* Flag labels are whole sentences ("GIA'S CURRENT_LOCATION IS BOTH …"), so
+     they must clip to the rail instead of running past its edge. The full text
+     is on the chip's title and in the reading pane's flag strip. */
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* the "+N more" chip sits with the flags but never truncates */
+.more {
+  color: var(--faint);
+  border-style: dashed;
+  width: max-content;
+  max-width: 100%;
 }
 
 .bad { color: var(--alert); }

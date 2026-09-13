@@ -10,6 +10,30 @@ import styles from './BookView.module.css';
 /** Below this much CONTAINER width the three panes stop fitting (design §8). */
 const MIN_WIDTH = 1200;
 
+/** Pane widths: defaults, the range a drag may set, and where they are remembered. */
+const PANE = {
+  toc: { def: 282, min: 190, max: 560, key: 'bookview.tocW' },
+  raw: { def: 440, min: 280, max: 860, key: 'bookview.rawW' },
+} as const;
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** Remembered per reader, per browser. Storage can throw (private windows,
+ *  blocked site data), so every read and write is guarded and falls back to
+ *  the default width. */
+function storedWidth(pane: keyof typeof PANE): number {
+  const { def, min, max, key } = PANE[pane];
+  try {
+    const raw = window.localStorage.getItem(key);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? clamp(n, min, max) : def;
+  } catch { return def; }
+}
+
+function rememberWidth(pane: keyof typeof PANE, px: number): void {
+  try { window.localStorage.setItem(PANE[pane].key, String(Math.round(px))); } catch { /* not fatal */ }
+}
+
 export interface BookViewProps {
   slug: string;
   initialItem?: string;
@@ -63,6 +87,59 @@ export function BookView({ slug, initialItem, panes, onClose }: BookViewProps) {
 
   const [narrow, setNarrow] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Resizable panes. Widths live in state (so a drag re-renders) and are
+  // mirrored to localStorage on release.
+  const [tocW, setTocW] = useState(() => storedWidth('toc'));
+  const [rawW, setRawW] = useState(() => storedWidth('raw'));
+  const [dragging, setDragging] = useState<null | 'toc' | 'raw'>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+
+  /** Drag a splitter: the left one sets the contents width from the pointer's
+   *  distance to the frame's left edge, the right one from its distance to the
+   *  right edge. Pointer capture keeps the drag alive over the other panes. */
+  const startDrag = useCallback((pane: 'toc' | 'raw') => (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(pane);
+
+    const move = (ev: PointerEvent) => {
+      const box = frameRef.current?.getBoundingClientRect();
+      if (!box) return;
+      if (pane === 'toc') setTocW(clamp(ev.clientX - box.left, PANE.toc.min, PANE.toc.max));
+      else setRawW(clamp(box.right - ev.clientX, PANE.raw.min, PANE.raw.max));
+    };
+    const end = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      setDragging(null);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }, []);
+
+  // Persist once the drag settles rather than on every pointermove.
+  useEffect(() => { if (!dragging) rememberWidth('toc', tocW); }, [tocW, dragging]);
+  useEffect(() => { if (!dragging) rememberWidth('raw', rawW); }, [rawW, dragging]);
+
+  /** Arrow keys nudge a focused splitter, so the panes are resizable without a mouse. */
+  const nudge = useCallback((pane: 'toc' | 'raw') => (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 48 : 12;
+    let delta = 0;
+    if (e.key === 'ArrowLeft') delta = -step;
+    else if (e.key === 'ArrowRight') delta = step;
+    else if (e.key === 'Home') delta = NaN;         // reset
+    else return;
+    e.preventDefault();
+    const set = pane === 'toc' ? setTocW : setRawW;
+    const { min, max, def } = PANE[pane];
+    if (Number.isNaN(delta)) { set(def); return; }
+    // the right-hand pane grows when its splitter moves LEFT
+    const signed = pane === 'raw' ? -delta : delta;
+    set((w) => clamp(w + signed, min, max));
+  }, []);
 
   // Escape closes, matching the shell's convention. The `b`-to-open half of the
   // accelerator belongs to whatever mounts this view, not to the view itself.
@@ -301,7 +378,11 @@ export function BookView({ slug, initialItem, panes, onClose }: BookViewProps) {
       ) : !contents ? (
         <div className={styles.shellnote}>Loading the book…</div>
       ) : (
-        <div className={`${styles.frame} ${showContents ? '' : styles.noToc} ${showRaw ? '' : styles.noRaw}`}>
+        <div
+          ref={frameRef}
+          className={`${styles.frame} ${showContents ? '' : styles.noToc} ${showRaw ? '' : styles.noRaw} ${dragging ? styles.resizing : ''}`}
+          style={{ '--tocW': `${tocW}px`, '--rawW': `${rawW}px` } as React.CSSProperties}
+        >
           <nav className={`${styles.col} ${styles.rail}`} aria-label="Contents">
             <BookContents
               groups={contents.groups}
@@ -310,6 +391,20 @@ export function BookView({ slug, initialItem, panes, onClose }: BookViewProps) {
               onSelect={selectItem}
             />
           </nav>
+
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize the contents pane"
+            aria-valuenow={Math.round(tocW)}
+            aria-valuemin={PANE.toc.min}
+            aria-valuemax={PANE.toc.max}
+            tabIndex={0}
+            className={`${styles.splitter} ${styles.splitLeft} ${dragging === 'toc' ? styles.dragging : ''}`}
+            onPointerDown={startDrag('toc')}
+            onKeyDown={nudge('toc')}
+            onDoubleClick={() => setTocW(PANE.toc.def)}
+          />
 
           <main className={styles.col}>
             <ReadingPane
@@ -327,6 +422,20 @@ export function BookView({ slug, initialItem, panes, onClose }: BookViewProps) {
               onGateResolved={gateResolved}
             />
           </main>
+
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize the raw markdown pane"
+            aria-valuenow={Math.round(rawW)}
+            aria-valuemin={PANE.raw.min}
+            aria-valuemax={PANE.raw.max}
+            tabIndex={0}
+            className={`${styles.splitter} ${styles.splitRight} ${dragging === 'raw' ? styles.dragging : ''}`}
+            onPointerDown={startDrag('raw')}
+            onKeyDown={nudge('raw')}
+            onDoubleClick={() => setRawW(PANE.raw.def)}
+          />
 
           <aside className={styles.rawcol}>
             <RawPane

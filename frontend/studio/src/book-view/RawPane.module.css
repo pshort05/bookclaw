@@ -4,7 +4,7 @@
   flex: 1 1 auto;
   min-width: 0;
   background: var(--panel);
-  border-left: 1px solid var(--line);
+  /* divider is drawn by .splitter */
   display: flex;
   flex-direction: column;
   overflow: hidden;
