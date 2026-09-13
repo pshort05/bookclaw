@@ -31,6 +31,7 @@ test('studio bundle carries the premise-intake screen', { timeout: 180000 }, () 
     .join('\n');
 
   assert.ok(js.includes('/api/books/intake'), 'intake endpoint path must ship in the bundle');
+  assert.ok(js.includes('/api/books/intake/budget-check'), 'the budget re-check must ship in the bundle');
   assert.ok(js.includes('From a premise file'), 'New-hub entry card must ship in the bundle');
   assert.ok(js.includes('Grounded setting'), 'grounded-setting label must ship in the bundle');
 });

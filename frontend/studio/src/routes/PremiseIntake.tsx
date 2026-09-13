@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, useStore, type LibraryEntry, type BookManifest } from '@bookclaw/shared';
+import { mergeBudgetDiscrepancies, discKey } from '../lib/budgetCheck.js';
 import styles from './PremiseIntake.module.css';
 
 // Response shape of POST /api/books/intake (backend: books.routes.ts).
@@ -91,6 +92,29 @@ export function PremiseIntake() {
     });
   }, []);
 
+  // The budget conflicts analyze returned were computed from the counts the AI
+  // PROPOSED. The author edits those numbers below, so re-check on every change
+  // (debounced; a stale response is dropped) and swap the budget findings for the
+  // fresh set. Deps are the two counts only — nothing else changes the answer.
+  const chapterCount = seeds?.chapterCount;
+  const wordsPerChapter = seeds?.wordsPerChapter;
+  useEffect(() => {
+    if (!seeds || chapterCount === undefined || wordsPerChapter === undefined) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      api<{ discrepancies: Discrepancy[] }>('/api/books/intake/budget-check', {
+        method: 'POST',
+        body: JSON.stringify({ seeds, chapterCount, wordsPerChapter }),
+      })
+        .then((r) => {
+          if (!live) return;
+          setResult((prev) => (prev ? { ...prev, discrepancies: mergeBudgetDiscrepancies(prev.discrepancies, r.discrepancies ?? []) } : prev));
+        })
+        .catch(() => { /* fail-soft: a failed re-check leaves the last known findings in place */ });
+    }, 400);
+    return () => { live = false; clearTimeout(timer); };
+  }, [chapterCount, wordsPerChapter]);
+
   const fillFromFile = async (file: File | undefined) => {
     if (!file) return;
     setPremise(await file.text());
@@ -119,15 +143,15 @@ export function PremiseIntake() {
 
   // "Apply" a discrepancy suggestion: just record the decision. The actual splice
   // happens once at finalize time (see startBook) so re-clicking stays idempotent.
-  const applyDiscrepancy = (d: Discrepancy) => setDiscResolution((m) => ({ ...m, [d.id]: 'applied' }));
-  const keepDiscrepancy = (d: Discrepancy) => setDiscResolution((m) => ({ ...m, [d.id]: 'kept' }));
+  const applyDiscrepancy = (d: Discrepancy) => setDiscResolution((m) => ({ ...m, [discKey(d)]: 'applied' }));
+  const keepDiscrepancy = (d: Discrepancy) => setDiscResolution((m) => ({ ...m, [discKey(d)]: 'kept' }));
 
   const failDiscs = (result?.discrepancies ?? []).filter((d) => d.status === 'fail');
   const passDiscs = (result?.discrepancies ?? []).filter((d) => d.status === 'pass');
   const gaps = result?.gaps ?? [];
 
   const gapsResolved = gaps.every((g) => (gapAnswers[g.id] ?? '').trim().length > 0);
-  const discsResolved = failDiscs.every((d) => !!discResolution[d.id]);
+  const discsResolved = failDiscs.every((d) => !!discResolution[discKey(d)]);
   const canCreate = !!(seeds && title.trim() && author && voice && gapsResolved && discsResolved && heatConfirmed && !creating);
 
   const startBook = async () => {
@@ -139,7 +163,7 @@ export function PremiseIntake() {
       // Discrepancy suggestions: splice once here for every 'applied' fail-discrepancy.
       // 'kept' means the author accepted the premise claim as intentional — nothing to do.
       for (const d of failDiscs) {
-        if (discResolution[d.id] !== 'applied' || !d.suggestion) continue;
+        if (discResolution[discKey(d)] !== 'applied' || !d.suggestion) continue;
         final[d.targetField] = `${final[d.targetField]}\n\n[Fact-check: ${d.premiseClaim}] ${d.suggestion}`;
       }
       // Gap answers: append to the named text field, or fold into the blueprint when the
@@ -310,7 +334,7 @@ export function PremiseIntake() {
           <section className={styles.section}>
             <h3 className={styles.h3}>Fact-check</h3>
             {failDiscs.map((d) => {
-              const state = discResolution[d.id];
+              const state = discResolution[discKey(d)];
               return (
                 <div key={d.id} className={styles.discCard}>
                   <div className={styles.discClaim}>{d.premiseClaim}</div>

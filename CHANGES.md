@@ -4,6 +4,11 @@ A running log of notable, user-facing changes to BookClaw, newest first. Entries
 
 ## 2026-09-13
 
+### Chapter length you asked for
+
+- **The outline now writes to your word target.** Setting 25 chapters of 2,400 words produced an outline planning ~90,000 words with 3,200-word chapters: the outline step was told the chapter count but never the word target, while the premise's own pacing notes ("24–28 chapters, 80,000–90,000 words") were handed to it as canon, so it followed the only number it had. Every outline prompt now states the per-chapter target, and says plainly that your chapter and word settings override any length stated in the premise or blueprint. The chapters themselves were always drafted to your target — it was the plan that drifted.
+- **A premise that disagrees with your settings now says so.** When the premise file states a book length or chapter count that contradicts what you chose, intake flags it alongside the other fact-checks, quoting the line from the premise and telling you which number wins, instead of letting the two disagree silently. The check re-runs as you edit the chapter count or words-per-chapter on the review screen, so a disagreement you introduce there is caught too — and clears itself the moment you fix the numbers.
+
 ### Consistency that acts
 
 - **The consistency checker's findings now reach the writing.** Every contradiction, knowledge-leak and timeline slip the ledger catches after a chapter's first draft is handed to the Rewrite pass as a named list of issues to fix — alongside the craft and dialogue notes it already received. Until now those findings only ever appeared in a review panel: *Three Months of Summer* carries 113 of them across all 24 chapters, and not one reached the pass that could have fixed it, because the wiring looked for step names the romance pipelines don't use.

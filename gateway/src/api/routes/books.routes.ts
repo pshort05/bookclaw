@@ -16,7 +16,7 @@ import { assembleManuscript, normalizeChapter, pickLatestChapters, validateAssem
 import { chapterTextSteps } from '../../services/pipeline/chapter-files.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
 import { baseSequenceNameForGenre } from '../../services/pipeline/genre-base.js';
-import { PremiseIntakeService, composeGroundedSetting } from '../../services/premise-intake.js';
+import { PremiseIntakeService, composeGroundedSetting, budgetDiscrepancies, type Discrepancy, type IntakeSeeds } from '../../services/premise-intake.js';
 import { RomanceInterviewService } from '../../services/romance-interview.js';
 import { loadRegistry } from '../../services/registry/store.js';
 import { buildContents, resolveItem, proseWords, stepFileName, type BuildInput } from '../../services/book-contents.js';
@@ -72,6 +72,23 @@ export function describeProviderError(raw: string): string | null {
   if (code === 429) return `${who} is rate-limited right now — wait a moment, then re-run Analyze.`;
   if (code && code >= 500) return `${who} had a server error (HTTP ${code}) — try again shortly.`;
   return `${who} returned HTTP ${code}.`;
+}
+
+/**
+ * Body check for POST /api/books/intake/budget-check (exported for unit tests, as
+ * parseVerifiedCanonBody is). Bad input is an error the route turns into a 400
+ * rather than an empty list: on the review screen an empty list is indistinguishable
+ * from "no conflicts", i.e. a silent pass for a check that never ran.
+ */
+export function budgetCheckBody(body: any): { error: string } | { discrepancies: Discrepancy[] } {
+  const seeds = body?.seeds;
+  if (!seeds || typeof seeds !== 'object' || Array.isArray(seeds)) return { error: 'seeds (object) is required' };
+  const count = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
+  const chapterCount = count(body.chapterCount);
+  if (chapterCount === null) return { error: 'chapterCount must be a positive number' };
+  const wordsPerChapter = count(body.wordsPerChapter);
+  if (wordsPerChapter === null) return { error: 'wordsPerChapter must be a positive number' };
+  return { discrepancies: budgetDiscrepancies(seeds as IntakeSeeds, chapterCount, wordsPerChapter) };
 }
 
 /**
@@ -156,7 +173,12 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       // Preserve the author's own setting verbatim; grounding only APPENDS verified
       // real-world geography — it must never overwrite the author's locations.
       const seeds = { ...intake.seeds, setting: composeGroundedSetting(intake.seeds.setting, grounding.dossier, grounding.status) };
-      res.json({ seeds, gaps: intake.gaps, discrepancies: grounding.discrepancies, citations: grounding.citations, realPlace: intake.realPlace, groundingStatus: grounding.status });
+      // Length-budget conflicts (deterministic, no AI) ride the same discrepancy
+      // list as the grounding fact-check, so a premise that states its own word
+      // count is reconciled with the chosen settings before the book is created.
+      // Run against the author's own seed text, not the grounded setting.
+      const discrepancies = [...grounding.discrepancies, ...budgetDiscrepancies(intake.seeds)];
+      res.json({ seeds, gaps: intake.gaps, discrepancies, citations: grounding.citations, realPlace: intake.realPlace, groundingStatus: grounding.status });
     } catch (err: any) {
       const msg = String(err?.message ?? '');
       if (msg.startsWith('PREMISE_INTAKE_EMPTY_FIELDS:')) {
@@ -171,6 +193,17 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
       if (provider) return res.status(502).json({ error: `Premise intake couldn't reach the AI — ${provider}` });
       res.status(500).json({ error: 'Premise intake failed' });
     }
+  });
+
+  // Re-check the length budget after the author edits the chapter/word counts on the
+  // intake review screen. POST /api/books/intake computes its budget conflicts once,
+  // from the counts the AI PROPOSED — the disagreement this check exists to catch
+  // usually only appears after the author types their own numbers (Firefly Pond).
+  // Zero AI, no writes, no state: the same deterministic detection, on demand.
+  app.post('/api/books/intake/budget-check', (req: Request, res: Response) => {
+    const result = budgetCheckBody(req.body);
+    if ('error' in result) return res.status(400).json({ error: result.error });
+    res.json({ discrepancies: result.discrepancies });
   });
 
   // Romance Adaptive Interview (sub-project 4): one conversational turn. STATELESS —

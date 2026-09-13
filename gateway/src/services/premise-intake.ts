@@ -1,3 +1,5 @@
+import { detectBudgetConflicts, type BudgetKind } from './intake-budget.js';
+
 export type SeedField = 'storyArc' | 'characters' | 'setting' | 'blueprint' | 'heat' | 'chapterCount' | 'wordsPerChapter';
 export interface IntakeSeeds { storyArc: string; characters: string; setting: string; blueprint: string; heat: 'sweet' | 'spicy'; chapterCount: number; wordsPerChapter: number; }
 export interface IntakeGap { id: string; question: string; proposedAnswer: string; alternatives?: string[]; targetField: SeedField; }
@@ -158,6 +160,44 @@ Audit ONLY real-world facts the PREMISE asserts (street names, town placement, g
  * geography that merely echoes the author's setting, composes to the author text
  * unchanged.
  */
+const BUDGET_LABEL: Record<BudgetKind, string> = { total: 'a total word budget', chapters: 'a chapter count', perChapter: 'a per-chapter word count' };
+
+/**
+ * Budget-conflict discrepancies for the intake review screen (Firefly Pond bug:
+ * the blueprint seed said 80,000–90,000 words while the book was set to 25 × 2,400
+ * = 60,000, and nothing flagged it — the outline then followed the blueprint).
+ *
+ * The counts default to the seeds' own; callers pass them explicitly to check a
+ * count the author has since edited (POST /api/books/intake/budget-check).
+ *
+ * Deterministic, zero-AI, and fail-soft. These ride the SAME discrepancy list as
+ * the grounding fact-check, so they surface where the author already resolves
+ * findings (Apply / Keep) before the book is created. They always target the
+ * blueprint: that is the seed a length correction belongs in, whichever seed the
+ * stray figure was written in (the source seed is named in `premiseClaim`).
+ */
+export function budgetDiscrepancies(
+  seeds: IntakeSeeds,
+  chapterCount: number = seeds?.chapterCount,
+  wordsPerChapter: number = seeds?.wordsPerChapter,
+): Discrepancy[] {
+  if (!seeds || typeof seeds !== 'object') return [];
+  const out: Discrepancy[] = [];
+  for (const field of SEED_TEXT_FIELDS) {
+    for (const c of detectBudgetConflicts(seeds[field], chapterCount, wordsPerChapter)) {
+      out.push({
+        id: `budget-${field}-${out.length + 1}`,
+        premiseClaim: `${field}: "${c.detail}"`,
+        finding: `The premise states ${BUDGET_LABEL[c.kind]} of ${c.claimed}, but this book is set to ${c.chosen}.`,
+        status: 'fail',
+        suggestion: `Your chapter/word settings OVERRIDE the premise here — generation uses ${c.chosen} and ignores the ${c.claimed} in the ${field}. Change the settings above if the premise figure is the one you want.`,
+        targetField: 'blueprint',
+      });
+    }
+  }
+  return out;
+}
+
 export function composeGroundedSetting(authorSetting: string, geography: string, status: GroundingStatus): string {
   const base = (authorSetting ?? '').trim();
   const geo = (geography ?? '').trim();
