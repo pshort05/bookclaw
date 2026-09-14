@@ -3,6 +3,7 @@ import path from 'path';
 import { addWaveDisclaimer, requireApprovedConfirmation } from './_shared.js';
 import { listForms } from '../../services/story-forms.js';
 import { renderPlotPromisesReport } from '../../services/reports/render-plot-promises.js';
+import { applyCanonDriftDecision } from '../../services/canon-accept.js';
 
 /** Memory search, user model, cron scheduler, auto-skill drafts, writing judge, character voices, research lookup (+runMarketingPreset), video research, story structures, plot promises. */
 export function mountKnowledge(app: Application, gateway: any, baseDir: string): void {
@@ -712,12 +713,35 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     res.json({ request: req_ });
   });
 
+  /**
+   * A `canon-drift-gate` decision is the ONLY thing that makes that confirmation
+   * mean anything: Approve marks the ambiguous place names canon for the book (the
+   * gate then treats them as known and stops flagging them), Reject records them as
+   * declined — the record of the author's choice, which nothing else reads. Every
+   * other confirmation service is untouched. Fail-soft — a store problem never fails
+   * the approve/reject request, but it is logged rather than passed off as success.
+   */
+  const recordCanonDecision = (result: any, decision: 'accepted' | 'declined') => {
+    const out = applyCanonDriftDecision((slug: string) => services.books?.bookDir?.(slug) ?? null, result, decision);
+    if (out) {
+      console.log(`  ✓ canon-places [${out.bookSlug}]: ${out.recorded} phrase(s) ${decision}`);
+      if (out.recorded === 0) console.log(`  ⚠ canon-places [${out.bookSlug}]: nothing persisted — the store could not be written`);
+      return;
+    }
+    // Only a canon-drift gate has a decision to record; every other service is a
+    // legitimate no-op. Saying so keeps a silent 200 from reading as "recorded".
+    if (result?.service === 'canon-drift-gate') {
+      console.log(`  ℹ canon-places: "${decision}" not recorded for this gate — it carries no bookSlug, no conflicts, or an unknown book, so there is nothing to record against`);
+    }
+  };
+
   app.post('/api/confirmations/:id/approve', async (req: Request, res: Response) => {
     const gate = services.confirmationGate;
     if (!gate) return res.status(503).json({ error: 'Confirmation gate not initialized' });
     try {
       const result = await gate.approve(req.params.id);
       if (!result) return res.status(404).json({ error: 'Not found' });
+      recordCanonDecision(result, 'accepted');
       // Human Review pipelines resume via the phase-10 periodic resolver (which
       // also re-drives generation) — not from here — so resume + drive stay in one
       // place and never race the autonomous heartbeat.
@@ -734,6 +758,7 @@ export function mountKnowledge(app: Application, gateway: any, baseDir: string):
     try {
       const result = await gate.reject(req.params.id, 'user', req.body?.reason);
       if (!result) return res.status(404).json({ error: 'Not found' });
+      recordCanonDecision(result, 'declined');
       res.json({ request: result });
     } catch (err: any) {
       res.status(400).json({ error: err?.message || 'Rejection failed' });

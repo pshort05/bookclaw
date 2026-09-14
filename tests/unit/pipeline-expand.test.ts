@@ -63,7 +63,9 @@ test('expandSteps carries modelOverride (provider+model+temperature) through emi
   ];
   const out = expandSteps(raw as any, vars);
   assert.equal(out.length, 2);
-  assert.deepEqual(out[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1 });
+  // `source: 'template'` marks the pick as the TEMPLATE's, so the book's per-role
+  // pin outranks it at routing time (see book-role-models.test.ts).
+  assert.deepEqual(out[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1, source: 'template' });
   assert.equal(out[1].modelOverride, undefined, 'step without modelOverride yields undefined (backward compat)');
 });
 

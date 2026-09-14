@@ -188,9 +188,11 @@ export const uploadZip = multer({
  * project step, for passing to handleMessage(..., preferredProvider,
  * overrideModel, bookSlug, overrideTemperature).
  * Precedence: a spiceRoute (a flagged intimate/violent scene re-routed to an
- * uncensored provider — Flagship Plan 2) beats everything; otherwise the
- * step's own modelOverride wins; otherwise the project-level preferredProvider
- * applies; model and temperature are pinned only when the step sets them.
+ * uncensored provider — Flagship Plan 2) beats everything; otherwise an explicit
+ * per-step modelOverride wins, then the book's per-role pin (manifest.roleModels),
+ * then the pipeline template's baked modelOverride, then the per-stage pin, then
+ * the project-level preferredProvider; model and temperature are pinned only when
+ * the step sets them.
  * Returns undefined fields when nothing is pinned (→ tier routing, today's
  * default behavior).
  */
@@ -208,6 +210,7 @@ export function applyBookModelConfig(project: any, manifest: any): void {
   project.preferredProvider = manifest.preferredProvider;
   project.preferredModel = manifest.preferredModel;
   project.stageModels = manifest.stageModels;
+  project.roleModels = manifest.roleModels;
   project.sceneBriefModel = manifest.sceneBriefModel;
   project.draftModel = manifest.draftModel;
   project.temperatures = manifest.temperatures;
@@ -230,12 +233,26 @@ export function stepRouting(
   // onto every scene brief (and 'creative_writing' onto every draft).
   const roleModeled = role === 'scene_brief' || role === 'draft';
   const stagePin = roleModeled ? undefined : project?.stageModels?.[step?.taskType];
-  const effectiveOverride = (step?.modelOverride || stagePin)
-    ? {
-        provider: step?.modelOverride?.provider || stagePin?.provider,
-        model: step?.modelOverride?.model || stagePin?.model,
-        temperature: step?.modelOverride?.temperature,
-      }
+
+  // A step's modelOverride has two very different origins, and they rank
+  // differently: one the author pinned on THIS step in the Write rail, and one
+  // the pipeline template baked into its step JSON (copied onto every expanded
+  // chapter step by pipeline-expand's emitStep, which tags it `source:'template'`).
+  // The book's per-ROLE pin ("apply to every First Draft", manifest.roleModels)
+  // must beat the template's baked pick — otherwise a chapter expanded AFTER the
+  // author pinned the role would still run on the template model — while an
+  // explicit per-step pin still beats the role pin.
+  const stepPin = step?.modelOverride;
+  const templatePin = stepPin?.source === 'template' ? stepPin : undefined;
+  const explicitPin = templatePin ? undefined : stepPin;
+  const rolePin = role ? project?.roleModels?.[role] : undefined;
+  // Wholesale (not field-by-field): mixing one source's provider with another's
+  // model id would send e.g. the template's Gemini slug to the pinned provider.
+  const winner = [explicitPin, rolePin, templatePin, stagePin].find((p) => p?.provider || p?.model);
+  // Temperature always comes from the step's own pin (either origin): a model
+  // change must never silently re-write the book's creative heat.
+  const effectiveOverride = (winner || typeof stepPin?.temperature === 'number')
+    ? { provider: winner?.provider, model: winner?.model, temperature: stepPin?.temperature }
     : undefined;
 
   // Backward compatibility: an untagged step keeps today's behavior exactly —

@@ -486,6 +486,33 @@
   color: var(--text);
 }
 
+/* "change all" — deliberately on its own row and in the accent colour so it
+   never reads as the single-step action sitting next to it. */
+.modelAll {
+  flex-basis: 100%;
+  text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid var(--ember);
+  border-radius: var(--r-s);
+  color: var(--ember);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.modelAll:hover:not(:disabled) {
+  background: var(--ember);
+  color: var(--panel-2);
+}
+
+.modelAll:disabled {
+  border-color: var(--line-2);
+  color: var(--dim);
+  cursor: default;
+}
+
 /* empty / error states */
 .empty {
   display: flex;

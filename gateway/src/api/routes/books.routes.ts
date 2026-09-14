@@ -12,6 +12,8 @@ import { mapRunnerPath, isUploadableName, resolveBookUpload } from '../../servic
 import { bindBookWorld } from './world-bind.js';
 import { buildBookFormat } from '../../services/format-input.js';
 import { AI_PROVIDER_IDS } from '../../ai/router.js';
+import { isValidModelId } from '../../ai/model-id.js';
+import { isStepRole, STEP_ROLES } from '../../services/casting/roles.js';
 import { assembleManuscript, normalizeChapter, pickLatestChapters, validateAssembly } from '../../services/manuscript-assembly.js';
 import { chapterTextSteps } from '../../services/pipeline/chapter-files.js';
 import { generateDocxBuffer } from '../../services/docx-export.js';
@@ -485,6 +487,117 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     } catch (err: any) {
       const msg = (err as Error)?.message || String(err);
       res.status(/not found/i.test(msg) ? 404 : /read-only|quarantine/i.test(msg) ? 409 : 500).json({ error: msg });
+    }
+  });
+
+  // "Change all": apply one model pick to a step's ROLE across the whole book.
+  // The Write rail's per-step picker pins a SINGLE step, which is unusable on a
+  // 25+-chapter book. "All" means the role everywhere — change chapter 7's First
+  // Draft and every First Draft follows — and never another role (a scene brief
+  // is never dragged onto the draft's model).
+  //
+  // The load-bearing write is the book-level, ROLE-KEYED slot `manifest.roleModels`
+  // (NOT the taskType-keyed stageModels, which would bleed onto every sibling role
+  // sharing that taskType — `improve`+`rewrite` both ride taskType 'revision').
+  // stepRouting resolves it live, above a pipeline-baked template modelOverride and
+  // below an explicit per-step pin, so chapters that expand LATER inherit it too.
+  // Existing steps are then re-stamped so an older explicit per-step pin on that
+  // role (which outranks the role pin by design) doesn't survive the bulk change.
+  // An empty provider clears both. Temperature is preserved verbatim — see the
+  // comment on the stamping loop.
+  app.post('/api/books/:slug/models/role', async (req: Request, res: Response) => {
+    const slug = String(req.params.slug);
+    if (!SLUG_RE.test(slug)) return res.status(400).json({ error: 'invalid slug' });
+    if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
+    const body = req.body ?? {};
+    const engine = gateway.getProjectEngine?.();
+    // The book's CHAIN only (planning → bible → production → …), never every
+    // project bound to the slug: a book carries duplicate/abandoned pipelines when
+    // "start" was clicked repeatedly, and stamping those re-pins runs the author
+    // abandoned. Same selection the frontier project is derived from.
+    const bookProjects: any[] = engine?.chainProjectsForBook?.(slug) ?? [];
+    const allSteps: any[] = bookProjects.flatMap((p: any) => p.steps ?? []);
+
+    // The role comes verbatim, or is derived from the step the user clicked.
+    let role = body.role;
+    if (role === undefined && typeof body.stepId === 'string') {
+      const source = allSteps.find((s) => s.id === body.stepId);
+      if (!source) return res.status(404).json({ error: 'Step not found' });
+      if (!source.role) return res.status(400).json({ error: 'that step carries no role, so it cannot be applied across chapters' });
+      role = source.role;
+    }
+    if (!isStepRole(role)) return res.status(400).json({ error: `invalid role. Use one of: ${STEP_ROLES.join(', ')}` });
+
+    const provider = typeof body.provider === 'string' ? body.provider.trim() : '';
+    const model = typeof body.model === 'string' ? body.model.trim() : '';
+    if (provider && !(AI_PROVIDER_IDS as readonly string[]).includes(provider)) {
+      return res.status(400).json({ error: `Invalid provider. Use one of: ${AI_PROVIDER_IDS.join(', ')}` });
+    }
+    if (provider && model && !isValidModelId(model)) return res.status(400).json({ error: 'Invalid model id' });
+
+    try {
+      // Manifest first: it is the atomic, durable half AND the one that actually
+      // routes (stepRouting reads roleModels for every step of the role, expanded
+      // or not). The step stamps below are in-memory + debounced, so a crash
+      // between the two leaves only stale per-step pins — not a half-applied
+      // change. It also fails closed on a read-only/quarantined book before
+      // anything is mutated in memory.
+      const manifest = await services.books.setModelConfig(slug, { roleModels: { [role]: { provider, model } } });
+
+      // Re-stamp (or clear) the per-step override on every existing step of the
+      // role, so an explicit pin set earlier on one chapter — which outranks the
+      // role pin — doesn't quietly survive an "apply to every" change.
+      // Any temperature the step already pinned is carried across UNCHANGED: the
+      // per-step endpoint drops it, and the OpenAI-compatible path (OpenRouter,
+      // OpenAI, DeepSeek) defaults an omitted temperature to 0.7 — which would
+      // silently re-write the book's creative heat while "only" changing a model.
+      let appliedSteps = 0;
+      let touchedProjects = 0;
+      for (const project of bookProjects) {
+        let changed = false;
+        for (const step of (project.steps ?? []) as any[]) {
+          if (step.role !== role) continue;
+          if (!provider) {
+            if (!step.modelOverride) continue;
+            delete step.modelOverride;
+          } else {
+            const temperature = step.modelOverride?.temperature;
+            step.modelOverride = {
+              provider,
+              ...(model ? { model } : {}),
+              ...(typeof temperature === 'number' ? { temperature } : {}),
+            };
+          }
+          appliedSteps++; changed = true;
+        }
+        // Don't bump a finished phase's recency just because its steps were
+        // re-stamped — that reorders every recency-sorted project view.
+        if (changed) { if (project.status !== 'completed') project.updatedAt = new Date().toISOString(); touchedProjects++; }
+      }
+      if (appliedSteps) engine?.saveState?.();
+
+      // Push the manifest onto the live project so a running book picks the change
+      // up on its next step (mirrors POST /api/books/:slug/models).
+      const frontier = engine?.frontierProjectForBook?.(slug) ?? null;
+      if (frontier) applyBookModelConfig(frontier, manifest);
+
+      // A bulk change can touch 100+ steps — leave a trail (the manifest's own
+      // history entry records only the book-level half).
+      console.log(provider
+        ? `  ✓ models: role "${role}" → ${provider}${model ? ` · ${model}` : ''} on "${slug}" (${appliedSteps} step(s) re-stamped across ${touchedProjects} project(s))`
+        : `  ✓ models: role "${role}" cleared on "${slug}" (${appliedSteps} step pin(s) removed across ${touchedProjects} project(s))`);
+
+      res.json({
+        success: true,
+        role,
+        appliedSteps,
+        touchedProjects,
+        roleModels: manifest.roleModels ?? {},
+      });
+    } catch (err: any) {
+      const msg = (err as Error)?.message || String(err);
+      // assertWritable throws "... is readonly" / "... is quarantined" (no hyphen).
+      res.status(/not found/i.test(msg) ? 404 : /read-?only|quarantine/i.test(msg) ? 409 : 500).json({ error: msg });
     }
   });
 

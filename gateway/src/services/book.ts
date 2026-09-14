@@ -500,6 +500,7 @@ export class BookService {
     cfg: {
       default?: { provider?: string; model?: string };
       stageModels?: Record<string, { provider?: string; model?: string }>;
+      roleModels?: Record<string, { provider?: string; model?: string }>;
       sceneBriefModel?: { provider?: string; model?: string };
       draftModel?: { provider?: string; model?: string };
     },
@@ -524,6 +525,17 @@ export class BookService {
         }
         if (Object.keys(next).length) manifest.stageModels = next; else delete manifest.stageModels;
       }
+      // Per-role pins ("apply to every <Role>"), same merge/clear rules as stages
+      // but keyed by StepRole. The caller validates the key against STEP_ROLES.
+      if (cfg.roleModels) {
+        const next = { ...(manifest.roleModels ?? {}) };
+        for (const [role, sel] of Object.entries(cfg.roleModels)) {
+          const provider = sel?.provider?.trim();
+          if (provider) next[role] = sel.model?.trim() ? { provider, model: sel.model.trim() } : { provider };
+          else delete next[role]; // falsy provider clears the role
+        }
+        if (Object.keys(next).length) manifest.roleModels = next; else delete manifest.roleModels;
+      }
       // Author-identity role models (per-author draft-model plan): a truthy
       // provider sets the field; an empty provider clears it. Undefined = not sent.
       for (const key of ['sceneBriefModel', 'draftModel'] as const) {
@@ -533,7 +545,7 @@ export class BookService {
         if (provider) manifest[key] = sel.model?.trim() ? { provider, model: sel.model.trim() } : { provider };
         else delete manifest[key];
       }
-      manifest.history.push({ at: new Date().toISOString(), event: 'model-config-set', detail: `default=${manifest.preferredModel ?? manifest.preferredProvider ?? 'auto'} stages=${Object.keys(manifest.stageModels ?? {}).length}` });
+      manifest.history.push({ at: new Date().toISOString(), event: 'model-config-set', detail: `default=${manifest.preferredModel ?? manifest.preferredProvider ?? 'auto'} stages=${Object.keys(manifest.stageModels ?? {}).length} roles=${Object.keys(manifest.roleModels ?? {}).length}` });
       await writeFileAtomic(join(this.booksDir, slug, 'book.json'), JSON.stringify(manifest, null, 2) + '\n');
       return manifest;
     });

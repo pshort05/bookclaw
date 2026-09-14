@@ -10,7 +10,22 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type Project, type ProjectStep, type BookDetail, type LibraryPipeline } from '@bookclaw/shared';
 import { ModelPicker, type ModelValue } from '../asset/ModelPicker.js';
+import { useDialog } from '../Dialog.js';
 import styles from '../../routes/Write.module.css';
+
+// Display names for the casting roles (gateway casting/roles.ts StepRole).
+const ROLE_LABELS: Record<string, string> = {
+  scene_brief: 'Scene Brief', approach: 'Approach', draft: 'First Draft', improve: 'Improvement Pass',
+  rewrite: 'Rewrite', humanize: 'Humanize Pass', intimacy: 'Intimacy Pass', editorial: 'Editorial Pass',
+  analysis: 'Analysis', research: 'Research', bible: 'Book Bible', outline: 'Outline', plan: 'Planning',
+  format: 'Format', marketing: 'Marketing', continuity: 'Continuity',
+};
+
+/** The author's OWN pin on a step. A modelOverride tagged `source:'template'` was
+ *  baked in by the pipeline template and is outranked by the book's role pin, so
+ *  it must not be shown — or re-broadcast — as the author's choice. */
+const stepPin = (step?: ProjectStep) =>
+  (step?.modelOverride && step.modelOverride.source !== 'template' ? step.modelOverride : undefined);
 
 interface Props {
   slug: string;
@@ -29,6 +44,9 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
   const [error, setError] = useState<string | null>(null);
   const [seqTotal, setSeqTotal] = useState<number | null>(null); // F1: total phases in a book sequence
   const [editingStepId, setEditingStepId] = useState<string | null>(null); // which step's model picker is open
+  const [applyAllStepId, setApplyAllStepId] = useState<string | null>(null); // which step's "apply to every …" call is in flight
+  const applyAllBusyRef = useRef(false); // synchronous guard (state lags a tick, so two clicks would double-fire)
+  const { confirm } = useDialog();
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyRef = useRef(false);
   const kickedRef = useRef<string | null>(null); // guard: fire /auto-execute once per active phase
@@ -228,6 +246,46 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
     } catch { /* silent */ }
   };
 
+  // The human name of a step's ROLE — the thing "apply to every …" actually keys
+  // on. Deliberately NOT parsed from the label: 'Write Chapter {{n}}' has no
+  // separator, so a label-derived name read "every Write Chapter 7", i.e. the
+  // opposite of what the action does.
+  const roleName = (step: ProjectStep) => ROLE_LABELS[step.role ?? ''] ?? step.role ?? 'step';
+
+  // "Change all": broadcast this step's pin to its ROLE across the whole book —
+  // every chapter's copy of this step, plus the book-level slot so chapters that
+  // are not expanded yet inherit it. Deliberately a separate, confirmed action:
+  // the ModelPicker above it still pins this one step only.
+  const applyModelToRole = async (step: ProjectStep) => {
+    const ov = stepPin(step);
+    if (!activeProject || !ov?.provider || applyAllBusyRef.current) return;
+    // Guard on a ref, not on the (not-yet-rendered) disabled state: two clicks in
+    // one tick would otherwise queue two confirms and leave the first unsettled.
+    applyAllBusyRef.current = true;
+    const name = roleName(step);
+    const pick = `${ov.provider}${ov.model ? ` · ${ov.model}` : ''}`;
+    setApplyAllStepId(step.id); setError(null);
+    try {
+      const ok = await confirm({
+        title: `Apply to every ${name}`,
+        message: `Set every ${name} step in this book to ${pick} — every chapter's, including chapters that have not been written yet. Steps in any other role keep their own models.`,
+        confirmLabel: 'Apply to all',
+      });
+      if (!ok) return;
+      await api(`/api/books/${encodeURIComponent(slug)}/models/role`, {
+        method: 'POST',
+        body: JSON.stringify({ stepId: step.id, provider: ov.provider, model: ov.model }),
+      });
+      const r = await api<{ project: Project }>(`/api/projects/${encodeURIComponent(activeProject.id)}`).catch(() => null);
+      if (r?.project) onProjectChange(r.project);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      applyAllBusyRef.current = false;
+      setApplyAllStepId(null);
+    }
+  };
+
   const pf = detail?.book.pulledFrom;
   const descriptions = detail?.descriptions;
 
@@ -281,18 +339,22 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
       : m;
 
   const stepModelControl = (step: ProjectStep | undefined, status: 'done' | 'cur' | 'queued') => {
-    const ov = step?.modelOverride;
+    const ov = stepPin(step);
     const label = ov?.provider ? `${ov.provider}${ov.model ? ` · ${ov.model}` : ''}` : null;
-    // With no explicit per-step pin, a scene_brief/draft step inherits the book's
-    // author-set model (resolved by the router at run time, not stamped on the step).
-    // Surface it so the chip shows the EFFECTIVE model instead of "+ set model".
-    const inherited = !ov?.provider && step
-      ? (step.role === 'scene_brief' ? activeProject?.sceneBriefModel
-        : step.role === 'draft' ? activeProject?.draftModel : undefined)
-      : undefined;
-    const inheritedLabel = inherited?.model ? `${prettyModel(inherited.model)} · author` : null;
+    // With no explicit per-step pin, the step inherits (in routing order) the book's
+    // per-role pin, then the author's scene_brief/draft model, then whatever the
+    // pipeline template baked in — all resolved by the router at run time, not
+    // stamped on the step. Surface it so the chip shows the EFFECTIVE model.
+    const rolePin = step?.role ? activeProject?.roleModels?.[step.role] : undefined;
+    const authorPin = step?.role === 'scene_brief' ? activeProject?.sceneBriefModel
+      : step?.role === 'draft' ? activeProject?.draftModel : undefined;
+    const templatePin = step?.modelOverride?.source === 'template' ? step.modelOverride : undefined;
+    const inherited = !ov?.provider ? (rolePin ?? authorPin ?? templatePin) : undefined;
+    const inheritedFrom = inherited === rolePin ? 'book' : inherited === authorPin ? 'author' : 'pipeline';
+    const inheritedLabel = inherited?.model ? `${prettyModel(inherited.model)} · ${inheritedFrom}` : null;
     if (!step || status === 'done') {
-      return label ? <div className={styles.smeta}><span className={styles.model}>{label}</span></div> : null;
+      const ran = label ?? inheritedLabel;
+      return ran ? <div className={styles.smeta}><span className={styles.model}>{ran}</span></div> : null;
     }
     if (editingStepId !== step.id) {
       return (
@@ -300,7 +362,7 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
           type="button"
           className={styles.modelChip}
           onClick={() => setEditingStepId(step.id)}
-          title={label ? 'Set the AI provider / model for this step' : inheritedLabel ? 'Inherited from the author profile — click to override for this step' : 'Set the AI provider / model for this step'}
+          title={!label && inheritedLabel ? `Inherited from the ${inheritedFrom} — click to override for this step` : 'Set the AI provider / model for this step'}
         >
           {label ?? inheritedLabel ?? '+ set model'}
         </button>
@@ -314,6 +376,19 @@ export function PipelineRail({ slug, activeProject, onProjectChange, autoStart, 
           hideTemperature
         />
         <button type="button" className={styles.modelDone} onClick={() => setEditingStepId(null)}>done</button>
+        {step.role && (
+          <button
+            type="button"
+            className={styles.modelAll}
+            disabled={!ov?.provider || applyAllStepId === step.id}
+            title={ov?.provider
+              ? `Use this model for every ${roleName(step)} in the book, including chapters not written yet`
+              : 'Pick a model above first — this then applies it to every step of this kind'}
+            onClick={() => applyModelToRole(step)}
+          >
+            {applyAllStepId === step.id ? 'applying…' : `⇉ Apply to every ${roleName(step)}`}
+          </button>
+        )}
       </div>
     );
   };

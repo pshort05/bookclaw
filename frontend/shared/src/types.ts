@@ -146,7 +146,9 @@ export interface ProjectStep {
   skill?: string;
   chapterNumber?: number;
   wordCountTarget?: number;
-  modelOverride?: { provider: string; model?: string } | null;
+  // `source: 'template'` marks a pick baked into the pipeline template (not an
+  // author pin on this step) — the book's per-role pin outranks it at routing time.
+  modelOverride?: { provider: string; model?: string; source?: 'template' } | null;
   role?: string; // semantic casting role (scene_brief/draft/…); drives inherited-model display
 }
 
@@ -173,6 +175,9 @@ export interface Project {
   // The write screen surfaces these as the inherited model on scene_brief/draft steps.
   sceneBriefModel?: { provider?: string; model?: string };
   draftModel?: { provider?: string; model?: string };
+  // Per-role pins from "apply to every <Role>" (mirrors manifest.roleModels),
+  // keyed by step role. Applies to steps with no explicit per-step pin.
+  roleModels?: Record<string, { provider?: string; model?: string }>;
   [k: string]: unknown;
 }
 

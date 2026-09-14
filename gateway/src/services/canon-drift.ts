@@ -27,7 +27,14 @@ const BIZ_CUES = new Set(['cafe', 'café', 'bar', 'grill', 'inn', 'diner', 'bake
 
 export interface PlaceSet { towns: string[]; roads: string[] }
 export interface EntityConflict { phrase: string; reason: string }
-export interface EntityGateResult { edits: DeAiEdit[]; ambiguous: EntityConflict[] }
+/**
+ * `ambiguous` — the anchor names SEVERAL places of that class and cannot choose:
+ * a real conflict the author must resolve. `unverifiable` — the anchor names NO
+ * place of that class at all (e.g. a grounded hamlet with no road list), so the
+ * gate has no basis to judge and the finding is advisory only: reported, counted,
+ * never gated on and never auto-applied.
+ */
+export interface EntityGateResult { edits: DeAiEdit[]; ambiguous: EntityConflict[]; unverifiable: EntityConflict[] }
 
 // A capitalized multi-word proper-noun run: "Long Beach Boulevard", "Surf City".
 const RUN_RE = /[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*/g;
@@ -40,6 +47,9 @@ const RUN_RE = /[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*/g;
 const LEADING_DET_RE = /^(?:(?:The|A|An|This|That|These|Those|Their|Her|His|Its|Our|My|Your)\s+)+/;
 
 function uniq(a: string[]): string[] { return Array.from(new Set(a)); }
+
+/** Collapse whitespace exactly the way `scanPlaces` builds a place's `norm`. */
+function normPhrase(s: string): string { return String(s ?? '').replace(/\s+/g, ' ').trim(); }
 
 function cueClass(tok: string): 'road' | 'town' | 'biz' | null {
   const t = tok.toLowerCase();
@@ -117,27 +127,50 @@ export function extractPlaces(text: string): PlaceSet {
  * Flag every geographic proper noun in `doc` absent from the anchor place-set,
  * emitting one `swap` edit per OCCURRENCE (applyDeAiEdits swaps only the first
  * match per edit, so a phrase appearing twice must yield two edits). An unknown
- * place whose class has no single canonical target in the anchor (0 or >1
- * candidates) is genuinely ambiguous → surfaced separately for the ConfirmationGate,
- * never auto-swapped. Fail-soft: no anchor / empty doc → no edits.
+ * place with >1 candidate targets of its class in the anchor is genuinely ambiguous
+ * → surfaced separately for the ConfirmationGate, never auto-swapped. An unknown
+ * place with ZERO candidates is *unverifiable*, not drifted: the anchor says nothing
+ * about that class of place (a grounded hamlet with no road list), so every real
+ * street would otherwise be reported as drift. It goes to the advisory channel and
+ * never gates. Fail-soft: no anchor / empty doc → no edits.
+ *
+ * `accepted` — phrases the author marked canon on an earlier ambiguous gate. They
+ * are a KNOWN-set input ONLY: deliberately NOT anchor text, because the anchor also
+ * supplies the candidate swap targets and the "is there any anchor at all" test.
+ * Folding them into `anchors` would let an accept change swap behaviour (a
+ * zero-candidate advisory class turning into a silent auto-swap, or an anchorless
+ * book gaining a candidate universe made entirely of accepted names). The invariant
+ * this preserves: accepting a phrase changes nothing except that the phrase stops
+ * being reported — same edits, same ambiguous set, same unverifiable set.
  */
-export function entityGate(doc: string, anchors: string[]): EntityGateResult {
+export function entityGate(doc: string, anchors: string[], accepted: string[] = []): EntityGateResult {
   const anchorText = (anchors ?? []).filter(Boolean).join('\n\n');
   const edits: DeAiEdit[] = [];
   const ambiguous: EntityConflict[] = [];
-  if (!anchorText.trim() || !String(doc ?? '').trim()) return { edits, ambiguous };
+  const unverifiable: EntityConflict[] = [];
+  if (!anchorText.trim() || !String(doc ?? '').trim()) return { edits, ambiguous, unverifiable };
 
   const ap = extractPlaces(anchorText);
   const known = new Set<string>([...ap.towns, ...ap.roads]);
-  const ambigSeen = new Set<string>();
+  // Accepted phrases match case-insensitively: they round-trip through a durable
+  // per-book JSON store, and the LLM-edit filter below already lowercases, so a
+  // case-sensitive test here would let the two halves of the feature disagree.
+  const acceptedKnown = new Set<string>(
+    (accepted ?? []).map((a) => normPhrase(a).toLowerCase()).filter(Boolean),
+  );
+  const conflictSeen = new Set<string>();
 
   for (const p of scanPlaces(doc)) {
-    if (known.has(p.norm)) continue;
+    if (known.has(p.norm) || acceptedKnown.has(p.norm.toLowerCase())) continue;
     const targets = p.kind === 'road' ? ap.roads : ap.towns;
     if (targets.length !== 1) {
-      if (!ambigSeen.has(p.norm)) {
-        ambigSeen.add(p.norm);
-        ambiguous.push({ phrase: p.norm, reason: `unknown ${p.kind} "${p.norm}" — anchor has ${targets.length} candidate ${p.kind}s` });
+      if (!conflictSeen.has(p.norm)) {
+        conflictSeen.add(p.norm);
+        if (targets.length === 0) {
+          unverifiable.push({ phrase: p.norm, reason: `unverifiable ${p.kind} "${p.norm}" — anchor lists no ${p.kind}s, so there is no basis to judge it` });
+        } else {
+          ambiguous.push({ phrase: p.norm, reason: `unknown ${p.kind} "${p.norm}" — anchor has ${targets.length} candidate ${p.kind}s` });
+        }
       }
       continue;
     }
@@ -147,10 +180,10 @@ export function entityGate(doc: string, anchors: string[]): EntityGateResult {
       reason: `canon-drift: "${p.norm}" is not in the verified place list; nearest canonical ${p.kind} is ${replace}`,
     });
   }
-  return { edits, ambiguous };
+  return { edits, ambiguous, unverifiable };
 }
 
-export interface CanonDriftResult { edits: DeAiEdit[]; ambiguous: EntityConflict[] }
+export interface CanonDriftResult { edits: DeAiEdit[]; ambiguous: EntityConflict[]; unverifiable: EntityConflict[] }
 
 /**
  * Hybrid canon-drift audit: union the deterministic entity gate (A) with the LLM
@@ -160,20 +193,30 @@ export interface CanonDriftResult { edits: DeAiEdit[]; ambiguous: EntityConflict
  * per occurrence, and `applyDeAiEdits` swaps only the first match per edit, so
  * collapsing same-`find` entity edits (a place repeated verbatim) would leave every
  * occurrence after the first un-reconciled. Ambiguous entity conflicts are returned
- * separately for the ConfirmationGate; they are never auto-applied.
+ * separately for the ConfirmationGate; unverifiable ones are advisory-only. Neither
+ * is ever auto-applied.
+ *
+ * An LLM edit whose `find` contains an ACCEPTED phrase is dropped too: the entity
+ * gate no longer flags an accepted place, so without this the LLM half would happily
+ * rewrite the very name the author just declared canon.
  */
 export function canonDriftAudit(
   doc: string,
   anchors: string[],
   llmAuditRaw: string | null | undefined,
+  accepted: string[] = [],
 ): CanonDriftResult {
-  const gate = entityGate(doc, anchors);
+  const gate = entityGate(doc, anchors, accepted);
   const edits: DeAiEdit[] = [...gate.edits];                  // every entity edit (one per occurrence)
   const entityFinds = new Set(gate.edits.map(e => e.find));
+  const acceptedNorm = (accepted ?? []).map(a => normPhrase(a).toLowerCase()).filter(Boolean);
   for (const e of parseAuditEdits(llmAuditRaw)) {
-    if (!entityFinds.has(e.find)) edits.push(e);              // LLM edit only if it doesn't collide with an entity edit
+    if (entityFinds.has(e.find)) continue;                    // the entity edit wins
+    const find = normPhrase(e.find).toLowerCase();
+    if (acceptedNorm.some(a => find.includes(a))) continue;   // the author already called this canon
+    edits.push(e);
   }
-  return { edits, ambiguous: gate.ambiguous };
+  return { edits, ambiguous: gate.ambiguous, unverifiable: gate.unverifiable };
 }
 
 /** Minimal step shape the gate runner reads (ProjectStep is structurally assignable). */
@@ -182,7 +225,15 @@ export interface CanonGateDeps {
   steps: CanonGateStep[];               // all steps of the running project
   step: CanonGateStep;                  // the canon-drift-apply step being executed
   loadAnchors: () => Promise<string[]>; // verified-canon.md + seeds.setting (+ setting bible for Gate B), injected
+  // Phrases the author already marked canon (see `entityGate`). A known-set input
+  // ONLY — never spliced into `loadAnchors`, so an accept cannot change which swaps
+  // the gate makes or whether it finds an anchor at all.
+  accepted?: string[];
   rewriteFn?: (span: string, instruction: string) => Promise<string>;
+  // Genuine ambiguity only (anchor has >1 candidate) — the human gate. Unverifiable
+  // findings (anchor has 0 candidates of that class) must NEVER reach it: there is
+  // nothing to reconcile them to, so gating on them only trains the author to ignore
+  // the gate. They are reported via `stats.unverifiable` + the summary instead.
   onAmbiguous?: (conflicts: EntityConflict[], baseDocLabel: string) => Promise<void>; // → ConfirmationGate
   // Rewrite the base canon doc's archival per-step file after canonicalization, so
   // the drifted text is gone from disk too. Injected + fail-soft (in-memory is the
@@ -191,10 +242,16 @@ export interface CanonGateDeps {
 }
 export interface CanonGateOutput {
   text: string; // the gate STEP's own result — a short reconciliation summary, NOT the whole bible
-  stats: { swaps: number; rewrites: number; skipped: number; ambiguous: number; noAnchor: boolean; changed: boolean };
+  stats: { swaps: number; rewrites: number; skipped: number; ambiguous: number; unverifiable: number; noAnchor: boolean; changed: boolean };
+  // Advisory-only findings (anchor has no place of that class). Reported so the
+  // information is not lost; never gated on, never applied.
+  unverifiable: EntityConflict[];
 }
 
 const done = (s: CanonGateStep) => s.status === 'completed' && !!s.result;
+
+/** How many unverifiable phrases the gate summary names before it says "+N more". */
+const UNVERIFIABLE_NAMED = 8;
 
 /**
  * The single entry point the dispatch sites call. Resolves the base canon doc (the
@@ -217,7 +274,7 @@ export async function runCanonDriftGate(deps: CanonGateDeps): Promise<CanonGateO
   const base = [...before].reverse().find(s =>
     done(s) && !/-audit$/i.test(s.skill ?? '') && (s.skill ?? '') !== 'canon-drift-apply');
   const noop = (summary: string, noAnchor: boolean): CanonGateOutput =>
-    ({ text: summary, stats: { swaps: 0, rewrites: 0, skipped: 0, ambiguous: 0, noAnchor, changed: false } });
+    ({ text: summary, stats: { swaps: 0, rewrites: 0, skipped: 0, ambiguous: 0, unverifiable: 0, noAnchor, changed: false }, unverifiable: [] });
   if (!base?.result) return noop('Canon gate: no base canon document to reconcile — skipped (no-op).', true);
   const label = base.label ?? 'canon document';
 
@@ -239,7 +296,7 @@ export async function runCanonDriftGate(deps: CanonGateDeps): Promise<CanonGateO
     .filter(s => done(s) && /-canon-audit$/i.test(s.skill ?? ''))
     .map(s => s.result ?? '').join('\n');
 
-  const { edits, ambiguous } = canonDriftAudit(base.result, anchors, auditRaw);
+  const { edits, ambiguous, unverifiable } = canonDriftAudit(base.result, anchors, auditRaw, deps.accepted ?? []);
   if (ambiguous.length && deps.onAmbiguous) {
     try { await deps.onAmbiguous(ambiguous, label); } catch { /* fail-soft */ }
   }
@@ -251,12 +308,20 @@ export async function runCanonDriftGate(deps: CanonGateDeps): Promise<CanonGateO
       try { await deps.persistCanonical(base, res.text); } catch { /* fail-soft: disk is archival */ }
     }
   }
-  const summary = changed
-    ? `Canon gate reconciled "${label}": ${res.appliedSwaps} swap(s), ${res.appliedRewrites} rewrite(s), ${res.skipped} skipped, ${ambiguous.length} ambiguous. Canonical text written back to the "${label}" step.`
-    : `Canon gate: "${label}" already consistent with the verified anchor (${res.skipped} skipped, ${ambiguous.length} ambiguous).`;
+  // Name the advisory findings — a bare count tells the author nothing they can act
+  // on, and this summary IS the gate step's result in the UI. Capped so a 16-finding
+  // run stays readable.
+  const shown = unverifiable.slice(0, UNVERIFIABLE_NAMED).map(u => u.phrase);
+  const note = unverifiable.length
+    ? ` Unverifiable (advisory, nothing changed): ${shown.join(', ')}${unverifiable.length > UNVERIFIABLE_NAMED ? ` +${unverifiable.length - UNVERIFIABLE_NAMED} more` : ''}.`
+    : '';
+  const summary = (changed
+    ? `Canon gate reconciled "${label}": ${res.appliedSwaps} swap(s), ${res.appliedRewrites} rewrite(s), ${res.skipped} skipped, ${ambiguous.length} ambiguous, ${unverifiable.length} unverifiable (advisory). Canonical text written back to the "${label}" step.`
+    : `Canon gate: "${label}" already consistent with the verified anchor (${res.skipped} skipped, ${ambiguous.length} ambiguous, ${unverifiable.length} unverifiable (advisory)).`) + note;
   return {
     text: summary,
-    stats: { swaps: res.appliedSwaps, rewrites: res.appliedRewrites, skipped: res.skipped, ambiguous: ambiguous.length, noAnchor: false, changed },
+    stats: { swaps: res.appliedSwaps, rewrites: res.appliedRewrites, skipped: res.skipped, ambiguous: ambiguous.length, unverifiable: unverifiable.length, noAnchor: false, changed },
+    unverifiable,
   };
 }
 

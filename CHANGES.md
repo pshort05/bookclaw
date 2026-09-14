@@ -4,6 +4,16 @@ A running log of notable, user-facing changes to BookClaw, newest first. Entries
 
 ## 2026-09-14
 
+### Choosing models for a whole book
+
+- **Change one step's model, change them all.** Picking a different model for chapter 7's First Draft used to leave the other 24 chapters behind, and re-pinning by hand across a long book was not realistic. The model editor in the Write rail now offers **"Apply to every First Draft"** (it names whichever step you opened), which sets that step *kind* across the entire book in one click. Other kinds are untouched — changing the draft never drags your scene briefs or revisions onto the same model.
+- **It covers chapters you have not written yet.** The choice is saved on the book itself, not only on the chapters that currently exist, so chapter 38 of a 38-chapter book picks it up when it is finally written. Your creative and surgical temperature settings are carried across unchanged — switching a model never quietly re-heats the prose.
+
+### The canon gate means something now
+
+- **Approving or rejecting a flagged place name now changes what happens next.** The canon check pauses when a chapter introduces a place the book's grounding doesn't recognise, and asks you to decide — but nothing read your answer. Approve and reject were the same no-op: the name stayed in the document either way, and the same name was flagged again on the next run. Accepting a place now records it as part of the book's canon, so it stops being questioned; declining records that too. The buttons say what they do ("Accept as canon" / "Not canon") rather than implying an edit that never happened.
+- **A place the checker simply can't verify no longer looks like an error.** A book anchored to one small town but set across several real places had every street it named — Ludlow, Delancey, Canal, Fifth Avenue, Queens Boulevard — reported as invented, because the anchor listed no streets to check against and "nothing to compare" was being reported as "wrong". Seventeen flags, none of them actionable. The gate now separates the two: where there is a real alternative to offer, it still asks; where there is nothing to check against, it notes the name and keeps going instead of stopping you for a decision you can't make.
+
 ### Consistency you can trust
 
 - **The consistency checker stopped inventing contradictions.** Three defects made it report problems that were not there — on the last book, 19 flags across three chapters and *every one* was an artifact. Every chapter's facts were stamped with the same story time, so a scene in chapter 1 and a scene in chapter 2 were compared as if they happened at the same moment ("Jay is both at the office and at his apartment"). Values that differed only by a trailing full stop, a curly apostrophe or a stray space were treated as different, producing a "contradiction" between two identical-looking sentences. And a deleted book left its facts behind, so a rebuilt book was checked against the chapters of the book it replaced — flagging chapter 1 against a chapter 24 that no longer existed.

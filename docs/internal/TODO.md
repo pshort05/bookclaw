@@ -9,65 +9,6 @@ Anything currently being worked on must appear in this list. When an item is fin
 Issues found while generating *Firefly Pond*. Collected here deliberately rather than fixed one at a
 time, so they ship as a single build/deploy cycle. Add to this list as the run turns up more.
 
-- [ ] **1. The canon-drift gate's Approve and Reject both do nothing.** A `canon-drift-gate` /
-  `reconcile-canon` confirmation asks for a decision the code never reads. `onAmbiguous`
-  (`projects.routes.ts:1346`, `:754`, `index.ts:2622`) creates the request and **returns immediately** —
-  the drive loop has already moved on, and the ambiguous phrases were skipped by the rewriter before you
-  ever saw the gate. Nothing anywhere keys on `service === 'canon-drift-gate'`, and the periodic
-  `resolveReviewGates` sweep only walks projects with `project.review` set (the human-review cadence/pipeline
-  gates), which a canon gate never sets. So approve and reject are the same no-op: the flagged names stay in
-  the document either way. Confirmed live on this run — an earlier canon gate was **rejected** and the names
-  came back in the regenerated Setting doc regardless. Two fixes, pick one or both: (a) label it honestly
-  ("Acknowledge / Dismiss") so it stops implying it changes the book; (b) make the decision real, per the
-  existing 2026-07-28 item "Edit the source doc from a decision-gate confirmation" — Edit → Save & Approve
-  writing the corrected doc back to the step result *and* its archival file, so Reject can mean "strip these".
-
-- [ ] **2. A single rural anchor flags every legitimate urban street.** This gate fired on 17 place names with
-  the reason `unknown road "X" — anchor has 0 candidate roads`. The book's grounded anchor is **Phillipsport,
-  NY** (ZIP 12769, Sullivan County), a hamlet with no road list in the grounding sources — so the checker has
-  nothing to validate against and flags *everything*, including real streets (Ludlow, Delancey, Attorney,
-  Canal, Centre, Fifth Avenue, Queens Boulevard, Skillman, Northern Boulevard) and a real NJ neighbourhood
-  (Botany Village). The book is deliberately multi-location (Manhattan office + Queens + NJ + a Catskills
-  pond) while the anchor is one hamlet, so the mismatch is structural, not a canon error. Fix direction: let a
-  book carry **multiple anchors** (one per real location in the setting) and validate each proper noun against
-  the nearest one; and when an anchor has zero candidate roads, treat road-level nouns as *unverifiable*
-  rather than *drifted* — flagging 17 unactionable items trains the author to ignore the gate. Note the
-  town-level flags behaved differently (`4 candidate towns`), so the town path has candidates and the road
-  path does not.
-
-- [ ] **3. "Change all" when pinning a model to a chapter step [owner ask 2026-09-13].** In Write's pipeline
-  rail, changing a step's model calls `setStepModel(stepId, value)` → `POST /api/projects/:id/steps/:stepId/model`,
-  which sets `modelOverride` on **that one step**. Pinning e.g. First Draft to a different model for chapter 7
-  leaves chapters 1-6 and 8-25 on the old one, and re-pinning by hand across 25 chapters is not realistic. Add a
-  "change all" affordance beside the picker. **Semantics, settled by the owner 2026-09-13:** "all" means the step's
-  ROLE across every chapter — change chapter 7's First Draft and it applies to *every* First Draft; change a
-  chapter revision and it applies to *every* chapter revision. Roles stay independent of each other: this is
-  never "set every chapter step to one model", so a scene brief is never dragged onto the draft's model.
-  Remaining decision: per-step overrides only reach steps that already exist, so for
-  a book whose later chapters have not been expanded yet the durable fix is the **book-level stage model**
-  (`POST /api/books/:slug/models` `stageModels`, which `castStep`/`stepRouting` already resolve) — likely
-  "change all" should write the stage model *and* clear now-conflicting per-step overrides, so future chapters
-  inherit it too. Watch the known caveat from `pipeline-ops-neptune`: the per-step model endpoint carries
-  provider+model only and **drops temperature**, and the OpenRouter path defaults an omitted temperature to 0.7.
-
-- [ ] **4. The consistency ledger still holds the DELETED run's facts, so new chapters are checked against a different book.** `facts` is keyed by `book_slug`, and the recreated *Firefly Pond* reuses the slug — so the ledger carries **460 facts across chapters 1-25** while this run has written only chapters 1-2. Chapter 1 was flagged "Addi Green's hair_color is *teal* but was *Dark red streak* in **chapter-24**" and a timeline flag referencing **chapter-16** — chapters that do not exist in this run. Every one of chapter 1's contradiction/timeline flags is this artifact. Fix: clear the book's ledger rows when a book is deleted (`DELETE /api/books/:slug` already cascades projects and reaps gates — it should cascade `facts`/`knowledge`/`canon_seed` too), and/or scope facts by a per-run id rather than slug alone. Until then any recreated book inherits a ghost.
-
-- [ ] **5. The contradiction force-gate will stop this run on false positives.** Chapter 2 carries **7 contradictions**, which is above the threshold of 6 shipped 2026-09-13 — so when its de-AI sweep completes the run will force-gate. All 7 are detector artifacts, not errors: one compares two **byte-identical** strings ("AssIst's location is X but was X"); three are ordinary **scene movement** inside a chapter (office → Birch Coffee → apartment → Madison Square Park treated as "the same point in the story"); one is a restatement of the same detail; one is a **sequence** (a shirt removed during a spicy scene read as contradicting "same gray shirt"). **ROOT CAUSE FOUND 2026-09-14 — it is one hardcoded argument.** `extractChapterFacts(text, [], 0)` passes
-  `chapterStoryBase = 0` at **both** call sites (`consistency/continuity-check.ts:97` and
-  `init/phase-06-content.ts:231`), so every chapter's facts get `storyTime = 0 + scene`. Chapter 1 scene 0 and
-  chapter 24 scene 0 both land on `storyTime 0`, and the impossibility rule is literally
-  `diff.find(p => p.storyTime === fact.storyTime)` (`check-engine.ts:55`) — so facts from *different chapters*
-  are compared as simultaneous. Confirmed in the live DB: every firefly-pond fact sits at `story_time` 0-2.
-  That is why "Jay is both at the AssIst office and at his apartment at the same point in the story" fires
-  across chapters 1 and 2. **Fix: pass a per-chapter band (e.g. `chapterNumber * 1000`) at both call sites.**
-  Second, smaller cause: the LLM-supplied scene index collapses — chapter 2 moves office → Birch Coffee →
-  apartment → Madison Square Park but 16 of its 20 facts were tagged `scene 0`. Either segment scenes
-  deterministically, or drop `current_location`/`clothing_state` from the impossibility rule (both are
-  inherently mutable within a chapter). Third: the identical-string case is a normalisation gap —
-  `valueNorm` falls back to `valueRaw.toLowerCase()` (`extractor.ts:102`), so two extractions differing only by
-  trailing punctuation or whitespace survive `valueNorm !== fact.valueNorm` and print as a contradiction
-  between two visibly identical strings. Consider lowering exposure by counting only contradictions the audit did not already resolve, or excluding `current_location`/`clothing_state` from the gating count while still reporting them.
-
 - [ ] **6. The de-AI sweep INVENTED staging and broke POV.** Chapter 1's sweep (`gemini-3.8-flash`) rewrote "The office shrinks, the space between our chairs narrowing without either of us moving an inch." into "The office shrinks, **my knees nearly brushing his** as the space between our chairs compresses...". In a Jay-POV chapter about Addi, "his" is wrong — and more importantly the sweep is a tell-removal pass that is not supposed to add content at all. The seam guard (2026-07-19) rejects edits that orphan punctuation or empty a quote; it does not catch an edit that *adds* a clause. Fix: make the sweep reject any replacement that introduces new physical staging or a pronoun not present in the source span, or bound it to non-additive edits.
 
 - [ ] **7. The Consistency Audit is blind to the ledger, and the last step in the chain is unvalidated.** Across chapters 1-3 the audit returned `[]` every time while the ledger recorded 19 flags. Three separate causes, verified by running `resolveAnalyzeApplyBlock` against the live project inside the deployed container:
@@ -82,6 +23,12 @@ time, so they ship as a single build/deploy cycle. Add to this list as the run t
   - **`checkChapter` has no intra-chapter comparison.** It evaluates each fact against stored priors only and never feeds the chapter's own facts back as priors, unlike `audit.ts:511` which builds `intraChapterPriors`. Two contradicting facts inside a single chapter are invisible to the live path. Parity would be a behaviour change, so it was left out of the review fixes.
   - **`audit.ts:292` still calls the over-broad `clearBookFacts`** (all rows for the slug, canon included), which is safe there only because it re-seeds immediately after. The delete cascade now uses the canon-preserving `clearBookLedger`; worth converging the two.
 
+
+- [ ] **9. The de-AI sweep is blind to the chapter's word target.** The sweep removes AI tells and can shorten a chapter materially, but nothing re-checks the result against `wordCountTarget`. A chapter that left the Rewrite on target can finish the chain under it, and the only signal is the assembled manuscript coming in short. Cheap fix: measure before/after in the sweep and flag (not fix) a drop past a threshold, alongside the existing seam guard.
+
+- [ ] **10. Consistency Apply runs even when the audit found nothing.** Owner question 2026-09-14. The chapter chain runs audit (5) → apply (6) unconditionally, so an audit returning `[]` is still followed by a full apply step — an LLM call and a file write that cannot change anything. Skip the apply when the audit is empty and mark it skipped rather than completed, so the version trail shows what actually happened. Interacts with item 7: once the audit stops returning a false `[]`, the skip must key on the real finding count, not on the empty string.
+
+- [ ] **11. The headless pipeline path ignores every book-level model layer.** Surfaced by the 2026-09-14 "change all" review. The headless loop in `index.ts` (~:2531) hand-rolls its routing (`stepOverride → stagePin → preferredProvider`) and never calls `stepRouting`/`castStep`, so the new `roleModels` pin is inert there — as `sceneBriefModel`/`draftModel` and the casting sheet already were. Pre-existing divergence, not a regression, but it means a headless run can use different models than the same book run interactively. `BOOKCLAW_HEADLESS_PIPELINE=1` is ON for Mercury, OFF for Neptune. Fix: have the headless loop call the same resolver instead of duplicating it.
 ## Targeted feature roadmap (product, consolidated 2026-06-21)
 
 A single ranked, deduplicated list of the **differentiating product features** distilled from [STRATEGY-LEADING-AI-WRITING-ASSISTANT.md](STRATEGY-LEADING-AI-WRITING-ASSISTANT.md) + the six tool reviews ([NARRATIVE-ENGINE](NARRATIVE-ENGINE-INTEGRATION.md), [STORYTHREAD](STORYTHREAD-STUDIO-INTEGRATION.md), [MIRRORSHARD](MIRRORSHARD-INTEGRATION.md), [NOVELMINT-TOOLS](NOVELMINT-TOOLS-REVIEW.md), [CLAUDE-CODE-METHODS](CLAUDE-CODE-WRITING-METHODS-REVIEW.md), [LONEWRITER](LONEWRITER-REVIEW.md)). **Detailed scoping for each item lives in the linked doc** — this is the canonical index; the scattered strategy/review bullets that fed it were removed from "Larger items" below so each feature appears once. The **multi-author/multi-book studio** (North Star, below) is the umbrella platform these build on; it is not re-listed here.

@@ -34,7 +34,9 @@ test('inline 2-step pipeline: modelOverride survives parse→expand on pinned st
   const vars = buildPipelineVars({ title: 'T', description: 'D' });
   const out = expandSteps(raw as any, vars);
   assert.equal(out.length, 2);
-  assert.deepEqual(out[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1 });
+  // `source: 'template'` marks the pick as the TEMPLATE's (the book's per-role pin
+  // outranks it at routing time — see book-role-models.test.ts).
+  assert.deepEqual(out[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1, source: 'template' });
   assert.equal(out[0].modelOverride!.temperature, 1.1);
   assert.equal(out[1].modelOverride, undefined, 'unpinned step has undefined modelOverride');
 });

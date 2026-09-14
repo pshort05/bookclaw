@@ -133,8 +133,11 @@ export interface ProjectStep {
   // Per-step model override (cheap-draft / premium-edit). When set, this step
   // pins the given provider (and, if `model` is set, the exact model id) instead
   // of tier routing. Any field is optional — e.g. temperature-only. Unset =
-  // inherit the project/tier default (today's behavior).
-  modelOverride?: { provider?: string; model?: string; temperature?: number };
+  // inherit the project/tier default (today's behavior). `source:'template'`
+  // marks a pick copied from the pipeline template (stamped by pipeline-expand),
+  // which stepRouting ranks BELOW the book's per-role pin; an untagged override
+  // is an explicit per-step pin and outranks it.
+  modelOverride?: { provider?: string; model?: string; temperature?: number; source?: 'template' };
   // Semantic casting role (scene_brief/draft/improve/...). Drives model
   // selection via the casting sheet + castStep resolver. Optional: an untagged
   // step falls back to today's provider/model routing.

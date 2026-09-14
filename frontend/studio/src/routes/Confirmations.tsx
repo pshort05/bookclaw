@@ -7,6 +7,14 @@ import styles from './Confirmations.module.css';
 /** Human-review gate payload (mirrors gateway human-review.ts openReviewGate). */
 type ReviewMeta = { projectId?: string; kind?: string; stepLabel?: string; findings?: Record<string, unknown> };
 
+/** True for the canon-drift gate, which is advisory about a DOCUMENT rather than a
+ *  paused action: approving marks the flagged place names canon for the book (so the
+ *  gate stops flagging them), rejecting records them as not canon. Neither edits the
+ *  book — so this gate gets labels that say that, instead of Approve/Reject. */
+function isCanonDrift(c: ConfirmationRequest): boolean {
+  return c.service === 'canon-drift-gate';
+}
+
 /** A human-review gate whose paused chapter draft is editable (cadence-gate). */
 function editableChapter(c: ConfirmationRequest): { projectId: string; meta: ReviewMeta } | null {
   if (c.service !== 'human-review') return null;
@@ -145,6 +153,7 @@ function DetailPane({
   onEditApprove: (projectId: string, editedText: string) => Promise<void>;
 }) {
   const chapter = editableChapter(c);
+  const canon = isCanonDrift(c);
   const meta = (c.payload ?? {}) as ReviewMeta;
   const findings = meta.findings && typeof meta.findings === 'object' ? meta.findings : null;
 
@@ -223,7 +232,7 @@ function DetailPane({
       )}
 
       <div className={styles.itemHead}>
-        {chapter ? (meta.stepLabel ?? 'Drafted chapter') : 'Item to approve'}
+        {chapter ? (meta.stepLabel ?? 'Drafted chapter') : canon ? 'Place names found' : 'Item to approve'}
         {chapter && !editing && !loading && !loadErr && (
           <Button variant="secondary" onClick={startEdit}>Edit</Button>
         )}
@@ -265,9 +274,11 @@ function DetailPane({
       )}
 
       <div className={styles.acts}>
-        <Button variant="secondary" onClick={() => onDecide(c.id, 'reject')} disabled={busy === c.id}>Reject</Button>
+        <Button variant="secondary" onClick={() => onDecide(c.id, 'reject')} disabled={busy === c.id}>
+          {canon ? 'Not canon' : 'Reject'}
+        </Button>
         <Button variant="primary" onClick={() => onDecide(c.id, 'approve')} disabled={busy === c.id}>
-          {busy === c.id ? '…' : 'Approve'}
+          {busy === c.id ? '…' : canon ? 'Accept as canon' : 'Approve'}
         </Button>
       </div>
     </article>

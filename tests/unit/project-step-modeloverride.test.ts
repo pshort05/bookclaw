@@ -46,7 +46,9 @@ test('createProjectFromPipeline copies modelOverride (incl. temperature) into Pr
     {},
   );
   assert.equal(project.steps.length, 2);
-  assert.deepEqual(project.steps[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1 });
+  // `source: 'template'` is stamped by pipeline-expand so stepRouting can rank a
+  // template-baked pick below the book's per-role pin.
+  assert.deepEqual(project.steps[0].modelOverride, { provider: 'openrouter', model: 'x-ai/grok-4', temperature: 1.1, source: 'template' });
   clearTimeout((e as any).saveDebounceTimer);
 });
 

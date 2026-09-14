@@ -46,6 +46,7 @@ import { isProseStep } from './services/casting/roles.js';
 import { buildBookCanonBlock } from './services/book-canon.js';
 import { runDeterministicApply, makeScopedRewriteFn } from './services/deterministic-apply.js';
 import { runCanonDriftGate, canonAuditAnchorBlock } from './services/canon-drift.js';
+import { acceptedPlacePhrases } from './services/canon-accept.js';
 import { runDeaiSweepStep } from './services/deai/run-step.js';
 import { loadBannedTermsForBook } from './services/deai/banned-terms.js';
 import { loadAiNamesForBook } from './services/deai/ai-names.js';
@@ -2615,12 +2616,15 @@ class BookClawGateway {
               steps: project.steps as any,
               step: activeStep as any,
               loadAnchors,
+              // Known-set only — never anchor text (see entityGate): accepting a place
+              // must not change which swaps the gate makes.
+              accepted: acceptedPlacePhrases(slug ? gateway.books?.bookDir?.(slug) : null),
               rewriteFn: makeScopedRewriteFn((r) => gateway.aiRouter.complete(r)),
               onAmbiguous: async (conflicts, docLabel) => {
                 if (!gateway.confirmationGate) return;
                 await gateway.confirmationGate.createRequest({
                   service: 'canon-drift-gate', action: 'reconcile-canon', platform: 'internal',
-                  description: `Ambiguous canon drift in "${docLabel}": ${conflicts.map(c => c.phrase).join(', ')} — no single canonical place to swap to. Human decision needed.`,
+                  description: `Ambiguous canon drift in "${docLabel}": ${conflicts.map(c => c.phrase).join(', ')} — the verified canon names more than one place of that kind, so the gate could not choose a single canonical name and left these names as written. "Accept as canon" marks them canon for this book, so this gate stops flagging them; "Not canon" only records that decision. Neither choice edits the document.`,
                   payload: { bookSlug: slug ?? null, docLabel, conflicts },
                   riskLevel: 'low', isReversible: true,
                 });
@@ -2637,7 +2641,7 @@ class BookClawGateway {
             });
             aiResponse = text;
             wasExecutable = true;
-            console.log(`  ✓ canon-drift-apply (${(activeStep as any).label}): swaps=${stats.swaps} rewrites=${stats.rewrites} skipped=${stats.skipped} ambiguous=${stats.ambiguous} changed=${stats.changed}${stats.noAnchor ? ' (no anchor — no-op)' : ''}`);
+            console.log(`  ✓ canon-drift-apply (${(activeStep as any).label}): swaps=${stats.swaps} rewrites=${stats.rewrites} skipped=${stats.skipped} ambiguous=${stats.ambiguous} unverifiable=${stats.unverifiable} changed=${stats.changed}${stats.noAnchor ? ' (no anchor — no-op)' : ''}`);
           } else if (execOut !== null) {
             aiResponse = execOut;
           } else {
