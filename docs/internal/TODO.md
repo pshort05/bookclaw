@@ -39,9 +39,11 @@ time, so they ship as a single build/deploy cycle. Add to this list as the run t
   rail, changing a step's model calls `setStepModel(stepId, value)` → `POST /api/projects/:id/steps/:stepId/model`,
   which sets `modelOverride` on **that one step**. Pinning e.g. First Draft to a different model for chapter 7
   leaves chapters 1-6 and 8-25 on the old one, and re-pinning by hand across 25 chapters is not realistic. Add a
-  "change all" affordance beside the picker. Design decision to settle first: **"all" should mean this step's
-  ROLE in every chapter** (every `First Draft`, not literally every step — nobody wants the scene brief and the
-  draft forced onto one model). Second decision: per-step overrides only reach steps that already exist, so for
+  "change all" affordance beside the picker. **Semantics, settled by the owner 2026-09-13:** "all" means the step's
+  ROLE across every chapter — change chapter 7's First Draft and it applies to *every* First Draft; change a
+  chapter revision and it applies to *every* chapter revision. Roles stay independent of each other: this is
+  never "set every chapter step to one model", so a scene brief is never dragged onto the draft's model.
+  Remaining decision: per-step overrides only reach steps that already exist, so for
   a book whose later chapters have not been expanded yet the durable fix is the **book-level stage model**
   (`POST /api/books/:slug/models` `stageModels`, which `castStep`/`stepRouting` already resolve) — likely
   "change all" should write the stage model *and* clear now-conflicting per-step overrides, so future chapters
