@@ -148,5 +148,46 @@ async function gateFor(contradictions, extra = {}) {
     `got ${typeof payload}: ${JSON.stringify(String(payload).slice(0, 60))}`);
 }
 
+
+// ══ Detector hardening (2026-09-14) ══════════════════════════════════════
+// Three fixes that killed 19 false positives on the live Firefly Pond run.
+console.log('Detector: chapters no longer collide, identical values no longer differ');
+{
+  const { normalizeFactValue, parseExtractorResponse } =
+    await import(`${base}/services/consistency/extractor.js`);
+
+  // The exact production report: a "contradiction" between two identical strings.
+  const addr = 'sixth floor, West 22nd Street off Fifth Avenue, Flatiron District, Manhattan';
+  check('trailing punctuation / spacing / case collapse to one key',
+    normalizeFactValue(addr + '.') === normalizeFactValue('  Sixth Floor,  West 22nd Street off Fifth Avenue, Flatiron District, Manhattan  '),
+    'identical values still produce different keys');
+  check('curly and straight apostrophes agree',
+    normalizeFactValue("Jay\u2019s apartment") === normalizeFactValue("Jay's apartment"));
+  check('genuinely different values stay different',
+    normalizeFactValue('sixth floor') !== normalizeFactValue('seventh floor')
+    && normalizeFactValue('Maya') !== normalizeFactValue("Maya's sister"),
+    'over-normalised — a real contradiction could now be hidden');
+  check('normalisation is idempotent',
+    normalizeFactValue(normalizeFactValue(addr + '.')) === normalizeFactValue(addr + '.'));
+
+  // Story-time banding: the extractor must honour the base it is given.
+  const payload = JSON.stringify({
+    scenes: [{ timeLabel: 'night' }, { timeLabel: 'later' }],
+    facts: [
+      { entity: 'Jay', attribute: 'current_location', type: 'stateful', valueRaw: 'AssIst office', scene: 0 },
+      { entity: 'Jay', attribute: 'current_location', type: 'stateful', valueRaw: "Jay's apartment", scene: 1 },
+    ],
+  });
+  const ch2 = parseExtractorResponse(payload, 2 * 1000);
+  const ch24 = parseExtractorResponse(payload, 24 * 1000);
+  const t2 = ch2.facts.map((f) => f.storyTime);
+  const t24 = ch24.facts.map((f) => f.storyTime);
+  check('chapter 2 facts band to 2000+', t2.every((t) => t >= 2000 && t < 3000), `got ${t2}`);
+  check('chapter 24 facts band to 24000+', t24.every((t) => t >= 24000 && t < 25000), `got ${t24}`);
+  check('chapters 2 and 24 never share a story time',
+    t2.every((t) => !t24.includes(t)),
+    'different chapters still collide — they would read as simultaneous');
+}
+
 console.log(failed === 0 ? '\nALL CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);
 process.exit(failed === 0 ? 0 : 1);

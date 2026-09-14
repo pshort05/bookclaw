@@ -18,6 +18,89 @@ function parseJsonLenient(s: string): unknown {
   }
 }
 
+/**
+ * Canonical form of a fact value. `valueNorm` is the EQUALITY KEY the contradiction
+ * check compares (`check-engine.ts`: `p.valueNorm !== fact.valueNorm`), so two
+ * renderings of the same value must land on the same string or the gate reports a
+ * contradiction between two visibly identical strings (observed in production: the
+ * same address flagged against itself because one chapter's extraction carried a
+ * trailing period).
+ *
+ * Deliberately conservative — over-normalising creates the opposite, worse bug
+ * (two genuinely different values collapsing into one, so a real contradiction goes
+ * unreported). So this only folds differences that cannot change meaning:
+ * case, Unicode form, typographic quotes/dashes, whitespace runs, zero-width
+ * characters, trailing sentence punctuation, and delimiters wrapping the whole
+ * value. It does NOT touch interior punctuation, digits, articles, or word forms.
+ *
+ * Also the third segment of a knowledge `factKey`, so an acquire and a use of the
+ * same fact group together in check-engine.
+ */
+export function normalizeFactValue(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  let s = value
+    .normalize('NFKC')                       // composed/decomposed + full-width forms converge
+    .replace(/[​-‍⁠﻿]/g, '') // zero-width/invisible chars render identically
+    .replace(/[‘’‚‛′]/g, "'")  // curly/quote-like apostrophes → '
+    .replace(/[“”„‟″]/g, '"')  // curly double quotes → "
+    .replace(/[‐-―−]/g, '-')  // hyphens/en/em dashes/minus → -
+    .toLowerCase()
+    .replace(/\s+/g, ' ')                    // \s covers NBSP and the other Unicode spaces
+    .trim();
+  // Trailing punctuation and enclosing wrappers, to a fixed point: an end-anchored
+  // punctuation strip alone is defeated by a wrapper (`"the office."`), and a model
+  // quoting its own value is at least as likely as one adding a period. Looping
+  // also keeps the function idempotent.
+  for (let i = 0; i < 3; i++) {
+    const before = s;
+    s = stripEnclosingWrapper(s.replace(/[.,;:!?]+$/, '').trim());
+    if (s === before) break;
+  }
+  return s;
+}
+
+const WRAPPER_PAIRS: [string, string][] = [['"', '"'], ["'", "'"], ['(', ')'], ['[', ']']];
+
+/**
+ * Drop one layer of wrapping delimiters, but ONLY when they enclose the whole
+ * value and the interior contains neither delimiter — so `"the office"` folds to
+ * `the office` while `"a" and "b"` and `maya's office` are left untouched. A
+ * value that is another value wrapped in quotes is the same value, so this can't
+ * collapse two genuinely different ones.
+ */
+function stripEnclosingWrapper(s: string): string {
+  if (s.length < 2) return s;
+  for (const [open, close] of WRAPPER_PAIRS) {
+    if (s.startsWith(open) && s.endsWith(close)) {
+      const inner = s.slice(1, -1);
+      if (!inner.includes(open) && !inner.includes(close)) return inner.trim();
+    }
+  }
+  return s;
+}
+
+/**
+ * Upper bound for a scene index when the response carries no scene list to clamp
+ * against. Story-time is laid out as `chapterNumber * 1000 + sceneIndex`
+ * (continuity-check.ts), so anything past 999 escapes its own chapter's band and
+ * collides with the next chapter's.
+ */
+const MAX_SCENE_INDEX = 999;
+
+/**
+ * Coerce an LLM-supplied scene index to a non-negative integer inside the
+ * chapter's band. The model intermittently returns `"scenes": []` (or jsonrepair
+ * drops the array), and the raw index was used unchecked on that path: a string
+ * index made `chapterStoryBase + scene` a STRING (every `===` in the
+ * impossibility rule then false, silently disabling the check for that fact),
+ * and an out-of-range index put the fact in another chapter's band.
+ */
+function coerceSceneIndex(raw: unknown, sceneCount: number): number {
+  const n = Math.trunc(Number(raw));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, sceneCount > 0 ? sceneCount - 1 : MAX_SCENE_INDEX);
+}
+
 export interface ExtractedScene {
   storyTime: number;
   timeLabel: string | null;
@@ -98,18 +181,16 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
     const entity = f.entity ?? '';
     const aliases: string[] = Array.isArray(f.aliases) && f.aliases.length > 0 ? f.aliases : [entity];
     const type: FactType = f.type === 'immutable' ? 'immutable' : 'stateful';
-    const valueRaw = f.valueRaw ?? '';
-    const valueNorm = typeof f.valueNorm === 'string' && f.valueNorm.length > 0
-      ? f.valueNorm
-      : valueRaw.toLowerCase();
-    const rawScene = f.scene ?? 0;
+    const valueRaw = typeof f.valueRaw === 'string' ? f.valueRaw : '';
+    // Normalise BOTH paths: an LLM-supplied valueNorm is a hint, not a canonical
+    // key — taking it verbatim was half of the same-string-contradiction bug.
+    const suppliedNorm = normalizeFactValue(f.valueNorm);
+    const valueNorm = suppliedNorm.length > 0 ? suppliedNorm : normalizeFactValue(valueRaw);
     // Clamp the LLM-supplied scene index into range before deriving story-time /
     // time-label / canonical (mirrors audit.ts's storyElapsed clamp). An
     // out-of-range index would otherwise inflate storyTime and read undefined
     // scene metadata.
-    const scene = rawScenes.length > 0
-      ? Math.min(Math.max(rawScene, 0), rawScenes.length - 1)
-      : rawScene;
+    const scene = coerceSceneIndex(f.scene, rawScenes.length);
     const source: FactSource = f.source === 'canon' ? 'canon' : 'manuscript';
     return {
       entity,
@@ -134,15 +215,17 @@ export function parseExtractorResponse(text: string, chapterStoryBase: number): 
     const knower = String(k.knower ?? '').trim();
     const factEntity = String(k.factEntity ?? '').trim();
     const factAttribute = String(k.factAttribute ?? '').trim();
-    const factValueNorm = String(k.factValueNorm ?? '').trim().toLowerCase();
-    const rawScene = typeof k.scene === 'number' ? k.scene : 0;
+    // Same canonical form as a fact's valueNorm above: the acquire and the use of
+    // one fact only group together (check-engine keys on `knower + factKey`) if
+    // both renderings land on the same string. Plain trim+lowercase left
+    // "The Affair." and "the affair" as different keys, fabricating a
+    // high-severity "learns it at no point in the story" violation.
+    const factValueNorm = normalizeFactValue(String(k.factValueNorm ?? ''));
     // Clamp the LLM-supplied scene index into range (mirrors the facts path
     // above). An out-of-range index would otherwise inflate/deflate storyTime
     // and read undefined scene metadata (canonical silently defaulting true),
     // skewing the used-before-learned knowledge-timeline check.
-    const scene = rawScenes.length > 0
-      ? Math.min(Math.max(rawScene, 0), rawScenes.length - 1)
-      : rawScene;
+    const scene = coerceSceneIndex(k.scene, rawScenes.length);
     const kind: KnowledgeKind = k.kind === 'acquire' ? 'acquire' : 'use';
     const source: KnowledgeSource = allowedSources.includes(k.source as KnowledgeSource)
       ? (k.source as KnowledgeSource)

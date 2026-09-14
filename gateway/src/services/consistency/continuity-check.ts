@@ -20,7 +20,7 @@
 import type { ConsistencyStore } from './fact-store.js';
 import type { LedgerFact, KnowledgeEvent, FindingCategory } from './types.js';
 import { extractChapterFacts } from './extractor.js';
-import { evaluateFact, evaluateKnowledge } from './check-engine.js';
+import { evaluateFact, evaluateKnowledge, CHAPTER_STORY_BAND, ELAPSED_UNKNOWN } from './check-engine.js';
 import { CONSISTENCY_PROVIDERS } from './model-selection.js';
 
 /**
@@ -76,6 +76,28 @@ export async function checkChapter(args: {
   const chapter = `chapter-${chapterNumber}`;
   const scope = { world, bookSlug: slug };
 
+  // Per-chapter story-time band. The extractor computes each fact's storyTime as
+  // `chapterStoryBase + sceneIndex`, and check-engine treats two facts with an
+  // EQUAL storyTime as simultaneous ("…both X and Y at the same point in the
+  // story"). Passing 0 for every chapter — as this call used to — put chapter 1
+  // scene 0 and chapter 24 scene 0 both at storyTime 0, so ordinary
+  // chapter-to-chapter changes were reported as impossibilities. One band per
+  // chapter keeps chapters disjoint while preserving scene order within one; the
+  // full audit bands identically so both writers share one scale.
+  //
+  // Coerce first: a caller that hands us a numeric STRING ('3') is perfectly
+  // well-formed data, and a bare Number.isFinite check would reject it and fall
+  // back to 0 — silently restoring the all-zeros defect. Anything that is not a
+  // positive integer after coercion (0, NaN, undefined, 2.5, -1) has no valid
+  // band; keep the fail-soft fallback to 0 so the chapter's facts still persist,
+  // but say so loudly rather than corrupting the ledger invisibly.
+  const chapterOrdinal = Number(chapterNumber);
+  const validOrdinal = Number.isInteger(chapterOrdinal) && chapterOrdinal > 0;
+  if (!validOrdinal) {
+    console.log(`  ⚠ continuity: chapter number "${chapterNumber}" is not a positive integer — story-time banding disabled for ${chapter}; its facts land at base 0 and may compare as simultaneous with other chapters.`);
+  }
+  const chapterStoryBase = validOrdinal ? chapterOrdinal * CHAPTER_STORY_BAND : 0;
+
   let extracted;
   try {
     extracted = await extractChapterFacts(
@@ -94,7 +116,7 @@ export async function checkChapter(args: {
           },
         },
       },
-      text, [], 0,
+      text, [], chapterStoryBase,
     );
   } catch {
     return { flags: [] }; // extraction hiccup must never break drafting
@@ -106,8 +128,17 @@ export async function checkChapter(args: {
   // chapter's own facts land, then persist.
   const chapterFacts: LedgerFact[] = [];
   for (const f of extracted.facts) {
-    const full: LedgerFact = { ...f, world, bookSlug: slug, chapter, storyElapsed: 0 };
-    const priors = store.priorFacts(scope, full.entity, full.attribute);
+    // storyElapsed is UNKNOWN here, not 0: only the full audit accumulates an
+    // elapsed story clock across scenes. Writing 0 claimed "day zero", which
+    // check-engine's reset rule then measured against an audit-written prior's
+    // real clock and used to excuse genuine contradictions.
+    const full: LedgerFact = { ...f, world, bookSlug: slug, chapter, storyElapsed: ELAPSED_UNKNOWN };
+    // Exclude this chapter's OWN rows: they are the previous draft of the very
+    // text being checked (they are cleared and re-inserted below), and since the
+    // re-draft lands in the same band as its predecessor they compare as
+    // simultaneous — reporting every ordinary regenerate as "both X and Y at the
+    // same point in the story".
+    const priors = store.priorFacts(scope, full.entity, full.attribute).filter(p => p.chapter !== chapter);
     const finding = evaluateFact(full, priors);
     if (finding) {
       flags.push({ kind: CATEGORY_TO_KIND[finding.category], detail: finding.explanation, span: finding.a?.quote });
@@ -129,7 +160,9 @@ export async function checkChapter(args: {
   }));
   if (newKnowledge.length > 0) {
     try {
-      const priorKnowledge = store.knowledgeForBook(scope);
+      // Same exclusion as the facts above: this chapter's stored events belong to
+      // its previous draft (cleared and re-inserted below), not to its history.
+      const priorKnowledge = store.knowledgeForBook(scope).filter(k => k.chapter !== chapter);
       const kfindings = evaluateKnowledge([...priorKnowledge, ...newKnowledge])
         .filter(kf => kf.a.chapter === chapter);
       for (const kf of kfindings) {

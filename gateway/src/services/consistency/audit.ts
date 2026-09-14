@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { ConsistencyStore } from './fact-store.js';
-import { evaluateFact, evaluateKnowledge, GAP_WEIGHT, type Gap } from './check-engine.js';
+import { evaluateFact, evaluateKnowledge, GAP_WEIGHT, CHAPTER_STORY_BAND, type Gap } from './check-engine.js';
 import type { ExtractResult } from './extractor.js';
 import type { ConsistencyFinding, LedgerFact, KnowledgeEvent } from './types.js';
 
@@ -392,7 +392,8 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
   }
 
   const findings: ConsistencyFinding[] = [];
-  let storyBase = 0;
+  // Ordinal of the last chapter banded, so the NEXT one is always strictly later.
+  let lastChapterOrdinal = 0;
   let elapsedClock = 0;
   let factCount = 0;
   let chaptersScanned = 0;
@@ -414,6 +415,24 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
 
   for (const { name: chapterName, text: chapterText } of chapters) {
     progress(`Scanning ${chapterName}...`);
+
+    // Story-time band for this chapter. This MUST match what the live
+    // per-chapter path (continuity-check.checkChapter) writes — both feed the
+    // same ledger and check-engine compares rows across them. Accumulating
+    // scene counts instead (the old `storyBase += scenes.length`) put the audit
+    // on a much smaller scale than the live `chapterNumber * 1000`, so every
+    // audit-written knowledge `acquire` compared as earlier than every
+    // live-written `use` and used-before-learned stopped firing entirely.
+    // Chapter files are named `chapter-<n>…`; a split-manuscript segment may not
+    // be (`prologue`), so fall back to the next ordinal — and never go backwards,
+    // which would let two segments share a band and read as simultaneous.
+    const parsedChapterNum = chapterName.toLowerCase().match(/chapter-(\d+)\b/);
+    const chapterOrdinal = Math.max(
+      parsedChapterNum ? parseInt(parsedChapterNum[1], 10) : 0,
+      lastChapterOrdinal + 1,
+    );
+    lastChapterOrdinal = chapterOrdinal;
+    const storyBase = chapterOrdinal * CHAPTER_STORY_BAND;
 
     // Build known-entity digest with current stateful values from the in-memory map (M3).
     const knownDigest: { entity: string; aliases: string[]; current: Record<string, string> }[] =
@@ -542,7 +561,6 @@ export async function runConsistencyAudit(slug: string, deps: AuditDeps): Promis
 
     factCount += chapterFacts.length;
     scanInfo.set(chapterName, { status: 'scanned', itemsTracked: chapterFacts.length });
-    storyBase += extractResult.scenes.length || 1;
     chaptersScanned++;
   }
 

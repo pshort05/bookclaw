@@ -197,7 +197,42 @@ export class ConsistencyStore {
     if (this.db) this.db.prepare('DELETE FROM facts WHERE book_slug = ? AND chapter = ?').run(bookSlug, chapter);
   }
 
-  clearBookFacts(bookSlug: string): void { if (this.db) this.db.prepare('DELETE FROM facts WHERE book_slug = ?').run(bookSlug); }
+  /** Delete every fact row for a book. Returns the number of rows removed. */
+  clearBookFacts(bookSlug: string): number {
+    if (!this.db) return 0;
+    return this.db.prepare('DELETE FROM facts WHERE book_slug = ?').run(bookSlug).changes ?? 0;
+  }
+  /**
+   * Book-deletion cascade: drop the book's facts, knowledge and cached audit
+   * report in ONE transaction (a half-cleared ledger reported as success is worse
+   * than a clean failure — the caller reports the throw). Returns the row counts.
+   *
+   * Canon scoping: world-keyed canon rows tagged with this slug are KEPT. The
+   * bible-seed hook (init/phase-06-content.ts) writes `{ world, bookSlug: slug,
+   * source: 'canon' }`, and priorFacts/factsForBook show those rows to every
+   * sibling book bound to the same world — deleting them would silently destroy
+   * canon the siblings draft against, unrecoverably (the seed hook only fires for
+   * a project that no longer exists, and the canon_seed hash still matches so the
+   * audit skips its re-seed). A book's own worldless canon belongs to that book
+   * alone and goes with it.
+   */
+  clearBookLedger(bookSlug: string): { facts: number; knowledge: number; report: number } {
+    if (!this.db) return { facts: 0, knowledge: 0, report: 0 };
+    const tx = this.db.transaction((slug: string) => ({
+      facts: this.db.prepare(
+        `DELETE FROM facts WHERE book_slug = ? AND (source <> 'canon' OR world IS NULL)`,
+      ).run(slug).changes,
+      knowledge: this.db.prepare('DELETE FROM knowledge WHERE book_slug = ?').run(slug).changes,
+      report: this.clearBookReport(slug),
+    }));
+    return tx(bookSlug);
+  }
+
+  /** Delete a book's cached audit report. Returns the number of rows removed. */
+  clearBookReport(bookSlug: string): number {
+    if (!this.db) return 0;
+    return this.db.prepare('DELETE FROM audit_reports WHERE book_slug = ?').run(bookSlug).changes;
+  }
   clearWorldCanon(world: string): void {
     if (!this.db) return;
     this.db.prepare("DELETE FROM facts WHERE world = ? AND source = 'canon'").run(world);
@@ -224,7 +259,11 @@ export class ConsistencyStore {
     }));
   }
 
-  clearBookKnowledge(bookSlug: string): void { if (this.db) this.db.prepare('DELETE FROM knowledge WHERE book_slug = ?').run(bookSlug); }
+  /** Delete every knowledge row for a book. Returns the number of rows removed. */
+  clearBookKnowledge(bookSlug: string): number {
+    if (!this.db) return 0;
+    return this.db.prepare('DELETE FROM knowledge WHERE book_slug = ?').run(bookSlug).changes ?? 0;
+  }
 
   /** Delete one chapter's knowledge events for a book (idempotent re-insert on a
    *  chapter re-draft/retry). */

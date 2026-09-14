@@ -1,5 +1,6 @@
 import type { LedgerFact, ConsistencyFinding, FindingRef, CanonRef, KnowledgeEvent } from './types.js';
 import { computeFindingId } from './finding-id.js';
+import { normalizeFactValue } from './extractor.js';
 
 export type Gap = 'same' | 'day' | 'longer' | 'unknown';
 
@@ -12,6 +13,26 @@ export const GAP_WEIGHT: Record<Gap, number> = { same: 0, day: 1, longer: 30, un
  *  reset rather than a continuity error. One explicit multi-unit jump ("…later")
  *  excuses it; derived from GAP_WEIGHT so they cannot drift apart. */
 export const ELAPSED_THRESHOLD = GAP_WEIGHT.longer;
+
+/** Story-time band width per chapter: a fact's storyTime is
+ *  `chapterNumber * CHAPTER_STORY_BAND + sceneIndex`. Both writers into the
+ *  ledger — the live per-chapter check and the full audit — MUST use this same
+ *  band, because check-engine compares rows across the two without knowing
+ *  which produced them (two scales made every cross-writer comparison
+ *  meaningless: see the knowledge-timeline rule below). 1000 leaves room for
+ *  any realistic scene count while keeping chapters disjoint. */
+export const CHAPTER_STORY_BAND = 1000;
+
+/** Sentinel for "this fact has no elapsed-story-time clock". The live
+ *  per-chapter path never computes one (only the audit accumulates elapsed
+ *  across scenes), and writing 0 there would claim "day zero" — which the
+ *  reset rule below would then read as a real, comparable distance and use to
+ *  excuse genuine contradictions. Negative so it can never collide with a real
+ *  cumulative clock, and it round-trips through the INTEGER column unchanged. */
+export const ELAPSED_UNKNOWN = -1;
+
+/** A fact carries a usable elapsed clock (not the UNKNOWN sentinel, not NaN). */
+const hasElapsed = (f: LedgerFact): boolean => Number.isFinite(f.storyElapsed) && f.storyElapsed >= 0;
 
 const refOf = (f: LedgerFact): FindingRef => ({ chapter: f.chapter, scene: f.scene, quote: f.evidence });
 const canonRefOf = (f: LedgerFact): CanonRef => ({ canonSource: f.sourceLabel ?? f.evidence, quote: f.evidence });
@@ -31,7 +52,13 @@ function finding(
 
 export function evaluateFact(fact: LedgerFact, priors: LedgerFact[]): ConsistencyFinding | null {
   if (priors.length === 0) return null;
-  const diff = priors.filter(p => p.valueNorm !== fact.valueNorm);
+  // Normalise on COMPARE, not only on write: rows persisted before the extractor
+  // normalised `value_norm` still hold the old key, and nothing rewrites them —
+  // world-keyed canon in particular is hash-gated, so a stale canon row survives
+  // every re-audit indefinitely and fabricates `X here but canon establishes X`.
+  // Applying the same normaliser here makes the fix retroactive for every row.
+  const valueNorm = normalizeFactValue(fact.valueNorm);
+  const diff = priors.filter(p => normalizeFactValue(p.valueNorm) !== valueNorm);
   if (diff.length === 0) return null; // consistent with everything
 
   // 1) Canon divergence — any seeded canon value differs.
@@ -62,15 +89,24 @@ export function evaluateFact(fact: LedgerFact, priors: LedgerFact[]): Consistenc
   if (fact.transition) return null;
   // 3c) Stateful change without cause — excuse when every differing prior is far
   // enough back in elapsed story time; otherwise flag the nearest recent prior.
-  const recent = diff.filter(p => Math.abs(fact.storyElapsed - p.storyElapsed) < ELAPSED_THRESHOLD);
+  // An elapsed distance can only be measured when BOTH sides carry a clock: the
+  // live per-chapter path has none (ELAPSED_UNKNOWN), and treating that as 0
+  // would put it a full threshold away from any audit-written prior whose
+  // cumulative clock had advanced — silently excusing real contradictions.
+  const factElapsed = hasElapsed(fact);
+  const farBack = (p: LedgerFact) =>
+    factElapsed && hasElapsed(p) && Math.abs(fact.storyElapsed - p.storyElapsed) >= ELAPSED_THRESHOLD;
+  const recent = diff.filter(p => !farBack(p));
   if (recent.length === 0) return null;              // all differing priors are far back: legitimate reset
   const prior = recent.reduce((m, p) => (p.storyElapsed > m.storyElapsed ? p : m));
   // Some explicit elapsed time but below the reset threshold → a real unexplained
-  // change over a short span (medium, like the old "day" gap). Zero elapsed means
-  // no time signal at all (e.g. label-free prose) → a soft review note (low, like
-  // the old "unknown" gap) so ordinary unlabeled manuscripts aren't flooded medium.
+  // change over a short span (medium, like the old "day" gap). Zero elapsed — or
+  // no clock at all — means no time signal (e.g. label-free prose, or the live
+  // per-chapter path) → a soft review note (low, like the old "unknown" gap) so
+  // ordinary unlabeled manuscripts aren't flooded medium.
+  const measurable = factElapsed && hasElapsed(prior);
   const severity: ConsistencyFinding['severity'] =
-    Math.abs(fact.storyElapsed - prior.storyElapsed) === 0 ? 'low' : 'medium';
+    !measurable || Math.abs(fact.storyElapsed - prior.storyElapsed) === 0 ? 'low' : 'medium';
   return finding('continuity', severity, fact, prior,
     `${fact.entity}'s ${fact.attribute} changed from "${prior.valueRaw}" (${prior.chapter}) to "${fact.valueRaw}" (${fact.chapter}) with no stated cause.`,
     `${fact.entity}'s ${fact.attribute} was "${prior.valueRaw}" in ${prior.chapter} and is "${fact.valueRaw}" in ${fact.chapter} with nothing in between — add a transition or fix.`);

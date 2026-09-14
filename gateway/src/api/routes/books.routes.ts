@@ -237,6 +237,32 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
     // corrupt manifest must still be deletable (DELETE is the recovery path).
     if (!services.books.exists(slug)) return res.status(404).json({ error: 'Book not found' });
     const wasActive = services.books.getActiveBook() === slug;
+    // Cascade: drop the book's consistency ledger. `facts`/`knowledge` are keyed
+    // by book_slug and a recreated book REUSES the slug, so leftover rows get
+    // audited as this book's own history — the live firefly-pond symptom was a
+    // chapter-1 contradiction cited against a "chapter-24" from the deleted run.
+    // This runs FIRST, before the irreversible book delete: facts are derived data
+    // (a re-audit rebuilds them), but a ledger orphaned by a failure part-way
+    // through the cascade needs manual SQLite surgery — nothing else clears the
+    // ledger of a book that no longer exists, and a retry 404s on the guard above.
+    // Fail-soft: the store is optional (better-sqlite3 may not have built) and a
+    // ledger error must never block the delete. canon_seed is deliberately NOT
+    // touched — it is keyed by world, shared with other books.
+    let removedFacts = 0;
+    let removedKnowledge = 0;
+    let ledgerCleared = true;
+    if (services.consistencyStore?.isAvailable?.()) {
+      try {
+        const cleared = services.consistencyStore.clearBookLedger(slug);
+        removedFacts = cleared.facts;
+        removedKnowledge = cleared.knowledge;
+      } catch (err) {
+        ledgerCleared = false;
+        console.log(`  ⚠ could not clear the consistency ledger for "${slug}": ${(err as Error)?.message || err}`);
+      }
+    } else {
+      console.log(`  ℹ consistency ledger cascade skipped for "${slug}": store unavailable`);
+    }
     try {
       const { active } = await services.books.delete(slug);
       // Cascade: remove the book's projects too. BookService.delete() only drops
@@ -257,7 +283,7 @@ export function mountBooks(app: Application, gateway: any, _baseDir: string): vo
           await gateway.soul.resetToInitial();
         }
       }
-      res.json({ deleted: slug, active, removedProjects });
+      res.json({ deleted: slug, active, removedProjects, removedFacts, removedKnowledge, ledgerCleared });
     } catch (err) {
       res.status(500).json({ error: (err as Error)?.message || String(err) });
     }

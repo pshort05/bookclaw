@@ -2,6 +2,14 @@
 
 A running log of notable, user-facing changes to BookClaw, newest first. Entries are grouped by theme rather than listed file-by-file; see the git history for the fine detail.
 
+## 2026-09-14
+
+### Consistency you can trust
+
+- **The consistency checker stopped inventing contradictions.** Three defects made it report problems that were not there — on the last book, 19 flags across three chapters and *every one* was an artifact. Every chapter's facts were stamped with the same story time, so a scene in chapter 1 and a scene in chapter 2 were compared as if they happened at the same moment ("Jay is both at the office and at his apartment"). Values that differed only by a trailing full stop, a curly apostrophe or a stray space were treated as different, producing a "contradiction" between two identical-looking sentences. And a deleted book left its facts behind, so a rebuilt book was checked against the chapters of the book it replaced — flagging chapter 1 against a chapter 24 that no longer existed.
+- **Deleting a book now clears its consistency data** — its facts, its knowledge and its cached consistency report — so a book you recreate starts clean instead of inheriting a ghost. Canon shared with other books in the same world is deliberately preserved.
+- **Fewer missed real problems, too.** Fixing the above surfaced two ways genuine errors were being *hidden*: a "used knowledge before learning it" violation was suppressed whenever the facts came from a full audit, and a real contradiction could be excused because the live check had no clock to compare against. Both now behave.
+
 ## 2026-09-13
 
 ### Chapter length you asked for

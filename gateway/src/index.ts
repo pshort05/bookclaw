@@ -2795,7 +2795,11 @@ class BookClawGateway {
         // into detectPostDraftContinuity so the headless driver persists
         // chapter facts too. Flags attach to the step for Plan 4's
         // analyze-then-apply polish to consume.
-        if (project.bookSlug && gateway.consistencyStore) {
+        // `gateway.books` is part of the guard: continuityChapterNum is only
+        // assigned inside the pre-draft `if (project.bookSlug && gateway.books)`
+        // block above, so without it every chapter would be persisted as
+        // chapter-0 at story-time base 0 — the all-zeros ledger defect.
+        if (project.bookSlug && gateway.books && gateway.consistencyStore) {
           const { flags } = await detectPostDraftContinuity({
             slug: project.bookSlug,
             role: (activeStep as any)?.role,
