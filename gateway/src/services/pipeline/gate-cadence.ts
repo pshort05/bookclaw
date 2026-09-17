@@ -70,7 +70,17 @@ export interface BoundaryStep {
   role?: string;
   skill?: string;
   label?: string;
+  /** A 'skipped' step is not part of the chapter for boundary purposes — see below. */
+  status?: string;
 }
+
+/**
+ * Optional steps (the de-AI sweep) are marked 'skipped' at expansion. Since the
+ * chapter/act gate fires on the LAST step of a chapter — which IS the sweep —
+ * ignoring skipped steps is what keeps the gate alive: it moves down to the last
+ * step that actually runs (Consistency Apply) instead of vanishing.
+ */
+const isSkipped = (s: BoundaryStep): boolean => s?.status === 'skipped';
 
 const isOutlineStep = (s: BoundaryStep): boolean => s.role === 'outline' || s.skill === 'outline';
 
@@ -105,8 +115,10 @@ export function computeBoundaries(stepIndex: number, allSteps: BoundaryStep[]): 
 
   // CHAPTER / ACT: the LAST step bearing this chapterNumber (a multi-stage
   // pipeline emits several role-tagged steps per chapter sharing one number).
-  if (typeof step.chapterNumber === 'number') {
-    const isLastOfChapter = !allSteps.some((s, i) => i > stepIndex && s.chapterNumber === step.chapterNumber);
+  if (typeof step.chapterNumber === 'number' && !isSkipped(step)) {
+    const isLastOfChapter = !allSteps.some(
+      (s, i) => i > stepIndex && s.chapterNumber === step.chapterNumber && !isSkipped(s),
+    );
     if (isLastOfChapter) {
       const totalChapters = new Set(
         allSteps.filter((s) => typeof s.chapterNumber === 'number').map((s) => s.chapterNumber),

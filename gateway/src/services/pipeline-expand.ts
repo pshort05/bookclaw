@@ -11,6 +11,10 @@ export interface ResolvedStepInput {
   // id ('g'+entryIndex) shared by every member of that group. Absent on ordinary
   // steps (including the implicit join step that follows a group).
   parallelGroup?: string;
+  // Declared by the pipeline when its own writing directions already cover this
+  // step's work — the de-AI sweep vs. the draft skill's AI-tell rules. Such a
+  // step is marked 'skipped' at expansion unless the book asks for it.
+  optional?: boolean;
   // Alternate Takes (Verbalized Sampling) opt-in — carried through to ProjectStep.
   // Set by the per-book inject-takes-steps overlay (not present in on-disk pipelines).
   vs?: { enabled: true; k?: number; threshold?: number; variant?: 'standard' | 'cot' | 'multi' };
@@ -55,6 +59,9 @@ function emitStep(s: any, vars: Record<string, string | number>): ResolvedStepIn
     // expand later (an untagged modelOverride stays an explicit per-step pin).
     ...(s.modelOverride ? { modelOverride: { ...s.modelOverride, source: 'template' as const } } : {}),
     ...(s.role !== undefined ? { role: s.role } : {}),
+    // A pipeline marks a step optional when its own writing directions already
+    // cover that work (the de-AI sweep vs. the draft skill's AI-tell rules).
+    ...(s.optional === true ? { optional: true as const } : {}),
   };
 }
 

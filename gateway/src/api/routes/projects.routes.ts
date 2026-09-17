@@ -41,6 +41,7 @@ import { runExecutableSkillStep, passiveSkillBlock } from '../../services/skill-
 import { runDeterministicApply, makeScopedRewriteFn } from '../../services/deterministic-apply.js';
 import { runCanonDriftGate, canonAuditAnchorBlock } from '../../services/canon-drift.js';
 import { acceptedPlacePhrases } from '../../services/canon-accept.js';
+import { applyOptionalSteps } from '../../services/pipeline/optional-steps.js';
 import { runDeaiSweepStep } from '../../services/deai/run-step.js';
 import { loadBannedTermsForBook } from '../../services/deai/banned-terms.js';
 import { loadAiNamesForBook } from '../../services/deai/ai-names.js';
@@ -653,6 +654,11 @@ export function mountProjects(app: Application, gateway: any, baseDir: string): 
             project.context.genre = genreName;
           }
           applyBookModelConfig(project, ob?.manifest);
+          // Reconcile optional steps (the de-AI sweep) with the book's setting.
+          // Runs even when the manifest is absent — absent means "follow the
+          // pipeline", i.e. skip. Must happen BEFORE the step executes so the
+          // chapter's last non-skipped step is settled when the gate is computed.
+          applyOptionalSteps(project, ob?.manifest);
         } catch { /* fail-soft: casting sheet stays tier-default */ }
       }
 

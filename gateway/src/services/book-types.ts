@@ -78,6 +78,12 @@ export interface BookManifest {
     citations: Array<{ title: string; url?: string }>;
     discrepancies: Array<{ id: string; premiseClaim: string; finding: string; status: 'pass' | 'fail'; suggestion?: string; targetField: 'setting' | 'blueprint' | 'characters' }>;
   }; // Canon Drift Gate — human-verified intake anchor (dossier lives in data/verified-canon.md) (additive-optional, no schema bump)
+  /**
+   * The de-AI sweep. Absent = follow the pipeline (a pipeline whose draft skill
+   * already carries the AI-tell rules marks it optional, so absent means skip).
+   * 'run' forces it back on for this book.
+   */
+  deaiSweep?: 'skip' | 'run';
   review?: { cadence?: Cadence }; // Flagship Plan 5 — human-review gate cadence; absent = 'per_act' default (additive-optional, no schema bump)
   ensemble?: { enabled?: boolean; panel?: string[] }; // Flagship Plan 8 — opt-in multi-model ideation ensemble on the premise phase; absent/enabled!==true = off (most expensive front-end, additive-optional, no schema bump)
   seeds?: { storyArc?: string; characters?: string; setting?: string; blueprint?: string; councilSelection?: 'auto' | 'propose' }; // Romance Workflow Foundation — author-provided seeds developed by the pipeline's front half; blueprint (act/POV/ending scaffold) honored by the outline step; councilSelection reserved for sub-project 2 (inert here) (additive-optional, no schema bump)

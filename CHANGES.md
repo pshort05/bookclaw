@@ -2,6 +2,13 @@
 
 A running log of notable, user-facing changes to BookClaw, newest first. Entries are grouped by theme rather than listed file-by-file; see the git history for the fine detail.
 
+## 2026-09-16
+
+### Writing passes that earn their place
+
+- **The de-AI sweep is now optional, and off where it is redundant.** The romance pipelines' own drafting instructions already forbid the things the sweep removes — the first-draft skill has a section headed "Avoid these AI tells" and bans adverbs, clichés, em-dashes and filter language. Measured across twelve chapters of a live book, the sweep matched **zero** entries from its own tell list, because the draft never contained any. With nothing on-task to do it line-edited instead, injecting four passages of new prose and rewriting eight impersonal "you"s into "I" — against its own rule that it may only remove, never add. Pipelines whose drafting instructions carry those rules now mark the sweep optional and skip it; pipelines that don't (romantasy, technothriller) keep running it. Set `deaiSweep: "run"` on a book to turn it back on.
+- **A skipped pass no longer takes the review gate with it.** Generation pauses for you at the last step of a chapter — which was the sweep. Skipping it would have silently stopped every per-chapter and act review from firing. The boundary now lands on the last step that actually runs, and a skipped stage shows in the version trail with the reason it was skipped rather than leaving a hole.
+
 ## 2026-09-14
 
 ### Choosing models for a whole book

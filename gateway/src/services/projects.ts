@@ -124,6 +124,10 @@ export interface ProjectStep {
   taskType: string;        // AI router task type (for tier routing)
   prompt: string;          // The prompt to send to AI
   status: 'pending' | 'active' | 'completed' | 'skipped' | 'failed';
+  /** Pipeline-declared: its work is already covered by the writing directions. */
+  optional?: boolean;
+  /** Why an optional step was skipped — see pipeline/optional-steps.ts. */
+  skipReason?: string;
   result?: string;
   error?: string;
   // Novel pipeline fields:
@@ -951,6 +955,7 @@ Description: ${description}`;
       ...(s.chapterNumber ? { chapterNumber: s.chapterNumber } : {}),
       ...(s.modelOverride ? { modelOverride: s.modelOverride } : {}),
       role: readStepRole(s),
+      ...((s as any).optional === true ? { optional: true } : {}),
       ...(s.parallelGroup ? { parallelGroup: s.parallelGroup } : {}),
       ...((s as any).vs ? { vs: (s as any).vs } : {}),
     }));

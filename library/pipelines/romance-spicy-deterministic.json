@@ -163,7 +163,8 @@
           "phase": "humanize",
           "chapterNumber": "{{n}}",
           "role": "humanize",
-          "promptTemplate": "Chunked two-pass de-AI sweep applied by code: a deterministic banned-terms replace, then a broad de-AI pass and a second-reader pass (each chunked into ~1,000-word windows and spliced by the drift-proof applier). Reads the consistency-applied chapter and emits the final humanized chapter — no model rewrites the whole chapter. Per-pass models come from the book's deai_pass1/deai_pass2 stage slots (defaults Gemini then Haiku)."
+          "promptTemplate": "Chunked two-pass de-AI sweep applied by code: a deterministic banned-terms replace, then a broad de-AI pass and a second-reader pass (each chunked into ~1,000-word windows and spliced by the drift-proof applier). Reads the consistency-applied chapter and emits the final humanized chapter — no model rewrites the whole chapter. Per-pass models come from the book's deai_pass1/deai_pass2 stage slots (defaults Gemini then Haiku).",
+          "optional": true
         }
       ]
     },

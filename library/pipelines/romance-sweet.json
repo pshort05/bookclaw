@@ -67,7 +67,8 @@
             "model": "anthropic/claude-sonnet-4.6",
             "temperature": 0.2
           },
-          "role": "humanize"
+          "role": "humanize",
+          "optional": true
         },
         {
           "label": "Intimacy — Chapter {{n}}",

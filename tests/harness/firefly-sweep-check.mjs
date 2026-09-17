@@ -187,5 +187,80 @@ const ROLE_PIN = { provider: 'claude', model: 'claude-opus-5' };
     r.provider === 'claude' && r.model === 'claude-opus-5', `${r.provider}/${r.model}`);
 }
 
+// ══ 5. the de-AI sweep is optional where the directions cover it ══════════
+// Measured on the live book: 0 AI-tells matched across ch1-12, while the pass
+// injected 4 passages and swapped 8 pronouns. The gate fix is load-bearing —
+// the sweep IS the last step of a chapter, so a naive skip kills every gate.
+console.log('Change 4: the de-AI sweep is optional, and the gate survives it');
+{
+  const { applyOptionalSteps } = await import(`${base}/services/pipeline/optional-steps.js`);
+  const { computeBoundaries } = await import(`${base}/services/pipeline/gate-cadence.js`);
+
+  const chapter = (n, sweepStatus = 'pending') => ([
+    { label: `Scene Brief — Chapter ${n}`, role: 'scene_brief', chapterNumber: n, status: 'completed' },
+    { label: `First Draft — Chapter ${n}`, role: 'draft', chapterNumber: n, status: 'completed' },
+    { label: `Improvement Plan — Chapter ${n}`, role: 'improve', chapterNumber: n, status: 'completed' },
+    { label: `Rewrite — Chapter ${n}`, role: 'rewrite', chapterNumber: n, status: 'completed' },
+    { label: `Consistency Audit — Chapter ${n}`, chapterNumber: n, status: 'completed' },
+    { label: `Consistency Apply — Chapter ${n}`, chapterNumber: n, status: 'completed' },
+    { label: `Humanize — De-AI Sweep — Chapter ${n}`, role: 'humanize', chapterNumber: n, status: sweepStatus, optional: true },
+  ]);
+
+  const proj = { steps: chapter(2) };
+  check('an optional sweep is skipped by default', applyOptionalSteps(proj, undefined) === 1
+    && proj.steps.at(-1).status === 'skipped', `status=${proj.steps.at(-1).status}`);
+
+  const applyIdx = proj.steps.findIndex((s) => /Consistency Apply/.test(s.label));
+  check('the chapter gate MOVES to Consistency Apply (not lost)',
+    computeBoundaries(applyIdx, proj.steps).includes('chapter'),
+    `got ${JSON.stringify(computeBoundaries(applyIdx, proj.steps))}`);
+  check('the skipped sweep does not itself gate',
+    computeBoundaries(proj.steps.length - 1, proj.steps).length === 0);
+
+  const forced = { steps: chapter(2) };
+  check('deaiSweep:"run" keeps the sweep', applyOptionalSteps(forced, { deaiSweep: 'run' }) === 0
+    && forced.steps.at(-1).status === 'pending');
+  check('with the sweep running it is still the boundary',
+    computeBoundaries(forced.steps.length - 1, forced.steps).includes('chapter'));
+
+  const ran = { steps: chapter(2, 'completed') };
+  applyOptionalSteps(ran, undefined);
+  check('a sweep that already ran is never retro-skipped', ran.steps.at(-1).status === 'completed');
+}
+
+// the SHIPPED pipeline files must carry the flag (proves the deployed image, not the repo)
+{
+  const { readFileSync } = await import('node:fs');
+  const libBase = arg.includes('/dist/') ? '/app/library' : 'library';
+  const sweepOf = (p) => {
+    const j = JSON.parse(readFileSync(`${libBase}/pipelines/${p}.json`, 'utf8'));
+    const walk = (ss) => ss.flatMap((s) => (s.expand || s.parallel ? walk(s.steps ?? s.parallel ?? []) : [s]));
+    return walk(j.steps ?? []).filter((s) => /De-AI|Humanize/i.test(String(s.label ?? '')));
+  };
+  for (const p of ['romance-spicy-deterministic', 'romance-sweet-deterministic']) {
+    check(`${p} ships the sweep as optional`, sweepOf(p).every((s) => s.optional === true));
+  }
+  check('romantasy-production keeps its sweep mandatory',
+    sweepOf('romantasy-production').every((s) => s.optional !== true));
+}
+
+// the flag must survive EXPANSION too — a pipeline JSON carrying `optional` is
+// worthless if expandSteps drops it before a ProjectStep is ever built.
+{
+  const { expandSteps } = await import(`${base}/services/pipeline-expand.js`);
+  const { readFileSync } = await import('node:fs');
+  const libBase = arg.includes('/dist/') ? '/app/library' : 'library';
+  const j = JSON.parse(readFileSync(`${libBase}/pipelines/romance-spicy-deterministic.json`, 'utf8'));
+  const resolved = expandSteps(j.steps, { chapterCount: 3, wordsPerChapter: 1650 });
+  const sweeps = resolved.filter((s) => s.role === 'humanize');
+  check('expansion emits one sweep per chapter', sweeps.length === 3, `got ${sweeps.length}`);
+  check('`optional` survives expansion onto every chapter',
+    sweeps.every((s) => s.optional === true),
+    `optional flags: ${JSON.stringify(sweeps.map((s) => s.optional))}`);
+  check('no OTHER chapter step was marked optional',
+    resolved.filter((s) => s.optional === true).length === 3,
+    `${resolved.filter((s) => s.optional === true).length} optional steps total`);
+}
+
 console.log(failed === 0 ? '\nALL CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);
 process.exit(failed === 0 ? 0 : 1);

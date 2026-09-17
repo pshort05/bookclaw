@@ -47,6 +47,7 @@ import { buildBookCanonBlock } from './services/book-canon.js';
 import { runDeterministicApply, makeScopedRewriteFn } from './services/deterministic-apply.js';
 import { runCanonDriftGate, canonAuditAnchorBlock } from './services/canon-drift.js';
 import { acceptedPlacePhrases } from './services/canon-accept.js';
+import { applyOptionalSteps } from './services/pipeline/optional-steps.js';
 import { runDeaiSweepStep } from './services/deai/run-step.js';
 import { loadBannedTermsForBook } from './services/deai/banned-terms.js';
 import { loadAiNamesForBook } from './services/deai/ai-names.js';
@@ -2451,6 +2452,7 @@ class BookClawGateway {
           const ob = await gateway.books.open(project.bookSlug).catch(() => null);
           bookManifest = ob?.manifest ?? null;
           applyBookModelConfig(project, bookManifest); // per-stage models on the headless drive path too
+          applyOptionalSteps(project, bookManifest); // and the optional-step (de-AI sweep) setting
           const canonBlock = buildBookCanonBlock(gateway.books.dataDirOf?.(project.bookSlug), ob?.manifest);
           if (canonBlock) projectContext += `\n\n${canonBlock}`;
 
